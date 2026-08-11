@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, PanelLeft } from "lucide-react";
+import { Building2, BriefcaseBusiness, LayoutDashboard, PanelLeft, ScrollText, Settings, ShieldCheck, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -46,6 +46,8 @@ function getInitials(email: string | null) {
   return email?.slice(0, 2).toUpperCase() ?? "HR";
 }
 
+const navigationIcons = { LayoutDashboard, Users, ShieldCheck, Building2, BriefcaseBusiness, Settings, ScrollText };
+
 export function AppShell({ children, config, email }: AppShellProps) {
   const pathname = usePathname();
 
@@ -80,6 +82,7 @@ export function AppShell({ children, config, email }: AppShellProps) {
                   <SidebarMenu>
                     {config.navigation.map((item) => {
                       const isActive = pathname === item.href;
+                      const Icon = navigationIcons[item.icon];
 
                       return (
                         <SidebarMenuItem key={item.href}>
@@ -93,7 +96,7 @@ export function AppShell({ children, config, email }: AppShellProps) {
                               />
                             }
                           >
-                            <LayoutDashboard aria-hidden="true" />
+                          <Icon aria-hidden="true" />
                             <span>{item.label}</span>
                           </SidebarMenuButton>
                         </SidebarMenuItem>

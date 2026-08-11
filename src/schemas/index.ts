@@ -21,3 +21,17 @@ export type {
   LoginInput,
   ResetPasswordInput,
 } from "./auth";
+export {
+  administrationFiltersSchema,
+  departmentSchema,
+  managedUserUpdateSchema,
+  organizationSettingsSchema,
+  positionSchema,
+} from "./administration";
+export type {
+  AdministrationFilters,
+  DepartmentInput,
+  ManagedUserUpdateInput,
+  OrganizationSettingsInput,
+  PositionInput,
+} from "./administration";

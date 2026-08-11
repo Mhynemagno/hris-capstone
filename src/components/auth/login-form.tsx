@@ -25,7 +25,8 @@ export function LoginForm({ nextPath }: LoginFormProps) {
     const { error: authError } = await createBrowserSupabaseClient().auth.signInWithPassword(result.data);
     setPending(false);
     if (authError) return setError("We could not sign you in. Check your details and try again.");
-    router.replace(getSafeNextPath(nextPath));
+    const next = getSafeNextPath(nextPath);
+    router.replace(`/auth/continue?next=${encodeURIComponent(next)}`);
     router.refresh();
   }
 
