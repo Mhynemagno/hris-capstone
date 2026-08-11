@@ -26,15 +26,29 @@ The role layout is the final authorization boundary. If the authenticated user's
 
 ## User Interface
 
+The reusable shell uses a modern, restrained enterprise-dashboard presentation rather than a default page-and-links layout. It follows the existing Tailwind CSS v4 and shadcn/ui setup, using semantic design tokens instead of per-component raw colors. The visual direction is balanced and professional: clear type hierarchy, white or neutral surfaces, restrained cyan primary accents, emerald success/status accents, soft borders, and subtle elevation. Status colors must never be the sole indicator of meaning.
+
 The reusable shell contains:
 
-- A header showing the signed-in user's email and a sign-out control.
-- Role-aware navigation derived from a typed configuration. At this stage it contains only the user's role landing page; later feature branches extend their own role's configuration.
-- An active navigation state based on the current pathname.
-- Breadcrumbs that identify the role area and current page.
-- Reusable loading and error states using the project's existing UI components.
+- A responsive `SidebarProvider` shell with an inset sidebar on desktop and an off-canvas, keyboard-accessible navigation drawer on small screens. A compact sidebar trigger remains in the header.
+- A branded sidebar header and role badge, role-aware navigation derived from a typed configuration, and a footer user menu containing the signed-in email and sign-out control. At this stage navigation contains only the user's role landing page; later feature branches extend their own role's configuration.
+- Active navigation states that are visible by shape, background, and text weight rather than color alone.
+- A slim, sticky top bar with the sidebar trigger, responsive breadcrumbs, and user menu. Breadcrumbs collapse gracefully on narrow screens.
+- A responsive content frame with adaptive gutters, a maximum readable content width, consistent 4/8px spacing rhythm, and unhurried section spacing.
+- A polished landing-page hero made from a page title, role-specific purpose statement, and a compact "What you can do here" placeholder card. These placeholder cards are informational and contain no non-functional controls.
+- Reusable `Skeleton` loading patterns and existing accessible loading/error states. Error states use an icon, clear recovery message, and a retry affordance only where a later module can actually retry.
+
+The implementation adds required shadcn/ui primitives through the current CLI rather than hand-copying component code: Sidebar, Breadcrumb, Avatar, Badge, Button, Card, Dropdown Menu, Separator, Sheet, Skeleton, and Tooltip. Lucide is the sole icon family; emoji are not used as structural icons.
 
 Each landing page provides a role-specific title, a concise statement of that role's purpose, and an explicit placeholder that its module summaries will arrive in later roadmap branches. The Management page is informational only and exposes no mutation controls.
+
+## Interaction, Responsiveness, and Accessibility
+
+The app shell is responsive from a 375px viewport upward, avoids horizontal scrolling, and preserves usable content at common tablet and desktop widths. The sidebar is persistent only when sufficient horizontal space exists; mobile navigation opens as an off-canvas drawer and returns focus correctly after close.
+
+Every interactive control is keyboard reachable, has a visible focus ring, and has an accessible name. A skip link targets the main-content landmark so keyboard users can bypass repeated navigation. Native links and buttons retain their semantic behavior; custom `div` controls are not used. Icon-only controls use a tooltip and explicit accessible label.
+
+The default color mode is light, with WCAG AA contrast for normal text (at least 4.5:1). The implementation does not add a theme switch in this branch; components must still use semantic tokens so a later dark-mode decision does not require a visual rewrite. Hover, focus, selected, disabled, and pending states are visually distinct. Motion is limited to brief 150–300ms opacity/color transitions and honors `prefers-reduced-motion`.
 
 ## Client Data Foundation
 
@@ -58,10 +72,12 @@ Tests will verify:
 - Existing unauthenticated protection remains intact.
 - Navigation exposes only links appropriate to the current role and marks the active page.
 - Breadcrumbs and role landing-page copy render correctly.
+- The responsive navigation trigger, skip link, semantic landmarks, accessible labels, and visible keyboard focus behavior are present.
+- Loading, error, active-navigation, and unauthorized states are understandable without relying only on color.
 - The query provider and query-key conventions are available to protected screens.
 - Management's landing page contains no mutation control.
 
-The branch is accepted when all five landing pages render in the shared shell, direct out-of-role URLs result in `/unauthorized`, and Management remains read-only. Linting, typechecking, unit tests, and a production build must pass.
+The branch is accepted when all five landing pages render in the polished shared shell, direct out-of-role URLs result in `/unauthorized`, the shell is usable with keyboard and at small/mobile through desktop widths, and Management remains read-only. Linting, typechecking, unit tests, and a production build must pass.
 
 ## Out of Scope
 
