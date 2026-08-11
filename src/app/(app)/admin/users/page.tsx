@@ -1,0 +1,2 @@
+import { AdminEmptyState, AdminPage } from "@/components/administration/admin-page";
+export default function UsersPage() { return <AdminPage title="Users" description="Search, filter, invite, and manage every account, including applicants."><AdminEmptyState title="Account management is ready for data" description="The secure role and activation workflow is available; the interactive directory is being connected next." /></AdminPage>; }
