@@ -28,16 +28,17 @@ Create **one branch at a time** from the latest `main`, finish it, test it, open
 | 3 | `feat/03-role-based-app-shell` | 02 |
 | 4 | `feat/04-administration-master-data` | 03 |
 | 5 | `feat/05-personnel-records` | 04 |
-| 6 | `feat/06-notifications` | 05 |
-| 7 | `feat/07-profile-change-approval` | 06 |
-| 8 | `feat/08-recruitment-and-applicant-portal` | 07 |
-| 9 | `feat/09-ai-applicant-shortlisting` | 08 |
-| 10 | `feat/10-leave-management` | 09 |
-| 11 | `feat/11-deployment-tracking` | 10 |
-| 12 | `feat/12-promotion-eligibility` | 11 |
-| 13 | `feat/13-attendance-integration` | 12 |
-| 14 | `feat/14-dashboards-and-reports` | 13 |
-| 15 | `chore/15-quality-release-and-turnover` | 14 |
+| 6 | `feat/06-administration-ui-completion` | 05 |
+| 7 | `feat/07-notifications` | 06 |
+| 8 | `feat/08-profile-change-approval` | 07 |
+| 9 | `feat/09-recruitment-and-applicant-portal` | 08 |
+| 10 | `feat/10-ai-applicant-shortlisting` | 09 |
+| 11 | `feat/11-leave-management` | 10 |
+| 12 | `feat/12-deployment-tracking` | 11 |
+| 13 | `feat/13-promotion-eligibility` | 12 |
+| 14 | `feat/14-attendance-integration` | 13 |
+| 15 | `feat/15-dashboards-and-reports` | 14 |
+| 16 | `chore/16-quality-release-and-turnover` | 15 |
 
 ## Branch convention
 
@@ -50,6 +51,7 @@ Create **one branch at a time** from the latest `main`, finish it, test it, open
 ## Global done checklist for every branch
 
 - [ ] Rebase or branch from the latest merged `main`.
+- [ ] For every feature that manages records, explicitly state the allowed create, read, update, deactivate/delete, approval, and export actions; a static route, navigation item, or empty-state card does not satisfy a CRUD requirement.
 - [ ] Add/update unit, integration, or end-to-end tests for the branch's main journey.
 - [ ] Run lint, typecheck, build, and relevant tests.
 - [ ] Test the intended role can access the feature and an unintended role cannot.
@@ -139,7 +141,7 @@ Create **one branch at a time** from the latest `main`, finish it, test it, open
 
 ## 4. `feat/04-administration-master-data`
 
-**Purpose:** Give the System Administrator control of core reference data and user roles.
+**Purpose:** Establish the secure administration database and server workflows that the later Admin interface uses.
 
 **Database**
 
@@ -155,7 +157,9 @@ Create **one branch at a time** from the latest `main`, finish it, test it, open
 - `/admin/settings`
 - `/admin/audit-logs`
 
-**Done when:** An administrator can manage departments, positions, and roles; all role changes are audited; no other role can perform these actions.
+**Scope boundary:** This branch creates the protected data model, policies, and server-side invitation/role workflow. The actual usable Admin CRUD interface is completed in `feat/06-administration-ui-completion` after personnel records.
+
+**Done when:** The administration data model and server-side workflows enforce administrator-only access, and every role or activation change is audited. The UI does not count as complete until the next Administration UI branch is finished.
 
 ## 5. `feat/05-personnel-records`
 
@@ -176,7 +180,29 @@ Create **one branch at a time** from the latest `main`, finish it, test it, open
 
 **Done when:** HR can create, search, filter, and maintain personnel records; employees can view but cannot edit official fields.
 
-## 6. `feat/06-notifications`
+## 6. `feat/06-administration-ui-completion`
+
+**Purpose:** Make the System Administrator area usable by connecting every existing Admin page to its protected Supabase workflows.
+
+**Required CRUD and workflows**
+
+- `/admin/users`: list, search, filter, invite, activate/deactivate, and manage internal accounts. The interface must use the existing protected invitation workflow; it must not expose Supabase secret keys in the browser.
+- `/admin/roles`: list and change eligible user roles through the audited server-side role-assignment workflow.
+- `/admin/departments`: list, create, edit, and deactivate departments. Do not hard-delete departments that are referenced by employee history.
+- `/admin/positions`: list, create, edit, and deactivate positions, including department assignment. Do not hard-delete positions that are referenced by employee history.
+- `/admin/settings`: view and update the allowed organization settings without displaying application secrets.
+- `/admin/audit-logs`: show searchable, filterable, read-only audit entries; no UI action may modify or delete audit records.
+
+**Implementation requirements**
+
+- Add Zod schemas, Supabase query functions, TanStack Query hooks, forms/dialogs, and loading, empty, validation, and error states for each workflow.
+- Connect each route to real data. A route containing only a static description or empty-state card is not complete.
+- Validate authorization at the database/server layer as well as the UI; hiding a button is not authorization.
+- Add UI and RLS/workflow tests for successful Administrator actions and denied non-Administrator actions.
+
+**Done when:** A System Administrator can complete every listed create, read, update, and permitted deactivate action in the HRIS UI; changes persist in Supabase; role and account-status changes create audit entries; and every other role is denied both in the UI and at the data layer.
+
+## 7. `feat/07-notifications`
 
 **Purpose:** Build the reusable notification system before approval workflows need it.
 
@@ -192,7 +218,7 @@ Create **one branch at a time** from the latest `main`, finish it, test it, open
 
 **Done when:** A user can see and mark only their own notifications as read.
 
-## 7. `feat/07-profile-change-approval`
+## 8. `feat/08-profile-change-approval`
 
 **Purpose:** Implement the required employee profile-change request and administrator approval workflow.
 
@@ -212,7 +238,7 @@ Create **one branch at a time** from the latest `main`, finish it, test it, open
 
 **Done when:** The complete journey works: employee submits, official profile remains unchanged, administrator approves/rejects, audit entry and notification are created.
 
-## 8. `feat/08-recruitment-and-applicant-portal`
+## 9. `feat/09-recruitment-and-applicant-portal`
 
 **Purpose:** Build recruitment from published opening through HR hiring decision.
 
@@ -231,7 +257,7 @@ Create **one branch at a time** from the latest `main`, finish it, test it, open
 
 **Done when:** An applicant can submit and track only their own application, HR can review it and record the final decision, and hiring can create/activate the linked employee record.
 
-## 9. `feat/09-ai-applicant-shortlisting`
+## 10. `feat/10-ai-applicant-shortlisting`
 
 **Purpose:** Add HR-reviewed AI recommendations to recruitment without automating hiring.
 
@@ -249,7 +275,7 @@ Create **one branch at a time** from the latest `main`, finish it, test it, open
 
 **Done when:** AI can recommend/rank applicants, but it cannot automatically change an application to Hired or Not Selected.
 
-## 10. `feat/10-leave-management`
+## 11. `feat/11-leave-management`
 
 **Purpose:** Deliver employee leave requests and HR decisions.
 
@@ -268,7 +294,7 @@ Create **one branch at a time** from the latest `main`, finish it, test it, open
 
 **Done when:** Employees submit and view their history; HR approves/rejects with a reason; the employee is notified.
 
-## 11. `feat/11-deployment-tracking`
+## 12. `feat/12-deployment-tracking`
 
 **Purpose:** Track personnel deployments and retain their history.
 
@@ -286,7 +312,7 @@ Create **one branch at a time** from the latest `main`, finish it, test it, open
 
 **Done when:** HR can create/update assignments without erasing history; employees see their own assignments.
 
-## 12. `feat/12-promotion-eligibility`
+## 13. `feat/13-promotion-eligibility`
 
 **Purpose:** Show promotion readiness for HR review, never automatic promotion.
 
@@ -304,7 +330,7 @@ Create **one branch at a time** from the latest `main`, finish it, test it, open
 
 **Done when:** HR can define criteria and review evidence/missing requirements; the system never changes an employee’s rank automatically.
 
-## 13. `feat/13-attendance-integration`
+## 14. `feat/14-attendance-integration`
 
 **Purpose:** Synchronize attendance logs from a supported biometric vendor without storing biometric templates.
 
@@ -326,7 +352,7 @@ Create **one branch at a time** from the latest `main`, finish it, test it, open
 
 **Done when:** Demo logs from a documented API or validated CSV/XLSX export import once, calculate late/absence status, and are visible only to the correct roles. A real device is selected only after the vendor supplies the integration documentation and a test credential/demo.
 
-## 14. `feat/14-dashboards-and-reports`
+## 15. `feat/15-dashboards-and-reports`
 
 **Purpose:** Turn operational data into role-appropriate analytics and reports.
 
@@ -343,7 +369,7 @@ Create **one branch at a time** from the latest `main`, finish it, test it, open
 
 **Done when:** Dashboards use real data, management cannot mutate anything, and exports contain only records the requesting role is authorized to see.
 
-## 15. `chore/15-quality-release-and-turnover`
+## 16. `chore/16-quality-release-and-turnover`
 
 **Purpose:** Make the finished capstone safe to demonstrate and ready to hand over.
 
