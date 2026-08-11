@@ -29,6 +29,8 @@ Human Resource Information System (HRIS) capstone built with Next.js, Supabase, 
 ## Project folders
 
 - `src/lib/supabase`: browser and server Supabase client factories.
+- `src/lib/auth`: verified server-side user and role lookup helpers.
+- `src/lib/types`: shared application-role and database record types.
 - `src/schemas`: shared Zod schemas.
 - `src/queries`: Supabase query functions.
 - `src/hooks`: browser TanStack Query hooks.
@@ -55,3 +57,18 @@ npm run build
 3. Deploy the project. Do not put Supabase secret or service-role keys in Vercel public variables.
 
 This baseline deploys a harmless public landing page. Authentication, role guards, database migrations, and job-opening data arrive in later roadmap branches.
+
+## Supabase database workflow
+
+The repository is linked to its Supabase project locally, but the link metadata is ignored. Authenticate and link your own local CLI before applying migrations:
+
+```bash
+npx supabase@latest login
+npx supabase@latest link --project-ref your-project-ref
+npx supabase@latest db push --linked
+npx supabase@latest test db --linked supabase/tests/auth_rbac_foundation.test.sql
+```
+
+The `private-documents` Storage bucket is private. RLS governs all application tables and Storage objects, so browser code must use the public publishable key only. Keep `service_role` and all other secret keys out of browser code, `NEXT_PUBLIC_*` variables, and Git.
+
+After an initial administrator signs up through Supabase Auth, use the Supabase dashboard Table Editor to change that user’s one `user_roles.role` value from `applicant` to `system_administrator`. Do this once, confirm the matching `audit_logs` entry, and use the later administration workflow for all subsequent role changes. Do not store the administrator’s email or a bootstrap SQL command in the repository.
