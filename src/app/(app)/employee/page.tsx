@@ -1,6 +1,5 @@
-import { RoleLanding } from "@/components/app-shell/role-landing";
-import { ROLE_CONFIG } from "@/lib/app/role-config";
+import { EmployeeRecordSummary } from "@/components/personnel-records/employee-record-summary";
 
 export default function EmployeePage() {
-  return <RoleLanding config={ROLE_CONFIG.employee} />;
+  return <EmployeeRecordSummary />;
 }

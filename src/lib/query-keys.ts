@@ -15,4 +15,12 @@ export const queryKeys = {
     auditLogs: (filters: Record<string, unknown>) =>
       ["administration", "audit-logs", filters] as const,
   },
+  personnelRecords: {
+    directory: (filters: Record<string, unknown>) => ["personnel-records", "directory", filters] as const,
+    detail: (employeeId: string) => ["personnel-records", "detail", employeeId] as const,
+    serviceHistory: (employeeId: string) => ["personnel-records", "service-history", employeeId] as const,
+    qualifications: (employeeId: string) => ["personnel-records", "qualifications", employeeId] as const,
+    certifications: (employeeId: string) => ["personnel-records", "certifications", employeeId] as const,
+    training: (employeeId: string) => ["personnel-records", "training", employeeId] as const,
+  },
 };
