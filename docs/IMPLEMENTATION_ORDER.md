@@ -196,6 +196,8 @@ Create **one branch at a time** from the latest `main`, finish it, test it, open
 **Implementation requirements**
 
 - Add Zod schemas, Supabase query functions, TanStack Query hooks, forms/dialogs, and loading, empty, validation, and error states for each workflow.
+- Standardize the Administration UI's interactive forms on React Hook Form with the existing Zod schemas as the validation source of truth. Preserve explicit server-side `POST` handling for credential or other sensitive submissions so those flows remain safe when browser JavaScript is unavailable.
+- Add Zustand only for shared client/UI state that must outlive a single component (for example, persisted table preferences or multi-step form drafts). TanStack Query remains the cache and source of truth for Supabase server data; configure its stale-time and invalidation rules instead of duplicating records in Zustand or refetching on every render.
 - Connect each route to real data. A route containing only a static description or empty-state card is not complete.
 - Validate authorization at the database/server layer as well as the UI; hiding a button is not authorization.
 - Add UI and RLS/workflow tests for successful Administrator actions and denied non-Administrator actions.
