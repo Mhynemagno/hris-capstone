@@ -28,6 +28,22 @@ export {
   organizationSettingsSchema,
   positionSchema,
 } from "./administration";
+export {
+  certificationSchema,
+  employeeDirectoryFiltersSchema,
+  employeeSchema,
+  qualificationSchema,
+  serviceHistorySchema,
+  trainingRecordSchema,
+} from "./personnel-records";
+export type {
+  CertificationInput,
+  EmployeeDirectoryFilters,
+  EmployeeInput,
+  QualificationInput,
+  ServiceHistoryInput,
+  TrainingRecordInput,
+} from "./personnel-records";
 export type {
   AdministrationFilters,
   DepartmentInput,
