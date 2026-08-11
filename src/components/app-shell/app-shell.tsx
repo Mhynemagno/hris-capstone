@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, BriefcaseBusiness, LayoutDashboard, PanelLeft, ScrollText, Settings, ShieldCheck, Users } from "lucide-react";
+import { Building2, BriefcaseBusiness, ContactRound, LayoutDashboard, PanelLeft, ScrollText, Settings, ShieldCheck, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -46,7 +46,7 @@ function getInitials(email: string | null) {
   return email?.slice(0, 2).toUpperCase() ?? "HR";
 }
 
-const navigationIcons = { LayoutDashboard, Users, ShieldCheck, Building2, BriefcaseBusiness, Settings, ScrollText };
+const navigationIcons = { LayoutDashboard, Users, ShieldCheck, Building2, BriefcaseBusiness, Settings, ScrollText, ContactRound };
 
 export function AppShell({ children, config, email }: AppShellProps) {
   const pathname = usePathname();

@@ -12,11 +12,14 @@ describe("role configuration", () => {
     );
   });
 
-  it("returns HR navigation scoped to the HR landing page", () => {
+  it("returns HR navigation scoped to HR personnel routes", () => {
     expect(getRoleConfig("hr_personnel")).toMatchObject({
       role: "hr_personnel",
       homeHref: "/hr",
-      navigation: [{ href: "/hr", label: "HR workspace" }],
+      navigation: [
+        { href: "/hr", label: "HR workspace" },
+        { href: "/hr/employees", label: "Personnel records" },
+      ],
     });
   });
 });
