@@ -19,6 +19,11 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  await supabase.auth.getClaims();
-  return response;
+  const { data, error } = await supabase.auth.getClaims();
+  const subject = data?.claims?.sub;
+
+  return {
+    response,
+    userId: error || typeof subject !== "string" ? null : subject,
+  };
 }
