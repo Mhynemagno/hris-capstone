@@ -42,7 +42,7 @@ describe("authentication forms", () => {
     expect(signInWithPassword).not.toHaveBeenCalled();
   });
 
-  it("signs in and redirects to the requested safe path", async () => {
+  it("signs in and hands the requested safe path to the server role resolver", async () => {
     const user = userEvent.setup();
     signInWithPassword.mockResolvedValue({ error: null });
     render(<LoginForm nextPath="/hr" />);
@@ -55,7 +55,7 @@ describe("authentication forms", () => {
       email: "person@example.com",
       password: "secret1",
     });
-    expect(replace).toHaveBeenCalledWith("/hr");
+    expect(replace).toHaveBeenCalledWith("/auth/continue?next=%2Fhr");
   });
 
   it("keeps password recovery confirmation neutral", async () => {
