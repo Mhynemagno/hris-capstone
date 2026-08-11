@@ -33,7 +33,7 @@ The reusable shell contains:
 - A responsive `SidebarProvider` shell with an inset sidebar on desktop and an off-canvas, keyboard-accessible navigation drawer on small screens. A compact sidebar trigger remains in the header.
 - A branded sidebar header and role badge, role-aware navigation derived from a typed configuration, and a footer user menu containing the signed-in email and sign-out control. At this stage navigation contains only the user's role landing page; later feature branches extend their own role's configuration.
 - Active navigation states that are visible by shape, background, and text weight rather than color alone.
-- A slim, sticky top bar with the sidebar trigger, responsive breadcrumbs, and user menu. Breadcrumbs collapse gracefully on narrow screens.
+- A slim, sticky top bar with the sidebar trigger and responsive breadcrumbs. The role badge, signed-in email, and sign-out control remain together in the sidebar footer so account controls have one predictable location. Breadcrumbs collapse gracefully on narrow screens.
 - A responsive content frame with adaptive gutters, a maximum readable content width, consistent 4/8px spacing rhythm, and unhurried section spacing.
 - A polished landing-page hero made from a page title, role-specific purpose statement, and a compact "What you can do here" placeholder card. These placeholder cards are informational and contain no non-functional controls.
 - Reusable `Skeleton` loading patterns and existing accessible loading/error states. Error states use an icon, clear recovery message, and a retry affordance only where a later module can actually retry.
