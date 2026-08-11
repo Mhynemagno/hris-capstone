@@ -58,6 +58,10 @@ npm run build
 
 This baseline deploys a harmless public landing page. Authentication, role guards, database migrations, and job-opening data arrive in later roadmap branches.
 
+## Authentication setup
+
+Add every deployed `https://<vercel-domain>/auth/callback` URL to Supabase Auth Redirect URLs. Deploy the internal invitation function with `npx supabase@latest functions deploy invite-internal-user`; its secret API key stays in the Supabase Edge Function runtime and must never be a `NEXT_PUBLIC_*` value.
+
 ## Supabase database workflow
 
 The repository is linked to its Supabase project locally, but the link metadata is ignored. Authenticate and link your own local CLI before applying migrations:
