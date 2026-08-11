@@ -27,7 +27,11 @@ Deno.serve(async (request) => {
   const adminClient = createClient(url, secretKey, { auth: { autoRefreshToken: false, persistSession: false } });
   const { data: invited, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(parsed.data.email, { data: { full_name: parsed.data.fullName }, redirectTo: `${new URL(request.url).origin}/auth/callback` });
   if (inviteError || !invited.user) return json(409, { error: "Unable to invite this account." });
-  const { error: roleError } = await callerClient.from("user_roles").update({ role: parsed.data.role, assigned_by: userData.user.id }).eq("user_id", invited.user.id);
+  const { error: roleError } = await callerClient.rpc("update_managed_user", {
+    target_user_id: invited.user.id,
+    next_role: parsed.data.role,
+    next_is_active: true,
+  });
   if (roleError) { await adminClient.auth.admin.deleteUser(invited.user.id); return json(500, { error: "Unable to assign the account role." }); }
   return Response.json({ userId: invited.user.id }, { status: 201 });
 });
