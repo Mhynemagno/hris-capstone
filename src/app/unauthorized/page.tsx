@@ -1,7 +1,7 @@
 import { ShieldAlert } from "lucide-react";
 import Link from "next/link";
 
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -25,9 +25,9 @@ export default function UnauthorizedPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <Button render={<Link href="/login" />}>
+          <Link className={buttonVariants()} href="/login">
             Return to sign in
-          </Button>
+          </Link>
         </CardContent>
       </Card>
     </main>
