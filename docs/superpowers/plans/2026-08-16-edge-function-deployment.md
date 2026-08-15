@@ -125,4 +125,3 @@ Expected: all checks exit 0 and whitespace checks print nothing.
     gh pr create --draft --base main --head codex/fix-edge-function-deployment --title "Automate invitation Edge Function deployment"
 
 The PR describes the direct live deployment and tells the repository owner to add SUPABASE_ACCESS_TOKEN before the workflow can deploy future changes.
-
