@@ -24,6 +24,7 @@ export const managedUserUpdateSchema = z.object({
   role: appRoleSchema,
   isActive: z.boolean(),
 });
+export const managedUserDeleteSchema = z.object({ userId: uuidSchema });
 
 export const departmentSchema = z.object({
   name: z.string().trim().min(2).max(160),
@@ -70,6 +71,7 @@ export const auditLogFiltersSchema = administrationPageSchema.extend({
 });
 
 export type ManagedUserUpdateInput = z.infer<typeof managedUserUpdateSchema>;
+export type ManagedUserDeleteInput = z.infer<typeof managedUserDeleteSchema>;
 export type InternalInvitationInput = z.infer<typeof internalInvitationSchema>;
 export type DepartmentInput = z.infer<typeof departmentSchema>;
 export type PositionInput = z.infer<typeof positionSchema>;

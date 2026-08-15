@@ -22,4 +22,24 @@ describe("auth callback route", () => {
     expect(exchangeCodeForSession).toHaveBeenCalledWith("abc");
     expect(response.headers.get("location")).toBe("http://localhost/");
   });
+
+  it("sends a callback without a code to the invitation recovery state", async () => {
+    const response = await GET(new NextRequest("http://localhost/auth/callback"));
+
+    expect(response.headers.get("location")).toBe(
+      "http://localhost/login?error=invitation_expired",
+    );
+  });
+
+  it("sends a rejected code exchange to the invitation recovery state", async () => {
+    exchangeCodeForSession.mockResolvedValue({ error: new Error("expired") });
+
+    const response = await GET(
+      new NextRequest("http://localhost/auth/callback?code=expired"),
+    );
+
+    expect(response.headers.get("location")).toBe(
+      "http://localhost/login?error=invitation_expired",
+    );
+  });
 });

@@ -15,6 +15,7 @@ import {
   departmentSchema,
   internalInvitationSchema,
   managedUserFiltersSchema,
+  managedUserDeleteSchema,
   managedUserUpdateSchema,
   organizationSettingsSchema,
   positionSchema,
@@ -23,6 +24,7 @@ import {
   type DepartmentInput,
   type InternalInvitationInput,
   type ManagedUserFilters,
+  type ManagedUserDeleteInput,
   type ManagedUserUpdateInput,
   type OrganizationSettingsInput,
   type PositionInput,
@@ -127,6 +129,15 @@ export async function updateManagedUser(input: ManagedUserUpdateInput) {
     next_is_active: values.isActive,
   });
   throwIfError(error);
+}
+
+export async function deleteManagedUser(input: ManagedUserDeleteInput) {
+  const values = managedUserDeleteSchema.parse(input);
+  const { error } = await createBrowserSupabaseClient().functions.invoke("delete-managed-user", {
+    method: "DELETE",
+    body: { userId: values.userId },
+  });
+  if (error) throw new Error(await invitationErrorMessage(error));
 }
 
 export async function listDepartments(input: Partial<ReferenceDataFilters> = {}): Promise<PaginatedResult<Department, ReferenceDataFilters>> {

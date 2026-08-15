@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - supabase/functions/invite-internal-user/**
+      - supabase/functions/delete-managed-user/**
   workflow_dispatch:
 
 permissions:
@@ -24,3 +25,7 @@ jobs:
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: supabase functions deploy invite-internal-user --project-ref wcjpyzulbiexvwtmyudq --use-api
+      - name: Deploy managed-account deletion function
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: supabase functions deploy delete-managed-user --project-ref wcjpyzulbiexvwtmyudq --use-api
