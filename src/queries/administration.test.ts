@@ -18,6 +18,7 @@ vi.mock("@/lib/supabase/client", () => ({
 
 import {
   inviteInternalUser,
+  listAuditLogs,
   listManagedUsers,
   saveOrganizationSettings,
   savePosition,
@@ -116,6 +117,41 @@ describe("administration queries", () => {
     expect(profileChain.range).toHaveBeenCalledWith(20, 39);
     expect(profileChain.select).not.toHaveBeenCalledWith(expect.stringContaining("user_roles!"));
     expect(roleChain.in).toHaveBeenCalledWith("user_id", [testUserId]);
+  });
+
+  it("enriches a 20-row audit page with only the profiles referenced by that page", async () => {
+    const targetUserId = "223e4567-e89b-42d3-a456-426614174000";
+    const auditChain = createChain({
+      data: [{
+        id: 1,
+        actor_user_id: testUserId,
+        entity_type: "user_roles",
+        entity_id: targetUserId,
+        action: "update",
+        metadata: { user_id: targetUserId, role: "system_administrator" },
+        created_at: "2026-08-15T09:18:40.330063+00:00",
+      }],
+      count: 1,
+      error: null,
+    });
+    const profileChain = createChain({
+      data: [
+        { id: testUserId, full_name: "Chief Ada Lovelace", email: "ada@example.com" },
+        { id: targetUserId, full_name: "Officer Grace Hopper", email: "grace@example.com" },
+      ],
+      error: null,
+    });
+    mocks.from.mockReturnValueOnce(auditChain).mockReturnValueOnce(profileChain);
+
+    const page = await listAuditLogs({ page: 1, pageSize: 20 });
+
+    expect(auditChain.range).toHaveBeenCalledWith(0, 19);
+    expect(profileChain.in).toHaveBeenCalledWith("id", [testUserId, targetUserId]);
+    expect(page.rows[0]).toMatchObject({
+      actorLabel: "Chief Ada Lovelace",
+      recordLabel: "Account “Officer Grace Hopper”",
+      actionLabel: "Role changed to System Administrator",
+    });
   });
 
   it("sends only validated payloads to the protected invitation and managed-user workflows", async () => {
