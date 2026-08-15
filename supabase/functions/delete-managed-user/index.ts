@@ -2,6 +2,8 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { z } from "npm:zod@4";
 
+// The injected client is deliberately structural so Deno tests can exercise the handler without credentials.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ClientFactory = (url: string, key: string, options?: unknown) => any;
 type HandlerDependencies = {
   createClient?: ClientFactory;
