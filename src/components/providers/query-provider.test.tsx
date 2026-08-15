@@ -7,7 +7,7 @@ import { QueryProvider } from "./query-provider";
 function QueryClientProbe() {
   const queryClient = useQueryClient();
 
-  return <p>{queryClient ? "query-client-ready" : "query-client-missing"}</p>;
+  return <p>{queryClient.getDefaultOptions().queries?.staleTime ? "query-client-ready" : "query-client-missing"}</p>;
 }
 
 describe("QueryProvider", () => {

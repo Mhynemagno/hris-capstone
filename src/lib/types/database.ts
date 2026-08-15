@@ -16,6 +16,14 @@ export type UserRole = {
   assigned_at: string;
 };
 
+export type ManagedUser = Profile & Pick<UserRole, "role" | "assigned_at">;
+
+export type PaginatedResult<T, TFilters> = {
+  rows: T[];
+  count: number;
+  filters: TFilters;
+};
+
 export type Department = {
   id: number;
   name: string;

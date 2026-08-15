@@ -5,6 +5,19 @@ import { appRoleSchema, paginationSchema, uuidSchema } from "./common";
 const optionalTrimmedText = (max: number) =>
   z.string().trim().max(max).transform((value) => value || undefined).optional();
 
+const optionalFilterText = (max: number) =>
+  z.string().trim().max(max).transform((value) => value || undefined).optional();
+
+const administrationPageSchema = paginationSchema.extend({
+  pageSize: z.literal(20).default(20),
+});
+
+export const internalInvitationSchema = z.object({
+  email: z.email(),
+  fullName: z.string().trim().min(2).max(120),
+  role: z.enum(["system_administrator", "hr_personnel", "employee", "management"]),
+});
+
 export const managedUserUpdateSchema = z.object({
   userId: uuidSchema,
   role: appRoleSchema,
@@ -38,8 +51,29 @@ export const administrationFiltersSchema = paginationSchema.extend({
   action: z.string().trim().max(80).optional(),
 });
 
+export const managedUserFiltersSchema = administrationPageSchema.extend({
+  search: optionalFilterText(120),
+  role: appRoleSchema.optional(),
+  status: z.enum(["active", "inactive"]).optional(),
+});
+
+export const referenceDataFiltersSchema = administrationPageSchema.extend({
+  search: optionalFilterText(120),
+  status: z.enum(["active", "inactive"]).optional(),
+});
+
+export const auditLogFiltersSchema = administrationPageSchema.extend({
+  search: optionalFilterText(120),
+  entityType: optionalFilterText(80),
+  action: optionalFilterText(80),
+});
+
 export type ManagedUserUpdateInput = z.infer<typeof managedUserUpdateSchema>;
+export type InternalInvitationInput = z.infer<typeof internalInvitationSchema>;
 export type DepartmentInput = z.infer<typeof departmentSchema>;
 export type PositionInput = z.infer<typeof positionSchema>;
 export type OrganizationSettingsInput = z.infer<typeof organizationSettingsSchema>;
 export type AdministrationFilters = z.infer<typeof administrationFiltersSchema>;
+export type ManagedUserFilters = z.infer<typeof managedUserFiltersSchema>;
+export type ReferenceDataFilters = z.infer<typeof referenceDataFiltersSchema>;
+export type AuditLogFilters = z.infer<typeof auditLogFiltersSchema>;
