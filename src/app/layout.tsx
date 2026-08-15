@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "HRIS Capstone",
-  description: "Human Resource Information System",
+  title: "San Juan City Police HRIS",
+  description: "Human resources information system for San Juan City Police.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

@@ -15,11 +15,11 @@ export default async function Home() {
   }
 
   return (
-    <main className="flex flex-1 bg-slate-950 px-6 py-16 text-slate-50 sm:px-10 lg:py-24">
+    <main className="flex flex-1 bg-sidebar px-6 py-16 text-sidebar-foreground sm:px-10 lg:py-24">
       <div className="mx-auto flex w-full max-w-5xl flex-col justify-center gap-12">
         <div className="max-w-2xl space-y-6">
-          <p className="text-sm font-semibold tracking-[0.2em] text-sky-300 uppercase">
-            HRIS Capstone
+          <p className="text-sm font-semibold tracking-[0.2em] text-blue-200 uppercase">
+            San Juan City Police
           </p>
           <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-6xl">
             A secure home for your workforce information.
@@ -33,14 +33,14 @@ export default async function Home() {
         <div className="flex flex-col gap-3 sm:flex-row">
           <Link
             href="/login"
-            className="inline-flex items-center justify-center gap-2 rounded-md bg-sky-400 px-5 py-3 font-medium text-slate-950 transition-colors hover:bg-sky-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-300"
+            className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-5 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
           >
             <LogIn aria-hidden="true" className="size-4" />
             Sign in
           </Link>
           <Link
             href="/jobs"
-            className="inline-flex items-center justify-center gap-2 rounded-md border border-slate-700 px-5 py-3 font-medium text-white transition-colors hover:border-slate-500 hover:bg-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-300"
+            className="inline-flex items-center justify-center gap-2 rounded-md border border-sidebar-border px-5 py-3 font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
           >
             <BriefcaseBusiness aria-hidden="true" className="size-4" />
             View job openings
