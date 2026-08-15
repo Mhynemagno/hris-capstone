@@ -1,6 +1,6 @@
 # Administration UI Completion Design
 
-**Branch:** `feat/06-administration-ui-completion`  
+**Branch:** `feat/06-administration-ui-completion`
 **Date:** 2026-08-15
 
 ## Goal
