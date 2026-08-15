@@ -6,6 +6,8 @@ import type {
   OrganizationSettings,
   PaginatedResult,
   Position,
+  Profile,
+  UserRole,
 } from "@/lib/types/database";
 import {
   auditLogFiltersSchema,
@@ -28,9 +30,7 @@ import {
 
 type SupabaseError = { message: string } | null;
 
-type ManagedUserRow = Omit<ManagedUser, "role" | "assigned_at"> & {
-  user_roles: { role: ManagedUser["role"]; assigned_at: string } | { role: ManagedUser["role"]; assigned_at: string }[];
-};
+type ManagedUserRoleRow = Pick<UserRole, "user_id" | "role" | "assigned_at">;
 
 function throwIfError(error: SupabaseError) {
   if (error) throw new Error(error.message);
@@ -56,21 +56,32 @@ function auditLogFilters(input: Partial<AuditLogFilters> = {}) {
 export async function listManagedUsers(input: Partial<ManagedUserFilters> = {}): Promise<PaginatedResult<ManagedUser, ManagedUserFilters>> {
   const filters = managedUserFilters(input);
   const { from, to } = pageRange(filters.page);
-  let query = createBrowserSupabaseClient()
+  const client = createBrowserSupabaseClient();
+  let query = client
     .from("profiles")
-    .select("id, email, full_name, is_active, created_at, updated_at, user_roles!inner(role, assigned_at)", { count: "exact" })
+    .select("id, email, full_name, is_active, created_at, updated_at", { count: "exact" })
     .order("full_name")
     .order("email");
 
   if (filters.search) query = query.or(`full_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`);
-  if (filters.role) query = query.eq("user_roles.role", filters.role);
   if (filters.status) query = query.eq("is_active", filters.status === "active");
 
   const { data, error, count } = await query.range(from, to);
   throwIfError(error);
-  const rows = ((data ?? []) as ManagedUserRow[]).map(({ user_roles, ...profile }) => {
-    const role = Array.isArray(user_roles) ? user_roles[0] : user_roles;
-    return { ...profile, role: role.role, assigned_at: role.assigned_at };
+  const profiles = (data ?? []) as Profile[];
+  const profileIds = profiles.map((profile) => profile.id);
+  let roles: ManagedUserRoleRow[] = [];
+  if (profileIds.length) {
+    let roleQuery = client.from("user_roles").select("user_id, role, assigned_at");
+    if (filters.role) roleQuery = roleQuery.eq("role", filters.role);
+    const { data: roleData, error: roleError } = await roleQuery.in("user_id", profileIds);
+    throwIfError(roleError);
+    roles = (roleData ?? []) as ManagedUserRoleRow[];
+  }
+  const roleByUserId = new Map(roles.map((role) => [role.user_id, role]));
+  const rows = profiles.flatMap((profile) => {
+    const role = roleByUserId.get(profile.id);
+    return role ? [{ ...profile, role: role.role, assigned_at: role.assigned_at }] : [];
   });
   return { rows, count: count ?? 0, filters };
 }
