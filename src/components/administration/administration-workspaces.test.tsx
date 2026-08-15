@@ -93,6 +93,18 @@ describe("administration shared controls", () => {
     expect(mutateAsync).toHaveBeenCalledWith({ departmentId: 1, input: { name: "Operations", isActive: false } });
   });
 
+  it("keeps a department row visible and reports a failed deactivation", async () => {
+    const user = userEvent.setup();
+    hooks.useDepartments.mockReturnValue({ data: { rows: [{ id: 1, name: "Operations", is_active: true }], count: 1 }, error: null, isLoading: false, refetch: vi.fn() });
+    hooks.useSaveDepartment.mockReturnValue({ isPending: false, mutateAsync: vi.fn().mockRejectedValue(new Error("Department is referenced")) });
+
+    render(<DepartmentsWorkspace />);
+    await user.click(screen.getByRole("button", { name: /deactivate operations/i }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Department is referenced");
+    expect(screen.getByText("Operations")).toBeInTheDocument();
+  });
+
   it("renders audit history without mutation controls", () => {
     hooks.useAuditLogs.mockReturnValue({ data: { rows: [], count: 0 }, error: null, isLoading: false, refetch: vi.fn() });
 

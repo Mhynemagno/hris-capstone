@@ -133,13 +133,34 @@ function DepartmentForm({ department, onSaved, pending }: { department?: Departm
 }
 
 export function DepartmentsWorkspace() {
-  const [search, setSearch] = useState(""); const [status, setStatus] = useState<"active" | "inactive" | "">(""); const [page, setPage] = useState(1); const [editing, setEditing] = useState<Department | null>(null); const [creating, setCreating] = useState(false);
-  const result = useDepartments({ page, pageSize: 20, ...(search ? { search } : {}), ...(status ? { status } : {}) }); const save = useSaveDepartment();
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<"active" | "inactive" | "">("");
+  const [page, setPage] = useState(1);
+  const [editing, setEditing] = useState<Department | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const result = useDepartments({ page, pageSize: 20, ...(search ? { search } : {}), ...(status ? { status } : {}) });
+  const save = useSaveDepartment();
   const resetPage = (callback: () => void) => { callback(); setPage(1); };
+  async function deactivate(department: Department) {
+    setActionError(null);
+    try { await save.mutateAsync({ departmentId: department.id, input: { name: department.name, isActive: false } }); }
+    catch (cause) { setActionError(cause instanceof Error ? cause.message : "We could not deactivate the department."); }
+  }
   if (result.isLoading) return <LoadingState label="Loading departments…" />;
   if (result.error) return <ErrorWithRetry error={result.error} onRetry={() => void result.refetch()} />;
   const rows = result.data?.rows ?? [];
-  return <div className="space-y-5"><div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between"><ReferenceFilters label="departments" onSearchChange={(value) => resetPage(() => setSearch(value))} onStatusChange={(value) => resetPage(() => setStatus(value))} search={search} status={status} /><Button onClick={() => setCreating(true)} type="button">Add department</Button></div><div className="overflow-x-auto rounded-xl border"><table className="w-full min-w-[540px] text-left text-sm"><thead className="bg-muted text-muted-foreground"><tr><th className="px-4 py-3">Department</th><th className="px-4 py-3">Status</th><th className="px-4 py-3"><span className="sr-only">Actions</span></th></tr></thead><tbody>{rows.length ? rows.map((department) => <tr className="border-t" key={department.id}><td className="px-4 py-3 font-medium">{department.name}</td><td className="px-4 py-3"><Badge variant={department.is_active ? "secondary" : "outline"}>{department.is_active ? "Active" : "Inactive"}</Badge></td><td className="space-x-2 px-4 py-3 text-right"><Button onClick={() => setEditing(department)} type="button" variant="outline">Edit</Button>{department.is_active ? <Button aria-label={`Deactivate ${department.name}`} onClick={() => void save.mutateAsync({ departmentId: department.id, input: { name: department.name, isActive: false } })} type="button" variant="destructive">Deactivate</Button> : null}</td></tr>) : <tr><EmptyTableState colSpan={3} message="No departments match these filters." /></tr>}</tbody></table></div><PaginatedTableControls onPageChange={setPage} page={page} pageSize={20} totalCount={result.data?.count ?? 0} /><AdministrationFormPanel description="Create or update a department without deleting historic references." onOpenChange={setCreating} open={creating} title="Add department"><DepartmentForm onSaved={async (input) => { await save.mutateAsync({ input }); setCreating(false); }} pending={save.isPending} /></AdministrationFormPanel>{editing ? <AdministrationFormPanel description="Changes are audited and historical references are preserved." onOpenChange={(open) => { if (!open) setEditing(null); }} open title="Edit department"><DepartmentForm department={editing} key={editing.id} onSaved={async (input) => { await save.mutateAsync({ input, departmentId: editing.id }); setEditing(null); }} pending={save.isPending} /></AdministrationFormPanel> : null}</div>;
+  return <div className="space-y-5">
+    <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+      <ReferenceFilters label="departments" onSearchChange={(value) => resetPage(() => setSearch(value))} onStatusChange={(value) => resetPage(() => setStatus(value))} search={search} status={status} />
+      <Button onClick={() => setCreating(true)} type="button">Add department</Button>
+    </div>
+    {actionError ? <ErrorState message={actionError} /> : null}
+    <div className="overflow-x-auto rounded-xl border"><table className="w-full min-w-[540px] text-left text-sm"><thead className="bg-muted text-muted-foreground"><tr><th className="px-4 py-3">Department</th><th className="px-4 py-3">Status</th><th className="px-4 py-3"><span className="sr-only">Actions</span></th></tr></thead><tbody>{rows.length ? rows.map((department) => <tr className="border-t" key={department.id}><td className="px-4 py-3 font-medium">{department.name}</td><td className="px-4 py-3"><Badge variant={department.is_active ? "secondary" : "outline"}>{department.is_active ? "Active" : "Inactive"}</Badge></td><td className="space-x-2 px-4 py-3 text-right"><Button onClick={() => setEditing(department)} type="button" variant="outline">Edit</Button>{department.is_active ? <Button aria-label={`Deactivate ${department.name}`} onClick={() => void deactivate(department)} type="button" variant="destructive">Deactivate</Button> : null}</td></tr>) : <tr><EmptyTableState colSpan={3} message="No departments match these filters." /></tr>}</tbody></table></div>
+    <PaginatedTableControls onPageChange={setPage} page={page} pageSize={20} totalCount={result.data?.count ?? 0} />
+    <AdministrationFormPanel description="Create or update a department without deleting historic references." onOpenChange={setCreating} open={creating} title="Add department"><DepartmentForm onSaved={async (input) => { await save.mutateAsync({ input }); setCreating(false); }} pending={save.isPending} /></AdministrationFormPanel>
+    {editing ? <AdministrationFormPanel description="Changes are audited and historical references are preserved." onOpenChange={(open) => { if (!open) setEditing(null); }} open title="Edit department"><DepartmentForm department={editing} key={editing.id} onSaved={async (input) => { await save.mutateAsync({ input, departmentId: editing.id }); setEditing(null); }} pending={save.isPending} /></AdministrationFormPanel> : null}
+  </div>;
 }
 
 function PositionForm({ departments, onSaved, pending, position }: { departments: Department[]; onSaved: (input: PositionInput) => Promise<void>; pending: boolean; position?: Position }) {
