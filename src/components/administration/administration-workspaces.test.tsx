@@ -78,7 +78,7 @@ describe("administration shared controls", () => {
     render(<UsersWorkspace />);
 
     expect(screen.getByText(/no accounts match/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /invite account/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /invite account/i })).toHaveClass("w-full", "sm:w-auto");
   });
 
   it("opens account invitations in a centered modal", async () => {
@@ -91,6 +91,20 @@ describe("administration shared controls", () => {
     await user.click(screen.getByRole("button", { name: /invite account/i }));
 
     expect(screen.getByRole("dialog", { name: "Invite account" })).toHaveAttribute("data-side", "center");
+  });
+
+  it("collects first and last names when inviting an account", async () => {
+    const user = userEvent.setup();
+    hooks.useManagedUsers.mockReturnValue({ data: { rows: [], count: 0 }, error: null, isLoading: false, refetch: vi.fn() });
+    hooks.useInviteInternalUser.mockReturnValue({ isPending: false, mutateAsync: vi.fn() });
+    hooks.useUpdateManagedUser.mockReturnValue({ isPending: false, mutateAsync: vi.fn() });
+
+    render(<UsersWorkspace />);
+    await user.click(screen.getByRole("button", { name: /invite account/i }));
+
+    expect(screen.getByRole("textbox", { name: "First name" })).toHaveAttribute("autocomplete", "given-name");
+    expect(screen.getByRole("textbox", { name: "Last name" })).toHaveAttribute("autocomplete", "family-name");
+    expect(screen.queryByRole("textbox", { name: "Full name" })).not.toBeInTheDocument();
   });
 
   it("keeps organization settings read-only until its edit modal opens", async () => {

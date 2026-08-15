@@ -53,10 +53,11 @@ describe("AppShell", () => {
     ).toHaveAttribute("href", "#main-content");
     expect(
       screen.getByRole("button", { name: /toggle sidebar/i }),
-    ).toBeInTheDocument();
+    ).toHaveClass("min-h-11");
     expect(screen.getAllByRole("main")).toHaveLength(1);
     expect(screen.getByRole("main")).toHaveAttribute("id", "main-content");
     expect(screen.getByRole("navigation", { name: /main navigation/i })).toBeInTheDocument();
     expect(screen.getByText("San Juan City Police")).toBeInTheDocument();
+    expect(screen.getByTestId("brand-command-accent")).toBeInTheDocument();
   });
 });

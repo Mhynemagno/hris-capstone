@@ -62,7 +62,8 @@ export function AppShell({ children, config, email }: AppShellProps) {
         </a>
         <Sidebar collapsible="offcanvas" variant="inset">
           <SidebarHeader className="p-4">
-            <div className="flex items-center gap-3 rounded-xl bg-sidebar-accent px-3 py-3">
+            <div className="relative flex items-center gap-3 overflow-hidden rounded-xl bg-sidebar-accent px-3 py-3">
+              <span aria-hidden="true" className="absolute inset-y-0 left-0 w-1 bg-brand-command-red" data-testid="brand-command-accent" />
               <div className="flex size-9 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground shadow-sm">
                 <LayoutDashboard aria-hidden="true" className="size-4" />
               </div>
@@ -126,7 +127,7 @@ export function AppShell({ children, config, email }: AppShellProps) {
         </Sidebar>
         <SidebarInset id="main-content">
           <header className="sticky top-0 z-10 flex h-16 items-center gap-3 border-b bg-background/90 px-4 backdrop-blur sm:px-6">
-            <SidebarTrigger aria-label="Toggle sidebar">
+            <SidebarTrigger aria-label="Toggle sidebar" className="min-h-11 min-w-11">
               <PanelLeft aria-hidden="true" />
             </SidebarTrigger>
             <Separator className="h-5" orientation="vertical" />

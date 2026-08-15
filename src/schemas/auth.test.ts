@@ -18,12 +18,17 @@ describe("authentication schemas", () => {
 
   it("accepts a valid applicant registration", () => {
     expect(
-      applicantRegistrationSchema.safeParse({
+      applicantRegistrationSchema.parse({
         email: "applicant@example.com",
-        fullName: "Applicant One",
+        firstName: "Applicant",
+        lastName: "One",
         password: "secret1",
-      }).success,
-    ).toBe(true);
+      }),
+    ).toMatchObject({
+      firstName: "Applicant",
+      lastName: "One",
+      fullName: "Applicant One",
+    });
   });
 
   it("requires a valid recovery email", () => {
@@ -45,8 +50,20 @@ describe("authentication schemas", () => {
     expect(
       inviteInternalUserSchema.safeParse({
         email: "person@example.com",
-        fullName: "Person One",
+        firstName: "Person",
+        lastName: "One",
         role: "applicant",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("requires both applicant name parts", () => {
+    expect(
+      applicantRegistrationSchema.safeParse({
+        email: "applicant@example.com",
+        firstName: "",
+        lastName: "One",
+        password: "secret1",
       }).success,
     ).toBe(false);
   });

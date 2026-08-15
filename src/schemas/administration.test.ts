@@ -44,14 +44,15 @@ describe("administration schemas", () => {
     ).toBe(false);
   });
 
-  it("accepts internal invitations and 20-row managed-user pages", () => {
+  it("accepts internal invitations with name parts and 20-row managed-user pages", () => {
     expect(
       internalInvitationSchema.parse({
         email: "new.hr@example.com",
-        fullName: "New HR",
+        firstName: "New",
+        lastName: "HR",
         role: "hr_personnel",
       }),
-    ).toMatchObject({ role: "hr_personnel" });
+    ).toMatchObject({ firstName: "New", lastName: "HR", fullName: "New HR", role: "hr_personnel" });
     expect(
       managedUserFiltersSchema.parse({ page: "2", pageSize: 20, status: "active" }),
     ).toMatchObject({ page: 2, pageSize: 20, status: "active" });
@@ -61,11 +62,23 @@ describe("administration schemas", () => {
     expect(
       internalInvitationSchema.safeParse({
         email: "applicant@example.com",
-        fullName: "Applicant User",
+        firstName: "Applicant",
+        lastName: "User",
         role: "applicant",
       }).success,
     ).toBe(false);
     expect(auditLogFiltersSchema.parse({ entityType: " ", pageSize: 20 }).entityType).toBeUndefined();
     expect(managedUserFiltersSchema.safeParse({ pageSize: 21 }).success).toBe(false);
+  });
+
+  it("rejects invitations with a missing name part", () => {
+    expect(
+      internalInvitationSchema.safeParse({
+        email: "new.hr@example.com",
+        firstName: "New",
+        lastName: "",
+        role: "hr_personnel",
+      }).success,
+    ).toBe(false);
   });
 });
