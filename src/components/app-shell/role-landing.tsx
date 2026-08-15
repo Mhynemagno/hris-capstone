@@ -28,7 +28,7 @@ export function RoleLanding({ config }: RoleLandingProps) {
         </p>
       </div>
       <Card className="max-w-2xl border-primary/15 shadow-sm">
-        <CardHeader className="flex-row items-start gap-4 space-y-0">
+        <CardHeader className="flex-col items-start gap-4 space-y-0 sm:flex-row">
           <div className="rounded-lg bg-primary/10 p-2 text-primary">
             <Info aria-hidden="true" className="size-5" />
           </div>

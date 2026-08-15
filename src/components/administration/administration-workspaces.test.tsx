@@ -78,7 +78,7 @@ describe("administration shared controls", () => {
     render(<UsersWorkspace />);
 
     expect(screen.getByText(/no accounts match/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /invite account/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /invite account/i })).toHaveClass("w-full", "sm:w-auto");
   });
 
   it("opens account invitations in a centered modal", async () => {

@@ -9,5 +9,6 @@ describe("AuthCard", () => {
 
     expect(screen.getByRole("main")).toHaveTextContent("San Juan City Police");
     expect(screen.getByRole("heading", { name: "Sign in" })).toBeInTheDocument();
+    expect(screen.getByTestId("brand-command-accent")).toBeInTheDocument();
   });
 });
