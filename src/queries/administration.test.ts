@@ -18,6 +18,7 @@ vi.mock("@/lib/supabase/client", () => ({
 
 import {
   inviteInternalUser,
+  listAuditLogs,
   listManagedUsers,
   saveOrganizationSettings,
   savePosition,
@@ -29,6 +30,7 @@ type Result = { data: unknown; error: { message: string } | null; count?: number
 function createChain(result: Result) {
   const chain = {
     eq: vi.fn(),
+    in: vi.fn(),
     ilike: vi.fn(),
     insert: vi.fn(),
     or: vi.fn(),
@@ -40,6 +42,7 @@ function createChain(result: Result) {
     upsert: vi.fn(),
   };
   Object.values(chain).forEach((method) => method.mockReturnValue(chain));
+  chain.in.mockResolvedValue(result);
   chain.range.mockResolvedValue(result);
   chain.single.mockResolvedValue(result);
   return chain;
@@ -47,11 +50,11 @@ function createChain(result: Result) {
 
 describe("administration queries", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   it("returns a flat managed-user page and requests only its 20-row range", async () => {
-    const chain = createChain({
+    const profileChain = createChain({
       data: [{
         id: testUserId,
         email: "ada@example.com",
@@ -59,12 +62,15 @@ describe("administration queries", () => {
         is_active: true,
         created_at: "2026-08-01T00:00:00.000Z",
         updated_at: "2026-08-01T00:00:00.000Z",
-        user_roles: { role: "employee", assigned_at: "2026-08-01T00:00:00.000Z" },
       }],
       count: 21,
       error: null,
     });
-    mocks.from.mockReturnValue(chain);
+    const roleChain = createChain({
+      data: [{ user_id: testUserId, role: "employee", assigned_at: "2026-08-01T00:00:00.000Z" }],
+      error: null,
+    });
+    mocks.from.mockReturnValueOnce(profileChain).mockReturnValueOnce(roleChain);
 
     const page = await listManagedUsers({ page: 2, pageSize: 20, search: "Ada", role: "employee" });
 
@@ -82,8 +88,70 @@ describe("administration queries", () => {
       count: 21,
       filters: { page: 2, pageSize: 20, search: "Ada", role: "employee" },
     });
-    expect(chain.range).toHaveBeenCalledWith(20, 39);
-    expect(chain.eq).toHaveBeenCalledWith("user_roles.role", "employee");
+    expect(profileChain.range).toHaveBeenCalledWith(20, 39);
+    expect(roleChain.eq).toHaveBeenCalledWith("role", "employee");
+    expect(roleChain.in).toHaveBeenCalledWith("user_id", [testUserId]);
+  });
+
+  it("composes managed users from a bounded profile page and roles constrained to that page", async () => {
+    const profileChain = createChain({
+      data: [{
+        id: testUserId,
+        email: "ada@example.com",
+        full_name: "Ada Lovelace",
+        is_active: true,
+        created_at: "2026-08-01T00:00:00.000Z",
+        updated_at: "2026-08-01T00:00:00.000Z",
+      }],
+      count: 21,
+      error: null,
+    });
+    const roleChain = createChain({
+      data: [{ user_id: testUserId, role: "employee", assigned_at: "2026-08-01T00:00:00.000Z" }],
+      error: null,
+    });
+    mocks.from.mockReturnValueOnce(profileChain).mockReturnValueOnce(roleChain);
+
+    await listManagedUsers({ page: 2, pageSize: 20 });
+
+    expect(profileChain.range).toHaveBeenCalledWith(20, 39);
+    expect(profileChain.select).not.toHaveBeenCalledWith(expect.stringContaining("user_roles!"));
+    expect(roleChain.in).toHaveBeenCalledWith("user_id", [testUserId]);
+  });
+
+  it("enriches a 20-row audit page with only the profiles referenced by that page", async () => {
+    const targetUserId = "223e4567-e89b-42d3-a456-426614174000";
+    const auditChain = createChain({
+      data: [{
+        id: 1,
+        actor_user_id: testUserId,
+        entity_type: "user_roles",
+        entity_id: targetUserId,
+        action: "update",
+        metadata: { user_id: targetUserId, role: "system_administrator" },
+        created_at: "2026-08-15T09:18:40.330063+00:00",
+      }],
+      count: 1,
+      error: null,
+    });
+    const profileChain = createChain({
+      data: [
+        { id: testUserId, full_name: "Chief Ada Lovelace", email: "ada@example.com" },
+        { id: targetUserId, full_name: "Officer Grace Hopper", email: "grace@example.com" },
+      ],
+      error: null,
+    });
+    mocks.from.mockReturnValueOnce(auditChain).mockReturnValueOnce(profileChain);
+
+    const page = await listAuditLogs({ page: 1, pageSize: 20 });
+
+    expect(auditChain.range).toHaveBeenCalledWith(0, 19);
+    expect(profileChain.in).toHaveBeenCalledWith("id", [testUserId, targetUserId]);
+    expect(page.rows[0]).toMatchObject({
+      actorLabel: "Chief Ada Lovelace",
+      recordLabel: "Account “Officer Grace Hopper”",
+      actionLabel: "Role changed to System Administrator",
+    });
   });
 
   it("sends only validated payloads to the protected invitation and managed-user workflows", async () => {

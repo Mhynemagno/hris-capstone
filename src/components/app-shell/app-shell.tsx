@@ -67,7 +67,7 @@ export function AppShell({ children, config, email }: AppShellProps) {
                 <LayoutDashboard aria-hidden="true" className="size-4" />
               </div>
               <div className="min-w-0 group-data-[collapsible=icon]:hidden">
-                <p className="truncate text-sm font-semibold">HRIS Capstone</p>
+                <p className="truncate text-sm font-semibold">San Juan City Police</p>
                 <p className="truncate text-xs text-muted-foreground">
                   Workforce hub
                 </p>

@@ -1,4 +1,5 @@
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { presentAuditLog, type AuditLogDisplay, type AuditPresentationLookups } from "@/lib/administration/audit-presentation";
 import type {
   AuditLog,
   Department,
@@ -6,6 +7,8 @@ import type {
   OrganizationSettings,
   PaginatedResult,
   Position,
+  Profile,
+  UserRole,
 } from "@/lib/types/database";
 import {
   auditLogFiltersSchema,
@@ -28,9 +31,8 @@ import {
 
 type SupabaseError = { message: string } | null;
 
-type ManagedUserRow = Omit<ManagedUser, "role" | "assigned_at"> & {
-  user_roles: { role: ManagedUser["role"]; assigned_at: string } | { role: ManagedUser["role"]; assigned_at: string }[];
-};
+type ManagedUserRoleRow = Pick<UserRole, "user_id" | "role" | "assigned_at">;
+type AuditProfileRow = Pick<Profile, "id" | "full_name" | "email">;
 
 function throwIfError(error: SupabaseError) {
   if (error) throw new Error(error.message);
@@ -56,21 +58,32 @@ function auditLogFilters(input: Partial<AuditLogFilters> = {}) {
 export async function listManagedUsers(input: Partial<ManagedUserFilters> = {}): Promise<PaginatedResult<ManagedUser, ManagedUserFilters>> {
   const filters = managedUserFilters(input);
   const { from, to } = pageRange(filters.page);
-  let query = createBrowserSupabaseClient()
+  const client = createBrowserSupabaseClient();
+  let query = client
     .from("profiles")
-    .select("id, email, full_name, is_active, created_at, updated_at, user_roles!inner(role, assigned_at)", { count: "exact" })
+    .select("id, email, full_name, is_active, created_at, updated_at", { count: "exact" })
     .order("full_name")
     .order("email");
 
   if (filters.search) query = query.or(`full_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`);
-  if (filters.role) query = query.eq("user_roles.role", filters.role);
   if (filters.status) query = query.eq("is_active", filters.status === "active");
 
   const { data, error, count } = await query.range(from, to);
   throwIfError(error);
-  const rows = ((data ?? []) as ManagedUserRow[]).map(({ user_roles, ...profile }) => {
-    const role = Array.isArray(user_roles) ? user_roles[0] : user_roles;
-    return { ...profile, role: role.role, assigned_at: role.assigned_at };
+  const profiles = (data ?? []) as Profile[];
+  const profileIds = profiles.map((profile) => profile.id);
+  let roles: ManagedUserRoleRow[] = [];
+  if (profileIds.length) {
+    let roleQuery = client.from("user_roles").select("user_id, role, assigned_at");
+    if (filters.role) roleQuery = roleQuery.eq("role", filters.role);
+    const { data: roleData, error: roleError } = await roleQuery.in("user_id", profileIds);
+    throwIfError(roleError);
+    roles = (roleData ?? []) as ManagedUserRoleRow[];
+  }
+  const roleByUserId = new Map(roles.map((role) => [role.user_id, role]));
+  const rows = profiles.flatMap((profile) => {
+    const role = roleByUserId.get(profile.id);
+    return role ? [{ ...profile, role: role.role, assigned_at: role.assigned_at }] : [];
   });
   return { rows, count: count ?? 0, filters };
 }
@@ -159,14 +172,61 @@ export async function saveOrganizationSettings(input: OrganizationSettingsInput)
   return data as OrganizationSettings;
 }
 
-export async function listAuditLogs(input: Partial<AuditLogFilters> = {}): Promise<PaginatedResult<AuditLog, AuditLogFilters>> {
+export async function listAuditLogs(input: Partial<AuditLogFilters> = {}): Promise<PaginatedResult<AuditLogDisplay, AuditLogFilters>> {
   const filters = auditLogFilters(input);
   const { from, to } = pageRange(filters.page);
-  let query = createBrowserSupabaseClient().from("audit_logs").select("*", { count: "exact" }).order("created_at", { ascending: false });
+  const client = createBrowserSupabaseClient();
+  let query = client.from("audit_logs").select("*", { count: "exact" }).order("created_at", { ascending: false });
   if (filters.search) query = query.or(`entity_type.ilike.%${filters.search}%,entity_id.ilike.%${filters.search}%,action.ilike.%${filters.search}%`);
   if (filters.entityType) query = query.eq("entity_type", filters.entityType);
   if (filters.action) query = query.eq("action", filters.action);
   const { data, error, count } = await query.range(from, to);
   throwIfError(error);
-  return { rows: (data ?? []) as AuditLog[], count: count ?? 0, filters };
+  const rows = (data ?? []) as AuditLog[];
+  const profileIds = [...new Set(rows.flatMap((row) => {
+    const metadataUserId = typeof row.metadata.user_id === "string" ? row.metadata.user_id : null;
+    const targetId = row.entity_type === "profiles" || row.entity_type === "user_roles" ? row.entity_id : null;
+    return [row.actor_user_id, metadataUserId, targetId].filter((id): id is string => Boolean(id));
+  }))];
+  const departmentIds = [...new Set(rows
+    .filter((row) => row.entity_type === "departments" && typeof row.metadata.name !== "string")
+    .map((row) => row.entity_id))];
+  const positionIds = [...new Set(rows
+    .filter((row) => row.entity_type === "positions" && typeof row.metadata.title !== "string")
+    .map((row) => row.entity_id))];
+
+  const lookups: AuditPresentationLookups = { profiles: {}, departments: {}, positions: {} };
+  if (profileIds.length) {
+    const { data: profileRows, error: profileError } = await client
+      .from("profiles")
+      .select("id, full_name, email")
+      .in("id", profileIds);
+    throwIfError(profileError);
+    for (const profile of (profileRows ?? []) as AuditProfileRow[]) {
+      const label = profile.full_name?.trim() || profile.email?.trim();
+      if (label) lookups.profiles[profile.id] = label;
+    }
+  }
+  if (departmentIds.length) {
+    const { data: departmentRows, error: departmentError } = await client
+      .from("departments")
+      .select("id, name")
+      .in("id", departmentIds);
+    throwIfError(departmentError);
+    for (const department of (departmentRows ?? []) as Array<Pick<Department, "id" | "name">>) {
+      lookups.departments[String(department.id)] = department.name;
+    }
+  }
+  if (positionIds.length) {
+    const { data: positionRows, error: positionError } = await client
+      .from("positions")
+      .select("id, title")
+      .in("id", positionIds);
+    throwIfError(positionError);
+    for (const position of (positionRows ?? []) as Array<Pick<Position, "id" | "title">>) {
+      lookups.positions[String(position.id)] = position.title;
+    }
+  }
+
+  return { rows: rows.map((row) => presentAuditLog(row, lookups)), count: count ?? 0, filters };
 }
