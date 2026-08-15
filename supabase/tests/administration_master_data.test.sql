@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(17);
+select extensions.plan(25);
 
 select extensions.has_table(
   'public',
@@ -163,6 +163,53 @@ select extensions.is(
   (select count(*) from public.organization_settings),
   1::bigint,
   'Administrator can read organization settings'
+);
+
+select extensions.lives_ok(
+  $$insert into public.departments (name) values ('Administration UI Test Department')$$,
+  'Administrator can create departments'
+);
+select extensions.lives_ok(
+  $$insert into public.positions (department_id, title) values ((select id from public.departments where name = 'Administration UI Test Department'), 'Administration UI Test Position')$$,
+  'Administrator can create department-assigned positions'
+);
+select extensions.lives_ok(
+  $$update public.departments set is_active = false where name = 'Administration UI Test Department'$$,
+  'Administrator can deactivate departments'
+);
+select extensions.lives_ok(
+  $$update public.positions set is_active = false where title = 'Administration UI Test Position'$$,
+  'Administrator can deactivate positions'
+);
+select extensions.cmp_ok(
+  (select count(*) from public.audit_logs where entity_type in ('departments', 'positions')),
+  '>', 0::bigint,
+  'Reference-data changes are audited'
+);
+
+set local request.jwt.claim.sub = '00000000-0000-0000-0000-000000000002';
+select extensions.throws_ok(
+  $$insert into public.departments (name) values ('Denied HR Department')$$,
+  '42501', null,
+  'HR cannot create departments'
+);
+update public.positions
+set title = 'Denied Update'
+where title = 'Administration UI Test Position';
+
+set local role postgres;
+select extensions.is(
+  (select title from public.positions where title = 'Administration UI Test Position'),
+  'Administration UI Test Position',
+  'HR cannot update positions'
+);
+
+set local role authenticated;
+set local request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+select extensions.throws_ok(
+  $$delete from public.audit_logs where id = (select min(id) from public.audit_logs)$$,
+  '42501', null,
+  'Administrators cannot delete audit logs'
 );
 
 set local role postgres;
