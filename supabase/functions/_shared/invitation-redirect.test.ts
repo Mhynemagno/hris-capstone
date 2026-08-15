@@ -5,7 +5,7 @@ import { getInvitationRedirectUrl } from "./invitation-redirect.ts";
 Deno.test("creates the configured application callback URL", () => {
   assertEquals(
     getInvitationRedirectUrl("https://hris.example"),
-    "https://hris.example/auth/callback",
+    "https://hris.example/auth/callback?next=/reset-password",
   );
 });
 

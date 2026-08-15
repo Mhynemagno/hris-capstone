@@ -14,7 +14,7 @@ export function getInvitationRedirectUrl(appUrl: string | undefined) {
       return null;
     }
 
-    return new URL("/auth/callback", url).toString();
+    return new URL("/auth/callback?next=/reset-password", url).toString();
   } catch {
     return null;
   }
