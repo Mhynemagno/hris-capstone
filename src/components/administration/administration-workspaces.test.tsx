@@ -4,20 +4,34 @@ import { describe, expect, it, vi } from "vitest";
 
 const hooks = vi.hoisted(() => ({
   useInviteInternalUser: vi.fn(),
+  useAuditLogs: vi.fn(),
+  useDepartments: vi.fn(),
   useManagedRoles: vi.fn(),
   useManagedUsers: vi.fn(),
+  useOrganizationSettings: vi.fn(),
+  usePositions: vi.fn(),
+  useSaveDepartment: vi.fn(),
+  useSaveOrganizationSettings: vi.fn(),
+  useSavePosition: vi.fn(),
   useUpdateManagedUser: vi.fn(),
 }));
 
 vi.mock("@/hooks/use-administration", () => ({
+  useAuditLogs: hooks.useAuditLogs,
+  useDepartments: hooks.useDepartments,
   useInviteInternalUser: hooks.useInviteInternalUser,
   useManagedRoles: hooks.useManagedRoles,
   useManagedUsers: hooks.useManagedUsers,
+  useOrganizationSettings: hooks.useOrganizationSettings,
+  usePositions: hooks.usePositions,
+  useSaveDepartment: hooks.useSaveDepartment,
+  useSaveOrganizationSettings: hooks.useSaveOrganizationSettings,
+  useSavePosition: hooks.useSavePosition,
   useUpdateManagedUser: hooks.useUpdateManagedUser,
 }));
 
 import { AdministrationFormPanel } from "./administration-form-panel";
-import { UsersWorkspace } from "./administration-workspaces";
+import { AuditLogsWorkspace, DepartmentsWorkspace, UsersWorkspace } from "./administration-workspaces";
 import { PaginatedTableControls } from "./paginated-table-controls";
 
 describe("administration shared controls", () => {
@@ -65,5 +79,26 @@ describe("administration shared controls", () => {
 
     expect(screen.getByText(/no accounts match/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /invite account/i })).toBeInTheDocument();
+  });
+
+  it("keeps department deactivation non-destructive", async () => {
+    const user = userEvent.setup();
+    const mutateAsync = vi.fn().mockResolvedValue(undefined);
+    hooks.useDepartments.mockReturnValue({ data: { rows: [{ id: 1, name: "Operations", is_active: true }], count: 1 }, error: null, isLoading: false, refetch: vi.fn() });
+    hooks.useSaveDepartment.mockReturnValue({ isPending: false, mutateAsync });
+
+    render(<DepartmentsWorkspace />);
+    await user.click(screen.getByRole("button", { name: /deactivate operations/i }));
+
+    expect(mutateAsync).toHaveBeenCalledWith({ departmentId: 1, input: { name: "Operations", isActive: false } });
+  });
+
+  it("renders audit history without mutation controls", () => {
+    hooks.useAuditLogs.mockReturnValue({ data: { rows: [], count: 0 }, error: null, isLoading: false, refetch: vi.fn() });
+
+    render(<AuditLogsWorkspace />);
+
+    expect(screen.getByText(/no audit entries match/i)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /add|edit|delete/i })).not.toBeInTheDocument();
   });
 });

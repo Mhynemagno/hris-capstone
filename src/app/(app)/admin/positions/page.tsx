@@ -1,2 +1,4 @@
-import { AdminEmptyState, AdminPage } from "@/components/administration/admin-page";
-export default function PositionsPage() { return <AdminPage title="Positions" description="Maintain titles, codes, descriptions, and departmental placement."><AdminEmptyState title="Positions" description="Positions preserve their history when they are deactivated." /></AdminPage>; }
+import { AdminPage } from "@/components/administration/admin-page";
+import { PositionsWorkspace } from "@/components/administration/administration-workspaces";
+
+export default function PositionsPage() { return <AdminPage title="Positions" description="Maintain titles, codes, descriptions, and departmental placement."><PositionsWorkspace /></AdminPage>; }
