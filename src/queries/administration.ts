@@ -30,12 +30,29 @@ import {
 } from "@/schemas/administration";
 
 type SupabaseError = { message: string } | null;
+type FunctionErrorContext = { json?: () => Promise<unknown> };
 
 type ManagedUserRoleRow = Pick<UserRole, "user_id" | "role" | "assigned_at">;
 type AuditProfileRow = Pick<Profile, "id" | "full_name" | "email">;
 
 function throwIfError(error: SupabaseError) {
   if (error) throw new Error(error.message);
+}
+
+async function invitationErrorMessage(error: unknown) {
+  const context = typeof error === "object" && error !== null && "context" in error
+    ? (error as { context?: FunctionErrorContext }).context
+    : undefined;
+  const payload = await context?.json?.().catch(() => undefined);
+  if (
+    typeof payload === "object"
+    && payload !== null
+    && "error" in payload
+    && typeof payload.error === "string"
+  ) return payload.error;
+  return error instanceof Error
+    ? error.message
+    : "The invitation service could not be reached. Please try again.";
 }
 
 function pageRange(page: number) {
@@ -89,9 +106,16 @@ export async function listManagedUsers(input: Partial<ManagedUserFilters> = {}):
 }
 
 export async function inviteInternalUser(input: InternalInvitationInput) {
-  const body = internalInvitationSchema.parse(input);
-  const { data, error } = await createBrowserSupabaseClient().functions.invoke("invite-internal-user", { body });
-  throwIfError(error);
+  const values = internalInvitationSchema.parse(input);
+  const { data, error } = await createBrowserSupabaseClient().functions.invoke("invite-internal-user", {
+    body: {
+      email: values.email,
+      firstName: values.firstName,
+      lastName: values.lastName,
+      role: values.role,
+    },
+  });
+  if (error) throw new Error(await invitationErrorMessage(error));
   return data as { userId: string };
 }
 

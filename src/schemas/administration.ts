@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { appRoleSchema, paginationSchema, uuidSchema } from "./common";
+import { namePartsSchema, withFullName } from "./name";
 
 const optionalTrimmedText = (max: number) =>
   z.string().trim().max(max).transform((value) => value || undefined).optional();
@@ -14,9 +15,9 @@ const administrationPageSchema = paginationSchema.extend({
 
 export const internalInvitationSchema = z.object({
   email: z.email(),
-  fullName: z.string().trim().min(2).max(120),
+  ...namePartsSchema.shape,
   role: z.enum(["system_administrator", "hr_personnel", "employee", "management"]),
-});
+}).transform(withFullName);
 
 export const managedUserUpdateSchema = z.object({
   userId: uuidSchema,

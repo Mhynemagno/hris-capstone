@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { namePartsSchema, withFullName } from "./name";
+
 export const passwordSchema = z
   .string()
   .min(6, "Password must be at least 6 characters.");
@@ -10,8 +12,8 @@ export const loginSchema = z.object({
 });
 
 export const applicantRegistrationSchema = loginSchema.extend({
-  fullName: z.string().trim().min(2).max(120),
-});
+  ...namePartsSchema.shape,
+}).transform(withFullName);
 
 export const forgotPasswordSchema = z.object({
   email: z.email(),
@@ -27,16 +29,16 @@ export const resetPasswordSchema = z
     message: "Passwords do not match.",
   });
 
-export const inviteInternalUserSchema = applicantRegistrationSchema
-  .pick({ email: true, fullName: true })
-  .extend({
-    role: z.enum([
-      "system_administrator",
-      "hr_personnel",
-      "employee",
-      "management",
-    ]),
-  });
+export const inviteInternalUserSchema = z.object({
+  email: z.email(),
+  ...namePartsSchema.shape,
+  role: z.enum([
+    "system_administrator",
+    "hr_personnel",
+    "employee",
+    "management",
+  ]),
+}).transform(withFullName);
 
 export type LoginInput = z.infer<typeof loginSchema>;
 export type ApplicantRegistrationInput = z.infer<

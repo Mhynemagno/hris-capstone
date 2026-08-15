@@ -154,21 +154,34 @@ describe("administration queries", () => {
     });
   });
 
-  it("sends only validated payloads to the protected invitation and managed-user workflows", async () => {
+  it("sends name parts only to the protected invitation workflow", async () => {
     mocks.invoke.mockResolvedValue({ data: { userId: testUserId }, error: null });
     mocks.rpc.mockResolvedValue({ data: null, error: null });
 
-    await expect(inviteInternalUser({ email: "new@example.com", fullName: "New User", role: "employee" })).resolves.toEqual({ userId: testUserId });
+    await expect(inviteInternalUser({ email: "new@example.com", firstName: "New", lastName: "User", fullName: "New User", role: "employee" })).resolves.toEqual({ userId: testUserId });
     await expect(updateManagedUser({ userId: testUserId, role: "management", isActive: false })).resolves.toBeUndefined();
 
     expect(mocks.invoke).toHaveBeenCalledWith("invite-internal-user", {
-      body: { email: "new@example.com", fullName: "New User", role: "employee" },
+      body: { email: "new@example.com", firstName: "New", lastName: "User", role: "employee" },
     });
     expect(mocks.rpc).toHaveBeenCalledWith("update_managed_user", {
       target_user_id: testUserId,
       next_role: "management",
       next_is_active: false,
     });
+  });
+
+  it("surfaces the safe Edge Function error body for invitations", async () => {
+    mocks.invoke.mockResolvedValue({
+      data: null,
+      error: {
+        message: "Failed to send a request to the Edge Function",
+        context: { json: vi.fn().mockResolvedValue({ error: "Administrator access is required." }) },
+      },
+    });
+
+    await expect(inviteInternalUser({ email: "new@example.com", firstName: "New", lastName: "User", fullName: "New User", role: "employee" }))
+      .rejects.toThrow("Administrator access is required.");
   });
 
   it("serializes position and organization settings fields for RLS-protected writes", async () => {
