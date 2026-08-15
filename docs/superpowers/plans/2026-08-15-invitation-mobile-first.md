@@ -393,4 +393,3 @@ Run: gh pr view --json url,state,baseRefName,headRefName
 Expected: an open PR from codex/fix-invitation-mobile-first to main.
 
 After merge deploy invite-internal-user with the approved Supabase command, then run the Task 2 OPTIONS request against https://wcjpyzulbiexvwtmyudq.supabase.co/functions/v1/invite-internal-user. Expected: successful CORS preflight before testing a signed-in administrator invitation.
-
