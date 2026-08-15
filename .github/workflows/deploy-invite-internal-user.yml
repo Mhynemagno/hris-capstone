@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
     paths:
+      - .github/workflows/deploy-invite-internal-user.yml
       - supabase/functions/invite-internal-user/**
       - supabase/functions/delete-managed-user/**
   workflow_dispatch:
