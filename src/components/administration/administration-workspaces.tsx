@@ -66,9 +66,9 @@ function UserFilters({ onRoleChange, onSearchChange, onStatusChange, role, searc
 }
 
 function InvitationForm({ onSaved, pending }: { onSaved: (input: InternalInvitationInput) => Promise<void>; pending: boolean }) {
-  const form = useForm<InternalInvitationInput>({
+  const form = useForm<z.input<typeof internalInvitationSchema>, unknown, InternalInvitationInput>({
     resolver: zodResolver(internalInvitationSchema),
-    defaultValues: { email: "", fullName: "", role: "employee" },
+    defaultValues: { email: "", firstName: "", lastName: "", role: "employee" },
   });
   const [error, setError] = useState<string | null>(null);
 
@@ -77,7 +77,7 @@ function InvitationForm({ onSaved, pending }: { onSaved: (input: InternalInvitat
     try { await onSaved(values); form.reset(); } catch (cause) { setError(cause instanceof Error ? cause.message : "We could not send the invitation."); }
   }
 
-  return <form className="space-y-4" noValidate onSubmit={form.handleSubmit(submit)}><FormField error={form.formState.errors.fullName?.message} htmlFor="invite-full-name" label="Full name"><Input aria-invalid={Boolean(form.formState.errors.fullName)} id="invite-full-name" {...form.register("fullName")} /></FormField><FormField error={form.formState.errors.email?.message} htmlFor="invite-email" label="Email"><Input aria-invalid={Boolean(form.formState.errors.email)} id="invite-email" type="email" {...form.register("email")} /></FormField><FormField error={form.formState.errors.role?.message} htmlFor="invite-role" label="Role"><select className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm" id="invite-role" {...form.register("role")}>{APP_ROLES.filter((role) => role !== "applicant").map((role) => <option key={role} value={role}>{roleLabels[role]}</option>)}</select></FormField>{error ? <ErrorState message={error} /> : null}<Button className="w-full" disabled={pending} type="submit">{pending ? "Sending…" : "Send invitation"}</Button></form>;
+  return <form className="space-y-4" noValidate onSubmit={form.handleSubmit(submit)}><div className="grid gap-4 sm:grid-cols-2"><FormField error={form.formState.errors.firstName?.message} htmlFor="invite-first-name" label="First name"><Input aria-invalid={Boolean(form.formState.errors.firstName)} autoComplete="given-name" id="invite-first-name" {...form.register("firstName")} /></FormField><FormField error={form.formState.errors.lastName?.message} htmlFor="invite-last-name" label="Last name"><Input aria-invalid={Boolean(form.formState.errors.lastName)} autoComplete="family-name" id="invite-last-name" {...form.register("lastName")} /></FormField></div><FormField error={form.formState.errors.email?.message} htmlFor="invite-email" label="Email"><Input aria-invalid={Boolean(form.formState.errors.email)} autoComplete="email" id="invite-email" type="email" {...form.register("email")} /></FormField><FormField error={form.formState.errors.role?.message} htmlFor="invite-role" label="Role"><select className="h-11 w-full rounded-lg border border-input bg-background px-2.5 text-sm" id="invite-role" {...form.register("role")}>{APP_ROLES.filter((role) => role !== "applicant").map((role) => <option key={role} value={role}>{roleLabels[role]}</option>)}</select></FormField>{error ? <ErrorState message={error} /> : null}<Button className="h-11 w-full" disabled={pending} type="submit">{pending ? "Sending…" : "Send invitation"}</Button></form>;
 }
 
 function ManagedUserForm({ onSaved, pending, user }: { onSaved: (input: ManagedUserUpdateInput) => Promise<void>; pending: boolean; user: ManagedUser }) {
