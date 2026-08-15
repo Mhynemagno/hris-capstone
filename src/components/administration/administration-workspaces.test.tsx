@@ -31,7 +31,7 @@ vi.mock("@/hooks/use-administration", () => ({
 }));
 
 import { AdministrationFormPanel } from "./administration-form-panel";
-import { AuditLogsWorkspace, DepartmentsWorkspace, UsersWorkspace } from "./administration-workspaces";
+import { AuditLogsWorkspace, DepartmentsWorkspace, SettingsWorkspace, UsersWorkspace } from "./administration-workspaces";
 import { PaginatedTableControls } from "./paginated-table-controls";
 
 describe("administration shared controls", () => {
@@ -81,6 +81,38 @@ describe("administration shared controls", () => {
     expect(screen.getByRole("button", { name: /invite account/i })).toBeInTheDocument();
   });
 
+  it("opens account invitations in a centered modal", async () => {
+    const user = userEvent.setup();
+    hooks.useManagedUsers.mockReturnValue({ data: { rows: [], count: 0 }, error: null, isLoading: false, refetch: vi.fn() });
+    hooks.useInviteInternalUser.mockReturnValue({ isPending: false, mutateAsync: vi.fn() });
+    hooks.useUpdateManagedUser.mockReturnValue({ isPending: false, mutateAsync: vi.fn() });
+
+    render(<UsersWorkspace />);
+    await user.click(screen.getByRole("button", { name: /invite account/i }));
+
+    expect(screen.getByRole("dialog", { name: "Invite account" })).toHaveAttribute("data-side", "center");
+  });
+
+  it("keeps organization settings read-only until its edit modal opens", async () => {
+    const user = userEvent.setup();
+    hooks.useOrganizationSettings.mockReturnValue({
+      data: { organization_name: "San Juan City Police", support_email: "hr@sanjuancity.gov", default_timezone: "Asia/Manila" },
+      error: null,
+      isLoading: false,
+      refetch: vi.fn(),
+    });
+    hooks.useSaveOrganizationSettings.mockReturnValue({ isPending: false, mutateAsync: vi.fn() });
+
+    render(<SettingsWorkspace />);
+
+    expect(screen.getByText("San Juan City Police")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /edit organization settings/i })).toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: "Organization name" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /edit organization settings/i }));
+    expect(screen.getByRole("dialog", { name: /organization settings/i })).toHaveAttribute("data-side", "center");
+  });
+
   it("keeps department deactivation non-destructive", async () => {
     const user = userEvent.setup();
     const mutateAsync = vi.fn().mockResolvedValue(undefined);
@@ -112,5 +144,40 @@ describe("administration shared controls", () => {
 
     expect(screen.getByText(/no audit entries match/i)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /add|edit|delete/i })).not.toBeInTheDocument();
+  });
+
+  it("renders human-readable audit history and exposes structured details in a modal", async () => {
+    const user = userEvent.setup();
+    hooks.useAuditLogs.mockReturnValue({
+      data: {
+        rows: [{
+          id: 1,
+          actor_user_id: "f988df5c-804b-47bf-a5ad-4d48387f5b21",
+          entity_type: "user_roles",
+          entity_id: "c038df5c-804b-47bf-a5ad-4d48387f5b21",
+          action: "update",
+          metadata: { user_id: "c038df5c-804b-47bf-a5ad-4d48387f5b21", role: "system_administrator" },
+          created_at: "2026-08-15T09:18:40.330063+00:00",
+          actorLabel: "Chief Ada Lovelace",
+          recordLabel: "Account “Officer Grace Hopper”",
+          actionLabel: "Role changed to System Administrator",
+          summary: "Account role changed to System Administrator",
+          details: { user_id: "c038df5c-804b-47bf-a5ad-4d48387f5b21", role: "system_administrator" },
+        }],
+        count: 1,
+      },
+      error: null,
+      isLoading: false,
+      refetch: vi.fn(),
+    });
+
+    render(<AuditLogsWorkspace />);
+
+    expect(screen.getByText("Chief Ada Lovelace")).toBeInTheDocument();
+    expect(screen.getByText("Account “Officer Grace Hopper”")).toBeInTheDocument();
+    expect(screen.getByText("Role changed to System Administrator")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /view details for audit record 1/i }));
+    expect(screen.getByRole("dialog", { name: /audit record details/i })).toHaveTextContent("system_administrator");
   });
 });

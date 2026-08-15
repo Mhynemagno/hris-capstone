@@ -19,7 +19,7 @@ type AdministrationFormPanelProps = {
 export function AdministrationFormPanel({ children, description, onOpenChange, open, title }: AdministrationFormPanelProps) {
   return (
     <Sheet onOpenChange={onOpenChange} open={open}>
-      <SheetContent side="right">
+      <SheetContent side="center">
         <SheetHeader>
           <SheetTitle>{title}</SheetTitle>
           <SheetDescription>{description}</SheetDescription>
