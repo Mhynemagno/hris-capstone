@@ -2,7 +2,22 @@ import userEvent from "@testing-library/user-event";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+const hooks = vi.hoisted(() => ({
+  useInviteInternalUser: vi.fn(),
+  useManagedRoles: vi.fn(),
+  useManagedUsers: vi.fn(),
+  useUpdateManagedUser: vi.fn(),
+}));
+
+vi.mock("@/hooks/use-administration", () => ({
+  useInviteInternalUser: hooks.useInviteInternalUser,
+  useManagedRoles: hooks.useManagedRoles,
+  useManagedUsers: hooks.useManagedUsers,
+  useUpdateManagedUser: hooks.useUpdateManagedUser,
+}));
+
 import { AdministrationFormPanel } from "./administration-form-panel";
+import { UsersWorkspace } from "./administration-workspaces";
 import { PaginatedTableControls } from "./paginated-table-controls";
 
 describe("administration shared controls", () => {
@@ -34,5 +49,21 @@ describe("administration shared controls", () => {
     expect(screen.getByRole("heading", { name: "Invite account" })).toBeInTheDocument();
     expect(screen.getByText("Send an account invitation.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /close/i })).toBeInTheDocument();
+  });
+
+  it("shows a recoverable empty users state", () => {
+    hooks.useManagedUsers.mockReturnValue({
+      data: { rows: [], count: 0 },
+      error: null,
+      isLoading: false,
+      refetch: vi.fn(),
+    });
+    hooks.useInviteInternalUser.mockReturnValue({ isPending: false, mutateAsync: vi.fn() });
+    hooks.useUpdateManagedUser.mockReturnValue({ isPending: false, mutateAsync: vi.fn() });
+
+    render(<UsersWorkspace />);
+
+    expect(screen.getByText(/no accounts match/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /invite account/i })).toBeInTheDocument();
   });
 });
