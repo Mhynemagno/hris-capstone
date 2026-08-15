@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 const hooks = vi.hoisted(() => ({
+  useDeleteManagedUser: vi.fn().mockReturnValue({ isPending: false, mutateAsync: vi.fn() }),
   useInviteInternalUser: vi.fn(),
   useAuditLogs: vi.fn(),
   useDepartments: vi.fn(),
@@ -17,6 +18,7 @@ const hooks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/hooks/use-administration", () => ({
+  useDeleteManagedUser: hooks.useDeleteManagedUser,
   useAuditLogs: hooks.useAuditLogs,
   useDepartments: hooks.useDepartments,
   useInviteInternalUser: hooks.useInviteInternalUser,

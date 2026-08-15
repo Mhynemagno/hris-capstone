@@ -52,7 +52,7 @@ function resourceLabel(log: AuditLog, lookups: AuditPresentationLookups) {
     case "profiles":
     case "user_roles": {
       const accountId = textValue(metadata.user_id) ?? log.entity_id;
-      const accountLabel = lookups.profiles[accountId];
+      const accountLabel = textValue(metadata.full_name) ?? textValue(metadata.email) ?? lookups.profiles[accountId];
       return accountLabel ? quoted("Account", accountLabel) : `Account #${accountId}`;
     }
     case "organization_settings":

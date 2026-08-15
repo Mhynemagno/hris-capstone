@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-keys";
 import {
   getOrganizationSettings,
+  deleteManagedUser,
   inviteInternalUser,
   listAuditLogs,
   listDepartments,
@@ -23,6 +24,7 @@ import {
   type DepartmentInput,
   type InternalInvitationInput,
   type ManagedUserFilters,
+  type ManagedUserDeleteInput,
   type ManagedUserUpdateInput,
   type OrganizationSettingsInput,
   type PositionInput,
@@ -89,6 +91,14 @@ export function useUpdateManagedUser() {
   const { invalidate } = useAdministrationMutations();
   return useMutation({
     mutationFn: ({ input }: { input: ManagedUserUpdateInput }) => updateManagedUser(input),
+    onSuccess: () => invalidate("users", "roles", "audit-logs"),
+  });
+}
+
+export function useDeleteManagedUser() {
+  const { invalidate } = useAdministrationMutations();
+  return useMutation({
+    mutationFn: (input: ManagedUserDeleteInput) => deleteManagedUser(input),
     onSuccess: () => invalidate("users", "roles", "audit-logs"),
   });
 }
