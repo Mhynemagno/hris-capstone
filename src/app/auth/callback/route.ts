@@ -12,7 +12,6 @@ export async function GET(request: NextRequest) {
   }
 
   const supabase = await createServerSupabaseClient();
-  await supabase.auth.signOut({ scope: "local" });
   const { error } = await supabase.auth.exchangeCodeForSession(code);
 
   return NextResponse.redirect(
