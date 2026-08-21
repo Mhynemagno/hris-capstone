@@ -62,13 +62,7 @@ This baseline deploys a harmless public landing page. Authentication, role guard
 
 For each deployed application URL, add `https://<vercel-domain>/auth/callback` to Supabase Auth Redirect URLs. Set the `APP_URL` secret for the `invite-internal-user` Edge Function to the application's origin, for example `https://hris.example`.
 
-In **Supabase Dashboard → Authentication → Email Templates → Invite user**, use this link in the invitation email:
-
-```html
-<a href="{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=invite">Accept invitation</a>
-```
-
-The invitation callback verifies the one-time token server-side and then sends the invitee to password setup. The same template is stored at `supabase/templates/invite.html` for local development. Deploy the internal invitation function with `npx supabase@latest functions deploy invite-internal-user`; its secret API key stays in the Supabase Edge Function runtime and must never be a `NEXT_PUBLIC_*` value.
+Internal invitations work with Supabase's default automated invitation email. After Supabase validates the email link, the browser completes the session and opens password setup; no email-template customization or custom SMTP is required. Deploy the internal invitation function with `npx supabase@latest functions deploy invite-internal-user`; its secret API key stays in the Supabase Edge Function runtime and must never be a `NEXT_PUBLIC_*` value.
 
 ## Supabase database workflow
 
