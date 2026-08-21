@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
   }
 
   if (!code) {
-    return NextResponse.redirect(new URL("/login?error=invitation_expired", request.url));
+    return NextResponse.redirect(new URL("/reset-password", request.url));
   }
 
   const supabase = await createServerSupabaseClient();

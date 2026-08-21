@@ -28,11 +28,11 @@ describe("auth callback route", () => {
     expect(response.headers.get("location")).toBe("http://localhost/");
   });
 
-  it("sends a callback without a code to the invitation recovery state", async () => {
+  it("hands a fragment-based invitation callback to the browser password screen", async () => {
     const response = await GET(new NextRequest("http://localhost/auth/callback"));
 
     expect(response.headers.get("location")).toBe(
-      "http://localhost/login?error=invitation_expired",
+      "http://localhost/reset-password",
     );
   });
 
