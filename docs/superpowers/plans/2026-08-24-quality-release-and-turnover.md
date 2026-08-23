@@ -186,7 +186,7 @@ Create a `supabase/seed.sql` that uses deterministic test IDs/emails under `.tes
 - [ ] **Step 2: Verify a clean local reset uses only demo data**
 
 ```powershell
-npx supabase@latest db reset --local
+npx supabase@latest db reset --local --sql-paths ./seed.sql
 npx supabase@latest test db --local supabase/tests/auth_rbac_foundation.test.sql
 npx supabase@latest test db --local supabase/tests/quality_release_employee_account_linking.test.sql
 ```
@@ -231,7 +231,7 @@ Record the command, commit, date, and result in the matrix.
 - [ ] **Step 2: Run every pgTAP suite on a clean local database**
 
 ```powershell
-npx supabase@latest db reset --local
+npx supabase@latest db reset --local --no-seed
 Get-ChildItem supabase/tests/*.test.sql | ForEach-Object { npx supabase@latest test db --local $_.FullName }
 ```
 
