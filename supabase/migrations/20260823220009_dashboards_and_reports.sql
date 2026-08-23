@@ -9,6 +9,7 @@ create or replace function private.require_active_reporting_role(allowed_roles p
 returns public.app_role
 language plpgsql
 security definer
+stable
 set search_path = ''
 as $$
 declare
@@ -33,6 +34,7 @@ create or replace function private.validate_reporting_range(target_starts_on dat
 returns void
 language plpgsql
 security definer
+stable
 set search_path = ''
 as $$
 begin
@@ -52,6 +54,7 @@ create or replace function private.get_hr_dashboard_summary(target_starts_on dat
 returns jsonb
 language plpgsql
 security definer
+stable
 set search_path = ''
 as $$
 begin
@@ -84,6 +87,7 @@ create or replace function private.get_management_dashboard_summary(target_start
 returns jsonb
 language plpgsql
 security definer
+stable
 set search_path = ''
 as $$
 begin
@@ -155,16 +159,16 @@ begin
     select jsonb_build_object('reportKey', target_report_key, 'title', 'Deployments', 'generatedAt', now(), 'columns', jsonb_build_array(jsonb_build_object('key','employeeNumber','label','Employee number'), jsonb_build_object('key','employee','label','Employee'), jsonb_build_object('key','department','label','Department'), jsonb_build_object('key','assignmentRole','label','Assignment role'), jsonb_build_object('key','destination','label','Destination'), jsonb_build_object('key','status','label','Status'), jsonb_build_object('key','startsOn','label','Starts'), jsonb_build_object('key','endsOn','label','Ends')), 'rows', coalesce((select jsonb_agg(jsonb_build_object('employeeNumber', employee_number, 'employee', concat_ws(' ', first_name, last_name), 'department', department_name, 'assignmentRole', assignment_role, 'destination', concat_ws(' · ', location, unit, project), 'status', status, 'startsOn', starts_on, 'endsOn', ends_on) order by starts_on desc) from paged), '[]'::jsonb), 'totalCount', (select count(*) from filtered), 'page', target_page, 'pageSize', target_page_size) into result;
   elsif target_report_key = 'attendance-leave' then
     with filtered as (
-      select attendance.employee_id, employee.employee_number, concat_ws(' ', employee.first_name, employee.last_name) as employee_name, department.name as department_name, 'Attendance'::text as record_type, attendance.status, attendance.attendance_date as record_date from public.attendance_logs attendance join public.employees employee on employee.id = attendance.employee_id left join public.departments department on department.id = employee.department_id where attendance.attendance_date between target_starts_on and target_ends_on
+      select attendance.employee_id, employee.employee_number, concat_ws(' ', employee.first_name, employee.last_name) as employee_name, employee.department_id, department.name as department_name, 'Attendance'::text as record_type, attendance.status, attendance.attendance_date as record_date from public.attendance_logs attendance join public.employees employee on employee.id = attendance.employee_id left join public.departments department on department.id = employee.department_id where attendance.attendance_date between target_starts_on and target_ends_on
       union all
-      select leave_request.employee_id, employee.employee_number, concat_ws(' ', employee.first_name, employee.last_name), department.name, 'Leave'::text, leave_request.status, leave_request.starts_on from public.leave_requests leave_request join public.employees employee on employee.id = leave_request.employee_id left join public.departments department on department.id = employee.department_id where leave_request.starts_on between target_starts_on and target_ends_on
-    ), scoped as (select * from filtered where (target_department_id is null or department_name is not null) and (target_status is null or status = target_status)), paged as (select * from scoped order by record_date desc limit target_page_size offset page_offset)
+      select leave_request.employee_id, employee.employee_number, concat_ws(' ', employee.first_name, employee.last_name), employee.department_id, department.name, 'Leave'::text, leave_request.status, leave_request.starts_on from public.leave_requests leave_request join public.employees employee on employee.id = leave_request.employee_id left join public.departments department on department.id = employee.department_id where leave_request.starts_on between target_starts_on and target_ends_on
+    ), scoped as (select * from filtered where (target_department_id is null or department_id = target_department_id) and (target_status is null or status = target_status)), paged as (select * from scoped order by record_date desc limit target_page_size offset page_offset)
     select jsonb_build_object('reportKey', target_report_key, 'title', 'Attendance and leave', 'generatedAt', now(), 'columns', jsonb_build_array(jsonb_build_object('key','employeeNumber','label','Employee number'), jsonb_build_object('key','employee','label','Employee'), jsonb_build_object('key','department','label','Department'), jsonb_build_object('key','recordType','label','Record type'), jsonb_build_object('key','status','label','Status'), jsonb_build_object('key','date','label','Date')), 'rows', coalesce((select jsonb_agg(jsonb_build_object('employeeNumber', employee_number, 'employee', employee_name, 'department', department_name, 'recordType', record_type, 'status', status, 'date', record_date) order by record_date desc) from paged), '[]'::jsonb), 'totalCount', (select count(*) from scoped), 'page', target_page, 'pageSize', target_page_size) into result;
   elsif target_report_key = 'promotion-training-needs' then
     with filtered as (
       select evaluation.id, employee.employee_number, employee.first_name, employee.last_name, department.name as department_name, position.title as position_title, evaluation.is_ready, evaluation.recommendation, evaluation.missing_requirements, evaluation.evaluated_on from public.promotion_evaluations evaluation join public.employees employee on employee.id = evaluation.employee_id left join public.departments department on department.id = employee.department_id join public.positions position on position.id = evaluation.target_position_id where evaluation.evaluated_on between target_starts_on and target_ends_on and (target_department_id is null or employee.department_id = target_department_id) and (target_status is null or evaluation.recommendation = target_status)
     ), paged as (select * from filtered order by evaluated_on desc limit target_page_size offset page_offset)
-    select jsonb_build_object('reportKey', target_report_key, 'title', 'Promotion and training needs', 'generatedAt', now(), 'columns', jsonb_build_array(jsonb_build_object('key','employeeNumber','label','Employee number'), jsonb_build_object('key','employee','label','Employee'), jsonb_build_object('key','department','label','Department'), jsonb_build_object('key','targetPosition','label','Target position'), jsonb_build_object('key','ready','label','Ready'), jsonb_build_object('key','recommendation','label','Recommendation'), jsonb_build_object('key','missingRequirements','label','Missing requirements')), 'rows', coalesce((select jsonb_agg(jsonb_build_object('employeeNumber', employee_number, 'employee', concat_ws(' ', first_name, last_name), 'department', department_name, 'targetPosition', position_title, 'ready', is_ready, 'recommendation', recommendation, 'missingRequirements', array_to_string(missing_requirements, '; ')) order by evaluated_on desc) from paged), '[]'::jsonb), 'totalCount', (select count(*) from filtered), 'page', target_page, 'pageSize', target_page_size) into result;
+    select jsonb_build_object('reportKey', target_report_key, 'title', 'Promotion and training needs', 'generatedAt', now(), 'columns', jsonb_build_array(jsonb_build_object('key','employeeNumber','label','Employee number'), jsonb_build_object('key','employee','label','Employee'), jsonb_build_object('key','department','label','Department'), jsonb_build_object('key','targetPosition','label','Target position'), jsonb_build_object('key','ready','label','Ready'), jsonb_build_object('key','recommendation','label','Recommendation'), jsonb_build_object('key','missingRequirements','label','Missing requirements')), 'rows', coalesce((select jsonb_agg(jsonb_build_object('employeeNumber', employee_number, 'employee', concat_ws(' ', first_name, last_name), 'department', department_name, 'targetPosition', position_title, 'ready', is_ready, 'recommendation', recommendation, 'missingRequirements', (select string_agg(value, '; ') from jsonb_array_elements_text(missing_requirements) as requirement(value))) order by evaluated_on desc) from paged), '[]'::jsonb), 'totalCount', (select count(*) from filtered), 'page', target_page, 'pageSize', target_page_size) into result;
   else
     raise exception 'Unknown report key.' using errcode = '22023';
   end if;
@@ -177,6 +181,7 @@ create or replace function private.get_management_report(target_report_key text,
 returns jsonb
 language plpgsql
 security definer
+stable
 set search_path = ''
 as $$
 declare
@@ -210,13 +215,13 @@ end;
 $$;
 
 create or replace function public.get_hr_dashboard_summary(target_starts_on date, target_ends_on date)
-returns jsonb language plpgsql security definer set search_path = '' as $$ begin return private.get_hr_dashboard_summary(target_starts_on, target_ends_on); end; $$;
+returns jsonb language plpgsql security definer stable set search_path = '' as $$ begin return private.get_hr_dashboard_summary(target_starts_on, target_ends_on); end; $$;
 create or replace function public.get_management_dashboard_summary(target_starts_on date, target_ends_on date)
-returns jsonb language plpgsql security definer set search_path = '' as $$ begin return private.get_management_dashboard_summary(target_starts_on, target_ends_on); end; $$;
+returns jsonb language plpgsql security definer stable set search_path = '' as $$ begin return private.get_management_dashboard_summary(target_starts_on, target_ends_on); end; $$;
 create or replace function public.get_hr_report(target_report_key text, target_starts_on date, target_ends_on date, target_department_id bigint, target_status text, target_page integer, target_page_size integer)
-returns jsonb language plpgsql security definer set search_path = '' as $$ begin return private.get_hr_report(target_report_key, target_starts_on, target_ends_on, target_department_id, target_status, target_page, target_page_size); end; $$;
+returns jsonb language plpgsql security definer stable set search_path = '' as $$ begin return private.get_hr_report(target_report_key, target_starts_on, target_ends_on, target_department_id, target_status, target_page, target_page_size); end; $$;
 create or replace function public.get_management_report(target_report_key text, target_starts_on date, target_ends_on date, target_department_id bigint, target_status text, target_page integer, target_page_size integer)
-returns jsonb language plpgsql security definer set search_path = '' as $$ begin return private.get_management_report(target_report_key, target_starts_on, target_ends_on, target_department_id, target_status, target_page, target_page_size); end; $$;
+returns jsonb language plpgsql security definer stable set search_path = '' as $$ begin return private.get_management_report(target_report_key, target_starts_on, target_ends_on, target_department_id, target_status, target_page, target_page_size); end; $$;
 
 revoke all on function private.require_active_reporting_role(public.app_role[]), private.validate_reporting_range(date, date, integer, integer), private.get_hr_dashboard_summary(date, date), private.get_management_dashboard_summary(date, date), private.get_hr_report(text, date, date, bigint, text, integer, integer), private.get_management_report(text, date, date, bigint, text, integer, integer) from public, anon, authenticated;
 revoke all on function public.get_hr_dashboard_summary(date, date), public.get_management_dashboard_summary(date, date), public.get_hr_report(text, date, date, bigint, text, integer, integer), public.get_management_report(text, date, date, bigint, text, integer, integer) from public, anon;
