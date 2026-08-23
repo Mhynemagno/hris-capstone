@@ -350,3 +350,78 @@ export type DeploymentHistory = {
   metadata: Record<string, unknown>;
   created_at: string;
 };
+
+export type PromotionCriterion = {
+  id: string;
+  target_position_id: number;
+  minimum_years_of_service: number;
+  minimum_performance_rating: number | null;
+  is_active: boolean;
+  created_by_user_id: string;
+  updated_by_user_id: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PromotionCriterionRequirement = {
+  id: string;
+  criterion_id: string;
+  ordinal: number;
+  record_kind: "qualification" | "certification" | "training";
+  required_name: string;
+  label: string;
+  is_mandatory: boolean;
+  created_at: string;
+};
+
+export type PerformanceRating = {
+  id: string;
+  employee_id: string;
+  rating: number;
+  review_period_starts_on: string;
+  review_period_ends_on: string;
+  notes: string | null;
+  created_by_user_id: string;
+  updated_by_user_id: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PromotionEvaluation = {
+  id: string;
+  employee_id: string;
+  target_position_id: number;
+  criterion_id: string;
+  evaluated_on: string;
+  criteria_snapshot: Record<string, unknown>;
+  years_of_service: number;
+  is_ready: boolean;
+  missing_requirements: string[];
+  recommendation: "recommended" | "not_recommended" | "deferred";
+  notes: string | null;
+  created_by_user_id: string;
+  updated_by_user_id: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PromotionEvaluationEvidence = {
+  id: string;
+  evaluation_id: string;
+  requirement_id: string;
+  qualification_id: string | null;
+  certification_id: string | null;
+  training_record_id: string | null;
+  created_at: string;
+};
+
+export type EmployeePromotionEligibilitySummary = {
+  employee_id: string;
+  evaluation_id: string;
+  target_position_id: number;
+  target_position_title: string;
+  calculated_at: string;
+  years_of_service: number;
+  is_ready: boolean;
+  missing_requirements: string[];
+};

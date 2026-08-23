@@ -66,4 +66,10 @@ export const queryKeys = {
     mine: (filters: Record<string, unknown>) => ["deployment-tracking", "mine", filters] as const,
     detail: (deploymentId: string) => ["deployment-tracking", "detail", deploymentId] as const,
   },
+  promotionEligibility: {
+    criteria: (filters: Record<string, unknown> = {}) => ["promotion-eligibility", "criteria", filters] as const,
+    hrDirectory: (filters: Record<string, unknown>) => ["promotion-eligibility", "hr-directory", filters] as const,
+    hrEmployee: (employeeId: string) => ["promotion-eligibility", "hr-employee", employeeId] as const,
+    mine: () => ["promotion-eligibility", "mine"] as const,
+  },
 };
