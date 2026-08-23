@@ -119,6 +119,18 @@ describe("administration queries", () => {
     expect(roleChain.in).toHaveBeenCalledWith("user_id", [testUserId]);
   });
 
+  it("attaches a pending employee activation request to its applicant account", async () => {
+    const profileChain = createChain({ data: [{ id: testUserId, email: "ada@example.com", full_name: "Ada Lovelace", is_active: true, created_at: "2026-08-01T00:00:00.000Z", updated_at: "2026-08-01T00:00:00.000Z" }], count: 1, error: null });
+    const roleChain = createChain({ data: [{ user_id: testUserId, role: "applicant", assigned_at: "2026-08-01T00:00:00.000Z" }], error: null });
+    const activationChain = createChain({ data: [{ id: "00000000-0000-0000-0000-000000000010", employee_id: "00000000-0000-0000-0000-000000000011", profile_id: testUserId, application_id: "00000000-0000-0000-0000-000000000012", status: "pending", requested_by_user_id: "00000000-0000-0000-0000-000000000013", activated_by_user_id: null, activated_at: null, created_at: "2026-08-20T00:00:00.000Z" }], error: null });
+    mocks.from.mockReturnValueOnce(profileChain).mockReturnValueOnce(roleChain).mockReturnValueOnce(activationChain);
+
+    const page = await listManagedUsers({ page: 1, pageSize: 20 });
+
+    expect(activationChain.in).toHaveBeenCalledWith("profile_id", [testUserId]);
+    expect(page.rows[0]).toMatchObject({ pending_activation: { status: "pending", profile_id: testUserId } });
+  });
+
   it("enriches a 20-row audit page with only the profiles referenced by that page", async () => {
     const targetUserId = "223e4567-e89b-42d3-a456-426614174000";
     const auditChain = createChain({

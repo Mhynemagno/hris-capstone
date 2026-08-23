@@ -19,6 +19,8 @@ describe("role configuration", () => {
       navigation: [
         { href: "/hr", label: "HR workspace" },
         { href: "/hr/employees", label: "Personnel records" },
+        { href: "/hr/jobs", label: "Job openings" },
+        { href: "/hr/applications", label: "Applications" },
       ],
     });
   });

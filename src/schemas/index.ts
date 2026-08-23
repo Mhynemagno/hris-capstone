@@ -29,6 +29,30 @@ export {
   positionSchema,
 } from "./administration";
 export {
+  applicantDocumentSchema,
+  applicantProfileSchema,
+  applicationFiltersSchema,
+  applicationStatusSchema,
+  applicationStatusTransitionSchema,
+  applicationSubmissionSchema,
+  hiringDecisionSchema,
+  jobCriterionSchema,
+  jobFiltersSchema,
+  jobOpeningSchema,
+} from "./recruitment";
+export type {
+  ApplicantDocumentInput,
+  ApplicantProfileInput,
+  ApplicationFilters,
+  ApplicationStatus,
+  ApplicationStatusTransitionInput,
+  ApplicationSubmissionInput,
+  HiringDecisionInput,
+  JobCriterionInput,
+  JobFilters,
+  JobOpeningInput,
+} from "./recruitment";
+export {
   notificationCreateSchema,
   notificationFiltersSchema,
 } from "./notifications";

@@ -16,7 +16,9 @@ export type UserRole = {
   assigned_at: string;
 };
 
-export type ManagedUser = Profile & Pick<UserRole, "role" | "assigned_at">;
+export type ManagedUser = Profile & Pick<UserRole, "role" | "assigned_at"> & {
+  pending_activation?: EmployeeActivationRequest;
+};
 
 export type PaginatedResult<T, TFilters> = {
   rows: T[];
@@ -182,4 +184,88 @@ export type TrainingRecord = {
   expires_on: string | null;
   hours: number | null;
   notes: string | null;
+};
+
+export type JobOpening = {
+  id: number;
+  department_id: number | null;
+  position_id: number | null;
+  title: string;
+  description: string;
+  location: string | null;
+  closes_on: string | null;
+  status: "draft" | "published" | "closed";
+  published_at: string | null;
+  created_by_user_id: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type JobQualificationCriterion = {
+  id: string;
+  job_opening_id: number;
+  ordinal: number;
+  kind: "education" | "experience" | "skill" | "certification" | "other";
+  requirement: string;
+  is_required: boolean;
+  created_at: string;
+};
+
+export type Applicant = {
+  id: string;
+  profile_id: string;
+  first_name: string;
+  middle_name: string | null;
+  last_name: string;
+  phone: string | null;
+  address: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Application = {
+  id: string;
+  applicant_id: string;
+  job_opening_id: number;
+  status: "Submitted" | "Under Review" | "Shortlisted" | "Interview" | "Hired" | "Not Selected";
+  cover_note: string | null;
+  submitted_at: string;
+  reviewed_at: string | null;
+  hired_employee_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ApplicationStatusHistory = {
+  id: string;
+  application_id: string;
+  actor_user_id: string | null;
+  previous_status: Application["status"] | null;
+  next_status: Application["status"];
+  note: string | null;
+  created_at: string;
+};
+
+export type ApplicantDocument = {
+  id: string;
+  application_id: string;
+  kind: "cv" | "credential";
+  object_path: string;
+  file_name: string;
+  mime_type: string;
+  size_bytes: number;
+  uploaded_by_user_id: string;
+  created_at: string;
+};
+
+export type EmployeeActivationRequest = {
+  id: string;
+  employee_id: string;
+  profile_id: string;
+  application_id: string;
+  status: "pending" | "activated";
+  requested_by_user_id: string;
+  activated_by_user_id: string | null;
+  activated_at: string | null;
+  created_at: string;
 };
