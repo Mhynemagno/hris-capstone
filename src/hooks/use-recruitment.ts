@@ -22,6 +22,7 @@ import {
 import type {
   ApplicantProfileInput,
   ApplicationAnalysisRequestInput,
+  ApplicationAiFilters,
   ApplicationFilters,
   ApplicationStatusTransitionInput,
   HiringDecisionInput,
@@ -85,7 +86,7 @@ export function useSaveJobOpening() {
   });
 }
 
-export function useHrApplications(filters: Partial<ApplicationFilters> = {}) {
+export function useHrApplications(filters: Partial<ApplicationAiFilters> = {}) {
   return useQuery({ queryKey: queryKeys.recruitment.applications(filters), queryFn: () => listHrApplications(filters) });
 }
 
