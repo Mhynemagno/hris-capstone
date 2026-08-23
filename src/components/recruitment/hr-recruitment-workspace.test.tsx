@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   saveJob: vi.fn(),
   transition: vi.fn(),
   hire: vi.fn(),
+  analyze: vi.fn(),
 }));
 
 vi.mock("@/hooks/use-administration", () => ({
@@ -28,6 +29,8 @@ vi.mock("@/hooks/use-recruitment", () => ({
   }),
   useTransitionApplicationStatus: () => ({ isPending: false, mutateAsync: mocks.transition }),
   useHireApplication: () => ({ isPending: false, mutateAsync: mocks.hire }),
+  useApplicationAiScores: () => ({ data: [] }),
+  useRequestApplicationAnalysis: () => ({ isPending: false, mutateAsync: mocks.analyze }),
 }));
 
 describe("HR recruitment workspace", () => {

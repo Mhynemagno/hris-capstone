@@ -245,6 +245,7 @@ export type ApplicationStatusHistory = {
   note: string | null;
   created_at: string;
 };
+export type ApplicationAiScore = { id: string; application_id: string; status: "pending" | "completed" | "failed"; score: number | null; explanation: string | null; provider: string | null; model: string | null; model_version: string | null; completed_at: string | null; created_at: string; };
 
 export type ApplicantDocument = {
   id: string;

@@ -2,6 +2,7 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import {
   applicantDocumentSchema,
   applicantProfileSchema,
+  applicationAnalysisRequestSchema,
   applicationFiltersSchema,
   applicationStatusTransitionSchema,
   applicationSubmissionSchema,
@@ -10,13 +11,14 @@ import {
   jobOpeningSchema,
   type ApplicationSubmissionInput,
   type ApplicantProfileInput,
+  type ApplicationAnalysisRequestInput,
   type ApplicationFilters,
   type ApplicationStatusTransitionInput,
   type HiringDecisionInput,
   type JobFilters,
   type JobOpeningInput,
 } from "@/schemas/recruitment";
-import type { Applicant, Application, ApplicantDocument, ApplicationStatusHistory, JobOpening, JobQualificationCriterion, PaginatedResult } from "@/lib/types/database";
+import type { Applicant, Application, ApplicationAiScore, ApplicantDocument, ApplicationStatusHistory, JobOpening, JobQualificationCriterion, PaginatedResult } from "@/lib/types/database";
 
 type PendingApplicantDocument = {
   kind: "cv" | "credential";
@@ -195,6 +197,20 @@ export async function transitionApplicationStatus(input: ApplicationStatusTransi
     transition_note: values.note ?? null,
   });
   throwIfError(error);
+}
+
+export async function getApplicationAiScores(applicationId: string) {
+  const id = applicationStatusTransitionSchema.shape.applicationId.parse(applicationId);
+  const { data, error } = await createBrowserSupabaseClient().from("application_ai_scores").select("*").eq("application_id", id).order("created_at", { ascending: false });
+  throwIfError(error);
+  return (data ?? []) as ApplicationAiScore[];
+}
+
+export async function requestApplicationAnalysis(input: ApplicationAnalysisRequestInput) {
+  const values = applicationAnalysisRequestSchema.parse(input);
+  const { data, error } = await createBrowserSupabaseClient().functions.invoke("score-application", { body: values });
+  throwIfError(error);
+  return data as { scoreId: string; status: "completed" };
 }
 
 export async function submitApplication(input: SubmitApplicationInput) {

@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-keys";
 import {
   getApplicantProfile,
+  getApplicationAiScores,
   getMyApplication,
   getPublishedJob,
   hireApplication,
@@ -13,12 +14,14 @@ import {
   listMyApplications,
   listPublishedJobs,
   saveApplicantProfile,
+  requestApplicationAnalysis,
   saveJobOpening,
   submitApplication,
   transitionApplicationStatus,
 } from "@/queries/recruitment";
 import type {
   ApplicantProfileInput,
+  ApplicationAnalysisRequestInput,
   ApplicationFilters,
   ApplicationStatusTransitionInput,
   HiringDecisionInput,
@@ -84,6 +87,19 @@ export function useSaveJobOpening() {
 
 export function useHrApplications(filters: Partial<ApplicationFilters> = {}) {
   return useQuery({ queryKey: queryKeys.recruitment.applications(filters), queryFn: () => listHrApplications(filters) });
+}
+
+export function useApplicationAiScores(applicationId: string) {
+  return useQuery({ queryKey: queryKeys.recruitment.aiScores(applicationId), queryFn: () => getApplicationAiScores(applicationId), enabled: Boolean(applicationId) });
+}
+
+export function useRequestApplicationAnalysis() {
+  const queryClient = useQueryClient();
+  return useMutation({ mutationFn: (input: ApplicationAnalysisRequestInput) => requestApplicationAnalysis(input), onSuccess: (_, input) => {
+    void queryClient.invalidateQueries({ queryKey: ["recruitment", "applications"] });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.application(input.applicationId) });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.aiScores(input.applicationId) });
+  } });
 }
 
 export function useTransitionApplicationStatus() {

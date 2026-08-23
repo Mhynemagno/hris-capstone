@@ -43,7 +43,7 @@
 - Modify: `supabase/tests/recruitment_and_applicant_portal.test.sql`
 
 **Interfaces:**
-- Consumes: `public.applications`, `public.user_roles`, and existing `private.has_role`.
+- Consumes: `public.applications`, `public.user_roles`, and existing `private.current_user_has_role`.
 - Produces: `public.application_ai_scores` and `public.list_hr_application_shortlist(target_application_status text, target_ai_status text, minimum_score smallint)`.
 
 - [ ] **Step 1: Write the failing pgTAP tests**
@@ -71,7 +71,7 @@ select extensions.throws_ok(
 
 - [ ] **Step 2: Run the test to verify it fails**
 
-Run: `supabase test db --local --file supabase/tests/recruitment_and_applicant_portal.test.sql`
+Run: `npx --yes supabase@latest test db --local supabase/tests/recruitment_and_applicant_portal.test.sql`
 
 Expected: FAIL because the table and RPC do not exist.
 
@@ -92,12 +92,12 @@ create index application_ai_scores_completed_score_idx
 
 create policy application_ai_scores_select_hr
   on public.application_ai_scores for select to authenticated
-  using ((select private.has_role('hr_personnel'::public.app_role)));
+  using ((select private.current_user_has_role('hr_personnel'::public.app_role)));
 ~~~
 
 - [ ] **Step 4: Run the database test to verify it passes**
 
-Run: `supabase db reset --local && supabase test db --local --file supabase/tests/recruitment_and_applicant_portal.test.sql`
+Run: `npx --yes supabase@latest db reset --local && npx --yes supabase@latest test db --local supabase/tests/recruitment_and_applicant_portal.test.sql`
 
 Expected: PASS with all existing recruitment assertions and the new RLS/ranking assertions.
 
@@ -367,8 +367,8 @@ npm run lint
 npm run typecheck
 npm run test:run
 npm run build
-supabase db reset --local
-supabase test db --local
+npx --yes supabase@latest db reset --local
+npx --yes supabase@latest test db --local
 deno test --allow-env supabase/functions/_shared/application-scoring-provider.test.ts supabase/functions/score-application/index.test.ts
 git diff --check
 git status --short
@@ -384,4 +384,3 @@ git commit -m "docs: add AI shortlisting setup guidance"
 ~~~
 
 Prepare a PR to `main` that names branch `feat/10-ai-applicant-shortlisting`, task-10 acceptance criteria, migration/RLS changes, `GEMINI_API_KEY` configuration, verification output, and screenshots of the HR queue/detail. Do not begin task 11 until this PR is reviewed, merged, and local `main` is current.
-

@@ -52,5 +52,6 @@ export const queryKeys = {
       ["recruitment", "hr-jobs", filters] as const,
     applications: (filters: Record<string, unknown>) =>
       ["recruitment", "applications", filters] as const,
+    aiScores: (applicationId: string) => ["recruitment", "ai-scores", applicationId] as const,
   },
 };
