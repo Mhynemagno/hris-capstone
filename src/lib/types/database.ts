@@ -73,6 +73,52 @@ export type Notification = {
   created_at: string;
 };
 
+export type ProfileChangeRequest = {
+  id: string;
+  employee_id: string;
+  submitted_by_user_id: string;
+  status: "pending" | "approved" | "rejected" | "cancelled";
+  note: string | null;
+  decision_reason: string | null;
+  decided_by_user_id: string | null;
+  decided_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ProfileChangeRequestChange = {
+  id: string;
+  request_id: string;
+  ordinal: number;
+  kind: "contact" | "qualification";
+  field_key: string | null;
+  operation: "add" | "edit" | "remove" | null;
+  qualification_id: string | null;
+  original_value: unknown;
+  requested_value: unknown;
+  created_at: string;
+};
+
+export type ProfileChangeRequestDocument = {
+  id: string;
+  request_id: string;
+  object_path: string;
+  file_name: string;
+  mime_type: string;
+  size_bytes: number;
+  uploaded_by_user_id: string;
+  created_at: string;
+};
+
+export type ProfileChangeRequestHistory = {
+  id: number;
+  request_id: string;
+  actor_user_id: string | null;
+  event_type: "submitted" | "cancelled" | "approved" | "rejected";
+  metadata: Record<string, unknown>;
+  created_at: string;
+};
+
 export type Employee = {
   id: string;
   profile_id: string | null;

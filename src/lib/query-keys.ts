@@ -29,4 +29,12 @@ export const queryKeys = {
       ["notifications", "inbox", filters] as const,
     unreadCount: () => ["notifications", "unread-count"] as const,
   },
+  profileChangeRequests: {
+    mine: (filters: Record<string, unknown>) =>
+      ["profile-change-requests", "mine", filters] as const,
+    detail: (requestId: string) =>
+      ["profile-change-requests", "detail", requestId] as const,
+    adminQueue: (filters: Record<string, unknown>) =>
+      ["profile-change-requests", "admin-queue", filters] as const,
+  },
 };
