@@ -13,6 +13,9 @@ vi.mock("next/navigation", () => ({ usePathname }));
 vi.mock("@/components/auth/sign-out-button", () => ({
   SignOutButton: () => <button type="button">Sign out</button>,
 }));
+vi.mock("@/components/notifications/notification-bell", () => ({
+  NotificationBell: () => <a href="/notifications">Notifications</a>,
+}));
 
 describe("AppShell", () => {
   beforeEach(() => {
@@ -59,5 +62,15 @@ describe("AppShell", () => {
     expect(screen.getByRole("navigation", { name: /main navigation/i })).toBeInTheDocument();
     expect(screen.getByText("San Juan City Police")).toBeInTheDocument();
     expect(screen.getByTestId("brand-command-accent")).toBeInTheDocument();
+  });
+
+  it("gives every authenticated workspace a notifications entry point", () => {
+    render(
+      <AppShell config={ROLE_CONFIG.management} email="manager@example.com">
+        <p>Management content</p>
+      </AppShell>,
+    );
+
+    expect(screen.getByRole("link", { name: "Notifications" })).toHaveAttribute("href", "/notifications");
   });
 });
