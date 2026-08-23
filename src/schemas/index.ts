@@ -29,6 +29,14 @@ export {
   positionSchema,
 } from "./administration";
 export {
+  notificationCreateSchema,
+  notificationFiltersSchema,
+} from "./notifications";
+export type {
+  NotificationCreateInput,
+  NotificationFilters,
+} from "./notifications";
+export {
   certificationSchema,
   employeeDirectoryFiltersSchema,
   employeeSchema,

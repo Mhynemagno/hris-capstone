@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { SignOutButton } from "@/components/auth/sign-out-button";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 import {
   Avatar,
   AvatarFallback,
@@ -141,6 +142,9 @@ export function AppShell({ children, config, email }: AppShellProps) {
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
+            <div className="ml-auto">
+              <NotificationBell />
+            </div>
           </header>
           <div className="flex flex-1 flex-col px-4 py-8 sm:px-6 lg:px-10">
             <div className="mx-auto w-full max-w-6xl">{children}</div>
