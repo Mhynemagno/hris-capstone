@@ -39,4 +39,18 @@ export const queryKeys = {
     adminQueue: (filters: Record<string, unknown>) =>
       ["profile-change-requests", "admin-queue", filters] as const,
   },
+  recruitment: {
+    publicJobs: (filters: Record<string, unknown>) =>
+      ["recruitment", "public-jobs", filters] as const,
+    job: (jobId: number) => ["recruitment", "job", jobId] as const,
+    myProfile: () => ["recruitment", "my-profile"] as const,
+    myApplications: (filters: Record<string, unknown>) =>
+      ["recruitment", "my-applications", filters] as const,
+    application: (applicationId: string) =>
+      ["recruitment", "application", applicationId] as const,
+    hrJobs: (filters: Record<string, unknown>) =>
+      ["recruitment", "hr-jobs", filters] as const,
+    applications: (filters: Record<string, unknown>) =>
+      ["recruitment", "applications", filters] as const,
+  },
 };

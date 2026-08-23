@@ -44,6 +44,8 @@ export const ROLE_CONFIG: Record<AppRole, RoleConfig> = {
     navigation: [
       { href: "/hr", label: "HR workspace", icon: "LayoutDashboard" },
       { href: "/hr/employees", label: "Personnel records", icon: "ContactRound" },
+      { href: "/hr/jobs", label: "Job openings", icon: "BriefcaseBusiness" },
+      { href: "/hr/applications", label: "Applications", icon: "BriefcaseBusiness" },
     ],
   },
   applicant: {
@@ -59,6 +61,9 @@ export const ROLE_CONFIG: Record<AppRole, RoleConfig> = {
         label: "Applicant portal",
         icon: "LayoutDashboard",
       },
+      { href: "/jobs", label: "Job openings", icon: "BriefcaseBusiness" },
+      { href: "/applicant/profile", label: "My profile", icon: "ContactRound" },
+      { href: "/applicant/applications", label: "My applications", icon: "BriefcaseBusiness" },
     ],
   },
   employee: {

@@ -21,4 +21,19 @@ describe("queryKeys", () => {
       { role: "applicant" },
     ]);
   });
+
+  it("scopes HR application queues by their active filters", () => {
+    const recruitment = queryKeys as typeof queryKeys & {
+      recruitment: {
+        applications: (filters: Record<string, unknown>) => readonly unknown[];
+      };
+    };
+
+    expect(recruitment.recruitment).toBeDefined();
+    expect(recruitment.recruitment.applications({ page: 1, pageSize: 20, status: "Submitted" })).toEqual([
+      "recruitment",
+      "applications",
+      { page: 1, pageSize: 20, status: "Submitted" },
+    ]);
+  });
 });
