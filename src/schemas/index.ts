@@ -32,6 +32,25 @@ export {
   notificationCreateSchema,
   notificationFiltersSchema,
 } from "./notifications";
+export {
+  profileChangeCancellationSchema,
+  profileChangeContactChangeSchema,
+  profileChangeDecisionSchema,
+  profileChangeDocumentSchema,
+  profileChangeDraftSchema,
+  profileChangeQualificationChangeSchema,
+  profileChangeQualificationSnapshotSchema,
+  profileChangeRequestFiltersSchema,
+  profileChangeSubmissionSchema,
+} from "./profile-change-requests";
+export type {
+  ProfileChangeCancellationInput,
+  ProfileChangeDecisionInput,
+  ProfileChangeDraftInput,
+  ProfileChangeRequestFilters,
+  ProfileChangeStatus,
+  ProfileChangeSubmissionInput,
+} from "./profile-change-requests";
 export type {
   NotificationCreateInput,
   NotificationFilters,

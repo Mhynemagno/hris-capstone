@@ -25,6 +25,7 @@ export const ROLE_CONFIG: Record<AppRole, RoleConfig> = {
       "Manage secure system settings, accounts, and organization data.",
     navigation: [
       { href: "/admin", label: "Admin workspace", icon: "LayoutDashboard" },
+      { href: "/admin/profile-change-requests", label: "Profile change requests", icon: "ContactRound" },
       { href: "/admin/users", label: "Users", icon: "Users" },
       { href: "/admin/roles", label: "Roles", icon: "ShieldCheck" },
       { href: "/admin/departments", label: "Departments", icon: "Building2" },
@@ -73,6 +74,7 @@ export const ROLE_CONFIG: Record<AppRole, RoleConfig> = {
         label: "Employee workspace",
         icon: "LayoutDashboard",
       },
+      { href: "/employee/profile", label: "My profile", icon: "ContactRound" },
     ],
   },
   management: {
