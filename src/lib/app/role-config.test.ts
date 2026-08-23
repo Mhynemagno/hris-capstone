@@ -24,7 +24,15 @@ describe("role configuration", () => {
         { href: "/hr/leave-requests", label: "Leave requests" },
         { href: "/hr/deployments", label: "Deployments" },
         { href: "/hr/promotions", label: "Promotions" },
+        { href: "/hr/attendance", label: "Attendance" },
       ],
     });
+  });
+
+  it("exposes attendance only to its intended operational roles", () => {
+    expect(getRoleConfig("hr_personnel").navigation).toContainEqual({ href: "/hr/attendance", label: "Attendance", icon: "BriefcaseBusiness" });
+    expect(getRoleConfig("employee").navigation).toContainEqual({ href: "/employee/attendance", label: "Attendance", icon: "BriefcaseBusiness" });
+    expect(getRoleConfig("system_administrator").navigation).toContainEqual({ href: "/admin/integrations/attendance", label: "Attendance integration", icon: "Settings" });
+    expect(getRoleConfig("management").navigation.some((item) => item.href.includes("attendance"))).toBe(false);
   });
 });

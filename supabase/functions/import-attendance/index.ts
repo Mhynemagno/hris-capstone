@@ -25,11 +25,13 @@ export function createImportAttendanceHandler({ createClient: makeClient = creat
     const form = await request.formData().catch(() => null);
     const file = form?.get("file");
     if (!(file instanceof File)) return json(400, { error: "A CSV or XLSX attendance file is required." });
+    let importId: string | null = null;
     try {
       const bytes = await file.arrayBuffer();
       const hash = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))).map((value) => value.toString(16).padStart(2, "0")).join("");
       const parsed = await adapter.parse(file, { timezone: "Asia/Ulaanbaatar", templateVersion: "v1" });
-      const { data: importId, error: importError } = await client.rpc("create_attendance_import", { target_filename: file.name, target_mime_type: file.type, target_checksum: hash });
+      const { data, error: importError } = await client.rpc("create_attendance_import", { target_filename: file.name, target_mime_type: file.type, target_checksum: hash });
+      importId = data as string | null;
       if (importError || !importId) throw importError ?? new Error("Attendance import could not be created.");
       const counts = { acceptedCount: 0, duplicateCount: 0, unmatchedCount: 0 };
       for (const event of parsed.events) {
@@ -39,10 +41,14 @@ export function createImportAttendanceHandler({ createClient: makeClient = creat
         if (outcome === "duplicate") counts.duplicateCount += 1;
         if (outcome === "unmatched") counts.unmatchedCount += 1;
       }
-      return json(200, { importId, ...counts, invalidCount: 0, status: counts.unmatchedCount ? "completed_with_issues" : "completed" });
+      const invalidCount = 0;
+      const { error: completionError } = await client.rpc("complete_attendance_import", { target_import_id: importId, target_duplicate_count: counts.duplicateCount, target_invalid_count: invalidCount });
+      if (completionError) throw completionError;
+      return json(200, { importId, ...counts, invalidCount, status: counts.unmatchedCount ? "completed_with_issues" : "completed" });
     } catch (error) {
       console.error("attendance_import_failed", error instanceof Error ? error.message : "unknown");
-      return json(400, { error: "Attendance file could not be imported." });
+      if (importId) await client.rpc("fail_attendance_import", { target_import_id: importId, target_error_summary: "Attendance processing failed." });
+      return json(importId ? 500 : 400, { error: importId ? "Attendance import failed. Please try again." : "Attendance file could not be imported." });
     }
   };
 }

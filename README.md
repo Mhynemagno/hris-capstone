@@ -78,3 +78,30 @@ npx supabase@latest test db --linked supabase/tests/auth_rbac_foundation.test.sq
 The `private-documents` Storage bucket is private. RLS governs all application tables and Storage objects, so browser code must use the public publishable key only. Keep `service_role` and all other secret keys out of browser code, `NEXT_PUBLIC_*` variables, and Git.
 
 After an initial administrator signs up through Supabase Auth, use the Supabase dashboard Table Editor to change that user’s one `user_roles.role` value from `applicant` to `system_administrator`. Do this once, confirm the matching `audit_logs` entry, and use the later administration workflow for all subsequent role changes. Do not store the administrator’s email or a bootstrap SQL command in the repository.
+
+## Attendance CSV/XLSX import
+
+HR Personnel can import a CSV or XLSX file at `/hr/attendance/import`. The first worksheet (or CSV) must contain these exact columns in order:
+
+```text
+external_employee_id,source_event_id,attendance_date,time_in,time_out,event_type
+```
+
+Use only a stable vendor/device employee ID in `external_employee_id`; the HRIS never matches a person by name. `event_type` is either `attendance` (requires `time_in`) or `absence` (both time values blank). Missing rows never mean an absence. Files are limited to 2 MiB and 5,000 data rows.
+
+```csv
+external_employee_id,source_event_id,attendance_date,time_in,time_out,event_type
+DEV-001,EVT-001,2026-08-24,08:16,17:00,attendance
+DEV-002,EVT-002,2026-08-24,,,absence
+UNKNOWN-003,EVT-003,2026-08-24,08:00,17:00,attendance
+```
+
+Deploy the authenticated function after applying migrations:
+
+```bash
+npx supabase@latest functions deploy import-attendance --no-verify-jwt=false
+```
+
+The function uses the caller’s JWT and the project URL plus publishable/anon key supplied by the Supabase runtime. Do not configure a service-role key or any biometric vendor credential in browser variables. Never upload or persist fingerprint templates, face images, raw biometric payloads, or vendor credentials.
+
+When a biometric vendor is selected later, replace or extend the CSV/XLSX adapter only after receiving its API/webhook documentation, test credentials, stable employee identifier, and idempotent event-ID semantics. Preserve the normalized-event contract and its tests before enabling production sync.

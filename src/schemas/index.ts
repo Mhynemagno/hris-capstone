@@ -166,3 +166,17 @@ export type {
   LeaveTypeInput,
   LeaveTypeUpdateInput,
 } from "./leave-management";
+export {
+  attendanceEventTypeSchema,
+  attendanceFiltersSchema,
+  attendanceImportFileSchema,
+  attendanceMappingSchema,
+  attendanceSettingsSchema,
+  attendanceStatusSchema,
+} from "./attendance-integration";
+export type {
+  AttendanceFilters,
+  AttendanceMappingInput,
+  AttendanceSettingsInput,
+  AttendanceStatus,
+} from "./attendance-integration";

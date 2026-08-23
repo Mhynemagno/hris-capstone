@@ -184,11 +184,42 @@ begin
 end;
 $$;
 
+create or replace function private.complete_attendance_import(target_import_id uuid, target_duplicate_count integer, target_invalid_count integer)
+returns void language plpgsql security definer set search_path = '' as $$
+declare caller_id uuid := private.require_active_hr();
+begin
+  if target_duplicate_count < 0 or target_invalid_count < 0 then raise exception 'Attendance import counts cannot be negative.' using errcode = '22023'; end if;
+  update public.attendance_imports
+  set duplicate_count = target_duplicate_count,
+      invalid_count = target_invalid_count,
+      status = case when unmatched_count > 0 or target_invalid_count > 0 then 'completed_with_issues' else 'completed' end,
+      completed_at = now()
+  where id = target_import_id and imported_by_user_id is not null;
+  if not found then raise exception 'Attendance import was not found.' using errcode = 'P0001'; end if;
+  insert into public.audit_logs (actor_user_id, entity_type, entity_id, action, metadata)
+  values (caller_id, 'attendance_imports', target_import_id::text, 'completed', jsonb_build_object('duplicate_count', target_duplicate_count, 'invalid_count', target_invalid_count));
+end;
+$$;
+
+create or replace function private.fail_attendance_import(target_import_id uuid, target_error_summary text)
+returns void language plpgsql security definer set search_path = '' as $$
+declare caller_id uuid := private.require_active_hr();
+begin
+  update public.attendance_imports set status = 'failed', error_summary = left(btrim(target_error_summary), 2000), completed_at = now() where id = target_import_id;
+  if found then
+    insert into public.audit_logs (actor_user_id, entity_type, entity_id, action, metadata)
+    values (caller_id, 'attendance_imports', target_import_id::text, 'failed', '{}'::jsonb);
+  end if;
+end;
+$$;
+
 create or replace function public.create_attendance_import(target_filename text, target_mime_type text, target_checksum text) returns uuid language plpgsql security definer set search_path = '' as $$ begin return private.create_attendance_import(target_filename, target_mime_type, target_checksum); end; $$;
 create or replace function public.process_attendance_event(target_import_id uuid, target_external_employee_id text, target_source_event_id text, target_attendance_date date, target_time_in timestamptz, target_time_out timestamptz, target_event_type text, target_metadata jsonb) returns text language plpgsql security definer set search_path = '' as $$ begin return private.process_attendance_event(target_import_id, target_external_employee_id, target_source_event_id, target_attendance_date, target_time_in, target_time_out, target_event_type, target_metadata); end; $$;
 create or replace function public.resolve_attendance_unmatched_event(target_unmatched_event_id uuid, target_employee_id uuid) returns uuid language plpgsql security definer set search_path = '' as $$ begin return private.resolve_attendance_unmatched_event(target_unmatched_event_id, target_employee_id); end; $$;
 create or replace function public.update_attendance_integration_settings(target_template_version text, target_workday_start time, target_late_grace_minutes integer, target_timezone text, target_enabled boolean) returns void language plpgsql security definer set search_path = '' as $$ begin perform private.update_attendance_integration_settings(target_template_version, target_workday_start, target_late_grace_minutes, target_timezone, target_enabled); end; $$;
+create or replace function public.complete_attendance_import(target_import_id uuid, target_duplicate_count integer, target_invalid_count integer) returns void language plpgsql security definer set search_path = '' as $$ begin perform private.complete_attendance_import(target_import_id, target_duplicate_count, target_invalid_count); end; $$;
+create or replace function public.fail_attendance_import(target_import_id uuid, target_error_summary text) returns void language plpgsql security definer set search_path = '' as $$ begin perform private.fail_attendance_import(target_import_id, target_error_summary); end; $$;
 
-revoke all on function private.require_attendance_admin(), private.create_attendance_import(text, text, text), private.process_attendance_event(uuid, text, text, date, timestamptz, timestamptz, text, jsonb), private.resolve_attendance_unmatched_event(uuid, uuid), private.update_attendance_integration_settings(text, time, integer, text, boolean) from public, anon, authenticated;
-revoke all on function public.create_attendance_import(text, text, text), public.process_attendance_event(uuid, text, text, date, timestamptz, timestamptz, text, jsonb), public.resolve_attendance_unmatched_event(uuid, uuid), public.update_attendance_integration_settings(text, time, integer, text, boolean) from public, anon;
-grant execute on function public.create_attendance_import(text, text, text), public.process_attendance_event(uuid, text, text, date, timestamptz, timestamptz, text, jsonb), public.resolve_attendance_unmatched_event(uuid, uuid), public.update_attendance_integration_settings(text, time, integer, text, boolean) to authenticated;
+revoke all on function private.require_attendance_admin(), private.create_attendance_import(text, text, text), private.process_attendance_event(uuid, text, text, date, timestamptz, timestamptz, text, jsonb), private.resolve_attendance_unmatched_event(uuid, uuid), private.update_attendance_integration_settings(text, time, integer, text, boolean), private.complete_attendance_import(uuid, integer, integer), private.fail_attendance_import(uuid, text) from public, anon, authenticated;
+revoke all on function public.create_attendance_import(text, text, text), public.process_attendance_event(uuid, text, text, date, timestamptz, timestamptz, text, jsonb), public.resolve_attendance_unmatched_event(uuid, uuid), public.update_attendance_integration_settings(text, time, integer, text, boolean), public.complete_attendance_import(uuid, integer, integer), public.fail_attendance_import(uuid, text) from public, anon;
+grant execute on function public.create_attendance_import(text, text, text), public.process_attendance_event(uuid, text, text, date, timestamptz, timestamptz, text, jsonb), public.resolve_attendance_unmatched_event(uuid, uuid), public.update_attendance_integration_settings(text, time, integer, text, boolean), public.complete_attendance_import(uuid, integer, integer), public.fail_attendance_import(uuid, text) to authenticated;

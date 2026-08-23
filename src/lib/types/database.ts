@@ -425,3 +425,75 @@ export type EmployeePromotionEligibilitySummary = {
   is_ready: boolean;
   missing_requirements: string[];
 };
+
+export type AttendanceStatus = "present" | "late" | "absent" | "incomplete";
+
+export type AttendanceIntegrationSettings = {
+  id: string;
+  adapter_key: "csv_xlsx";
+  timezone: "Asia/Ulaanbaatar";
+  workday_start: string;
+  late_grace_minutes: number;
+  template_version: string;
+  is_enabled: boolean;
+  updated_by_user_id: string | null;
+  updated_at: string;
+};
+
+export type AttendanceIdentityMapping = {
+  id: string;
+  employee_id: string;
+  external_employee_id: string;
+  created_by_user_id: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AttendanceImport = {
+  id: string;
+  source_filename: string;
+  mime_type: "text/csv" | "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+  checksum_sha256: string;
+  adapter_key: "csv_xlsx";
+  status: "processing" | "completed" | "completed_with_issues" | "failed";
+  accepted_count: number;
+  duplicate_count: number;
+  unmatched_count: number;
+  invalid_count: number;
+  error_summary: string | null;
+  imported_by_user_id: string;
+  created_at: string;
+  completed_at: string | null;
+};
+
+export type AttendanceLog = {
+  id: string;
+  employee_id: string;
+  integration_id: string;
+  source_event_id: string;
+  external_employee_id: string;
+  attendance_date: string;
+  time_in: string | null;
+  time_out: string | null;
+  status: AttendanceStatus;
+  import_id: string;
+  sync_metadata: Record<string, unknown>;
+  created_at: string;
+};
+
+export type AttendanceUnmatchedEvent = {
+  id: string;
+  integration_id: string;
+  source_event_id: string;
+  external_employee_id: string;
+  attendance_date: string;
+  time_in: string | null;
+  time_out: string | null;
+  event_type: "attendance" | "absence";
+  import_id: string;
+  sync_metadata: Record<string, unknown>;
+  resolved_by_user_id: string | null;
+  resolved_at: string | null;
+  resolved_log_id: string | null;
+  created_at: string;
+};
