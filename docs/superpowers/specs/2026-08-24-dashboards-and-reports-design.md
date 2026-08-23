@@ -1,6 +1,6 @@
 # Dashboards and reports design
 
-**Branch:** `feat/15-dashboards-and-reports`  
+**Branch:** `feat/15-dashboards-and-reports`
 **Goal:** Deliver live, role-appropriate HR and Management analytics plus filtered, exportable reports without granting Management direct access to operational data.
 
 ## Decisions
