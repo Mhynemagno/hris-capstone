@@ -70,6 +70,7 @@ export const leaveDecisionSchema = z.object({
 });
 
 export const leaveRequestFiltersSchema = paginationSchema.extend({
+  pageSize: z.coerce.number().int().positive().transform((value) => Math.min(value, 100)).default(25),
   status: leaveStatusSchema.optional(),
   leaveTypeId: uuidSchema.optional(),
   search: z.string().trim().max(200).transform((value) => value || undefined).optional(),
