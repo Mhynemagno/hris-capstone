@@ -36,7 +36,7 @@ Employee logs and mapping records are retained. Corrections create an audited re
 
 ## Import boundary and data flow
 
-The browser submits a small CSV/XLSX file to the JWT-protected `import-attendance` Edge Function. The function verifies the calling user and `hr_personnel` role with the caller token before it creates a privileged database client. It limits content type, size, rows, columns, and string lengths, and uses a pinned XLSX parser version for workbook handling.
+The browser submits a small CSV/XLSX file to the JWT-protected `import-attendance` Edge Function. The function verifies the calling user and `hr_personnel` role with the caller token, then uses that same token for every attendance RPC so database authorization remains enforceable. It limits content type, size, rows, columns, and string lengths, and uses a pinned XLSX parser version for workbook handling.
 
 `CsvXlsxAttendanceAdapter` validates required template columns: `external_employee_id`, `source_event_id`, `attendance_date`, `time_in`, `time_out`, and `event_type`. It normalizes identifiers, parses timestamps in the configured timezone, and emits only a `NormalizedAttendanceEvent`. `event_type` must be `attendance` or `absence`; an absence has no times, while an attendance event has a time-in and optional time-out. The adapter never accepts a name as an identity field.
 
