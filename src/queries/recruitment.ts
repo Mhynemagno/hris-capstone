@@ -178,15 +178,12 @@ export async function saveJobOpening(input: JobOpeningInput, jobId?: number) {
 export async function listHrApplications(input: Partial<ApplicationFilters> = {}) {
   const filters = applicationFiltersSchema.parse(input);
   const { from, to } = pageRange(filters.page, filters.pageSize);
-  let query = createBrowserSupabaseClient()
-    .from("applications")
-    .select("*, applicants(*), job_openings(id, title, location)", { count: "exact" })
-    .order("created_at", { ascending: true });
-  if (filters.status) query = query.eq("status", filters.status);
-  if (filters.jobId) query = query.eq("job_opening_id", filters.jobId);
-  const { data, error, count } = await query.range(from, to);
+  const { data, error } = await createBrowserSupabaseClient()
+    .rpc("list_hr_application_shortlist", { target_application_status: filters.status ?? null, target_ai_status: null, minimum_score: null })
+    .range(from, to);
   throwIfError(error);
-  return { rows: (data ?? []) as Application[], count: count ?? 0, filters } satisfies PaginatedResult<Application, ApplicationFilters>;
+  const rows = (data ?? []).map((row: { application_id: string; applicant_id: string; job_opening_id: number; application_status: Application["status"]; submitted_at: string }) => ({ id: row.application_id, applicant_id: row.applicant_id, job_opening_id: row.job_opening_id, status: row.application_status, submitted_at: row.submitted_at })) as Application[];
+  return { rows, count: rows.length, filters } satisfies PaginatedResult<Application, ApplicationFilters>;
 }
 
 export async function transitionApplicationStatus(input: ApplicationStatusTransitionInput) {
