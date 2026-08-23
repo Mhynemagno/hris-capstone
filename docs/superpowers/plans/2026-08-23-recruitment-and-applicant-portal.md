@@ -137,7 +137,7 @@ select extensions.throws_ok(
 
 - [ ] **Step 2: Run SQL tests to verify failure**
 
-Run: npx supabase@latest test db --local --file supabase/tests/recruitment_and_applicant_portal.test.sql
+Run: npx supabase@latest test db --local supabase/tests/recruitment_and_applicant_portal.test.sql
 
 Expected: FAIL; migration is absent.
 
@@ -193,7 +193,7 @@ Run:
 
 ~~~bash
 npx supabase@latest db reset --local
-npx supabase@latest test db --local --file supabase/tests/recruitment_and_applicant_portal.test.sql
+npx supabase@latest test db --local supabase/tests/recruitment_and_applicant_portal.test.sql
 npx supabase@latest db lint --local
 ~~~
 
@@ -493,7 +493,7 @@ git commit -m "feat: surface employee activation requests"
 ~~~bash
 npm run test:run -- src/schemas/recruitment.test.ts src/queries/recruitment.test.ts src/hooks/use-recruitment.test.tsx src/components/recruitment src/schemas/administration.test.ts src/queries/administration.test.ts src/hooks/use-administration.test.tsx src/components/administration/administration-workspaces.test.tsx
 npx supabase@latest db reset --local
-npx supabase@latest test db --local --file supabase/tests/recruitment_and_applicant_portal.test.sql
+npx supabase@latest test db --local supabase/tests/recruitment_and_applicant_portal.test.sql
 ~~~
 
 Expected: PASS.
