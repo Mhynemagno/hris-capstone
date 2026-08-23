@@ -1,0 +1,2 @@
+import { HrDeploymentDirectory } from "@/components/deployment-tracking/hr-deployment-directory";
+export default function HrDeploymentsPage() { return <section className="space-y-4"><div><p className="text-sm font-medium text-primary">Personnel deployments</p><h1 className="text-3xl font-semibold">Deployments</h1><p className="mt-2 text-muted-foreground">Create and maintain personnel assignments without losing their history.</p></div><HrDeploymentDirectory /></section>; }

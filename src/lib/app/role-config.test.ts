@@ -22,6 +22,7 @@ describe("role configuration", () => {
         { href: "/hr/jobs", label: "Job openings" },
         { href: "/hr/applications", label: "Applications" },
         { href: "/hr/leave-requests", label: "Leave requests" },
+        { href: "/hr/deployments", label: "Deployments" },
       ],
     });
   });

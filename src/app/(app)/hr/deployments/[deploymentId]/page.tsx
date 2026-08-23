@@ -1,0 +1,2 @@
+import { HrDeploymentEditor } from "@/components/deployment-tracking/hr-deployment-editor";
+export default async function DeploymentDetailPage({ params }: { params: Promise<{ deploymentId: string }> }) { const { deploymentId } = await params; return <section className="space-y-4"><h1 className="text-3xl font-semibold">Deployment details</h1><HrDeploymentEditor deploymentId={deploymentId} /></section>; }
