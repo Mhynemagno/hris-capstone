@@ -114,8 +114,14 @@ select extensions.lives_ok(
   $$insert into public.departments (name) values ('Administrator Department')$$,
   'System Administrator can create a department'
 );
-select extensions.lives_ok(
-  $$update public.user_roles set role = 'employee'::public.app_role where user_id = '00000000-0000-0000-0000-000000000003'::uuid$$,
+select public.update_managed_user(
+  '00000000-0000-0000-0000-000000000003'::uuid,
+  'employee'::public.app_role,
+  true
+);
+select extensions.is(
+  (select role::text from public.user_roles where user_id = '00000000-0000-0000-0000-000000000003'::uuid),
+  'employee',
   'System Administrator can change a role'
 );
 select extensions.is(

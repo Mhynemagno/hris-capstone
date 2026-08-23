@@ -14,7 +14,7 @@ vi.mock("@/lib/supabase/client", () => ({
   }),
 }));
 
-import { decideProfileChangeRequest, submitProfileChangeRequest } from "./profile-change-requests";
+import { cancelProfileChangeRequest, decideProfileChangeRequest, getProfileChangeDocumentUrl, submitProfileChangeRequest } from "./profile-change-requests";
 
 describe("profile change request queries", () => {
   beforeEach(() => vi.resetAllMocks());
@@ -36,5 +36,19 @@ describe("profile change request queries", () => {
     mocks.rpc.mockResolvedValue({ error: null });
     await decideProfileChangeRequest({ requestId, decision: "approved" });
     expect(mocks.rpc).toHaveBeenCalledWith("decide_profile_change_request", { target_request_id: requestId, requested_decision: "approved", requested_reason: null });
+  });
+
+  it("cancels through the protected cancellation RPC", async () => {
+    mocks.rpc.mockResolvedValue({ error: null });
+    await cancelProfileChangeRequest({ requestId });
+    expect(mocks.rpc).toHaveBeenCalledWith("cancel_profile_change_request", { target_request_id: requestId });
+  });
+
+  it("creates a short-lived URL only for a profile-change evidence path", async () => {
+    const createSignedUrl = vi.fn().mockResolvedValue({ data: { signedUrl: "https://example.test/private" }, error: null });
+    mocks.storageFrom.mockReturnValue({ createSignedUrl });
+    await expect(getProfileChangeDocumentUrl(`profile-change-requests/${userId}/${requestId}/123e4567-e89b-42d3-a456-426614174002.pdf`)).resolves.toBe("https://example.test/private");
+    expect(createSignedUrl).toHaveBeenCalledWith(expect.stringContaining(`/${requestId}/`), 60);
+    await expect(getProfileChangeDocumentUrl("not-a-request-document.pdf")).rejects.toThrow("Invalid profile-change request document path");
   });
 });

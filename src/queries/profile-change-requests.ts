@@ -27,6 +27,16 @@ export async function getProfileChangeRequest(requestId: string) {
   throwIfError(error); return data;
 }
 
+export async function getProfileChangeDocumentUrl(objectPath: string) {
+  if (!/^profile-change-requests\/[0-9a-f-]{36}\/[0-9a-f-]{36}\/[0-9a-f-]{36}\.(pdf|png|jpe?g|webp)$/i.test(objectPath)) {
+    throw new Error("Invalid profile-change request document path.");
+  }
+  const { data, error } = await createBrowserSupabaseClient().storage.from("private-documents").createSignedUrl(objectPath, 60);
+  throwIfError(error);
+  if (!data?.signedUrl) throw new Error("Unable to open the supporting document.");
+  return data.signedUrl;
+}
+
 const extensionFor = (file: File) => ({ "application/pdf": "pdf", "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" }[file.type] ?? "");
 
 export async function submitProfileChangeRequest(draftWithRequestId: { requestId: string; note?: string; changes: unknown[] }, files: File[]) {

@@ -34,6 +34,8 @@ export const queryKeys = {
       ["profile-change-requests", "mine", filters] as const,
     detail: (requestId: string) =>
       ["profile-change-requests", "detail", requestId] as const,
+    document: (objectPath: string) =>
+      ["profile-change-requests", "document", objectPath] as const,
     adminQueue: (filters: Record<string, unknown>) =>
       ["profile-change-requests", "admin-queue", filters] as const,
   },
