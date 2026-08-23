@@ -72,4 +72,11 @@ export const queryKeys = {
     hrEmployee: (employeeId: string) => ["promotion-eligibility", "hr-employee", employeeId] as const,
     mine: () => ["promotion-eligibility", "mine"] as const,
   },
+  attendanceIntegration: {
+    hrLogs: (filters: Record<string, unknown>) => ["attendance-integration", "hr-logs", filters] as const,
+    mine: (filters: Record<string, unknown>) => ["attendance-integration", "mine", filters] as const,
+    imports: (filters: Record<string, unknown>) => ["attendance-integration", "imports", filters] as const,
+    unmatched: (filters: Record<string, unknown>) => ["attendance-integration", "unmatched", filters] as const,
+    settings: () => ["attendance-integration", "settings"] as const,
+  },
 };

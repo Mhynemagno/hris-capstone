@@ -100,4 +100,12 @@ describe("queryKeys", () => {
     ]);
     expect(promotionEligibility.promotionEligibility.mine()).toEqual(["promotion-eligibility", "mine"]);
   });
+
+  it("keeps attendance history, operations, and settings caches distinct", () => {
+    const filters = { page: 1, pageSize: 25 };
+    const attendance = queryKeys as typeof queryKeys & { attendanceIntegration: { hrLogs: (filters: Record<string, unknown>) => readonly unknown[]; mine: (filters: Record<string, unknown>) => readonly unknown[]; imports: (filters: Record<string, unknown>) => readonly unknown[]; unmatched: (filters: Record<string, unknown>) => readonly unknown[]; settings: () => readonly unknown[]; }; };
+    const keys = [attendance.attendanceIntegration.hrLogs(filters), attendance.attendanceIntegration.mine(filters), attendance.attendanceIntegration.imports(filters), attendance.attendanceIntegration.unmatched(filters), attendance.attendanceIntegration.settings()];
+    expect(new Set(keys.map((key) => JSON.stringify(key))).size).toBe(5);
+    expect(attendance.attendanceIntegration.hrLogs(filters)).toEqual(["attendance-integration", "hr-logs", filters]);
+  });
 });

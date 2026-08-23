@@ -31,6 +31,7 @@ export const ROLE_CONFIG: Record<AppRole, RoleConfig> = {
       { href: "/admin/departments", label: "Departments", icon: "Building2" },
       { href: "/admin/positions", label: "Positions", icon: "BriefcaseBusiness" },
       { href: "/admin/settings", label: "Settings", icon: "Settings" },
+      { href: "/admin/integrations/attendance", label: "Attendance integration", icon: "Settings" },
       { href: "/admin/audit-logs", label: "Audit logs", icon: "ScrollText" },
     ],
   },
@@ -49,6 +50,7 @@ export const ROLE_CONFIG: Record<AppRole, RoleConfig> = {
       { href: "/hr/leave-requests", label: "Leave requests", icon: "BriefcaseBusiness" },
       { href: "/hr/deployments", label: "Deployments", icon: "BriefcaseBusiness" },
       { href: "/hr/promotions", label: "Promotions", icon: "BriefcaseBusiness" },
+      { href: "/hr/attendance", label: "Attendance", icon: "BriefcaseBusiness" },
     ],
   },
   applicant: {
@@ -86,6 +88,7 @@ export const ROLE_CONFIG: Record<AppRole, RoleConfig> = {
       { href: "/employee/leave", label: "Leave", icon: "BriefcaseBusiness" },
       { href: "/employee/deployments", label: "Deployments", icon: "BriefcaseBusiness" },
       { href: "/employee/promotion-eligibility", label: "Promotion eligibility", icon: "BriefcaseBusiness" },
+      { href: "/employee/attendance", label: "Attendance", icon: "BriefcaseBusiness" },
     ],
   },
   management: {

@@ -1,0 +1,9 @@
+"use client";
+
+import Link from "next/link";
+import { ErrorState } from "@/components/ui/error-state";
+import { LoadingState } from "@/components/ui/loading-state";
+import { useHrAttendanceLogs } from "@/hooks/use-attendance-integration";
+import { AttendanceStatusBadge } from "./attendance-status-badge";
+
+export function HrAttendanceDirectory() { const query = useHrAttendanceLogs({ page: 1, pageSize: 25 }); if (query.isLoading) return <LoadingState label="Loading attendance history…" />; if (query.error) return <ErrorState message={query.error.message} />; const rows = query.data?.rows ?? []; return <section className="space-y-4"><div className="flex flex-wrap justify-end gap-2"><Link className="rounded-lg border px-4 py-2 text-sm font-medium" href="/hr/attendance/unmatched">Unmatched IDs</Link><Link className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground" href="/hr/attendance/import">Import attendance</Link></div>{rows.length ? <div className="overflow-x-auto rounded-xl border"><table className="w-full min-w-[680px] text-sm"><thead className="bg-muted"><tr><th className="p-3 text-left">Date</th><th className="p-3 text-left">External ID</th><th className="p-3 text-left">Time in</th><th className="p-3 text-left">Time out</th><th className="p-3 text-left">Status</th></tr></thead><tbody>{rows.map((row) => <tr className="border-t" key={row.id}><td className="p-3">{row.attendance_date}</td><td className="p-3">{row.external_employee_id}</td><td className="p-3">{row.time_in?.slice(11, 16) ?? "—"}</td><td className="p-3">{row.time_out?.slice(11, 16) ?? "—"}</td><td className="p-3"><AttendanceStatusBadge status={row.status} /></td></tr>)}</tbody></table></div> : <p className="rounded-xl border p-4 text-sm text-muted-foreground">No attendance records found.</p>}</section>; }
