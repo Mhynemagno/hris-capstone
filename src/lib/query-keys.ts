@@ -54,4 +54,11 @@ export const queryKeys = {
       ["recruitment", "applications", filters] as const,
     aiScores: (applicationId: string) => ["recruitment", "ai-scores", applicationId] as const,
   },
+  leaveManagement: {
+    types: () => ["leave-management", "types"] as const,
+    mine: (filters: Record<string, unknown>) => ["leave-management", "mine", filters] as const,
+    request: (requestId: string) => ["leave-management", "request", requestId] as const,
+    hrQueue: (filters: Record<string, unknown>) => ["leave-management", "hr-queue", filters] as const,
+    attachment: (objectPath: string) => ["leave-management", "attachment", objectPath] as const,
+  },
 };

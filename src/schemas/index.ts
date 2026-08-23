@@ -107,3 +107,24 @@ export type {
   OrganizationSettingsInput,
   PositionInput,
 } from "./administration";
+export {
+  leaveAttachmentSchema,
+  leaveCancellationSchema,
+  leaveDecisionSchema,
+  leaveRequestDraftSchema,
+  leaveRequestFiltersSchema,
+  leaveRequestSubmissionSchema,
+  leaveTypeSchema,
+  leaveTypeUpdateSchema,
+} from "./leave-management";
+export type {
+  LeaveAttachmentInput,
+  LeaveCancellationInput,
+  LeaveDecisionInput,
+  LeaveRequestDraftInput,
+  LeaveRequestFilters,
+  LeaveRequestStatus,
+  LeaveRequestSubmissionInput,
+  LeaveTypeInput,
+  LeaveTypeUpdateInput,
+} from "./leave-management";
