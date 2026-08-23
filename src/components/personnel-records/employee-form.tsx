@@ -6,16 +6,17 @@ import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
-import type { Employee } from "@/lib/types/database";
+import type { Employee, UnlinkedEmployeeAccount } from "@/lib/types/database";
 import { employeeSchema, type EmployeeInput } from "@/schemas/personnel-records";
 
 type EmployeeFormProps = {
   employee?: Employee;
+  account?: UnlinkedEmployeeAccount;
   onSaved: (input: EmployeeInput) => void | Promise<void>;
   pending?: boolean;
 };
 
-export function EmployeeForm({ employee, onSaved, pending = false }: EmployeeFormProps) {
+export function EmployeeForm({ employee, account, onSaved, pending = false }: EmployeeFormProps) {
   const [error, setError] = useState<string | null>(null);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -34,10 +35,11 @@ export function EmployeeForm({ employee, onSaved, pending = false }: EmployeeFor
   }
 
   return <form className="grid gap-4 sm:grid-cols-2" noValidate onSubmit={submit}>
+    {account ? <input name="profileId" type="hidden" value={account.profile_id} /> : null}
     <FormField htmlFor="employee-number" label="Employee number"><Input className="h-11" defaultValue={employee?.employee_number} id="employee-number" name="employeeNumber" placeholder="EMP-0001" required /></FormField>
-    <FormField htmlFor="personal-email" label="Personal email"><Input className="h-11" defaultValue={employee?.personal_email} id="personal-email" name="personalEmail" type="email" required /></FormField>
-    <FormField htmlFor="first-name" label="First name"><Input className="h-11" defaultValue={employee?.first_name} id="first-name" name="firstName" required /></FormField>
-    <FormField htmlFor="last-name" label="Last name"><Input className="h-11" defaultValue={employee?.last_name} id="last-name" name="lastName" required /></FormField>
+    <FormField htmlFor="personal-email" label="Personal email"><Input className="h-11" defaultValue={employee?.personal_email ?? account?.email ?? ""} id="personal-email" name="personalEmail" type="email" required /></FormField>
+    <FormField htmlFor="first-name" label="First name"><Input className="h-11" defaultValue={employee?.first_name ?? account?.first_name ?? ""} id="first-name" name="firstName" required /></FormField>
+    <FormField htmlFor="last-name" label="Last name"><Input className="h-11" defaultValue={employee?.last_name ?? account?.last_name ?? ""} id="last-name" name="lastName" required /></FormField>
     <FormField htmlFor="phone" label="Phone"><Input className="h-11" defaultValue={employee?.phone ?? ""} id="phone" name="phone" /></FormField>
     <FormField htmlFor="employment-status" label="Employment status"><select className="h-11 w-full rounded-lg border border-input bg-background px-3 text-sm" defaultValue={employee?.employment_status ?? "active"} id="employment-status" name="employmentStatus"><option value="active">Active</option><option value="on_leave">On leave</option><option value="inactive">Inactive</option><option value="separated">Separated</option></select></FormField>
     <FormField htmlFor="employment-started-on" label="Employment start date"><Input className="h-11" defaultValue={employee?.employment_started_on} id="employment-started-on" name="employmentStartedOn" type="date" required /></FormField>
