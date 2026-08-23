@@ -271,3 +271,54 @@ export type EmployeeActivationRequest = {
   activated_at: string | null;
   created_at: string;
 };
+
+export type LeaveType = {
+  id: string;
+  name: string;
+  description: string | null;
+  requires_attachment: boolean;
+  is_active: boolean;
+  created_by_user_id: string;
+  updated_by_user_id: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type LeaveRequestStatus = "pending" | "approved" | "rejected" | "cancelled";
+
+export type LeaveRequest = {
+  id: string;
+  employee_id: string;
+  submitted_by_user_id: string;
+  leave_type_id: string;
+  leave_type_name: string;
+  starts_on: string;
+  ends_on: string;
+  reason: string;
+  status: LeaveRequestStatus;
+  decision_note: string | null;
+  decided_by_user_id: string | null;
+  decided_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type LeaveRequestAttachment = {
+  id: string;
+  request_id: string;
+  object_path: string;
+  file_name: string;
+  mime_type: "application/pdf" | "image/png" | "image/jpeg" | "image/webp";
+  size_bytes: number;
+  uploaded_by_user_id: string;
+  created_at: string;
+};
+
+export type LeaveRequestHistory = {
+  id: number;
+  request_id: string;
+  actor_user_id: string | null;
+  event_type: LeaveRequestStatus;
+  metadata: Record<string, unknown>;
+  created_at: string;
+};

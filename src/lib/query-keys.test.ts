@@ -36,4 +36,26 @@ describe("queryKeys", () => {
       { page: 1, pageSize: 20, status: "Submitted" },
     ]);
   });
+
+  it("scopes leave data by audience, request, and filters", () => {
+    const leaveManagement = queryKeys as typeof queryKeys & {
+      leaveManagement: {
+        types: () => readonly unknown[];
+        mine: (filters: Record<string, unknown>) => readonly unknown[];
+        request: (requestId: string) => readonly unknown[];
+        hrQueue: (filters: Record<string, unknown>) => readonly unknown[];
+      };
+    };
+
+    expect(leaveManagement.leaveManagement.types()).toEqual(["leave-management", "types"]);
+    expect(leaveManagement.leaveManagement.mine({ page: 1, pageSize: 20 })).toEqual([
+      "leave-management", "mine", { page: 1, pageSize: 20 },
+    ]);
+    expect(leaveManagement.leaveManagement.request("123e4567-e89b-42d3-a456-426614174000")).toEqual([
+      "leave-management", "request", "123e4567-e89b-42d3-a456-426614174000",
+    ]);
+    expect(leaveManagement.leaveManagement.hrQueue({ status: "pending" })).toEqual([
+      "leave-management", "hr-queue", { status: "pending" },
+    ]);
+  });
 });
