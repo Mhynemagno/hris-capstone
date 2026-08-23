@@ -51,6 +51,7 @@ export const ROLE_CONFIG: Record<AppRole, RoleConfig> = {
       { href: "/hr/deployments", label: "Deployments", icon: "BriefcaseBusiness" },
       { href: "/hr/promotions", label: "Promotions", icon: "BriefcaseBusiness" },
       { href: "/hr/attendance", label: "Attendance", icon: "BriefcaseBusiness" },
+      { href: "/reports", label: "Reports", icon: "ScrollText" },
     ],
   },
   applicant: {
@@ -104,6 +105,7 @@ export const ROLE_CONFIG: Record<AppRole, RoleConfig> = {
         label: "Management workspace",
         icon: "LayoutDashboard",
       },
+      { href: "/reports", label: "Reports", icon: "ScrollText" },
     ],
   },
 };

@@ -1,6 +1,10 @@
 import type { AppRole } from "@/lib/types/roles";
 
 export const queryKeys = {
+  reporting: {
+    dashboard: (role: "hr_personnel" | "management", filters: Record<string, unknown>) => ["reporting", "dashboard", role, filters] as const,
+    report: (role: "hr_personnel" | "management", filters: Record<string, unknown>) => ["reporting", "report", role, filters] as const,
+  },
   appShell: () => ["app-shell"] as const,
   roleLanding: (role: AppRole) => ["role-landing", role] as const,
   administration: {

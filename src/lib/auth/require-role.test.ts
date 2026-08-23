@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { APP_ROLES, type AppRole } from "@/lib/types/roles";
 
-import { requireRole } from "./require-role";
+import { requireAnyRole, requireRole } from "./require-role";
 
 const { getAuthenticatedUser, getCurrentRole, redirect } = vi.hoisted(() => ({
   getAuthenticatedUser: vi.fn(),
@@ -57,6 +57,13 @@ describe("requireRole", () => {
     await expect(requireRole("management")).rejects.toThrow(
       "NEXT_REDIRECT:/unauthorized",
     );
+  });
+
+  it("allows either eligible reporting role", async () => {
+    getAuthenticatedUser.mockResolvedValue({ id: "00000000-0000-4000-8000-000000000001", email: "management@example.com" });
+    getCurrentRole.mockResolvedValue("management");
+
+    await expect(requireAnyRole(["hr_personnel", "management"])).resolves.toMatchObject({ role: "management" });
   });
 
   it("redirects a missing role to unauthorized", async () => {
