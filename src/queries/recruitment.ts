@@ -2,6 +2,8 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import {
   applicantDocumentSchema,
   applicantProfileSchema,
+  applicationAnalysisRequestSchema,
+  applicationAiFiltersSchema,
   applicationFiltersSchema,
   applicationStatusTransitionSchema,
   applicationSubmissionSchema,
@@ -10,13 +12,15 @@ import {
   jobOpeningSchema,
   type ApplicationSubmissionInput,
   type ApplicantProfileInput,
+  type ApplicationAnalysisRequestInput,
+  type ApplicationAiFilters,
   type ApplicationFilters,
   type ApplicationStatusTransitionInput,
   type HiringDecisionInput,
   type JobFilters,
   type JobOpeningInput,
 } from "@/schemas/recruitment";
-import type { Applicant, Application, ApplicantDocument, ApplicationStatusHistory, JobOpening, JobQualificationCriterion, PaginatedResult } from "@/lib/types/database";
+import type { Applicant, Application, ApplicationAiScore, ApplicantDocument, ApplicationStatusHistory, HrShortlistApplication, JobOpening, JobQualificationCriterion, PaginatedResult } from "@/lib/types/database";
 
 type PendingApplicantDocument = {
   kind: "cv" | "credential";
@@ -173,18 +177,15 @@ export async function saveJobOpening(input: JobOpeningInput, jobId?: number) {
   return job;
 }
 
-export async function listHrApplications(input: Partial<ApplicationFilters> = {}) {
-  const filters = applicationFiltersSchema.parse(input);
+export async function listHrApplications(input: Partial<ApplicationAiFilters> = {}) {
+  const filters = applicationAiFiltersSchema.parse(input);
   const { from, to } = pageRange(filters.page, filters.pageSize);
-  let query = createBrowserSupabaseClient()
-    .from("applications")
-    .select("*, applicants(*), job_openings(id, title, location)", { count: "exact" })
-    .order("created_at", { ascending: true });
-  if (filters.status) query = query.eq("status", filters.status);
-  if (filters.jobId) query = query.eq("job_opening_id", filters.jobId);
-  const { data, error, count } = await query.range(from, to);
+  const { data, error } = await createBrowserSupabaseClient()
+    .rpc("list_hr_application_shortlist", { target_application_status: filters.status ?? null, target_ai_status: filters.aiStatus ?? null, minimum_score: filters.minimumScore ?? null })
+    .range(from, to);
   throwIfError(error);
-  return { rows: (data ?? []) as Application[], count: count ?? 0, filters } satisfies PaginatedResult<Application, ApplicationFilters>;
+  const rows = (data ?? []).map((row: { application_id: string; applicant_id: string; job_opening_id: number; application_status: Application["status"]; submitted_at: string; ai_score_id: string | null; ai_score_status: HrShortlistApplication["ai_score_status"] | null; ai_score: number | null; ai_explanation: string | null; ai_model: string | null }) => ({ id: row.application_id, applicant_id: row.applicant_id, job_opening_id: row.job_opening_id, status: row.application_status, submitted_at: row.submitted_at, ai_score_id: row.ai_score_id, ai_score_status: row.ai_score_status ?? "unscored", ai_score: row.ai_score, ai_explanation: row.ai_explanation, ai_model: row.ai_model })) as HrShortlistApplication[];
+  return { rows, count: rows.length, filters } satisfies PaginatedResult<HrShortlistApplication, ApplicationAiFilters>;
 }
 
 export async function transitionApplicationStatus(input: ApplicationStatusTransitionInput) {
@@ -195,6 +196,20 @@ export async function transitionApplicationStatus(input: ApplicationStatusTransi
     transition_note: values.note ?? null,
   });
   throwIfError(error);
+}
+
+export async function getApplicationAiScores(applicationId: string) {
+  const id = applicationStatusTransitionSchema.shape.applicationId.parse(applicationId);
+  const { data, error } = await createBrowserSupabaseClient().from("application_ai_scores").select("*").eq("application_id", id).order("created_at", { ascending: false });
+  throwIfError(error);
+  return (data ?? []) as ApplicationAiScore[];
+}
+
+export async function requestApplicationAnalysis(input: ApplicationAnalysisRequestInput) {
+  const values = applicationAnalysisRequestSchema.parse(input);
+  const { data, error } = await createBrowserSupabaseClient().functions.invoke("score-application", { body: values });
+  throwIfError(error);
+  return data as { scoreId: string; status: "completed" };
 }
 
 export async function submitApplication(input: SubmitApplicationInput) {

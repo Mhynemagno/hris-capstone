@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(33);
+select extensions.plan(41);
 
 select extensions.has_table('public', 'job_openings', 'Job openings table exists');
 select extensions.has_table('public', 'job_qualification_criteria', 'Job qualification criteria table exists');
@@ -12,6 +12,13 @@ select extensions.has_table('public', 'applications', 'Applications table exists
 select extensions.has_table('public', 'application_status_history', 'Application history table exists');
 select extensions.has_table('public', 'applicant_documents', 'Applicant document metadata table exists');
 select extensions.has_table('public', 'employee_activation_requests', 'Employee activation request table exists');
+select extensions.has_table('public', 'application_ai_scores', 'Application AI scores table exists');
+select extensions.has_function(
+  'public',
+  'list_hr_application_shortlist',
+  array['text', 'text', 'smallint'],
+  'HR AI shortlist query exists'
+);
 
 insert into auth.users (id, aud, role, email, created_at, updated_at)
 values
@@ -103,6 +110,81 @@ select extensions.lives_ok(
   'HR can move Submitted to Under Review'
 );
 select extensions.is((select status from public.applications where id = '00000000-0000-4000-8000-000000009401'::uuid), 'Under Review', 'Review transition persists');
+
+set local role postgres;
+select extensions.throws_ok(
+  $$insert into public.application_ai_scores (
+      application_id, requested_by_user_id, status, score, explanation,
+      provider, model, model_version, input_at, completed_at
+    ) values (
+      '00000000-0000-4000-8000-000000009401',
+      '00000000-0000-4000-8000-000000009101',
+      'completed', 101, 'Score exceeds the permitted range.',
+      'gemini', 'gemini-2.5-flash-lite', '2026-08', now(), now()
+    )$$,
+  '23514', null, 'AI scores reject values above 100'
+);
+
+insert into public.applications (id, applicant_id, job_opening_id, status)
+select
+  '00000000-0000-4000-8000-000000009402',
+  applicant.id,
+  opening.id,
+  'Submitted'
+from public.applicants applicant
+join public.job_openings opening on opening.status = 'draft'
+where applicant.profile_id = '00000000-0000-4000-8000-000000009102';
+
+insert into public.application_ai_scores (
+  application_id, requested_by_user_id, status, score, explanation,
+  provider, model, model_version, input_at, completed_at
+) values
+  (
+    '00000000-0000-4000-8000-000000009401',
+    '00000000-0000-4000-8000-000000009101',
+    'completed', 72, 'Matches core education and experience criteria.',
+    'gemini', 'gemini-2.5-flash-lite', '2026-08', now(), now()
+  ),
+  (
+    '00000000-0000-4000-8000-000000009402',
+    '00000000-0000-4000-8000-000000009101',
+    'completed', 88, 'Matches required skills and preferred certification.',
+    'gemini', 'gemini-2.5-flash-lite', '2026-08', now(), now()
+  );
+
+set local role authenticated;
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000009101';
+select extensions.is((select count(*) from public.application_ai_scores), 2::bigint, 'HR can read AI score recommendations');
+select extensions.is(
+  (
+    select array_agg(application_id order by ai_score desc)
+    from public.list_hr_application_shortlist(null, 'completed', null)
+  ),
+  array[
+    '00000000-0000-4000-8000-000000009402'::uuid,
+    '00000000-0000-4000-8000-000000009401'::uuid
+  ],
+  'HR shortlist ranks completed recommendations by score'
+);
+select extensions.is(
+  (select status from public.applications where id = '00000000-0000-4000-8000-000000009401'::uuid),
+  'Under Review',
+  'AI scoring does not change the application status'
+);
+
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000009102';
+select extensions.is((select count(*) from public.application_ai_scores), 0::bigint, 'Applicants cannot read AI score recommendations');
+select extensions.throws_ok(
+  $$insert into public.application_ai_scores (application_id, requested_by_user_id, status)
+    values (
+      '00000000-0000-4000-8000-000000009401',
+      '00000000-0000-4000-8000-000000009102',
+      'pending'
+    )$$,
+  '42501', null, 'Applicants cannot write AI score recommendations'
+);
+
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000009101';
 select extensions.lives_ok(
   $$select public.transition_application_status('00000000-0000-4000-8000-000000009401'::uuid, 'Shortlisted', 'Meets the required criteria')$$,
   'HR can shortlist an application under review'
