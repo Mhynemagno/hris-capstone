@@ -10,7 +10,11 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
-    exclude: [...configDefaults.exclude, "supabase/functions/**/*.test.ts"],
+    exclude: [
+      ...configDefaults.exclude,
+      ".worktrees/**",
+      "supabase/functions/**/*.test.ts",
+    ],
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
   },
