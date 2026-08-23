@@ -128,6 +128,33 @@ export type {
   DeploymentInput,
   DeploymentUpdateInput,
 } from "./deployment-tracking";
+export {
+  employeePromotionEligibilitySchema,
+  performanceRatingSchema,
+  performanceRatingUpdateSchema,
+  promotionCriterionRequirementSchema,
+  promotionCriterionSchema,
+  promotionCriterionUpdateSchema,
+  promotionEvaluationFiltersSchema,
+  promotionEvaluationSchema,
+  promotionEvaluationUpdateSchema,
+  promotionEvidenceSchema,
+  promotionReadinessSchema,
+  promotionRecommendationSchema,
+  promotionRecordKindSchema,
+} from "./promotion-eligibility";
+export type {
+  PerformanceRatingInput,
+  PerformanceRatingUpdateInput,
+  PromotionCriterionInput,
+  PromotionCriterionUpdateInput,
+  PromotionEvaluationFilters,
+  PromotionEvaluationInput,
+  PromotionEvaluationUpdateInput,
+  PromotionEvidenceInput,
+  PromotionRecommendation,
+  PromotionRecordKind,
+} from "./promotion-eligibility";
 export type {
   LeaveAttachmentInput,
   LeaveCancellationInput,

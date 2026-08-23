@@ -78,4 +78,26 @@ describe("queryKeys", () => {
       "deployment-tracking", "detail", "123e4567-e89b-42d3-a456-426614174000",
     ]);
   });
+
+  it("scopes promotion data by criteria, HR review, and employee audience", () => {
+    const promotionEligibility = queryKeys as typeof queryKeys & {
+      promotionEligibility: {
+        criteria: (filters: Record<string, unknown>) => readonly unknown[];
+        hrDirectory: (filters: Record<string, unknown>) => readonly unknown[];
+        hrEmployee: (employeeId: string) => readonly unknown[];
+        mine: () => readonly unknown[];
+      };
+    };
+
+    expect(promotionEligibility.promotionEligibility.criteria({ isActive: true })).toEqual([
+      "promotion-eligibility", "criteria", { isActive: true },
+    ]);
+    expect(promotionEligibility.promotionEligibility.hrDirectory({ readiness: "ready" })).toEqual([
+      "promotion-eligibility", "hr-directory", { readiness: "ready" },
+    ]);
+    expect(promotionEligibility.promotionEligibility.hrEmployee("123e4567-e89b-42d3-a456-426614174000")).toEqual([
+      "promotion-eligibility", "hr-employee", "123e4567-e89b-42d3-a456-426614174000",
+    ]);
+    expect(promotionEligibility.promotionEligibility.mine()).toEqual(["promotion-eligibility", "mine"]);
+  });
 });
