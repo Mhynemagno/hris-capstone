@@ -122,7 +122,7 @@ begin
   end loop;
   for document in select value from jsonb_array_elements(requested_documents) loop
     if document ->> 'objectPath' !~ ('^profile-change-requests/' || caller_id::text || '/' || target_request_id::text || '/[0-9a-f-]{36}\.(pdf|png|jpe?g|webp)$') or document ->> 'mimeType' not in ('application/pdf', 'image/png', 'image/jpeg', 'image/webp') or coalesce((document ->> 'sizeBytes')::bigint, 0) not between 1 and 10485760 then raise exception 'Invalid supporting document.' using errcode = '22023'; end if;
-    if not exists (select 1 from storage.objects object where object.bucket_id = 'private-documents' and object.name = document ->> 'objectPath' and object.owner_id = caller_id) then raise exception 'Supporting document was not uploaded by the requester.' using errcode = '42501'; end if;
+    if not exists (select 1 from storage.objects object where object.bucket_id = 'private-documents' and object.name = document ->> 'objectPath' and object.owner_id = caller_id::text) then raise exception 'Supporting document was not uploaded by the requester.' using errcode = '42501'; end if;
     insert into public.profile_change_request_documents (request_id, object_path, file_name, mime_type, size_bytes, uploaded_by_user_id) values (target_request_id, document ->> 'objectPath', btrim(document ->> 'fileName'), document ->> 'mimeType', (document ->> 'sizeBytes')::bigint, caller_id);
   end loop;
   insert into public.profile_change_request_history (request_id, actor_user_id, event_type) values (target_request_id, caller_id, 'submitted');
