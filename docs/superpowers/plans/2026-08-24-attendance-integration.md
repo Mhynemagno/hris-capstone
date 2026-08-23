@@ -75,7 +75,7 @@
 
 - [ ] **Step 2: Run the database test and confirm it fails**
 
-  Run: `supabase test db --file supabase/tests/attendance_integration.test.sql`
+  Run: `supabase test db --local supabase/tests/attendance_integration.test.sql`
 
   Expected: FAIL because the attendance tables and functions do not exist.
 
@@ -118,7 +118,7 @@
 
 - [ ] **Step 4: Run database tests and inspect schema quality**
 
-  Run: `supabase test db --file supabase/tests/attendance_integration.test.sql`
+  Run: `supabase test db --local supabase/tests/attendance_integration.test.sql`
 
   Expected: PASS with every pgTAP assertion completed.
 
@@ -346,7 +346,7 @@
   Run:
 
   ```bash
-  supabase test db --file supabase/tests/attendance_integration.test.sql
+  supabase test db --local supabase/tests/attendance_integration.test.sql
   deno test --allow-env supabase/functions/_shared/attendance-adapter.test.ts supabase/functions/import-attendance/index.test.ts
   npm run lint
   npm run typecheck
