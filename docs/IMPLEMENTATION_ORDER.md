@@ -16,7 +16,7 @@ Create **one branch at a time** from the latest `main`, finish it, test it, open
 - **Notifications:** In-app only. No email delivery is in scope.
 - **Accounts:** Applicants self-register. System Administrators invite/create internal accounts. HR marks an application `Hired`; an administrator performs the separate employee-account activation.
 - **Leave:** Requests, decisions, attachments, and history only. Leave-balance/entitlement calculation is not in scope.
-- **Attendance:** Use a vendor-neutral integration boundary. Prefer a documented cloud/API integration; secure CSV/XLSX import is the required fallback. The HRIS stores attendance logs only—never fingerprint templates, images, or raw biometric data. A USB fingerprint kiosk is deferred and requires a separate approved task after its SDK is proven.
+- **Attendance:** Use a vendor-neutral integration boundary. The first implementation is a secure, validated CSV/XLSX import; it must be replaceable later with a documented biometric-vendor API or webhook adapter once the vendor supplies integration documentation and test credentials. The HRIS stores attendance logs only—never fingerprint templates, images, or raw biometric data. A USB fingerprint kiosk is deferred and requires a separate approved task after its SDK is proven.
 
 ## Branch dependency map
 
@@ -343,6 +343,8 @@ Create **one branch at a time** from the latest `main`, finish it, test it, open
 - Make sync idempotent using the provider event identifier; audit sync failures.
 - Store no fingerprint, face template, or other raw biometric data.
 - Implement an attendance-identity mapping workflow using a stable external employee ID. Unknown IDs must enter a review queue; do not match on a name alone.
+
+**Deferred follow-up:** The initial release validates a secure CSV/XLSX import adapter. Replace or extend that adapter with a real biometric-vendor cloud API/webhook only after the vendor provides integration documentation, a test credential/demo, event-ID semantics, and a stable employee identifier. Keep the same normalized import contract and never add raw biometric templates to the HRIS.
 
 **Pages**
 
