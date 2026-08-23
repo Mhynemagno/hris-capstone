@@ -61,4 +61,9 @@ export const queryKeys = {
     hrQueue: (filters: Record<string, unknown>) => ["leave-management", "hr-queue", filters] as const,
     attachment: (objectPath: string) => ["leave-management", "attachment", objectPath] as const,
   },
+  deploymentTracking: {
+    hrDirectory: (filters: Record<string, unknown>) => ["deployment-tracking", "hr-directory", filters] as const,
+    mine: (filters: Record<string, unknown>) => ["deployment-tracking", "mine", filters] as const,
+    detail: (deploymentId: string) => ["deployment-tracking", "detail", deploymentId] as const,
+  },
 };

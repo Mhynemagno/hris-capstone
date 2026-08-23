@@ -58,4 +58,24 @@ describe("queryKeys", () => {
       "leave-management", "hr-queue", { status: "pending" },
     ]);
   });
+
+  it("scopes deployment data by audience, detail, and filters", () => {
+    const deploymentTracking = queryKeys as typeof queryKeys & {
+      deploymentTracking: {
+        hrDirectory: (filters: Record<string, unknown>) => readonly unknown[];
+        mine: (filters: Record<string, unknown>) => readonly unknown[];
+        detail: (deploymentId: string) => readonly unknown[];
+      };
+    };
+
+    expect(deploymentTracking.deploymentTracking.hrDirectory({ status: "active" })).toEqual([
+      "deployment-tracking", "hr-directory", { status: "active" },
+    ]);
+    expect(deploymentTracking.deploymentTracking.mine({ page: 1, pageSize: 25 })).toEqual([
+      "deployment-tracking", "mine", { page: 1, pageSize: 25 },
+    ]);
+    expect(deploymentTracking.deploymentTracking.detail("123e4567-e89b-42d3-a456-426614174000")).toEqual([
+      "deployment-tracking", "detail", "123e4567-e89b-42d3-a456-426614174000",
+    ]);
+  });
 });

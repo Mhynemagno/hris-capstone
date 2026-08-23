@@ -322,3 +322,31 @@ export type LeaveRequestHistory = {
   metadata: Record<string, unknown>;
   created_at: string;
 };
+
+export type DeploymentStatus = "planned" | "active" | "completed" | "cancelled";
+
+export type Deployment = {
+  id: string;
+  employee_id: string;
+  location: string | null;
+  unit: string | null;
+  project: string | null;
+  assignment_role: string;
+  starts_on: string;
+  ends_on: string | null;
+  status: DeploymentStatus;
+  notes: string | null;
+  created_by_user_id: string;
+  updated_by_user_id: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type DeploymentHistory = {
+  id: number;
+  deployment_id: string;
+  actor_user_id: string | null;
+  event_type: "created" | "updated" | "status_changed";
+  metadata: Record<string, unknown>;
+  created_at: string;
+};
