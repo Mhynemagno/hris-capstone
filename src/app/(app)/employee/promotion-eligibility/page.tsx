@@ -1,0 +1,2 @@
+import { EmployeePromotionEligibility } from "@/components/promotion-eligibility/employee-promotion-eligibility";
+export default function EmployeePromotionEligibilityPage() { return <section className="space-y-4"><div><p className="text-sm font-medium text-primary">Career development</p><h1 className="text-3xl font-semibold">Promotion eligibility</h1></div><EmployeePromotionEligibility /></section>; }
