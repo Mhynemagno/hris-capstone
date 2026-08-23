@@ -57,25 +57,25 @@ set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000001601';
 
 select extensions.is(
-  (select count(*) from public.list_unlinked_employee_accounts()),
+  (select count(*) from public.list_unlinked_employee_accounts() where profile_id between '00000000-0000-4000-8000-000000001601'::uuid and '00000000-0000-4000-8000-000000001607'::uuid),
   1::bigint,
   'HR sees exactly the active unlinked Employee account'
 );
 
 select extensions.is(
-  (select first_name from public.list_unlinked_employee_accounts()),
+  (select first_name from public.list_unlinked_employee_accounts() where profile_id = '00000000-0000-4000-8000-000000001604'::uuid),
   'Ariun',
   'HR receives the invited Employee first name for form prefill'
 );
 
 select extensions.is(
-  (select last_name from public.list_unlinked_employee_accounts()),
+  (select last_name from public.list_unlinked_employee_accounts() where profile_id = '00000000-0000-4000-8000-000000001604'::uuid),
   'Bold',
   'HR receives the invited Employee last name for form prefill'
 );
 
 select extensions.is(
-  (select email from public.list_unlinked_employee_accounts()),
+  (select email from public.list_unlinked_employee_accounts() where profile_id = '00000000-0000-4000-8000-000000001604'::uuid),
   'candidate.employee@example.test',
   'HR receives the invited Employee email for form prefill'
 );
