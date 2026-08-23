@@ -47,6 +47,7 @@ export const ROLE_CONFIG: Record<AppRole, RoleConfig> = {
       { href: "/hr/jobs", label: "Job openings", icon: "BriefcaseBusiness" },
       { href: "/hr/applications", label: "Applications", icon: "BriefcaseBusiness" },
       { href: "/hr/leave-requests", label: "Leave requests", icon: "BriefcaseBusiness" },
+      { href: "/hr/deployments", label: "Deployments", icon: "BriefcaseBusiness" },
     ],
   },
   applicant: {
@@ -82,6 +83,7 @@ export const ROLE_CONFIG: Record<AppRole, RoleConfig> = {
       },
       { href: "/employee/profile", label: "My profile", icon: "ContactRound" },
       { href: "/employee/leave", label: "Leave", icon: "BriefcaseBusiness" },
+      { href: "/employee/deployments", label: "Deployments", icon: "BriefcaseBusiness" },
     ],
   },
   management: {

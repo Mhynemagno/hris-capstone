@@ -1,0 +1,6 @@
+"use client";
+import { ErrorState } from "@/components/ui/error-state";
+import { LoadingState } from "@/components/ui/loading-state";
+import { useMyDeployments } from "@/hooks/use-deployment-tracking";
+import { DeploymentStatusBadge } from "./deployment-status-badge";
+export function EmployeeDeploymentList() { const query = useMyDeployments({ page: 1, pageSize: 25 }); if (query.isLoading) return <LoadingState label="Loading your deployments…" />; if (query.error) return <ErrorState message={query.error.message} />; const rows = query.data?.rows ?? []; return <section className="space-y-3">{rows.length ? rows.map((row) => <article className="rounded-xl border p-4" key={row.id}><div className="flex flex-wrap justify-between gap-2"><p className="font-medium">{row.assignment_role}</p><DeploymentStatusBadge status={row.status} /></div><p className="mt-2 text-sm text-muted-foreground">{[row.location, row.unit, row.project].filter(Boolean).join(" · ")}</p><p className="mt-2 text-sm">{row.starts_on} – {row.ends_on ?? "ongoing"}</p>{row.notes ? <p className="mt-2 text-sm">{row.notes}</p> : null}</article>) : <p className="rounded-xl border p-4 text-sm text-muted-foreground">No deployments recorded.</p>}</section>; }

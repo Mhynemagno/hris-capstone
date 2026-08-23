@@ -117,6 +117,17 @@ export {
   leaveTypeSchema,
   leaveTypeUpdateSchema,
 } from "./leave-management";
+export {
+  deploymentFiltersSchema,
+  deploymentInputSchema,
+  deploymentStatusSchema,
+  deploymentUpdateSchema,
+} from "./deployment-tracking";
+export type {
+  DeploymentFilters,
+  DeploymentInput,
+  DeploymentUpdateInput,
+} from "./deployment-tracking";
 export type {
   LeaveAttachmentInput,
   LeaveCancellationInput,
