@@ -24,4 +24,9 @@ export const queryKeys = {
     certifications: (employeeId: string) => ["personnel-records", "certifications", employeeId] as const,
     training: (employeeId: string) => ["personnel-records", "training", employeeId] as const,
   },
+  notifications: {
+    inbox: (filters: Record<string, unknown>) =>
+      ["notifications", "inbox", filters] as const,
+    unreadCount: () => ["notifications", "unread-count"] as const,
+  },
 };

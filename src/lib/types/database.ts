@@ -62,6 +62,17 @@ export type AuditLog = {
   created_at: string;
 };
 
+export type Notification = {
+  id: string;
+  recipient_user_id: string;
+  type: string;
+  title: string;
+  body: string;
+  link: string | null;
+  read_at: string | null;
+  created_at: string;
+};
+
 export type Employee = {
   id: string;
   profile_id: string | null;
