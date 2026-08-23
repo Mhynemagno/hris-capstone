@@ -3,6 +3,7 @@ import { presentAuditLog, type AuditLogDisplay, type AuditPresentationLookups } 
 import type {
   AuditLog,
   Department,
+  EmployeeActivationRequest,
   ManagedUser,
   OrganizationSettings,
   PaginatedResult,
@@ -100,9 +101,22 @@ export async function listManagedUsers(input: Partial<ManagedUserFilters> = {}):
     roles = (roleData ?? []) as ManagedUserRoleRow[];
   }
   const roleByUserId = new Map(roles.map((role) => [role.user_id, role]));
+  const applicantIds = roles.filter((role) => role.role === "applicant").map((role) => role.user_id);
+  let pendingActivations: EmployeeActivationRequest[] = [];
+  if (applicantIds.length) {
+    const { data: activationData, error: activationError } = await client
+      .from("employee_activation_requests")
+      .select("*")
+      .eq("status", "pending")
+      .in("profile_id", applicantIds);
+    throwIfError(activationError);
+    pendingActivations = (activationData ?? []) as EmployeeActivationRequest[];
+  }
+  const activationByProfileId = new Map(pendingActivations.map((activation) => [activation.profile_id, activation]));
   const rows = profiles.flatMap((profile) => {
     const role = roleByUserId.get(profile.id);
-    return role ? [{ ...profile, role: role.role, assigned_at: role.assigned_at }] : [];
+    const pendingActivation = activationByProfileId.get(profile.id);
+    return role ? [{ ...profile, role: role.role, assigned_at: role.assigned_at, ...(pendingActivation ? { pending_activation: pendingActivation } : {}) }] : [];
   });
   return { rows, count: count ?? 0, filters };
 }

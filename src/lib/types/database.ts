@@ -16,7 +16,9 @@ export type UserRole = {
   assigned_at: string;
 };
 
-export type ManagedUser = Profile & Pick<UserRole, "role" | "assigned_at">;
+export type ManagedUser = Profile & Pick<UserRole, "role" | "assigned_at"> & {
+  pending_activation?: EmployeeActivationRequest;
+};
 
 export type PaginatedResult<T, TFilters> = {
   rows: T[];
