@@ -1,6 +1,5 @@
-import { RoleLanding } from "@/components/app-shell/role-landing";
-import { ROLE_CONFIG } from "@/lib/app/role-config";
+import { ReportingDashboard } from "@/components/reporting/dashboard";
 
 export default function ManagementPage() {
-  return <RoleLanding config={ROLE_CONFIG.management} />;
+  return <ReportingDashboard role="management" />;
 }

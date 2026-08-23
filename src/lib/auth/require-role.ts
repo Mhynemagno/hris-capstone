@@ -26,3 +26,21 @@ export async function requireRole(
 
   return { user, role };
 }
+
+export async function requireAnyRole(
+  expectedRoles: readonly AppRole[],
+): Promise<AuthenticatedRole> {
+  const user = await getAuthenticatedUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const role = await getCurrentRole();
+
+  if (!role || !expectedRoles.includes(role)) {
+    redirect("/unauthorized");
+  }
+
+  return { user, role };
+}

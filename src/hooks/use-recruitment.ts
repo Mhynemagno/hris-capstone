@@ -64,6 +64,7 @@ export function useSubmitApplication() {
     mutationFn: submitApplication,
     onSuccess: (_, input) => {
       void queryClient.invalidateQueries({ queryKey: ["recruitment", "my-applications"] });
+      void queryClient.invalidateQueries({ queryKey: ["reporting"] });
       void queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.application(input.applicationId) });
       void queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.job(input.jobId) });
     },
@@ -80,6 +81,7 @@ export function useSaveJobOpening() {
     mutationFn: ({ input, jobId }: { input: JobOpeningInput; jobId?: number }) => saveJobOpening(input, jobId),
     onSuccess: (job) => {
       void queryClient.invalidateQueries({ queryKey: ["recruitment", "hr-jobs"] });
+      void queryClient.invalidateQueries({ queryKey: ["reporting"] });
       void queryClient.invalidateQueries({ queryKey: ["recruitment", "public-jobs"] });
       void queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.job(job.id) });
     },
@@ -98,6 +100,7 @@ export function useRequestApplicationAnalysis() {
   const queryClient = useQueryClient();
   return useMutation({ mutationFn: (input: ApplicationAnalysisRequestInput) => requestApplicationAnalysis(input), onSuccess: (_, input) => {
     void queryClient.invalidateQueries({ queryKey: ["recruitment", "applications"] });
+    void queryClient.invalidateQueries({ queryKey: ["reporting"] });
     void queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.application(input.applicationId) });
     void queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.aiScores(input.applicationId) });
   } });
@@ -109,6 +112,7 @@ export function useTransitionApplicationStatus() {
     mutationFn: (input: ApplicationStatusTransitionInput) => transitionApplicationStatus(input),
     onSuccess: (_, input) => {
       void queryClient.invalidateQueries({ queryKey: ["recruitment", "applications"] });
+      void queryClient.invalidateQueries({ queryKey: ["reporting"] });
       void queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.application(input.applicationId) });
     },
   });
@@ -120,6 +124,7 @@ export function useHireApplication() {
     mutationFn: (input: HiringDecisionInput) => hireApplication(input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["recruitment"] });
+      void queryClient.invalidateQueries({ queryKey: ["reporting"] });
       void queryClient.invalidateQueries({ queryKey: ["personnel-records", "directory"] });
       void queryClient.invalidateQueries({ queryKey: ["administration", "users"] });
       void queryClient.invalidateQueries({ queryKey: ["administration", "audit-logs"] });

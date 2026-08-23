@@ -1,6 +1,5 @@
-import { RoleLanding } from "@/components/app-shell/role-landing";
-import { ROLE_CONFIG } from "@/lib/app/role-config";
+import { ReportingDashboard } from "@/components/reporting/dashboard";
 
 export default function HrPage() {
-  return <RoleLanding config={ROLE_CONFIG.hr_personnel} />;
+  return <ReportingDashboard role="hr_personnel" />;
 }
