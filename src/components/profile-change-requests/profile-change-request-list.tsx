@@ -1,0 +1,5 @@
+"use client";
+import Link from "next/link";
+import { useMyProfileChangeRequests } from "@/hooks/use-profile-change-requests";
+import { Button } from "@/components/ui/button";
+export function ProfileChangeRequestList() { const requests = useMyProfileChangeRequests(); if (!requests.data) return <p>Loading requests…</p>; return <section className="space-y-3">{requests.data.rows.length ? requests.data.rows.map((request) => <article className="rounded border p-4" key={request.id}><p className="font-medium capitalize">{request.status}</p><p className="text-sm text-muted-foreground">Submitted {new Date(request.created_at).toLocaleString()}</p>{request.decision_reason ? <p className="mt-2 text-sm">Decision: {request.decision_reason}</p> : null}</article>) : <p className="text-muted-foreground">No profile-change requests yet.</p>}<Link className="inline-flex rounded bg-primary px-4 py-2 text-primary-foreground" href="/employee/profile/change-request">Request a change</Link></section>; }
