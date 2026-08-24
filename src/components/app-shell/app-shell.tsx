@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { AccountMenu } from "@/components/auth/account-menu";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import {
@@ -142,8 +143,9 @@ export function AppShell({ children, config, email }: AppShellProps) {
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
-            <div className="ml-auto">
+            <div className="ml-auto flex items-center gap-2">
               <NotificationBell />
+              <AccountMenu email={email} roleLabel={config.label} />
             </div>
           </header>
           <div className="flex flex-1 flex-col px-4 py-8 sm:px-6 lg:px-10">

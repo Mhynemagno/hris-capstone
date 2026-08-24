@@ -72,5 +72,10 @@ describe("AppShell", () => {
     );
 
     expect(screen.getByRole("link", { name: "Notifications" })).toHaveAttribute("href", "/notifications");
+    expect(
+      screen.getByRole("button", {
+        name: "Account menu for manager@example.com",
+      }),
+    ).toBeVisible();
   });
 });
