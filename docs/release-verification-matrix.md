@@ -13,6 +13,8 @@ This file records executed evidence, not hoped-for behavior. `blocked-external` 
 | REL-07 | HR imports normalized attendance without raw biometrics; unknown IDs queue for review. | HR / other roles | `supabase/tests/attendance_integration.test.sql` and adapter/function tests passed; manual local import remains to record. | passed-automated |
 | REL-08 | All sensitive tables and private Storage objects have regression coverage. | least privilege | All 11 `supabase/tests/*.test.sql` suites passed after `db reset --local --no-seed`. | passed-automated |
 | REL-09 | Production Vercel deployment serves the current commit with Supabase public variables and auth redirect URL. | project owner | Follow [deployment runbook](DEPLOYMENT_RUNBOOK.md). | blocked-external |
+| REL-10 | Signed-out visitors see only public SJCP recruitment content, including published job openings and application entry points. | public / unpublished jobs and all HR data denied | Component tests cover landing, featured opening, empty state, and existing job-detail routes; signed-in visual journey remains to record. | passed-automated / pending-manual |
+| REL-11 | Every authenticated workspace exposes a header account control and explicit Sign out action, independent of sidebar state. | all authenticated roles / anonymous | Account-menu keyboard interaction and shared-shell tests pass; narrow/desktop visual check remains to record. | passed-automated / pending-manual |
 
 ## Findings register
 
@@ -29,3 +31,5 @@ This file records executed evidence, not hoped-for behavior. `blocked-external` 
 4. Execute REL-04 through REL-07 with their feature-specific test fixture data. For every role, also enter one prohibited route directly and confirm `/unauthorized` or an RLS failure.
 5. At desktop and narrow widths, check every table/form for visible labels, keyboard focus, error/empty states, and horizontal table scrolling rather than viewport overflow.
 6. Enter outcome, date, tested commit, and any failure in this matrix before calling the release ready.
+7. As a signed-out visitor, check `/` and `/jobs`: only published openings are visible, an opening reaches `/jobs/:id`, and account creation/application routes remain clear. At 375px, 768px, 1024px, and 1440px, confirm there is no viewport overflow.
+8. As each signed-in role, collapse/open the sidebar, use Tab to reach the top-right **Account menu**, open it with Enter, and confirm **Sign out** remains visible and usable. Enable reduced motion and confirm the same actions remain available.
