@@ -13,6 +13,7 @@ describe("RoleLanding", () => {
       screen.getByRole("heading", { name: /management workspace/i }),
     ).toBeInTheDocument();
     expect(screen.getByText(/what you can do here/i)).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(/ready/i);
     expect(
       screen.queryByRole("button", { name: /create|edit|delete|approve/i }),
     ).not.toBeInTheDocument();

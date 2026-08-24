@@ -10,13 +10,14 @@ it("presents a page purpose and its primary action", () => {
       action={<Link href="/jobs">Browse all openings</Link>}
       description="Apply securely for a role serving San Juan."
       eyebrow="Careers"
+      id="careers-title"
       title="Current openings"
     />,
   );
 
   expect(
     screen.getByRole("heading", { level: 1, name: "Current openings" }),
-  ).toBeVisible();
+  ).toHaveAttribute("id", "careers-title");
   expect(screen.getByText("Careers")).toBeVisible();
   expect(
     screen.getByRole("link", { name: "Browse all openings" }),
