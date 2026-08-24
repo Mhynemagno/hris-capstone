@@ -1,5 +1,5 @@
 import { CircleAlert, CircleCheck, LoaderCircle } from "lucide-react";
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 
 type StatusPanelProps = {
   kind: "loading" | "empty" | "error";
@@ -22,10 +22,12 @@ export function StatusPanel({
 }: StatusPanelProps) {
   const Icon = statusIcons[kind];
   const role = kind === "error" ? "alert" : "status";
+  const titleId = useId();
 
   return (
     <section
       aria-live={kind === "loading" ? "polite" : undefined}
+      aria-labelledby={titleId}
       className="rounded-xl border border-border bg-card p-6 shadow-sm"
       role={role}
     >
@@ -37,7 +39,7 @@ export function StatusPanel({
           />
         </div>
         <div className="space-y-1">
-          <h2 className="font-semibold">{title}</h2>
+          <h2 className="font-semibold" id={titleId}>{title}</h2>
           <p className="text-sm leading-6 text-muted-foreground">
             {description}
           </p>
