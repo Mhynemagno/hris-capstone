@@ -1,4 +1,4 @@
-import type { Certification, Employee, Qualification, ServiceHistory, TrainingRecord } from "@/lib/types/database";
+import type { Certification, Employee, Qualification, ServiceHistory, TrainingRecord, UnlinkedEmployeeAccount } from "@/lib/types/database";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import {
   certificationSchema,
@@ -37,6 +37,12 @@ export async function listEmployees(input: Partial<EmployeeDirectoryFilters> = {
   const { data, error, count } = await query;
   throwIfError(error);
   return { rows: (data ?? []) as Employee[], count: count ?? 0, filters };
+}
+
+export async function listUnlinkedEmployeeAccounts() {
+  const { data, error } = await createBrowserSupabaseClient().rpc("list_unlinked_employee_accounts");
+  throwIfError(error);
+  return (data ?? []) as UnlinkedEmployeeAccount[];
 }
 
 export async function getEmployee(employeeId: string) {

@@ -22,6 +22,7 @@ export const queryKeys = {
   },
   personnelRecords: {
     directory: (filters: Record<string, unknown>) => ["personnel-records", "directory", filters] as const,
+    unlinkedAccounts: () => ["personnel-records", "unlinked-accounts"] as const,
     detail: (employeeId: string) => ["personnel-records", "detail", employeeId] as const,
     serviceHistory: (employeeId: string) => ["personnel-records", "service-history", employeeId] as const,
     qualifications: (employeeId: string) => ["personnel-records", "qualifications", employeeId] as const,

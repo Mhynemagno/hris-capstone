@@ -142,6 +142,14 @@ export type Employee = {
   updated_at: string;
 };
 
+export type UnlinkedEmployeeAccount = {
+  profile_id: string;
+  first_name: string | null;
+  last_name: string | null;
+  full_name: string | null;
+  email: string | null;
+};
+
 export type ServiceHistory = {
   id: string;
   employee_id: string;
