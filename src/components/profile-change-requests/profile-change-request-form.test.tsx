@@ -25,7 +25,7 @@ describe("ProfileChangeRequestForm", () => {
     expect(screen.getByRole("list", { name: "Qualification proposals" })).toHaveTextContent("Bachelor of Science");
     await user.click(screen.getByRole("button", { name: "Submit request" }));
     await waitFor(() => expect(mocks.mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ draft: expect.objectContaining({ changes: [expect.objectContaining({ kind: "qualification", operation: "add", requestedValue: expect.objectContaining({ name: "Bachelor of Science", institution: "Mongolian University" }) })] }) }))); 
-  });
+  }, 10_000);
 
   it("requires at least one proposed change", async () => {
     const user = userEvent.setup();

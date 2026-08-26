@@ -1,5 +1,6 @@
 "use client";
 
+import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
 
@@ -41,13 +42,17 @@ export function SignOutButton({
   return (
     <div className="space-y-2">
       <Button
-        className={cn("w-full justify-center", className)}
+        className={cn(
+          "w-full justify-center",
+          !className && "border-sidebar-border bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+          className,
+        )}
         disabled={pending}
         onClick={signOut}
         type="button"
         variant={variant}
       >
-        {icon}
+        {icon ?? <LogOut aria-hidden="true" />}
         {pending ? "Signing out..." : "Sign out"}
       </Button>
       {error ? <p className="text-sm text-destructive" role="alert">{error}</p> : null}

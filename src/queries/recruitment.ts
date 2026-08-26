@@ -31,6 +31,15 @@ type SubmitApplicationInput = Omit<ApplicationSubmissionInput, "documents"> & {
   documents: PendingApplicantDocument[];
 };
 
+export class ApplicantProfileRequiredError extends Error {
+  readonly code = "APPLICANT_PROFILE_REQUIRED" as const;
+
+  constructor() {
+    super("Complete your applicant profile before applying.");
+    this.name = "ApplicantProfileRequiredError";
+  }
+}
+
 function throwIfError(error: { message: string } | null) {
   if (error) throw new Error(error.message);
 }
@@ -218,6 +227,13 @@ export async function submitApplication(input: SubmitApplicationInput) {
   throwIfError(userError);
   const user = userData.user;
   if (!user) throw new Error("Sign in as an applicant before submitting an application.");
+
+  const { data: applicant, error: applicantError } = await client
+    .from("applicants")
+    .select("id")
+    .maybeSingle();
+  throwIfError(applicantError);
+  if (!applicant) throw new ApplicantProfileRequiredError();
 
   const uploadedDocuments = [];
   const bucket = client.storage.from("applicant-documents");
