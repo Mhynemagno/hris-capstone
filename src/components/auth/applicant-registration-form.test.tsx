@@ -1,6 +1,6 @@
 import userEvent from "@testing-library/user-event";
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   replace: vi.fn(),
@@ -19,9 +19,15 @@ vi.mock("@/lib/supabase/client", () => ({
 import { ApplicantRegistrationForm } from "./applicant-registration-form";
 
 describe("ApplicantRegistrationForm", () => {
+  beforeEach(() => {
+    mocks.replace.mockReset();
+    mocks.refresh.mockReset();
+    mocks.signUp.mockReset();
+  });
+
   it("collects name parts and sends structured account metadata", async () => {
     const user = userEvent.setup();
-    mocks.signUp.mockResolvedValue({ data: { session: null }, error: null });
+    mocks.signUp.mockResolvedValue({ data: { session: { access_token: "test" } }, error: null });
 
     render(<ApplicantRegistrationForm />);
 
@@ -42,5 +48,24 @@ describe("ApplicantRegistrationForm", () => {
         },
       }),
     }));
+    expect(mocks.signUp.mock.calls[0]?.[0].options).not.toHaveProperty("emailRedirectTo");
+    expect(mocks.replace).toHaveBeenCalledWith("/applicant");
+    expect(mocks.refresh).toHaveBeenCalledOnce();
+  });
+
+  it("explains how to recover when the environment still requires email confirmation", async () => {
+    const user = userEvent.setup();
+    mocks.signUp.mockResolvedValue({ data: { session: null }, error: null });
+
+    render(<ApplicantRegistrationForm />);
+
+    await user.type(screen.getByRole("textbox", { name: "First name" }), "Applicant");
+    await user.type(screen.getByRole("textbox", { name: "Last name" }), "One");
+    await user.type(screen.getByRole("textbox", { name: "Email" }), "applicant@example.com");
+    await user.type(screen.getByLabelText("Password"), "secret1");
+    await user.click(screen.getByRole("button", { name: /create account/i }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("requires email confirmation");
+    expect(mocks.replace).not.toHaveBeenCalled();
   });
 });
