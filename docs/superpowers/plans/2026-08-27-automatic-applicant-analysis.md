@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - Queueing starts automatically after every successful application submission.
-- Analyze the CV and all submitted credentials, including scanned PDFs via Gemini OCR.
+- Accept PDF, PNG, and JPEG CVs/credentials only; analyze every accepted document, including scanned PDFs via Gemini OCR.
 - Do not add an applicant consent checkbox or applicant-facing AI notice.
 - Retry transient processing failures exactly once; the next failure is terminal until HR explicitly retries.
 - HR is the final decision-maker; no score may change application status.
@@ -40,6 +40,7 @@
 - `src/hooks/use-recruitment.ts` — invalidate recommendation, shortlist, and report queries after an HR retry.
 - `src/components/recruitment/hr-application-list.tsx` and `.test.tsx` — clear queued/processing/completed/failed language and filters.
 - `src/components/recruitment/hr-application-detail.tsx` and `.test.tsx` — status panel and HR retry action; remove the manual textarea and checkbox.
+- `src/components/recruitment/applicant-application-form.tsx` and `.test.tsx` — restrict uploads to PDF, PNG, and JPEG and explain the supported formats.
 - `docs/DEPLOYMENT_RUNBOOK.md` — hosted queue, cron, Vault secret, Edge Function deployment, and rollback steps.
 
 ## Task 1: Create the durable analysis-attempt and queue contract
@@ -176,7 +177,7 @@ Define and test the exact worker-facing types:
 ```ts
 export type ApplicationDocumentInput = {
   fileName: string;
-  mimeType: "application/pdf" | "application/msword" | "application/vnd.openxmlformats-officedocument.wordprocessingml.document" | "image/png" | "image/jpeg";
+  mimeType: "application/pdf" | "image/png" | "image/jpeg";
   bytes: Uint8Array;
 };
 
@@ -203,7 +204,7 @@ Expected: FAIL because document types and `analyzeDocuments` are absent.
 
 Create `application-document-analysis.ts` with constants that enforce a maximum
 of ten documents, 10 MiB per document, and a combined encoded payload cap. It
-must accept only the MIME types already validated by the submission RPC and
+must accept only PDF, PNG, and JPEG MIME types already validated by the submission RPC and
 must never log file bytes or extracted text.
 
 Add this provider method while retaining the existing `score` method for
@@ -328,6 +329,8 @@ git commit -m "feat: process queued applicant analysis"
 - Create: `src/components/recruitment/hr-application-list.test.tsx`
 - Modify: `src/components/recruitment/hr-application-detail.tsx`
 - Create: `src/components/recruitment/hr-application-detail.test.tsx`
+- Modify: `src/components/recruitment/applicant-application-form.tsx`
+- Modify: `src/components/recruitment/applicant-application-form.test.tsx`
 
 **Interfaces:**
 - Consumes: `public.retry_application_analysis(applicationId)` and score statuses `queued | processing | completed | failed | unscored`.
@@ -350,6 +353,10 @@ explanation, failed renders a reachable **Retry analysis** button, and a legacy
 `unscored` application renders **Not analyzed** plus **Analyze existing
 application**. Assert the old “Approved anonymized CV text” field, checkbox,
 and manual “Analyze application” button are absent.
+
+Add applicant form assertions that the file input accepts only
+`.pdf,.png,.jpg,.jpeg`, helper text names those formats, and a DOC/DOCX upload
+is rejected before any Storage upload occurs.
 
 - [ ] **Step 2: Run targeted tests to verify they fail**
 
@@ -381,6 +388,9 @@ contains no textarea, manual confirmation checkbox, or applicant-supplied AI
 text. The retry control must be disabled while its mutation is pending and show
 errors through the existing `ErrorState` pattern. Update shortlist labels and
 filter option copy to `Analyzing`, `Completed`, `Failed`, and `Not analyzed`.
+Update the applicant form, schema, client extension allowlist, and submission
+migration validation together so DOC/DOCX cannot be selected, uploaded, or
+accepted through a forged client request.
 
 - [ ] **Step 4: Run targeted tests to verify they pass**
 

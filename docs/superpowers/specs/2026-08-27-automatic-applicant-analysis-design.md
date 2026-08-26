@@ -14,7 +14,8 @@ step with reliable background processing of the submitted CV and credentials.
 
 - Start analysis automatically after every successful application submission.
 - Include the CV and uploaded credentials in the analysis.
-- Support both text-based and scanned PDFs through OCR.
+- Accept PDF, PNG, and JPEG documents only. Support both text-based and scanned
+  PDFs through OCR; reject legacy Word documents before submission.
 - Reuse the existing Gemini integration for extraction/OCR and scoring; do not
   introduce a second OCR vendor in this release.
 - Do not add an applicant consent checkbox or applicant-facing AI notice.
@@ -52,7 +53,7 @@ successfully submitted application cannot silently be left with no analysis job.
 2. The worker uses a service-role client only inside the Edge Function to read
    the referenced private Storage objects. No signed document URLs are stored in
    the queue or exposed to clients.
-3. It sends each supported document to the existing Gemini provider for text
+3. It sends each accepted PDF, PNG, or JPEG document to the existing Gemini provider for text
    extraction. Native text is used where available and Gemini OCR is used for
    scanned pages. The worker combines CV and credential text, with size and
    page limits to keep processing bounded.
