@@ -5,14 +5,12 @@ import { ROLE_CONFIG } from "@/lib/app/role-config";
 
 import { AppShell } from "./app-shell";
 
-const { usePathname } = vi.hoisted(() => ({
+const { usePathname, useRouter } = vi.hoisted(() => ({
   usePathname: vi.fn(),
+  useRouter: vi.fn(),
 }));
 
-vi.mock("next/navigation", () => ({ usePathname }));
-vi.mock("@/components/auth/sign-out-button", () => ({
-  SignOutButton: () => <button type="button">Sign out</button>,
-}));
+vi.mock("next/navigation", () => ({ usePathname, useRouter }));
 vi.mock("@/components/notifications/notification-bell", () => ({
   NotificationBell: () => <a href="/notifications">Notifications</a>,
 }));
@@ -20,6 +18,7 @@ vi.mock("@/components/notifications/notification-bell", () => ({
 describe("AppShell", () => {
   beforeEach(() => {
     usePathname.mockReturnValue("/hr");
+    useRouter.mockReturnValue({ replace: vi.fn(), refresh: vi.fn() });
   });
 
   it("shows only HR navigation and identifies the current page", () => {
@@ -62,6 +61,7 @@ describe("AppShell", () => {
     expect(screen.getByRole("navigation", { name: /main navigation/i })).toBeInTheDocument();
     expect(screen.getByText("San Juan City Police")).toBeInTheDocument();
     expect(screen.getByTestId("brand-command-accent")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Sign out" })).toBeInTheDocument();
   });
 
   it("gives every authenticated workspace a notifications entry point", () => {
