@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(41);
+select extensions.plan(45);
 
 select extensions.has_table('public', 'job_openings', 'Job openings table exists');
 select extensions.has_table('public', 'job_qualification_criteria', 'Job qualification criteria table exists');
@@ -20,11 +20,12 @@ select extensions.has_function(
   'HR AI shortlist query exists'
 );
 
-insert into auth.users (id, aud, role, email, created_at, updated_at)
+insert into auth.users (id, aud, role, email, created_at, updated_at, raw_user_meta_data)
 values
-  ('00000000-0000-4000-8000-000000009101', 'authenticated', 'authenticated', 'recruitment-hr@example.test', now(), now()),
-  ('00000000-0000-4000-8000-000000009102', 'authenticated', 'authenticated', 'recruitment-applicant@example.test', now(), now()),
-  ('00000000-0000-4000-8000-000000009103', 'authenticated', 'authenticated', 'recruitment-admin@example.test', now(), now());
+  ('00000000-0000-4000-8000-000000009100', 'authenticated', 'authenticated', 'provisioned-applicant@example.test', now(), now(), '{"first_name":"Auto","last_name":"Applicant","full_name":"Auto Applicant"}'::jsonb),
+  ('00000000-0000-4000-8000-000000009101', 'authenticated', 'authenticated', 'recruitment-hr@example.test', now(), now(), '{}'::jsonb),
+  ('00000000-0000-4000-8000-000000009102', 'authenticated', 'authenticated', 'recruitment-applicant@example.test', now(), now(), '{}'::jsonb),
+  ('00000000-0000-4000-8000-000000009103', 'authenticated', 'authenticated', 'recruitment-admin@example.test', now(), now(), '{}'::jsonb);
 
 update public.user_roles
 set role = case user_id
@@ -36,6 +37,27 @@ where user_id in (
   '00000000-0000-4000-8000-000000009101'::uuid,
   '00000000-0000-4000-8000-000000009102'::uuid,
   '00000000-0000-4000-8000-000000009103'::uuid
+);
+
+select extensions.is(
+  (select first_name from public.applicants where profile_id = '00000000-0000-4000-8000-000000009100'::uuid),
+  'Auto',
+  'Auth registration provisions the applicant first name'
+);
+select extensions.is(
+  (select last_name from public.applicants where profile_id = '00000000-0000-4000-8000-000000009100'::uuid),
+  'Applicant',
+  'Auth registration provisions the applicant last name'
+);
+select extensions.is(
+  (select count(*) from public.applicants where profile_id = '00000000-0000-4000-8000-000000009100'::uuid),
+  1::bigint,
+  'Auth registration provisions only one applicant row'
+);
+select extensions.is(
+  (select count(*) from public.applicants where profile_id = '00000000-0000-4000-8000-000000009101'::uuid),
+  0::bigint,
+  'Metadata-free internal Auth users are not forced into applicant profiles'
 );
 
 insert into public.departments (name) values ('Recruitment test department');
