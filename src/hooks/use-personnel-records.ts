@@ -8,6 +8,7 @@ import {
   getEmployee,
   getEmployeeForCurrentUser,
   listEmployees,
+  listUnlinkedEmployeeAccounts,
   listPersonnelEntries,
   saveEmployee,
   savePersonnelEntry,
@@ -17,6 +18,10 @@ import type { EmployeeDirectoryFilters, EmployeeInput, ServiceHistoryInput, Qual
 
 export function useEmployeeDirectory(filters: Partial<EmployeeDirectoryFilters> = {}) {
   return useQuery({ queryKey: queryKeys.personnelRecords.directory(filters), queryFn: () => listEmployees(filters) });
+}
+
+export function useUnlinkedEmployeeAccounts() {
+  return useQuery({ queryKey: queryKeys.personnelRecords.unlinkedAccounts(), queryFn: listUnlinkedEmployeeAccounts });
 }
 
 export function useEmployee(employeeId: string) {
@@ -38,6 +43,7 @@ export function useSaveEmployee() {
     mutationFn: ({ input, employeeId }: { input: EmployeeInput; employeeId?: string }) => saveEmployee(input, employeeId),
     onSuccess: (employee) => {
       void queryClient.invalidateQueries({ queryKey: ["personnel-records", "directory"] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.personnelRecords.unlinkedAccounts() });
       void queryClient.invalidateQueries({ queryKey: queryKeys.personnelRecords.detail(employee.id) });
     },
   });

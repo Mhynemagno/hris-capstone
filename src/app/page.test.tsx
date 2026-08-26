@@ -22,17 +22,20 @@ describe("Home", () => {
     redirect.mockClear();
   });
 
-  it("links visitors to sign in and future job openings", async () => {
+  it("links visitors to public careers and sign in", async () => {
     getAuthenticatedUser.mockResolvedValue(null);
     render(await Home());
 
-    expect(screen.getByRole("link", { name: /sign in/i })).toHaveAttribute(
-      "href",
-      "/login",
-    );
     expect(
-      screen.getByRole("link", { name: /view job openings/i }),
-    ).toHaveAttribute("href", "/jobs");
+      screen
+        .getAllByRole("link", { name: /sign in/i })
+        .some((link) => link.getAttribute("href") === "/login"),
+    ).toBe(true);
+    expect(
+      screen
+        .getAllByRole("link", { name: /^careers$/i })
+        .some((link) => link.getAttribute("href") === "/jobs"),
+    ).toBe(true);
   });
 
   it("redirects a verified administrator to the administration workspace", async () => {
