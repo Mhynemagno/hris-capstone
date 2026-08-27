@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(51);
+select extensions.plan(63);
 
 delete from public.applications;
 delete from public.job_openings;
@@ -21,6 +21,12 @@ select extensions.has_function(
   'list_hr_application_shortlist',
   array['text', 'text', 'smallint'],
   'HR AI shortlist query exists'
+);
+select extensions.has_function(
+  'public',
+  'save_job_opening',
+  array['bigint', 'bigint', 'bigint', 'text', 'text', 'text', 'date', 'text', 'jsonb'],
+  'Transactional job-opening save workflow exists'
 );
 select extensions.ok(
   exists (
@@ -168,6 +174,76 @@ select extensions.throws_ok(
 
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000009101';
 select extensions.lives_ok(
+  $$select public.save_job_opening(
+    null,
+    department.id,
+    position.id,
+    'Transactional opening',
+    'A job opening created together with its qualification criteria in one transaction.',
+    null,
+    null,
+    'closed',
+    '[{"ordinal":1,"kind":"experience","requirement":"Two years of relevant experience","isRequired":true}]'::jsonb
+  ) from public.departments department
+  join public.positions position on position.department_id = department.id
+  where department.name = 'Recruitment test department'$$,
+  'HR creates a job opening and criteria through the protected workflow'
+);
+select extensions.is(
+  (select created_by_user_id from public.job_openings where title = 'Transactional opening'),
+  '00000000-0000-4000-8000-000000009101'::uuid,
+  'The job workflow records its original creator'
+);
+select extensions.lives_ok(
+  $$select public.save_job_opening(
+    opening.id,
+    opening.department_id,
+    opening.position_id,
+    'Transactional opening updated',
+    'The edited job opening and its replacement qualification criteria remain consistent.',
+    'Headquarters',
+    null,
+    'closed',
+    '[{"ordinal":1,"kind":"experience","requirement":"Three years of relevant experience","isRequired":true},{"ordinal":2,"kind":"skill","requirement":"Clear written communication","isRequired":false}]'::jsonb
+  ) from public.job_openings opening where opening.title = 'Transactional opening'$$,
+  'HR atomically updates an opening and replaces its criteria'
+);
+select extensions.is(
+  (select created_by_user_id from public.job_openings where title = 'Transactional opening updated'),
+  '00000000-0000-4000-8000-000000009101'::uuid,
+  'Editing a job opening preserves the original creator'
+);
+select extensions.is(
+  (select count(*) from public.job_qualification_criteria criteria join public.job_openings opening on opening.id = criteria.job_opening_id where opening.title = 'Transactional opening updated'),
+  2::bigint,
+  'The job workflow replaces criteria as one set'
+);
+select extensions.throws_ok(
+  $$select public.save_job_opening(
+    opening.id,
+    opening.department_id,
+    opening.position_id,
+    'Transactional opening updated',
+    'The edited job opening and its replacement qualification criteria remain consistent.',
+    'Headquarters',
+    null,
+    'draft',
+    '[{"ordinal":1,"kind":"skill","requirement":"Valid criterion","isRequired":true},{"ordinal":2,"kind":"invalid","requirement":"Invalid criterion","isRequired":true}]'::jsonb
+  ) from public.job_openings opening where opening.title = 'Transactional opening updated'$$,
+  '22023', null,
+  'Invalid replacement criteria reject the entire job update'
+);
+select extensions.is(
+  (select count(*) from public.job_qualification_criteria criteria join public.job_openings opening on opening.id = criteria.job_opening_id where opening.title = 'Transactional opening updated'),
+  2::bigint,
+  'A failed criteria replacement leaves the existing set intact'
+);
+select extensions.is(
+  (select status from public.job_openings where title = 'Transactional opening updated'),
+  'closed',
+  'The atomic job workflow leaves a valid opening state after a failed retry'
+);
+select extensions.lives_ok(
   $$select public.transition_application_status('00000000-0000-4000-8000-000000009401'::uuid, 'Under Review', 'Initial review started')$$,
   'HR can move Submitted to Under Review'
 );
@@ -197,15 +273,24 @@ from public.applicants applicant
 join public.job_openings opening on opening.status = 'draft'
 where applicant.profile_id = '00000000-0000-4000-8000-000000009102';
 
-update public.application_ai_scores
-set status = 'completed',
-    score = 72,
-    explanation = 'Matches core education and experience criteria.',
-    provider = 'gemini',
-    model = 'gemini-2.5-flash-lite',
-    model_version = '2026-08',
-    completed_at = clock_timestamp()
+update public.application_ai_scores set status = 'processing', processing_started_at = clock_timestamp()
 where application_id = '00000000-0000-4000-8000-000000009401';
+select extensions.lives_ok(
+  $$select public.complete_application_analysis(
+    (select id from public.application_ai_scores where application_id = '00000000-0000-4000-8000-000000009401'::uuid),
+    72,
+    'Matches core education and experience criteria.',
+    'gemini',
+    'gemini-2.5-flash-lite',
+    '2026-08',
+    clock_timestamp()
+  )$$,
+  'Worker completion persists the score and audit atomically'
+);
+select extensions.ok(
+  exists (select 1 from public.audit_logs where entity_type = 'applications' and entity_id = '00000000-0000-4000-8000-000000009401' and action = 'ai_scored'),
+  'Atomic analysis completion writes its audit record'
+);
 
 insert into public.application_ai_scores (
   application_id, requested_by_user_id, status, score, explanation,
@@ -270,6 +355,10 @@ set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000009101';
 select extensions.lives_ok(
   $$select public.retry_application_analysis('00000000-0000-4000-8000-000000009401'::uuid)$$,
   'HR can queue a fresh attempt after terminal analysis failure'
+);
+select extensions.throws_ok(
+  $$select public.retry_application_analysis('00000000-0000-4000-8000-000000009401'::uuid)$$,
+  'P0001', 'Analysis can be retried only after it has failed.', 'An active retry cannot be queued twice'
 );
 set local role postgres;
 select extensions.is(

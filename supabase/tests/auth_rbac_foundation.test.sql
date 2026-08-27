@@ -3,13 +3,28 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(18);
+select extensions.plan(21);
 
 select extensions.has_table('public', 'profiles', 'profiles table exists');
 select extensions.has_table('public', 'user_roles', 'user_roles table exists');
 select extensions.has_table('public', 'departments', 'departments table exists');
 select extensions.has_table('public', 'positions', 'positions table exists');
 select extensions.has_table('public', 'audit_logs', 'audit_logs table exists');
+select extensions.is(
+  (select count(*) from auth.users where email like 'demo.%@example.test' and instance_id = '00000000-0000-0000-0000-000000000000'::uuid),
+  6::bigint,
+  'Local demo users belong to the Auth instance and can sign in'
+);
+select extensions.is(
+  (select count(*) from auth.identities where user_id between '00000000-0000-4000-8000-000000008101'::uuid and '00000000-0000-4000-8000-000000008106'::uuid and provider = 'email'),
+  6::bigint,
+  'Local demo users have email identities'
+);
+select extensions.is(
+  (select count(*) from auth.users where email like 'demo.%@example.test' and confirmation_token is not null and recovery_token is not null and email_change_token_new is not null and email_change_token_current is not null and reauthentication_token is not null),
+  6::bigint,
+  'Local demo users include the token defaults required by Auth'
+);
 
 set local role anon;
 select extensions.is(
@@ -94,7 +109,7 @@ set local role authenticated;
 
 set local request.jwt.claim.sub = '00000000-0000-0000-0000-000000000005';
 select extensions.is(
-  (select count(*) from public.departments),
+  (select count(*) from public.departments where name = 'Fixture Department'),
   1::bigint,
   'Management can read reference data'
 );

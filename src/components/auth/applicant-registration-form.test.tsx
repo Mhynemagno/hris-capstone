@@ -53,7 +53,7 @@ describe("ApplicantRegistrationForm", () => {
     expect(mocks.refresh).toHaveBeenCalledOnce();
   });
 
-  it("explains how to recover when the environment still requires email confirmation", async () => {
+  it("shows a successful check-email state when confirmation is required", async () => {
     const user = userEvent.setup();
     mocks.signUp.mockResolvedValue({ data: { session: null }, error: null });
 
@@ -65,7 +65,8 @@ describe("ApplicantRegistrationForm", () => {
     await user.type(screen.getByLabelText("Password"), "secret1");
     await user.click(screen.getByRole("button", { name: /create account/i }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("requires email confirmation");
+    expect(await screen.findByRole("status")).toHaveTextContent("Check your email");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(mocks.replace).not.toHaveBeenCalled();
   });
 });

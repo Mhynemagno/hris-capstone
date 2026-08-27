@@ -1,4 +1,4 @@
-import { z } from "npm:zod@4";
+import { z } from "npm:zod@^4.4.3";
 import { prepareApplicationDocuments, type ApplicationDocumentInput } from "./application-document-analysis.ts";
 
 export type ApplicationScoringInput = {
@@ -30,6 +30,7 @@ export class GeminiApplicationScoringProvider {
       headers: { "Content-Type": "application/json", "x-goog-api-key": this.apiKey },
       body: JSON.stringify({
         model: "gemini-2.5-flash-lite",
+        store: false,
         input: `Evaluate this approved anonymized CV text against the job criteria. Return only the requested JSON.\nCV:\n${input.cvText}\nCriteria:\n${JSON.stringify(input.criteria)}`,
         response_format: {
           type: "text",
@@ -57,6 +58,7 @@ export class GeminiApplicationScoringProvider {
       headers: { "Content-Type": "application/json", "x-goog-api-key": this.apiKey },
       body: JSON.stringify({
         model: "gemini-2.5-flash-lite",
+        store: false,
         input: [
           ...documents.map((document) => ({
             type: "document",

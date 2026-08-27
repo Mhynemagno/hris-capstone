@@ -44,16 +44,24 @@ export async function submitProfileChangeRequest(draftWithRequestId: { requestId
   const requestId = uuidSchema.parse(draftWithRequestId.requestId);
   const client = createBrowserSupabaseClient(); const { data: userData, error: userError } = await client.auth.getUser(); throwIfError(userError);
   if (!userData.user) throw new Error("Authentication is required.");
+  const bucket = client.storage.from("private-documents");
   const documents = [] as Array<{ objectPath: string; fileName: string; mimeType: "application/pdf" | "image/png" | "image/jpeg" | "image/webp"; sizeBytes: number }>;
   if (files.length > 10) throw new Error("Attach at most 10 supporting documents.");
-  for (const file of files) {
-    const extension = extensionFor(file); if (!extension || file.size < 1 || file.size > 10 * 1024 * 1024) throw new Error("Supporting documents must be PDF, PNG, JPEG, or WEBP files up to 10 MiB.");
-    const objectPath = `profile-change-requests/${userData.user.id}/${requestId}/${crypto.randomUUID()}.${extension}`;
-    const { error } = await client.storage.from("private-documents").upload(objectPath, file, { contentType: file.type, upsert: false }); throwIfError(error);
-    documents.push({ objectPath, fileName: file.name, mimeType: file.type as "application/pdf" | "image/png" | "image/jpeg" | "image/webp", sizeBytes: file.size });
+  try {
+    for (const file of files) {
+      const extension = extensionFor(file); if (!extension || file.size < 1 || file.size > 10 * 1024 * 1024) throw new Error("Supporting documents must be PDF, PNG, JPEG, or WEBP files up to 10 MiB.");
+      const objectPath = `profile-change-requests/${userData.user.id}/${requestId}/${crypto.randomUUID()}.${extension}`;
+      const { error } = await bucket.upload(objectPath, file, { contentType: file.type, upsert: false }); throwIfError(error);
+      documents.push({ objectPath, fileName: file.name, mimeType: file.type as "application/pdf" | "image/png" | "image/jpeg" | "image/webp", sizeBytes: file.size });
+    }
+    const payload = profileChangeSubmissionSchema.parse({ ...draft, requestId, documents });
+    const { error } = await client.rpc("submit_profile_change_request", { target_request_id: payload.requestId, request_note: payload.note ?? null, requested_changes: payload.changes, requested_documents: payload.documents }); throwIfError(error);
+  } catch (error) {
+    if (documents.length > 0) {
+      await bucket.remove(documents.map((document) => document.objectPath)).catch(() => undefined);
+    }
+    throw error;
   }
-  const payload = profileChangeSubmissionSchema.parse({ ...draft, requestId, documents });
-  const { error } = await client.rpc("submit_profile_change_request", { target_request_id: payload.requestId, request_note: payload.note ?? null, requested_changes: payload.changes, requested_documents: payload.documents }); throwIfError(error);
 }
 
 export async function cancelProfileChangeRequest(input: { requestId: string }) { const parsed = profileChangeCancellationSchema.parse(input); const { error } = await createBrowserSupabaseClient().rpc("cancel_profile_change_request", { target_request_id: parsed.requestId }); throwIfError(error); }

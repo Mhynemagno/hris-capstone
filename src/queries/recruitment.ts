@@ -82,6 +82,7 @@ export async function getPublishedJob(jobId: number) {
     .from("job_openings")
     .select("*, job_qualification_criteria(*)")
     .eq("id", id)
+    .eq("status", "published")
     .maybeSingle();
   throwIfError(error);
   return data as (JobOpening & { job_qualification_criteria: JobQualificationCriterion[] }) | null;
@@ -151,37 +152,21 @@ export async function listHrJobs(input: Partial<JobFilters> = {}) {
 
 export async function saveJobOpening(input: JobOpeningInput, jobId?: number) {
   const values = jobOpeningSchema.parse(input);
-  const user = await requireCurrentUser();
+  await requireCurrentUser();
   const client = createBrowserSupabaseClient();
-  const payload = {
-    department_id: values.departmentId,
-    position_id: values.positionId,
-    title: values.title,
-    description: values.description,
-    location: values.location ?? null,
-    closes_on: values.closesOn ?? null,
-    status: values.status,
-    published_at: values.status === "published" ? new Date().toISOString() : null,
-    created_by_user_id: user.id,
-  };
-  const result = jobId
-    ? await client.from("job_openings").update(payload).eq("id", jobId).select("*").single()
-    : await client.from("job_openings").insert(payload).select("*").single();
-  throwIfError(result.error);
-  const job = result.data as JobOpening;
-  if (jobId) {
-    const { error } = await client.from("job_qualification_criteria").delete().eq("job_opening_id", job.id);
-    throwIfError(error);
-  }
-  const { error } = await client.from("job_qualification_criteria").insert(values.criteria.map((criterion, index) => ({
-    job_opening_id: job.id,
-    ordinal: index + 1,
-    kind: criterion.kind,
-    requirement: criterion.requirement,
-    is_required: criterion.isRequired,
-  })));
+  const { data, error } = await client.rpc("save_job_opening", {
+    target_job_id: jobId ?? null,
+    target_department_id: values.departmentId,
+    target_position_id: values.positionId,
+    target_title: values.title,
+    target_description: values.description,
+    target_location: values.location ?? null,
+    target_closes_on: values.closesOn ?? null,
+    target_status: values.status,
+    requested_criteria: values.criteria,
+  });
   throwIfError(error);
-  return job;
+  return data as JobOpening;
 }
 
 export async function listHrApplications(input: Partial<ApplicationAiFilters> = {}) {
@@ -236,40 +221,49 @@ export async function submitApplication(input: SubmitApplicationInput) {
   if (!applicant) throw new ApplicantProfileRequiredError();
 
   const uploadedDocuments = [];
+  const uploadedPaths: string[] = [];
   const bucket = client.storage.from("applicant-documents");
-  for (const document of input.documents) {
-    const documentId = crypto.randomUUID();
-    const extension = extensionFor(document.file);
-    const objectPath = `applicants/${user.id}/${input.applicationId}/${documentId}.${extension}`;
-    const metadata = applicantDocumentSchema.parse({
-      kind: document.kind,
-      objectPath,
-      fileName: document.file.name,
-      mimeType: document.file.type,
-      sizeBytes: document.file.size,
+  try {
+    for (const document of input.documents) {
+      const documentId = crypto.randomUUID();
+      const extension = extensionFor(document.file);
+      const objectPath = `applicants/${user.id}/${input.applicationId}/${documentId}.${extension}`;
+      const metadata = applicantDocumentSchema.parse({
+        kind: document.kind,
+        objectPath,
+        fileName: document.file.name,
+        mimeType: document.file.type,
+        sizeBytes: document.file.size,
+      });
+      const { error } = await bucket.upload(objectPath, document.file, {
+        contentType: metadata.mimeType,
+        upsert: false,
+      });
+      throwIfError(error);
+      uploadedPaths.push(objectPath);
+      uploadedDocuments.push(metadata);
+    }
+
+    const values = applicationSubmissionSchema.parse({
+      applicationId: input.applicationId,
+      jobId: input.jobId,
+      coverNote: input.coverNote,
+      documents: uploadedDocuments,
     });
-    const { error } = await bucket.upload(objectPath, document.file, {
-      contentType: metadata.mimeType,
-      upsert: false,
+    const { data, error } = await client.rpc("submit_application", {
+      target_application_id: values.applicationId,
+      target_job_opening_id: values.jobId,
+      submitted_cover_note: values.coverNote ?? null,
+      submitted_documents: values.documents,
     });
     throwIfError(error);
-    uploadedDocuments.push(metadata);
+    return (data as string | null) ?? values.applicationId;
+  } catch (cause) {
+    if (uploadedPaths.length > 0) {
+      try { await bucket.remove(uploadedPaths); } catch { /* Preserve the submission error. */ }
+    }
+    throw cause;
   }
-
-  const values = applicationSubmissionSchema.parse({
-    applicationId: input.applicationId,
-    jobId: input.jobId,
-    coverNote: input.coverNote,
-    documents: uploadedDocuments,
-  });
-  const { data, error } = await client.rpc("submit_application", {
-    target_application_id: values.applicationId,
-    target_job_opening_id: values.jobId,
-    submitted_cover_note: values.coverNote ?? null,
-    submitted_documents: values.documents,
-  });
-  throwIfError(error);
-  return (data as string | null) ?? values.applicationId;
 }
 
 export async function hireApplication(input: HiringDecisionInput) {

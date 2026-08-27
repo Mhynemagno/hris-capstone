@@ -9,6 +9,7 @@ import {
   managedUserUpdateSchema,
   organizationSettingsSchema,
   positionSchema,
+  referenceDataFiltersSchema,
 } from "./administration";
 
 describe("administration schemas", () => {
@@ -80,5 +81,9 @@ describe("administration schemas", () => {
         role: "hr_personnel",
       }).success,
     ).toBe(false);
+  });
+
+  it("allows larger reference-data pages for complete form choices", () => {
+    expect(referenceDataFiltersSchema.parse({ pageSize: 100 }).pageSize).toBe(100);
   });
 });

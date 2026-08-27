@@ -60,7 +60,7 @@ export function createProcessApplicationAnalysisHandler({
     const analyzer = analyzeDocuments ?? provider.analyzeDocuments.bind(provider);
     const { data: messages, error: readError } = await admin.schema("pgmq_public").rpc("read", {
       queue_name: QUEUE_NAME,
-      sleep_seconds: 0,
+      visibility_timeout_seconds: 600,
       n: WORKER_BATCH_SIZE,
     });
     if (readError) return json(500, { error: "Unable to read application analysis queue." });
@@ -128,27 +128,16 @@ export function createProcessApplicationAnalysisHandler({
           })),
         });
         const completedAt = now().toISOString();
-        const { error: completeError } = await admin
-          .from("application_ai_scores")
-          .update({
-            status: "completed",
-            score: result.score,
-            explanation: result.explanation,
-            provider: result.provider,
-            model: result.model,
-            model_version: result.modelVersion,
-            completed_at: completedAt,
-          })
-          .eq("id", attempt.id);
-        if (completeError) throw new Error("persistence_failed");
-        const { error: auditError } = await admin.from("audit_logs").insert({
-          actor_user_id: null,
-          entity_type: "applications",
-          entity_id: attempt.application_id,
-          action: "ai_scored",
-          metadata: { score_id: attempt.id, status: "completed", provider: result.provider, model: result.model },
+        const { data: completed, error: completeError } = await admin.rpc("complete_application_analysis", {
+          target_score_id: attempt.id,
+          target_score: result.score,
+          target_explanation: result.explanation,
+          target_provider: result.provider,
+          target_model: result.model,
+          target_model_version: result.modelVersion,
+          target_completed_at: completedAt,
         });
-        if (auditError) throw new Error("persistence_failed");
+        if (completeError || completed !== true) throw new Error("persistence_failed");
         await admin.schema("pgmq_public").rpc("delete", { queue_name: QUEUE_NAME, msg_id: message.msg_id });
         processed += 1;
       } catch (cause) {
@@ -168,10 +157,11 @@ export function createProcessApplicationAnalysisHandler({
           if (enqueueError) continue;
         } else {
           const completedAt = now().toISOString();
-          await admin
+          const { error: failureError } = await admin
             .from("application_ai_scores")
             .update({ status: "failed", failure_code: code, completed_at: completedAt })
             .eq("id", attempt.id);
+          if (failureError) continue;
         }
         await admin.schema("pgmq_public").rpc("delete", { queue_name: QUEUE_NAME, msg_id: message.msg_id });
       }

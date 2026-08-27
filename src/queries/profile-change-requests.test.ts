@@ -32,6 +32,21 @@ describe("profile change request queries", () => {
     expect(mocks.rpc).toHaveBeenCalledWith("submit_profile_change_request", expect.objectContaining({ target_request_id: requestId, requested_documents: [expect.objectContaining({ fileName: "evidence.pdf", mimeType: "application/pdf" })] }));
   });
 
+  it("removes uploaded documents when the request RPC fails", async () => {
+    const upload = vi.fn().mockResolvedValue({ error: null });
+    const remove = vi.fn().mockResolvedValue({ error: null });
+    mocks.authGetUser.mockResolvedValue({ data: { user: { id: userId } }, error: null });
+    mocks.storageFrom.mockReturnValue({ remove, upload });
+    mocks.rpc.mockResolvedValue({ error: { message: "request rejected" } });
+
+    await expect(submitProfileChangeRequest({
+      requestId,
+      changes: [{ kind: "contact", field: "phone", originalValue: null, requestedValue: "+976 99112233" }],
+    }, [new File(["evidence"], "evidence.pdf", { type: "application/pdf" })])).rejects.toThrow("request rejected");
+
+    expect(remove).toHaveBeenCalledWith([expect.stringMatching(new RegExp(`^profile-change-requests/${userId}/${requestId}/`))]);
+  });
+
   it("sends only approved or rejected decisions through the decision RPC", async () => {
     mocks.rpc.mockResolvedValue({ error: null });
     await decideProfileChangeRequest({ requestId, decision: "approved" });

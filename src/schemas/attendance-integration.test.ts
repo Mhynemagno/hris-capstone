@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { attendanceFiltersSchema, attendanceMappingSchema, attendanceSettingsSchema } from "./attendance-integration";
+import { attendanceFiltersSchema, attendanceImportFileSchema, attendanceMappingSchema, attendanceSettingsSchema } from "./attendance-integration";
 
 const employeeId = "123e4567-e89b-42d3-a456-426614174000";
 
@@ -22,5 +22,10 @@ describe("attendance integration schemas", () => {
   it("normalizes external employee IDs and requires UUID references", () => {
     expect(attendanceMappingSchema.parse({ employeeId, externalEmployeeId: " dev-001 " })).toEqual({ employeeId, externalEmployeeId: "DEV-001" });
     expect(attendanceMappingSchema.safeParse({ employeeId: "dev-001", externalEmployeeId: "DEV-001" }).success).toBe(false);
+  });
+
+  it("accepts CSV files when the browser omits the MIME type", () => {
+    expect(attendanceImportFileSchema.safeParse({ name: "attendance.csv", type: "", size: 1024 }).success).toBe(true);
+    expect(attendanceImportFileSchema.safeParse({ name: "attendance.exe", type: "", size: 1024 }).success).toBe(false);
   });
 });

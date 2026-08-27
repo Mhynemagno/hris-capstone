@@ -1,20 +1,28 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const getCurrentRole = vi.hoisted(() => vi.fn());
+
+vi.mock("@/lib/auth/current-role", () => ({ getCurrentRole }));
 
 import UnauthorizedPage from "./page";
 
 describe("UnauthorizedPage", () => {
-  it("explains the denial and offers a return to sign in", () => {
-    render(<UnauthorizedPage />);
+  beforeEach(() => getCurrentRole.mockReset());
 
-    expect(
-      screen.getByRole("heading", { name: /access denied/i }),
-    ).toBeInTheDocument();
-    const returnLink = screen.getByRole("link", {
-      name: /return to sign in/i,
-    });
+  it("returns an authenticated user to their own workspace", async () => {
+    getCurrentRole.mockResolvedValue("management");
 
-    expect(returnLink).toHaveAttribute("href", "/login");
-    expect(returnLink.closest("button")).toBeNull();
+    render(await UnauthorizedPage());
+
+    expect(screen.getByRole("link", { name: /return to management workspace/i })).toHaveAttribute("href", "/management");
+  });
+
+  it("returns a signed-out visitor to sign in", async () => {
+    getCurrentRole.mockResolvedValue(null);
+
+    render(await UnauthorizedPage());
+
+    expect(screen.getByRole("link", { name: /return to sign in/i })).toHaveAttribute("href", "/login");
   });
 });

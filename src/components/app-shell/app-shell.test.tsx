@@ -78,4 +78,18 @@ describe("AppShell", () => {
       }),
     ).toBeVisible();
   });
+
+  it("keeps the most specific parent navigation active on detail pages", () => {
+    usePathname.mockReturnValue("/hr/applications/123e4567-e89b-42d3-a456-426614174000");
+    render(
+      <AppShell config={ROLE_CONFIG.hr_personnel} email="hr@example.com">
+        <p>Application detail</p>
+      </AppShell>,
+    );
+
+    const navigation = screen.getByRole("navigation", { name: /main navigation/i });
+    expect(within(navigation).getByRole("link", { name: "Applications" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByText("Applications", { selector: "[data-slot='breadcrumb-page']" })).toBeVisible();
+    expect(within(navigation).getByRole("link", { name: "HR workspace" })).not.toHaveAttribute("aria-current");
+  });
 });

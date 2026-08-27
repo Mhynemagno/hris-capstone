@@ -22,3 +22,26 @@ jobs:
       - run: npm run typecheck
       - run: npm run test:run
       - run: npm run build
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Test Edge Functions with the frozen lockfile
+        run: deno test --node-modules-dir=auto --frozen --allow-env --allow-net supabase/functions
+
+  database:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.114.0
+
+      - name: Start local Supabase services
+        run: supabase start
+
+      - name: Run database regression tests
+        run: supabase test db --local supabase/tests

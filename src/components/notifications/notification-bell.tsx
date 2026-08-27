@@ -5,7 +5,7 @@ import Link from "next/link";
 
 import { useUnreadNotificationCount } from "@/hooks/use-notifications";
 
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 
 export function NotificationBell() {
   const { data: unreadCount, isError, isLoading } = useUnreadNotificationCount();
@@ -13,12 +13,10 @@ export function NotificationBell() {
   const label = count > 0 ? `Notifications, ${count} unread` : "Notifications";
 
   return (
-    <Button
+    <Link
       aria-label={label}
-      className="relative"
-      size="icon"
-      variant="ghost"
-      render={<Link href="/notifications" />}
+      className={buttonVariants({ className: "relative", size: "icon", variant: "ghost" })}
+      href="/notifications"
     >
       <Bell aria-hidden="true" />
       {count > 0 ? (
@@ -29,6 +27,6 @@ export function NotificationBell() {
           {count > 99 ? "99+" : count}
         </span>
       ) : null}
-    </Button>
+    </Link>
   );
 }
