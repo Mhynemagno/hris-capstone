@@ -1,6 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
-import { z } from "npm:zod@4";
+import { z } from "npm:zod@^4.4.3";
 
 import { getInvitationRedirectUrl } from "../_shared/invitation-redirect.ts";
 

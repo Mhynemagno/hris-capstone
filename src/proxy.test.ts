@@ -21,6 +21,8 @@ describe("authentication proxy", () => {
   it("protects future application routes", () => {
     expect(isAuthenticationProtectedPath("/hr")).toBe(true);
     expect(isAuthenticationProtectedPath("/applicant/profile")).toBe(true);
+    expect(isAuthenticationProtectedPath("/notifications")).toBe(true);
+    expect(isAuthenticationProtectedPath("/reports/workforce-summary")).toBe(true);
   });
 
   it("redirects an anonymous visitor to login with the requested path", async () => {

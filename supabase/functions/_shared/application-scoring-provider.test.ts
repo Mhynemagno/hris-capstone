@@ -20,6 +20,7 @@ Deno.test("Gemini provider returns validated structured recommendation", async (
   assertEquals(body.includes("Candidate has five years"), true);
   assertEquals(body.includes("response_format"), true);
   assertEquals(body.includes("application_id"), false);
+  assertEquals(JSON.parse(body).store, false);
 });
 
 Deno.test("Gemini provider rejects malformed structured output", async () => {
@@ -47,4 +48,5 @@ Deno.test("Gemini provider scores uploaded PDF and image evidence", async () => 
   assertEquals(body.includes('"type":"document"'), true);
   assertEquals(body.includes('"mime_type":"application/pdf"'), true);
   assertEquals(body.includes('"mime_type":"image/png"'), true);
+  assertEquals(JSON.parse(body).store, false);
 });

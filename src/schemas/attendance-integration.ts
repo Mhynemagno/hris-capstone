@@ -31,8 +31,12 @@ export const attendanceMappingSchema = z.object({
 
 export const attendanceImportFileSchema = z.object({
   name: z.string().trim().min(1).max(255),
-  type: z.enum(["text/csv", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"]),
+  type: z.string(),
   size: z.number().int().positive().max(2 * 1024 * 1024),
+}).superRefine((file, context) => {
+  const isCsv = /\.csv$/i.test(file.name) && (file.type === "" || file.type === "text/csv" || file.type === "application/csv");
+  const isXlsx = /\.xlsx$/i.test(file.name) && (file.type === "" || file.type === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  if (!isCsv && !isXlsx) context.addIssue({ code: "custom", path: ["type"], message: "Choose a CSV or XLSX file." });
 });
 
 export type AttendanceFilters = z.infer<typeof attendanceFiltersSchema>;

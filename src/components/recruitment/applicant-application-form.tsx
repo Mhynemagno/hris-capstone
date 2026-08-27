@@ -9,36 +9,45 @@ import { Input } from "@/components/ui/input";
 import { useSubmitApplication } from "@/hooks/use-recruitment";
 import { ApplicantProfileRequiredError } from "@/queries/recruitment";
 
+function isNonEmptyFile(value: FormDataEntryValue | null): value is File {
+  return typeof value === "object" && value !== null && "size" in value && value.size > 0;
+}
+
 export function ApplicantApplicationForm({ jobId }: { jobId: number }) {
   const submit = useSubmitApplication();
   const [error, setError] = useState<string | null>(null);
   const [profileRequired, setProfileRequired] = useState(false);
+  const [submittedApplicationId, setSubmittedApplicationId] = useState<string | null>(null);
 
   async function onSubmit(form: HTMLFormElement) {
     setError(null);
     setProfileRequired(false);
+    setSubmittedApplicationId(null);
 
     const data = new FormData(form);
-    const files = Array.from(data.getAll("documents")).filter(
-      (value): value is File => value instanceof File && value.size > 0,
+    const cvValue = data.get("cv");
+    const cv = isNonEmptyFile(cvValue) ? cvValue : null;
+    const credentials = Array.from(data.getAll("credentials")).filter(
+      isNonEmptyFile,
     );
 
-    if (!files.some((file) => file.type === "application/pdf" || /\.(pdf)$/i.test(file.name))) {
-      setError("Attach a CV before submitting.");
+    if (!cv || (cv.type !== "application/pdf" && !/\.pdf$/i.test(cv.name))) {
+      setError("Attach your CV as a PDF before submitting.");
       return;
     }
 
     try {
-      await submit.mutateAsync({
+      const applicationId = await submit.mutateAsync({
         applicationId: crypto.randomUUID(),
         jobId,
         coverNote: String(data.get("coverNote") ?? ""),
-        documents: files.map((file, index) => ({
-          kind: index === 0 ? "cv" as const : "credential" as const,
-          file,
-        })),
+        documents: [
+          { kind: "cv" as const, file: cv },
+          ...credentials.map((file) => ({ kind: "credential" as const, file })),
+        ],
       });
       form.reset();
+      setSubmittedApplicationId(applicationId);
     } catch (cause) {
       if (cause instanceof ApplicantProfileRequiredError) {
         setProfileRequired(true);
@@ -66,16 +75,21 @@ export function ApplicantApplicationForm({ jobId }: { jobId: number }) {
       <FormField htmlFor="application-cover-note" label="Cover note">
         <textarea className="min-h-28 w-full rounded-lg border bg-background p-3 text-base leading-6" id="application-cover-note" name="coverNote" />
       </FormField>
-      <FormField htmlFor="application-documents" label="CV and credentials">
-        <Input accept=".pdf,.png,.jpg,.jpeg" aria-describedby="application-documents-help" id="application-documents" multiple name="documents" type="file" />
+      <FormField htmlFor="application-cv" label="CV (PDF)">
+        <Input accept=".pdf,application/pdf" aria-describedby="application-cv-help" id="application-cv" name="cv" required type="file" />
       </FormField>
-      <p className="text-sm text-muted-foreground" id="application-documents-help">Upload your CV first. You can add certificates or other supporting documents in PDF, PNG, or JPEG format. Files must be 10 MB or smaller.</p>
+      <p className="text-sm text-muted-foreground" id="application-cv-help">Required. Upload one PDF no larger than 10 MB.</p>
+      <FormField htmlFor="application-credentials" label="Credentials (optional)">
+        <Input accept=".pdf,.png,.jpg,.jpeg" aria-describedby="application-credentials-help" id="application-credentials" multiple name="credentials" type="file" />
+      </FormField>
+      <p className="text-sm text-muted-foreground" id="application-credentials-help">Add certificates or other supporting documents as PDF, PNG, or JPEG files up to 10 MB each.</p>
       {profileRequired && error ? (
         <div className="rounded-lg border border-primary/30 bg-primary/5 p-4" role="alert">
           <p className="text-sm font-medium text-foreground">{error}</p>
           <Link className="mt-2 inline-flex text-sm font-semibold text-primary underline-offset-4 hover:underline" href="/applicant/profile">Complete profile</Link>
         </div>
       ) : error ? <ErrorState message={error} /> : null}
+      {submittedApplicationId ? <div aria-live="polite" className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-emerald-950" role="status"><p className="font-semibold">Application submitted</p><p className="mt-1 text-sm">Your application and documents were received.</p><Link className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold underline underline-offset-4" href={`/applicant/applications/${submittedApplicationId}`}>Track application</Link></div> : null}
       <button className="min-h-11 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60" disabled={submit.isPending} type="submit">{submit.isPending ? "Submitting…" : "Submit application"}</button>
     </form>
   );

@@ -59,7 +59,7 @@ export const managedUserFiltersSchema = administrationPageSchema.extend({
   status: z.enum(["active", "inactive"]).optional(),
 });
 
-export const referenceDataFiltersSchema = administrationPageSchema.extend({
+export const referenceDataFiltersSchema = paginationSchema.extend({
   search: optionalFilterText(120),
   status: z.enum(["active", "inactive"]).optional(),
 });

@@ -40,8 +40,8 @@ beforeEach(() => {
     isError: false,
     isLoading: false,
   });
-  mocks.useMarkNotificationRead.mockReturnValue({ isPending: false, mutate: mocks.markOneMutate });
-  mocks.useMarkAllNotificationsRead.mockReturnValue({ isPending: false, mutate: mocks.markAllMutate });
+  mocks.useMarkNotificationRead.mockReturnValue({ error: null, isError: false, isPending: false, mutate: mocks.markOneMutate });
+  mocks.useMarkAllNotificationsRead.mockReturnValue({ error: null, isError: false, isPending: false, mutate: mocks.markAllMutate });
   mocks.markOneMutate.mockReset();
   mocks.markAllMutate.mockReset();
 });
@@ -112,5 +112,19 @@ describe("NotificationInbox", () => {
     await user.click(nextPage);
 
     expect(mocks.useNotifications).toHaveBeenLastCalledWith({ page: 2, pageSize: 20 });
+  });
+
+  it("reports notification update failures without hiding the inbox", () => {
+    mocks.useMarkAllNotificationsRead.mockReturnValue({
+      error: new Error("Unable to update notifications"),
+      isError: true,
+      isPending: false,
+      mutate: mocks.markAllMutate,
+    });
+
+    render(<NotificationInbox />);
+
+    expect(screen.getByRole("alert")).toHaveTextContent("Unable to update notifications");
+    expect(screen.getByText("Profile updated")).toBeVisible();
   });
 });

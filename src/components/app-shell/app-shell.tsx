@@ -52,6 +52,10 @@ const navigationIcons = { LayoutDashboard, Users, ShieldCheck, Building2, Briefc
 
 export function AppShell({ children, config, email }: AppShellProps) {
   const pathname = usePathname();
+  const activeNavigationItem = config.navigation
+    .filter((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))
+    .toSorted((left, right) => right.href.length - left.href.length)[0];
+  const currentPageLabel = activeNavigationItem?.label ?? (pathname === "/notifications" ? "Notifications" : config.landingTitle);
 
   return (
     <TooltipProvider>
@@ -84,7 +88,7 @@ export function AppShell({ children, config, email }: AppShellProps) {
                 <nav aria-label="Main navigation">
                   <SidebarMenu>
                     {config.navigation.map((item) => {
-                      const isActive = pathname === item.href;
+                      const isActive = activeNavigationItem?.href === item.href;
                       const Icon = navigationIcons[item.icon];
 
                       return (
@@ -139,7 +143,7 @@ export function AppShell({ children, config, email }: AppShellProps) {
                   <span className="text-muted-foreground">{config.label}</span>
                 </BreadcrumbItem>
                 <BreadcrumbItem>
-                  <BreadcrumbPage>{config.landingTitle}</BreadcrumbPage>
+                  <BreadcrumbPage>{currentPageLabel}</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>

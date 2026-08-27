@@ -8,8 +8,14 @@ import {
   CardDescription,
   CardHeader,
 } from "@/components/ui/card";
+import { ROLE_CONFIG } from "@/lib/app/role-config";
+import { getCurrentRole } from "@/lib/auth/current-role";
 
-export default function UnauthorizedPage() {
+export default async function UnauthorizedPage() {
+  const role = await getCurrentRole();
+  const returnHref = role ? ROLE_CONFIG[role].homeHref : "/login";
+  const returnLabel = role ? `Return to ${ROLE_CONFIG[role].landingTitle}` : "Return to sign in";
+
   return (
     <main className="flex min-h-dvh items-center justify-center bg-muted/40 px-4 py-12">
       <Card className="w-full max-w-md text-center shadow-sm">
@@ -25,8 +31,8 @@ export default function UnauthorizedPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <Link className={buttonVariants()} href="/login">
-            Return to sign in
+          <Link className={buttonVariants()} href={returnHref}>
+            {returnLabel}
           </Link>
         </CardContent>
       </Card>

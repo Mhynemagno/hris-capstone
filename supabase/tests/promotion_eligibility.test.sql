@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(25);
+select extensions.plan(26);
 
 select extensions.has_table('public', 'promotion_criteria', 'Promotion criteria table exists');
 select extensions.has_table('public', 'promotion_criteria_requirements', 'Promotion requirement table exists');
@@ -48,6 +48,18 @@ set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000801';
 
 select set_config('test.criterion_id', public.create_promotion_criterion(9901, 3, 4, '[{"recordKind":"certification","requiredName":"First Aid","label":"First-aid certification","isMandatory":true}]'::jsonb)::text, true);
+select extensions.lives_ok(
+  $$select public.update_promotion_criterion(
+    current_setting('test.criterion_id')::uuid,
+    (select updated_at from public.promotion_criteria where id = current_setting('test.criterion_id')::uuid),
+    9901,
+    4,
+    4,
+    true,
+    '[{"recordKind":"certification","requiredName":"First Aid","label":"First-aid certification","isMandatory":true}]'::jsonb
+  )$$,
+  'HR can update promotion criteria without an ambiguous column error'
+);
 select extensions.lives_ok($$select public.create_performance_rating('00000000-0000-4000-8000-000000000811'::uuid, 5, '2025-01-01', '2025-12-31', 'Strong review')$$, 'HR records an overall rating');
 select extensions.lives_ok($$select public.create_promotion_evaluation('00000000-0000-4000-8000-000000000811'::uuid, 9901, current_setting('test.criterion_id')::uuid, '2026-08-24', 'recommended', 'Ready for manual consideration', '[]'::jsonb)$$, 'HR creates an advisory evaluation');
 select extensions.ok((select is_ready from public.promotion_evaluations where employee_id = '00000000-0000-4000-8000-000000000811'), 'Matching records and rating produce readiness');

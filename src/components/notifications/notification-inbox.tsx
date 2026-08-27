@@ -11,7 +11,7 @@ import {
 } from "@/hooks/use-notifications";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
@@ -33,6 +33,7 @@ export function NotificationInbox() {
   const markAll = useMarkAllNotificationsRead();
   const notificationPage = notifications.data;
   const unreadCount = unread.data ?? 0;
+  const mutationError = markOne.error ?? markAll.error;
 
   return (
     <section aria-labelledby="notifications-heading" className="space-y-6">
@@ -49,6 +50,7 @@ export function NotificationInbox() {
         </Button>
       </div>
 
+      {mutationError ? <ErrorState message={mutationError.message} /> : null}
       {notifications.isLoading ? <LoadingState label="Loading notifications" /> : null}
       {notifications.isError ? <ErrorState message={`${notifications.error.message} Please try again.`} /> : null}
       {notificationPage && notificationPage.rows.length === 0 ? (
@@ -78,9 +80,9 @@ export function NotificationInbox() {
               </CardContent>
               <CardFooter className="justify-between gap-3">
                 {notification.link ? (
-                  <Button variant="link" render={<Link href={notification.link} aria-label={`View details for ${notification.title}`} />}>
+                  <Link aria-label={`View details for ${notification.title}`} className={buttonVariants({ variant: "link" })} href={notification.link}>
                     View details
-                  </Button>
+                  </Link>
                 ) : <span />}
                 {notification.read_at ? null : (
                   <Button

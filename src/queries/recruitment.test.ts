@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   getUser: vi.fn(),
   rpc: vi.fn(),
   upload: vi.fn(),
+  remove: vi.fn(),
 }));
 
 vi.mock("@/lib/supabase/client", () => ({
@@ -15,11 +16,31 @@ vi.mock("@/lib/supabase/client", () => ({
     auth: { getUser: mocks.getUser },
     from: mocks.from,
     rpc: mocks.rpc,
-    storage: { from: () => ({ upload: mocks.upload }) },
+    storage: { from: () => ({ upload: mocks.upload, remove: mocks.remove }) },
   }),
 }));
 
-import { retryApplicationAnalysis, submitApplication } from "./recruitment";
+import { getPublishedJob, retryApplicationAnalysis, saveJobOpening, submitApplication } from "./recruitment";
+
+describe("getPublishedJob", () => {
+  beforeEach(() => vi.resetAllMocks());
+
+  it("applies an explicit published-status filter before returning a public job", async () => {
+    const query = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+    };
+    query.select.mockReturnValue(query);
+    query.eq.mockReturnValue(query);
+    mocks.from.mockReturnValue(query);
+
+    await getPublishedJob(42);
+
+    expect(query.eq).toHaveBeenNthCalledWith(1, "id", 42);
+    expect(query.eq).toHaveBeenNthCalledWith(2, "status", "published");
+  });
+});
 
 describe("submitApplication", () => {
   beforeEach(() => {
@@ -86,6 +107,53 @@ describe("submitApplication", () => {
     })).rejects.toThrow("Choose a PDF, PNG, or JPEG file.");
 
     expect(mocks.upload).not.toHaveBeenCalled();
+  });
+
+  it("removes uploaded objects when the submission transaction fails", async () => {
+    const profileQuery = {
+      maybeSingle: vi.fn().mockResolvedValue({ data: { id: "323e4567-e89b-42d3-a456-426614174000" }, error: null }),
+      select: vi.fn(),
+    };
+    profileQuery.select.mockReturnValue(profileQuery);
+    mocks.from.mockReturnValue(profileQuery);
+    mocks.rpc.mockResolvedValue({ data: null, error: { message: "submission failed" } });
+    mocks.remove.mockResolvedValue({ error: null });
+
+    await expect(submitApplication({
+      applicationId,
+      jobId: 7,
+      coverNote: "Ready to contribute.",
+      documents: [{ kind: "cv", file: new File(["CV"], "cv.pdf", { type: "application/pdf" }) }],
+    })).rejects.toThrow("submission failed");
+
+    expect(mocks.remove).toHaveBeenCalledWith([
+      expect.stringMatching(new RegExp(`^applicants/${userId}/${applicationId}/.+\\.pdf$`)),
+    ]);
+  });
+});
+
+describe("saveJobOpening", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    mocks.getUser.mockResolvedValue({ data: { user: { id: userId } }, error: null });
+    mocks.rpc.mockResolvedValue({ data: { id: 42 }, error: null });
+  });
+
+  it("saves the opening and its criteria through one transactional RPC", async () => {
+    await expect(saveJobOpening({
+      departmentId: 1,
+      positionId: 2,
+      title: "Public Safety Analyst",
+      description: "Analyze public safety data and support evidence-based operational decisions.",
+      status: "draft",
+      criteria: [{ ordinal: 1, kind: "skill", requirement: "Clear written communication", isRequired: true }],
+    }, 42)).resolves.toMatchObject({ id: 42 });
+
+    expect(mocks.rpc).toHaveBeenCalledWith("save_job_opening", expect.objectContaining({
+      target_job_id: 42,
+      requested_criteria: [{ ordinal: 1, kind: "skill", requirement: "Clear written communication", isRequired: true }],
+    }));
+    expect(mocks.from).not.toHaveBeenCalled();
   });
 });
 

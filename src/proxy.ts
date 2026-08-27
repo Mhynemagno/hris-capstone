@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { updateSession } from "@/lib/supabase/proxy";
 
-const protectedRoots = ["/admin", "/hr", "/employee", "/management"];
+const protectedRoots = ["/admin", "/hr", "/employee", "/management", "/notifications", "/reports"];
 
 export function isAuthenticationProtectedPath(pathname: string): boolean {
   return (
