@@ -3,7 +3,10 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(45);
+select extensions.plan(51);
+
+delete from public.applications;
+delete from public.job_openings;
 
 select extensions.has_table('public', 'job_openings', 'Job openings table exists');
 select extensions.has_table('public', 'job_qualification_criteria', 'Job qualification criteria table exists');
@@ -18,6 +21,16 @@ select extensions.has_function(
   'list_hr_application_shortlist',
   array['text', 'text', 'smallint'],
   'HR AI shortlist query exists'
+);
+select extensions.ok(
+  exists (
+    select 1
+    from pg_namespace queue_schema
+    where queue_schema.nspname = 'pgmq_public'
+      and has_schema_privilege('service_role', queue_schema.oid, 'usage')
+      and not has_schema_privilege('authenticated', queue_schema.oid, 'usage')
+  ),
+  'The queue API is available only to the service role'
 );
 
 insert into auth.users (id, aud, role, email, created_at, updated_at, raw_user_meta_data)
@@ -102,6 +115,15 @@ values (
   '00000000-0000-4000-8000-000000009102',
   '{"mimetype":"application/pdf","size":1024}'::jsonb
 );
+insert into storage.objects (id, bucket_id, name, owner, owner_id, metadata)
+values (
+  '00000000-0000-4000-8000-000000009303',
+  'applicant-documents',
+  'applicants/00000000-0000-4000-8000-000000009100/00000000-0000-4000-8000-000000009403/00000000-0000-4000-8000-000000009304.docx',
+  '00000000-0000-4000-8000-000000009100',
+  '00000000-0000-4000-8000-000000009100',
+  '{"mimetype":"application/vnd.openxmlformats-officedocument.wordprocessingml.document","size":1024}'::jsonb
+);
 
 select extensions.has_function('public', 'submit_application', array['uuid', 'bigint', 'text', 'jsonb'], 'Applicant submission workflow exists');
 
@@ -117,6 +139,24 @@ select extensions.lives_ok(
   'Applicant can submit an application with an owned CV'
 );
 select extensions.is((select status from public.applications where id = '00000000-0000-4000-8000-000000009401'::uuid), 'Submitted', 'Submission starts in Submitted status');
+set local role postgres;
+select extensions.is(
+  (select status from public.application_ai_scores where application_id = '00000000-0000-4000-8000-000000009401'::uuid),
+  'queued',
+  'Submission queues automatic applicant analysis'
+);
+set local role authenticated;
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000009100';
+select extensions.throws_ok(
+  $$select public.submit_application(
+    '00000000-0000-4000-8000-000000009403'::uuid,
+    (select id from public.job_openings where status = 'published'),
+    'Document validation test.',
+    '[{"kind":"cv","objectPath":"applicants/00000000-0000-4000-8000-000000009100/00000000-0000-4000-8000-000000009403/00000000-0000-4000-8000-000000009304.docx","fileName":"cv.docx","mimeType":"application/vnd.openxmlformats-officedocument.wordprocessingml.document","sizeBytes":1024}]'::jsonb
+  )$$,
+  '22023', 'Invalid application document.', 'Application submissions reject Word documents'
+);
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000009102';
 
 select extensions.has_function('public', 'transition_application_status', array['uuid', 'text', 'text'], 'HR transition workflow exists');
 select extensions.has_function('public', 'hire_application', array['uuid', 'text', 'bigint', 'bigint', 'date', 'text'], 'Hiring workflow exists');
@@ -157,17 +197,20 @@ from public.applicants applicant
 join public.job_openings opening on opening.status = 'draft'
 where applicant.profile_id = '00000000-0000-4000-8000-000000009102';
 
+update public.application_ai_scores
+set status = 'completed',
+    score = 72,
+    explanation = 'Matches core education and experience criteria.',
+    provider = 'gemini',
+    model = 'gemini-2.5-flash-lite',
+    model_version = '2026-08',
+    completed_at = clock_timestamp()
+where application_id = '00000000-0000-4000-8000-000000009401';
+
 insert into public.application_ai_scores (
   application_id, requested_by_user_id, status, score, explanation,
   provider, model, model_version, input_at, completed_at
-) values
-  (
-    '00000000-0000-4000-8000-000000009401',
-    '00000000-0000-4000-8000-000000009101',
-    'completed', 72, 'Matches core education and experience criteria.',
-    'gemini', 'gemini-2.5-flash-lite', '2026-08', now(), now()
-  ),
-  (
+) values (
     '00000000-0000-4000-8000-000000009402',
     '00000000-0000-4000-8000-000000009101',
     'completed', 88, 'Matches required skills and preferred certification.',
@@ -204,6 +247,35 @@ select extensions.throws_ok(
       'pending'
     )$$,
   '42501', null, 'Applicants cannot write AI score recommendations'
+);
+select extensions.throws_ok(
+  $$select public.retry_application_analysis('00000000-0000-4000-8000-000000009401'::uuid)$$,
+  '42501', null, 'Applicants cannot retry application analysis'
+);
+
+set local role postgres;
+update public.application_ai_scores
+set status = 'failed',
+    score = null,
+    explanation = null,
+    provider = null,
+    model = null,
+    model_version = null,
+    failure_code = 'provider_unavailable',
+    completed_at = clock_timestamp()
+where application_id = '00000000-0000-4000-8000-000000009401';
+
+set local role authenticated;
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000009101';
+select extensions.lives_ok(
+  $$select public.retry_application_analysis('00000000-0000-4000-8000-000000009401'::uuid)$$,
+  'HR can queue a fresh attempt after terminal analysis failure'
+);
+set local role postgres;
+select extensions.is(
+  (select status from public.application_ai_scores where application_id = '00000000-0000-4000-8000-000000009401'::uuid order by created_at desc, id desc limit 1),
+  'queued',
+  'HR retry creates a queued analysis attempt'
 );
 
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000009101';

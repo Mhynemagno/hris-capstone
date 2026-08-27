@@ -14,14 +14,13 @@ import {
   listMyApplications,
   listPublishedJobs,
   saveApplicantProfile,
-  requestApplicationAnalysis,
+  retryApplicationAnalysis,
   saveJobOpening,
   submitApplication,
   transitionApplicationStatus,
 } from "@/queries/recruitment";
 import type {
   ApplicantProfileInput,
-  ApplicationAnalysisRequestInput,
   ApplicationAiFilters,
   ApplicationFilters,
   ApplicationStatusTransitionInput,
@@ -96,13 +95,13 @@ export function useApplicationAiScores(applicationId: string) {
   return useQuery({ queryKey: queryKeys.recruitment.aiScores(applicationId), queryFn: () => getApplicationAiScores(applicationId), enabled: Boolean(applicationId) });
 }
 
-export function useRequestApplicationAnalysis() {
+export function useRetryApplicationAnalysis() {
   const queryClient = useQueryClient();
-  return useMutation({ mutationFn: (input: ApplicationAnalysisRequestInput) => requestApplicationAnalysis(input), onSuccess: (_, input) => {
+  return useMutation({ mutationFn: retryApplicationAnalysis, onSuccess: (_, applicationId) => {
     void queryClient.invalidateQueries({ queryKey: ["recruitment", "applications"] });
     void queryClient.invalidateQueries({ queryKey: ["reporting"] });
-    void queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.application(input.applicationId) });
-    void queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.aiScores(input.applicationId) });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.application(applicationId) });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.aiScores(applicationId) });
   } });
 }
 

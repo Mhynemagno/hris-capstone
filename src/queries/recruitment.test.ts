@@ -19,7 +19,7 @@ vi.mock("@/lib/supabase/client", () => ({
   }),
 }));
 
-import { submitApplication } from "./recruitment";
+import { retryApplicationAnalysis, submitApplication } from "./recruitment";
 
 describe("submitApplication", () => {
   beforeEach(() => {
@@ -68,5 +68,40 @@ describe("submitApplication", () => {
       target_application_id: applicationId,
       target_job_opening_id: 7,
     }));
+  });
+
+  it("rejects a Word document before uploading it", async () => {
+    const profileQuery = {
+      maybeSingle: vi.fn().mockResolvedValue({ data: { id: "323e4567-e89b-42d3-a456-426614174000" }, error: null }),
+      select: vi.fn(),
+    };
+    profileQuery.select.mockReturnValue(profileQuery);
+    mocks.from.mockReturnValue(profileQuery);
+
+    await expect(submitApplication({
+      applicationId,
+      jobId: 7,
+      coverNote: "Ready to contribute.",
+      documents: [{ kind: "cv", file: new File(["CV"], "cv.docx", { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" }) }],
+    })).rejects.toThrow("Choose a PDF, PNG, or JPEG file.");
+
+    expect(mocks.upload).not.toHaveBeenCalled();
+  });
+});
+
+describe("retryApplicationAnalysis", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it("asks the database to queue a fresh analysis attempt", async () => {
+    const scoreId = "323e4567-e89b-42d3-a456-426614174000";
+    mocks.rpc.mockResolvedValue({ data: scoreId, error: null });
+
+    await expect(retryApplicationAnalysis(applicationId)).resolves.toBe(scoreId);
+
+    expect(mocks.rpc).toHaveBeenCalledWith("retry_application_analysis", {
+      target_application_id: applicationId,
+    });
   });
 });

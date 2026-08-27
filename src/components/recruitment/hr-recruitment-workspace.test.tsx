@@ -9,7 +9,8 @@ const mocks = vi.hoisted(() => ({
   saveJob: vi.fn(),
   transition: vi.fn(),
   hire: vi.fn(),
-  analyze: vi.fn(),
+  retry: vi.fn(),
+  scores: [] as Array<{ id: string; status: "queued" | "processing" | "completed" | "failed"; score: number | null; explanation: string | null }>,
 }));
 
 vi.mock("@/hooks/use-administration", () => ({
@@ -29,8 +30,8 @@ vi.mock("@/hooks/use-recruitment", () => ({
   }),
   useTransitionApplicationStatus: () => ({ isPending: false, mutateAsync: mocks.transition }),
   useHireApplication: () => ({ isPending: false, mutateAsync: mocks.hire }),
-  useApplicationAiScores: () => ({ data: [] }),
-  useRequestApplicationAnalysis: () => ({ isPending: false, mutateAsync: mocks.analyze }),
+  useApplicationAiScores: () => ({ data: mocks.scores }),
+  useRetryApplicationAnalysis: () => ({ isPending: false, mutateAsync: mocks.retry }),
 }));
 
 describe("HR recruitment workspace", () => {
@@ -60,5 +61,14 @@ describe("HR recruitment workspace", () => {
 
     await user.selectOptions(screen.getByLabelText("Next status"), "Hired");
     expect(screen.getByRole("heading", { name: "Hire applicant" })).toBeInTheDocument();
+  });
+
+  it("shows queued analysis progress without asking HR to paste a CV", () => {
+    mocks.scores = [{ id: "00000000-0000-0000-0000-000000000003", status: "queued", score: null, explanation: null }];
+    render(<HrApplicationDetail applicationId="00000000-0000-0000-0000-000000000001" />);
+
+    expect(screen.getByText("Analyzing application…")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Approved anonymized CV text")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Analyze application" })).not.toBeInTheDocument();
   });
 });
