@@ -14,6 +14,14 @@
 5. Verify public RPC identity arguments, grants, RLS, and PostgREST visibility with `npx supabase@latest db query --linked --project-ref <project-ref> ...`.
 6. Deploy changed Edge Functions with `npx supabase@latest functions deploy <name> --project-ref <project-ref> --use-api`; preserve JWT verification and configure function secrets only in Supabase.
 
+### Automatic applicant analysis
+
+1. Apply the queue migrations before deploying `process-application-analysis`. They expose the queue API only to the service role; browser roles remain denied.
+2. Set `GEMINI_API_KEY` and a newly generated `ANALYSIS_WORKER_SECRET` as Edge Function secrets. Never expose either value through `NEXT_PUBLIC_*` variables or source control.
+3. Deploy `process-application-analysis` and retain `score-application` only as the retired compatibility endpoint. The worker accepts a five-message batch, processes all submitted PDF/PNG/JPEG documents, retries one transient provider failure, then marks a second failure terminal for HR retry.
+4. In Supabase Vault, store the project URL, publishable key, and the worker secret. Configure a one-minute `pg_cron` job using `pg_net.http_post` to call `/functions/v1/process-application-analysis` with `apikey` and `x-analysis-worker-secret` headers. This follows Supabase's scheduled Edge Function pattern; do not place secrets in the cron SQL text.
+5. Verify a test application creates a `queued` score attempt, the scheduled invocation transitions it to `completed` or `failed`, and the queue remains inaccessible to browser roles. Confirm HR sees only score metadata and explanations—never document bytes or extracted text.
+
 ## Vercel
 
 1. Confirm the GitHub integration deploys the intended `main` commit; no Vercel CLI token is needed for this project workflow.

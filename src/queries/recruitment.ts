@@ -2,7 +2,6 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import {
   applicantDocumentSchema,
   applicantProfileSchema,
-  applicationAnalysisRequestSchema,
   applicationAiFiltersSchema,
   applicationFiltersSchema,
   applicationStatusTransitionSchema,
@@ -12,7 +11,6 @@ import {
   jobOpeningSchema,
   type ApplicationSubmissionInput,
   type ApplicantProfileInput,
-  type ApplicationAnalysisRequestInput,
   type ApplicationAiFilters,
   type ApplicationFilters,
   type ApplicationStatusTransitionInput,
@@ -46,8 +44,8 @@ function throwIfError(error: { message: string } | null) {
 
 function extensionFor(file: File) {
   const extension = file.name.split(".").pop()?.toLowerCase();
-  if (!extension || !["pdf", "doc", "docx", "png", "jpg", "jpeg"].includes(extension)) {
-    throw new Error("Choose a PDF, Word document, PNG, or JPEG file.");
+  if (!extension || !["pdf", "png", "jpg", "jpeg"].includes(extension)) {
+    throw new Error("Choose a PDF, PNG, or JPEG file.");
   }
   return extension === "jpg" ? "jpeg" : extension;
 }
@@ -214,11 +212,13 @@ export async function getApplicationAiScores(applicationId: string) {
   return (data ?? []) as ApplicationAiScore[];
 }
 
-export async function requestApplicationAnalysis(input: ApplicationAnalysisRequestInput) {
-  const values = applicationAnalysisRequestSchema.parse(input);
-  const { data, error } = await createBrowserSupabaseClient().functions.invoke("score-application", { body: values });
+export async function retryApplicationAnalysis(applicationId: string) {
+  const id = applicationStatusTransitionSchema.shape.applicationId.parse(applicationId);
+  const { data, error } = await createBrowserSupabaseClient().rpc("retry_application_analysis", {
+    target_application_id: id,
+  });
   throwIfError(error);
-  return data as { scoreId: string; status: "completed" };
+  return applicationStatusTransitionSchema.shape.applicationId.parse(data);
 }
 
 export async function submitApplication(input: SubmitApplicationInput) {

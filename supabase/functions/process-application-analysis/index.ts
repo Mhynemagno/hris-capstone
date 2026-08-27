@@ -10,7 +10,8 @@ const QUEUE_NAME = "application_analysis";
 const WORKER_BATCH_SIZE = 5;
 
 type QueueMessage = { msg_id: bigint; message: { scoreId?: unknown } };
-type ClientFactory = (url: string, key: string, options?: unknown) => any; // deno-lint-ignore no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ClientFactory = (url: string, key: string, options?: unknown) => any;
 type AnalyzeDocuments = (input: {
   documents: ApplicationDocumentInput[];
   criteria: Array<{ kind: string; requirement: string; isRequired: boolean }>;
@@ -55,7 +56,8 @@ export function createProcessApplicationAnalysisHandler({
     if (!url || !secretKey || !apiKey) return json(503, { error: "AI analysis is unavailable." });
 
     const admin = makeClient(url, secretKey, { auth: { autoRefreshToken: false, persistSession: false } });
-    const analyzer = analyzeDocuments ?? new GeminiApplicationScoringProvider(apiKey).analyzeDocuments.bind(new GeminiApplicationScoringProvider(apiKey));
+    const provider = new GeminiApplicationScoringProvider(apiKey);
+    const analyzer = analyzeDocuments ?? provider.analyzeDocuments.bind(provider);
     const { data: messages, error: readError } = await admin.schema("pgmq_public").rpc("read", {
       queue_name: QUEUE_NAME,
       sleep_seconds: 0,

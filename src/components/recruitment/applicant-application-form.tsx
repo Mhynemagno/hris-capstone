@@ -67,9 +67,9 @@ export function ApplicantApplicationForm({ jobId }: { jobId: number }) {
         <textarea className="min-h-28 w-full rounded-lg border bg-background p-3 text-base leading-6" id="application-cover-note" name="coverNote" />
       </FormField>
       <FormField htmlFor="application-documents" label="CV and credentials">
-        <Input accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" aria-describedby="application-documents-help" id="application-documents" multiple name="documents" type="file" />
+        <Input accept=".pdf,.png,.jpg,.jpeg" aria-describedby="application-documents-help" id="application-documents" multiple name="documents" type="file" />
       </FormField>
-      <p className="text-sm text-muted-foreground" id="application-documents-help">Upload your CV first. You can add certificates or other supporting documents. Files must be 10 MB or smaller.</p>
+      <p className="text-sm text-muted-foreground" id="application-documents-help">Upload your CV first. You can add certificates or other supporting documents in PDF, PNG, or JPEG format. Files must be 10 MB or smaller.</p>
       {profileRequired && error ? (
         <div className="rounded-lg border border-primary/30 bg-primary/5 p-4" role="alert">
           <p className="text-sm font-medium text-foreground">{error}</p>

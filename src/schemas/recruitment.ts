@@ -25,8 +25,7 @@ export const jobCriterionKindSchema = z.enum([
   "other",
 ]);
 export const applicantDocumentKindSchema = z.enum(["cv", "credential"]);
-export const applicationAiStatusSchema = z.enum(["pending", "completed", "failed", "unscored"]);
-export const applicationAnalysisRequestSchema = z.object({ applicationId: uuidSchema, cvText: z.string().trim().min(80).max(30_000), confirmedAnonymized: z.literal(true) });
+export const applicationAiStatusSchema = z.enum(["queued", "processing", "completed", "failed", "unscored"]);
 
 export const jobCriterionSchema = z.object({
   id: uuidSchema.optional(),
@@ -63,8 +62,6 @@ export const applicantDocumentSchema = z.object({
   fileName: z.string().trim().min(1).max(255),
   mimeType: z.enum([
     "application/pdf",
-    "application/msword",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "image/png",
     "image/jpeg",
   ]),
@@ -119,4 +116,3 @@ export type HiringDecisionInput = z.infer<typeof hiringDecisionSchema>;
 export type JobFilters = z.infer<typeof jobFiltersSchema>;
 export type ApplicationFilters = z.infer<typeof applicationFiltersSchema>;
 export type ApplicationAiFilters = z.infer<typeof applicationAiFiltersSchema>;
-export type ApplicationAnalysisRequestInput = z.infer<typeof applicationAnalysisRequestSchema>;

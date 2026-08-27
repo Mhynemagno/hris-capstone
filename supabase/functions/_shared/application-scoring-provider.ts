@@ -1,4 +1,5 @@
 import { z } from "npm:zod@4";
+import { prepareApplicationDocuments, type ApplicationDocumentInput } from "./application-document-analysis.ts";
 
 export type ApplicationScoringInput = {
   cvText: string;
@@ -13,11 +14,7 @@ export type ApplicationScoringResult = {
   modelVersion: string;
 };
 
-export type ApplicationDocumentInput = {
-  fileName: string;
-  mimeType: "application/pdf" | "image/png" | "image/jpeg";
-  bytes: Uint8Array;
-};
+export type { ApplicationDocumentInput } from "./application-document-analysis.ts";
 
 const responseSchema = z.object({
   score: z.number().int().min(0).max(100),
@@ -54,14 +51,14 @@ export class GeminiApplicationScoringProvider {
     documents: ApplicationDocumentInput[];
     criteria: ApplicationScoringInput["criteria"];
   }): Promise<ApplicationScoringResult> {
-    if (!input.documents.length) throw new Error("provider_invalid_response");
+    const documents = prepareApplicationDocuments(input.documents);
     const response = await this.fetcher("https://generativelanguage.googleapis.com/v1beta/interactions", {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": this.apiKey },
       body: JSON.stringify({
         model: "gemini-2.5-flash-lite",
         input: [
-          ...input.documents.map((document) => ({
+          ...documents.map((document) => ({
             type: "document",
             mime_type: document.mimeType,
             data: btoa(Array.from(document.bytes, (byte) => String.fromCharCode(byte)).join("")),
