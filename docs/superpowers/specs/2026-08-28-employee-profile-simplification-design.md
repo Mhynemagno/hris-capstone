@@ -24,7 +24,7 @@ The primary profile and HR edit experience will collect and display only the det
 | Profile area | Fields | Notes |
 | --- | --- | --- |
 | Identity | optional profile photo, full name, badge number, rank | The current `employee_number` database value becomes the product label **Badge number**. It is not renamed because attendance, auditing, and existing records depend on it. |
-| Assignment | department, unit/station, position, employment status | `department` remains the existing reference data. `unit_station` is a concise optional assignment field. Position is retained where needed by promotions and historic records. |
+| Assignment | department, unit/station, position, employment status | The active department catalogue is replaced with the client-approved entries from `Departments.txt`: Operations Division, Women and Children Protection Desk, and Administrative & Intelligence Division. Older department rows are retired (not deleted) to preserve historic references. `unit_station` is a concise optional assignment field. Position is retained where needed by promotions and historic records. |
 | Contact | personal email, phone | Kept narrow and employee-visible. |
 | Emergency | contact name, contact phone | Optional, available as one compact section. |
 | Development | training records | Existing training records become a first-class profile section used by promotion eligibility. HR maintains the official entries; employees can read their own entries. |
