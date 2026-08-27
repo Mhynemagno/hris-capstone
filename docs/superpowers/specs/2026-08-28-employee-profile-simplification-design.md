@@ -79,7 +79,7 @@ The Users table keeps edit and delete controls and adds a clearly named `View pr
 - **Schemas and types:** expand the employee contract with rank, unit/station, and controlled image-path data. Add narrow client validation for photo metadata and password confirmation. Centralize the rank catalogue so forms, display, and tests use one source of truth.
 - **Queries and hooks:** add typed, RLS-protected operations for profile photo storage, profile detail lookup, current user profile summary/training lookup, and linked-employee lookup for managed users. Existing query invalidation refreshes the directory, profile, and account view after an official update or photo replacement.
 - **Components:** split identity display, facts grid, action rail, training list, and profile-photo controls into focused reusable personnel components. Keep the User management table responsible for account actions and link it to the profile route instead of duplicating profile fields.
-- **Routes:** retain HR employee detail deep links, add administrator-safe profile reading via the existing employee detail route or a scoped query parameter, and add an employee account-security route. Routes remain server components unless client interaction is needed; client components use the existing browser Supabase client and TanStack Query pattern.
+- **Routes:** retain HR employee detail deep links, add a separate administrator-safe route at `/admin/users/[userId]/profile` which resolves only the linked employee account, and add an employee account-security route. Routes remain server components unless client interaction is needed; client components use the existing browser Supabase client and TanStack Query pattern.
 
 ## Error handling and edge cases
 
