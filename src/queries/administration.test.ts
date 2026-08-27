@@ -119,6 +119,17 @@ describe("administration queries", () => {
     expect(roleChain.in).toHaveBeenCalledWith("user_id", [testUserId]);
   });
 
+  it("includes an employee profile link only when the account is linked", async () => {
+    const employeeId = "00000000-0000-0000-0000-000000000010";
+    const profileChain = createChain({ data: [{ id: testUserId, email: "ada@example.com", full_name: "Ada Lovelace", is_active: true, created_at: "2026-08-01T00:00:00.000Z", updated_at: "2026-08-01T00:00:00.000Z", employees: [{ id: employeeId }] }], count: 1, error: null });
+    const roleChain = createChain({ data: [{ user_id: testUserId, role: "employee", assigned_at: "2026-08-01T00:00:00.000Z" }], error: null });
+    mocks.from.mockReturnValueOnce(profileChain).mockReturnValueOnce(roleChain);
+
+    const page = await listManagedUsers({ page: 1, pageSize: 20 });
+
+    expect(page.rows).toEqual([expect.objectContaining({ id: testUserId, employee_id: employeeId })]);
+  });
+
   it("attaches a pending employee activation request to its applicant account", async () => {
     const profileChain = createChain({ data: [{ id: testUserId, email: "ada@example.com", full_name: "Ada Lovelace", is_active: true, created_at: "2026-08-01T00:00:00.000Z", updated_at: "2026-08-01T00:00:00.000Z" }], count: 1, error: null });
     const roleChain = createChain({ data: [{ user_id: testUserId, role: "applicant", assigned_at: "2026-08-01T00:00:00.000Z" }], error: null });

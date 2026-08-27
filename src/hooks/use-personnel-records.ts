@@ -7,6 +7,7 @@ import {
   deletePersonnelEntry,
   getEmployee,
   getEmployeeForCurrentUser,
+  getEmployeeForProfile,
   listEmployees,
   listUnlinkedEmployeeAccounts,
   listPersonnelEntries,
@@ -30,6 +31,10 @@ export function useEmployee(employeeId: string) {
 
 export function useEmployeeForCurrentUser() {
   return useQuery({ queryKey: ["personnel-records", "current-user"] as const, queryFn: getEmployeeForCurrentUser });
+}
+
+export function useEmployeeForProfile(profileId: string) {
+  return useQuery({ queryKey: ["personnel-records", "profile", profileId] as const, queryFn: () => getEmployeeForProfile(profileId), enabled: Boolean(profileId) });
 }
 
 export function usePersonnelEntries(kind: PersonnelKind, employeeId: string) {

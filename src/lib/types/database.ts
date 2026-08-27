@@ -17,6 +17,7 @@ export type UserRole = {
 };
 
 export type ManagedUser = Profile & Pick<UserRole, "role" | "assigned_at"> & {
+  employee_id?: string;
   pending_activation?: EmployeeActivationRequest;
 };
 
@@ -128,6 +129,9 @@ export type Employee = {
   first_name: string;
   middle_name: string | null;
   last_name: string;
+  rank: string | null;
+  unit_station: string | null;
+  profile_image_path: string | null;
   personal_email: string;
   phone: string | null;
   address: string | null;
