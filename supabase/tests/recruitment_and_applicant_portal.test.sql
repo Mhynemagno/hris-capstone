@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(46);
+select extensions.plan(47);
 
 delete from public.applications;
 delete from public.job_openings;
@@ -21,6 +21,16 @@ select extensions.has_function(
   'list_hr_application_shortlist',
   array['text', 'text', 'smallint'],
   'HR AI shortlist query exists'
+);
+select extensions.ok(
+  exists (
+    select 1
+    from pg_namespace queue_schema
+    where queue_schema.nspname = 'pgmq_public'
+      and has_schema_privilege('service_role', queue_schema.oid, 'usage')
+      and not has_schema_privilege('authenticated', queue_schema.oid, 'usage')
+  ),
+  'The queue API is available only to the service role'
 );
 
 insert into auth.users (id, aud, role, email, created_at, updated_at, raw_user_meta_data)
