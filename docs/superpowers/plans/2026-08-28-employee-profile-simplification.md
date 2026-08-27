@@ -49,7 +49,7 @@
 
 - [ ] **Step 2: Verify red.**
 
-Run: npx supabase test db --tests supabase/tests/personnel_records.test.sql --tests supabase/tests/profile_change_approval.test.sql
+Run: npx supabase test db supabase/tests/personnel_records.test.sql supabase/tests/profile_change_approval.test.sql
 
 Expected: rank/Storage/Admin read-only/address-exclusion coverage fails because the feature does not exist.
 
@@ -59,7 +59,7 @@ Use the CLI-created migration. Add a check-limited rank catalogue, 160-character
 
 - [ ] **Step 4: Verify green.**
 
-Run: npx supabase test db --tests supabase/tests/personnel_records.test.sql --tests supabase/tests/profile_change_approval.test.sql
+Run: npx supabase test db supabase/tests/personnel_records.test.sql supabase/tests/profile_change_approval.test.sql
 
 Expected: existing cases plus new rank, Storage, profile-change, and Admin allow/deny cases pass.
 
@@ -292,4 +292,3 @@ Add a focused failing assertion, observe the expected failure, implement the sma
 
     git add -A
     git commit -m "fix: verify employee profile experience"
-
