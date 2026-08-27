@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(24);
+select extensions.plan(33);
 
 select extensions.has_table('public', 'employees', 'Employee records table exists');
 select extensions.has_table('public', 'service_history', 'Service history table exists');
@@ -12,7 +12,14 @@ select extensions.has_table('public', 'certifications', 'Certifications table ex
 select extensions.has_table('public', 'training_records', 'Training records table exists');
 select extensions.has_table('public', 'employee_record_history', 'Personnel history table exists');
 select extensions.has_column('public', 'employees', 'profile_id', 'Employees can link to an account');
-select extensions.is(
+select extensions.has_column('public', 'employees', 'rank', 'Employees record their police rank');
+select extensions.has_column('public', 'employees', 'unit_station', 'Employees record their unit or station');
+select extensions.has_column('public', 'employees', 'profile_image_path', 'Employees can have an optional private profile photo');
+select extensions.ok(
+  exists (select 1 from storage.buckets where id = 'employee-profile-photos' and public = false),
+  'Employee profile photos use a private Storage bucket'
+);
+select extensions.cmp_ok(
   (
     select count(*)
     from pg_policies
@@ -21,8 +28,9 @@ select extensions.is(
       and cmd = 'SELECT'
       and roles = array['authenticated']::name[]
   ),
+  '>=',
   1::bigint,
-  'Employee reads use one combined authenticated policy'
+  'Employee reads have an authenticated policy'
 );
 
 insert into auth.users (id, aud, role, email, created_at, updated_at)
@@ -97,6 +105,12 @@ select extensions.lives_ok(
   'HR can update official employee fields'
 );
 
+select extensions.lives_ok(
+  $$insert into public.training_records (employee_id, course_name, provider, completed_on)
+    values ('00000000-0000-0000-0000-000000000010'::uuid, 'Leadership Development', 'Police Academy', '2026-01-01')$$,
+  'HR can add an official training record'
+);
+
 select extensions.cmp_ok(
   (select count(*) from public.employee_record_history where employee_id = '00000000-0000-0000-0000-000000000010'::uuid and action = 'update'),
   '>',
@@ -107,6 +121,33 @@ select extensions.cmp_ok(
 insert into public.employees (id, employee_number, first_name, last_name, personal_email, employment_status, employment_started_on)
 values ('00000000-0000-0000-0000-000000000011', 'EMP-0002', 'Other', 'Employee', 'other.fixture@example.com', 'active', '2024-01-01');
 
+set local request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+
+select extensions.cmp_ok(
+  (select count(*) from public.employees),
+  '>=',
+  2::bigint,
+  'Administrator can read employee profiles'
+);
+
+select extensions.is(
+  (select count(*) from public.training_records),
+  1::bigint,
+  'Administrator can read employee training records'
+);
+
+update public.employees
+set phone = '+976-99222222'
+where id = '00000000-0000-0000-0000-000000000010'::uuid;
+
+set local role postgres;
+select extensions.is(
+  (select phone from public.employees where id = '00000000-0000-0000-0000-000000000010'::uuid),
+  '+976-99000000',
+  'Administrator cannot update official employee fields'
+);
+
+set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-0000-0000-000000000004';
 
 select extensions.is(
@@ -176,6 +217,14 @@ select extensions.throws_ok(
   '23505',
   null,
   'Employee number is unique'
+);
+
+select extensions.throws_ok(
+  $$insert into public.employees (employee_number, first_name, last_name, personal_email, employment_status, employment_started_on, rank)
+    values ('EMP-0003', 'Invalid', 'Rank', 'invalid.rank@example.com', 'active', '2024-01-01', 'Commander')$$,
+  '23514',
+  null,
+  'Employee records reject a rank outside the supplied police catalogue'
 );
 
 select extensions.throws_ok(

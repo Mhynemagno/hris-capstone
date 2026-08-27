@@ -8,7 +8,9 @@ describe("EmployeeForm", () => {
   it("exposes labelled official record fields and a save action", () => {
     render(<EmployeeForm onSaved={() => undefined} />);
 
-    expect(screen.getByLabelText(/employee number/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/badge number/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^rank/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/unit.*station/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/first name/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/employment start date/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /save employee/i })).toHaveClass("w-full");
@@ -35,7 +37,7 @@ describe("EmployeeForm", () => {
     expect(screen.getByLabelText(/personal email/i)).toHaveValue("candidate.employee@example.test");
     expect(container.querySelector('input[name="profileId"]')).toHaveValue("00000000-0000-4000-8000-000000001604");
 
-    await user.type(screen.getByLabelText(/employee number/i), "EMP-0099");
+    await user.type(screen.getByLabelText(/badge number/i), "EMP-0099");
     await user.type(screen.getByLabelText(/employment start date/i), "2024-01-01");
     await user.click(screen.getByRole("button", { name: /save employee/i }));
 

@@ -8,6 +8,25 @@ const optionalText = (max: number) =>
 const optionalDate = isoDateSchema.optional();
 const employmentStatuses = ["active", "on_leave", "inactive", "separated"] as const;
 
+export const POLICE_RANKS = [
+  "Patrolman / Patrolwoman (PAT)",
+  "Police Corporal (PCpl)",
+  "Police Staff Sergeant (PSSg)",
+  "Police Master Sergeant (PMSg)",
+  "Police Senior Master Sergeant (PSMS)",
+  "Police Chief Master Sergeant (PCMS)",
+  "Police Executive Master Sergeant (PEMS)",
+  "Police Lieutenant (PLT)",
+  "Police Captain (PCPT)",
+  "Police Major (PMAJ)",
+  "Police Lieutenant Colonel (PLTCOL)",
+  "Police Colonel (PCOL)",
+  "Police Brigadier General (PBGEN)",
+  "Police Major General (PMGEN)",
+  "Police Lieutenant General (PLTGEN)",
+  "Police General (PGEN)",
+] as const;
+
 const hasValidDateRange = (startKey: string, endKey: string) => (value: Record<string, unknown>) => {
   const start = value[startKey];
   const end = value[endKey];
@@ -21,6 +40,8 @@ export const employeeSchema = z
     firstName: z.string().trim().min(1).max(80),
     middleName: optionalText(80),
     lastName: z.string().trim().min(1).max(80),
+    rank: z.preprocess((value) => value === "" ? undefined : value, z.enum(POLICE_RANKS).optional()),
+    unitStation: optionalText(160),
     personalEmail: z.string().trim().toLowerCase().pipe(z.email()),
     phone: optionalText(32),
     address: optionalText(500),

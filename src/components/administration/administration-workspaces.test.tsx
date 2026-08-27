@@ -83,6 +83,16 @@ describe("administration shared controls", () => {
     expect(screen.getByRole("button", { name: /invite account/i })).toHaveClass("w-full", "sm:w-auto");
   });
 
+  it("links a linked user account to its employee profile", () => {
+    hooks.useManagedUsers.mockReturnValue({ data: { rows: [{ id: "00000000-0000-0000-0000-000000000001", email: "ada@example.com", full_name: "Officer Ada", is_active: true, role: "employee", assigned_at: "2026-08-01T00:00:00Z", created_at: "2026-08-01T00:00:00Z", updated_at: "2026-08-01T00:00:00Z", employee_id: "00000000-0000-0000-0000-000000000010" }], count: 1 }, error: null, isLoading: false, refetch: vi.fn() });
+    hooks.useInviteInternalUser.mockReturnValue({ isPending: false, mutateAsync: vi.fn() });
+    hooks.useUpdateManagedUser.mockReturnValue({ isPending: false, mutateAsync: vi.fn() });
+
+    render(<UsersWorkspace />);
+
+    expect(screen.getByRole("link", { name: /view profile for officer ada/i })).toHaveAttribute("href", "/admin/users/00000000-0000-0000-0000-000000000001/profile");
+  });
+
   it("opens account invitations in a centered modal", async () => {
     const user = userEvent.setup();
     hooks.useManagedUsers.mockReturnValue({ data: { rows: [], count: 0 }, error: null, isLoading: false, refetch: vi.fn() });

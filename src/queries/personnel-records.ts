@@ -57,10 +57,17 @@ export async function getEmployeeForCurrentUser() {
   return data as Employee | null;
 }
 
+export async function getEmployeeForProfile(profileId: string) {
+  const { data, error } = await createBrowserSupabaseClient().from("employees").select("*").eq("profile_id", profileId).maybeSingle();
+  throwIfError(error);
+  return data as Employee | null;
+}
+
 function employeePayload(input: EmployeeInput) {
   return {
     profile_id: input.profileId ?? null, employee_number: input.employeeNumber, first_name: input.firstName,
-    middle_name: input.middleName ?? null, last_name: input.lastName, personal_email: input.personalEmail,
+    middle_name: input.middleName ?? null, last_name: input.lastName, rank: input.rank ?? null,
+    unit_station: input.unitStation ?? null, personal_email: input.personalEmail,
     phone: input.phone ?? null, address: input.address ?? null, emergency_contact_name: input.emergencyContactName ?? null,
     emergency_contact_phone: input.emergencyContactPhone ?? null, department_id: input.departmentId ?? null,
     position_id: input.positionId ?? null, employment_status: input.employmentStatus,

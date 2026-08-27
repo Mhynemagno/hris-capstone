@@ -26,6 +26,29 @@ describe("personnel record schemas", () => {
     });
   });
 
+  it("accepts only the supplied police rank catalogue", () => {
+    expect(employeeSchema.parse({
+      employeeNumber: "PAT-0001",
+      firstName: "Ana",
+      lastName: "Dela Cruz",
+      personalEmail: "ana@example.com",
+      employmentStartedOn: "2024-01-01",
+      rank: "Police Captain (PCPT)",
+      unitStation: "Station 1",
+    })).toMatchObject({
+      rank: "Police Captain (PCPT)",
+      unitStation: "Station 1",
+    });
+    expect(employeeSchema.safeParse({
+      employeeNumber: "PAT-0001",
+      firstName: "Ana",
+      lastName: "Dela Cruz",
+      personalEmail: "ana@example.com",
+      employmentStartedOn: "2024-01-01",
+      rank: "Commander",
+    }).success).toBe(false);
+  });
+
   it("rejects inverted official-record date ranges", () => {
     expect(
       serviceHistorySchema.safeParse({

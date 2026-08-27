@@ -37,6 +37,7 @@ type FunctionErrorContext = { json?: () => Promise<unknown> };
 
 type ManagedUserRoleRow = Pick<UserRole, "user_id" | "role" | "assigned_at">;
 type AuditProfileRow = Pick<Profile, "id" | "full_name" | "email">;
+type ManagedUserProfileRow = Profile & { employees?: Array<{ id: string }> | null };
 
 function throwIfError(error: SupabaseError) {
   if (error) throw new Error(error.message);
@@ -81,7 +82,7 @@ export async function listManagedUsers(input: Partial<ManagedUserFilters> = {}):
   const client = createBrowserSupabaseClient();
   let query = client
     .from("profiles")
-    .select("id, email, full_name, is_active, created_at, updated_at", { count: "exact" })
+    .select("id, email, full_name, is_active, created_at, updated_at, employees(id)", { count: "exact" })
     .order("full_name")
     .order("email");
 
@@ -90,7 +91,7 @@ export async function listManagedUsers(input: Partial<ManagedUserFilters> = {}):
 
   const { data, error, count } = await query.range(from, to);
   throwIfError(error);
-  const profiles = (data ?? []) as Profile[];
+  const profiles = (data ?? []) as ManagedUserProfileRow[];
   const profileIds = profiles.map((profile) => profile.id);
   let roles: ManagedUserRoleRow[] = [];
   if (profileIds.length) {
@@ -116,7 +117,9 @@ export async function listManagedUsers(input: Partial<ManagedUserFilters> = {}):
   const rows = profiles.flatMap((profile) => {
     const role = roleByUserId.get(profile.id);
     const pendingActivation = activationByProfileId.get(profile.id);
-    return role ? [{ ...profile, role: role.role, assigned_at: role.assigned_at, ...(pendingActivation ? { pending_activation: pendingActivation } : {}) }] : [];
+    const { employees, ...managedProfile } = profile;
+    const employeeId = employees?.[0]?.id;
+    return role ? [{ ...managedProfile, role: role.role, assigned_at: role.assigned_at, ...(employeeId ? { employee_id: employeeId } : {}), ...(pendingActivation ? { pending_activation: pendingActivation } : {}) }] : [];
   });
   return { rows, count: count ?? 0, filters };
 }

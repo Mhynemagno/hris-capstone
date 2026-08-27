@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(33);
+select extensions.plan(30);
 
 select extensions.has_table('public', 'profile_change_requests', 'Profile change request headers exist');
 select extensions.has_table('public', 'profile_change_request_changes', 'Proposed changes exist');
@@ -53,16 +53,11 @@ select extensions.ok(exists (select 1 from public.notifications where recipient_
 
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000102';
-select extensions.lives_ok($$select public.submit_profile_change_request('00000000-0000-4000-8000-000000000302'::uuid, null, '[{"kind":"contact","field":"address","originalValue":null,"requestedValue":"Ulaanbaatar"}]'::jsonb, '[]'::jsonb)$$, 'Employee submits a request that can be rejected');
-set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000101';
-select extensions.lives_ok($$select public.decide_profile_change_request('00000000-0000-4000-8000-000000000302'::uuid, 'rejected', 'Please provide a current proof of address.')$$, 'Administrator rejects with a reason');
-set local role postgres;
-select extensions.is((select status from public.profile_change_requests where id = '00000000-0000-4000-8000-000000000302'::uuid), 'rejected', 'Rejected request is retained in history');
-select extensions.is((select address from public.employees where id = '00000000-0000-4000-8000-000000000201'::uuid), null::text, 'Rejection leaves official data unchanged');
+select extensions.throws_ok($$select public.submit_profile_change_request('00000000-0000-4000-8000-000000000302'::uuid, null, '[{"kind":"contact","field":"address","originalValue":null,"requestedValue":"Ulaanbaatar"}]'::jsonb, '[]'::jsonb)$$, '22023', null, 'Employee self-service does not collect address changes');
 
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000102';
-select extensions.lives_ok($$select public.submit_profile_change_request('00000000-0000-4000-8000-000000000303'::uuid, null, '[{"kind":"contact","field":"address","originalValue":null,"requestedValue":"Ulaanbaatar"}]'::jsonb, '[]'::jsonb)$$, 'Employee submits a request that can be cancelled');
+select extensions.lives_ok($$select public.submit_profile_change_request('00000000-0000-4000-8000-000000000303'::uuid, null, '[{"kind":"contact","field":"phone","originalValue":"+976 99112233","requestedValue":"+976 99112235"}]'::jsonb, '[]'::jsonb)$$, 'Employee submits a contact request that can be cancelled');
 select extensions.lives_ok($$select public.cancel_profile_change_request('00000000-0000-4000-8000-000000000303'::uuid)$$, 'Employee cancels their pending request');
 set local role postgres;
 select extensions.is((select status from public.profile_change_requests where id = '00000000-0000-4000-8000-000000000303'::uuid), 'cancelled', 'Cancelled request is retained in history');
