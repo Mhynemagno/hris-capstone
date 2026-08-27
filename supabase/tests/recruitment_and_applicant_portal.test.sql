@@ -3,7 +3,10 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(45);
+select extensions.plan(46);
+
+delete from public.applications;
+delete from public.job_openings;
 
 select extensions.has_table('public', 'job_openings', 'Job openings table exists');
 select extensions.has_table('public', 'job_qualification_criteria', 'Job qualification criteria table exists');
@@ -117,6 +120,13 @@ select extensions.lives_ok(
   'Applicant can submit an application with an owned CV'
 );
 select extensions.is((select status from public.applications where id = '00000000-0000-4000-8000-000000009401'::uuid), 'Submitted', 'Submission starts in Submitted status');
+set local role postgres;
+select extensions.is(
+  (select status from public.application_ai_scores where application_id = '00000000-0000-4000-8000-000000009401'::uuid),
+  'queued',
+  'Submission queues automatic applicant analysis'
+);
+set local role authenticated;
 
 select extensions.has_function('public', 'transition_application_status', array['uuid', 'text', 'text'], 'HR transition workflow exists');
 select extensions.has_function('public', 'hire_application', array['uuid', 'text', 'bigint', 'bigint', 'date', 'text'], 'Hiring workflow exists');
@@ -157,17 +167,20 @@ from public.applicants applicant
 join public.job_openings opening on opening.status = 'draft'
 where applicant.profile_id = '00000000-0000-4000-8000-000000009102';
 
+update public.application_ai_scores
+set status = 'completed',
+    score = 72,
+    explanation = 'Matches core education and experience criteria.',
+    provider = 'gemini',
+    model = 'gemini-2.5-flash-lite',
+    model_version = '2026-08',
+    completed_at = clock_timestamp()
+where application_id = '00000000-0000-4000-8000-000000009401';
+
 insert into public.application_ai_scores (
   application_id, requested_by_user_id, status, score, explanation,
   provider, model, model_version, input_at, completed_at
-) values
-  (
-    '00000000-0000-4000-8000-000000009401',
-    '00000000-0000-4000-8000-000000009101',
-    'completed', 72, 'Matches core education and experience criteria.',
-    'gemini', 'gemini-2.5-flash-lite', '2026-08', now(), now()
-  ),
-  (
+) values (
     '00000000-0000-4000-8000-000000009402',
     '00000000-0000-4000-8000-000000009101',
     'completed', 88, 'Matches required skills and preferred certification.',
