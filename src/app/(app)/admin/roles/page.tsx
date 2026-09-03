@@ -1,4 +1,3 @@
-import { AdminPage } from "@/components/administration/admin-page";
-import { RolesWorkspace } from "@/components/administration/administration-workspaces";
+import { redirect } from "next/navigation";
 
-export default function RolesPage() { return <AdminPage title="Roles" description="Review account roles and assign the right access."><RolesWorkspace /></AdminPage>; }
+export default function RolesPage() { redirect("/admin/users"); }
