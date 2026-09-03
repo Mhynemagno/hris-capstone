@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -63,7 +64,7 @@ export function EmployeeProfilePhotoControl({
 
   return <div className="shrink-0">
     <Avatar className="size-20 border text-xl">
-      {photo.data ? <img alt="Employee profile photo" className="size-full rounded-full object-cover" src={photo.data} /> : <AvatarFallback>{initials}</AvatarFallback>}
+      {photo.data ? <Image alt="Employee profile photo" className="size-full rounded-full object-cover" height={80} src={photo.data} unoptimized width={80} /> : <AvatarFallback>{initials}</AvatarFallback>}
     </Avatar>
     {canManagePhoto ? <div className="mt-3 space-y-2">
       <Input
