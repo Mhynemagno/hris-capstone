@@ -14,5 +14,5 @@ export function EmployeeRecordSummary() {
   if (employee.error) return <ErrorState message={employee.error.message} />;
   if (!employee.data) return <p className="rounded-xl border p-5 text-sm text-muted-foreground">Your official personnel record has not been linked to this account yet. Contact HR for help.</p>;
   if (trainings.error) return <ErrorState message={trainings.error.message} />;
-  return <EmployeeProfile employee={employee.data} trainings={(trainings.data ?? []) as TrainingRecord[]} />;
+  return <EmployeeProfile canManagePhoto employee={employee.data} trainings={(trainings.data ?? []) as TrainingRecord[]} />;
 }

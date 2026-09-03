@@ -1,6 +1,14 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
+import { vi } from "vitest";
+
+vi.mock("@/hooks/use-personnel-records", () => ({
+  useEmployeeProfilePhotoUrl: () => ({ data: null }),
+  useRemoveMyEmployeeProfilePhoto: () => ({ isPending: false, mutateAsync: vi.fn() }),
+  useReplaceMyEmployeeProfilePhoto: () => ({ isPending: false, mutateAsync: vi.fn() }),
+}));
+
 import { EmployeeProfile } from "./employee-profile";
 
 const employee = {
