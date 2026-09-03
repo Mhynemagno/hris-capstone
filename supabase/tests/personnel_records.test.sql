@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(33);
+select extensions.plan(37);
 
 select extensions.has_table('public', 'employees', 'Employee records table exists');
 select extensions.has_table('public', 'service_history', 'Service history table exists');
@@ -15,6 +15,7 @@ select extensions.has_column('public', 'employees', 'profile_id', 'Employees can
 select extensions.has_column('public', 'employees', 'rank', 'Employees record their police rank');
 select extensions.has_column('public', 'employees', 'unit_station', 'Employees record their unit or station');
 select extensions.has_column('public', 'employees', 'profile_image_path', 'Employees can have an optional private profile photo');
+select extensions.has_function('public', 'update_my_employee_profile_image_path', array['text'], 'Employee profile photo path uses a protected RPC');
 select extensions.ok(
   exists (select 1 from storage.buckets where id = 'employee-profile-photos' and public = false),
   'Employee profile photos use a private Storage bucket'
@@ -149,6 +150,22 @@ select extensions.is(
 
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-0000-0000-000000000004';
+
+select extensions.lives_ok(
+  $$select public.update_my_employee_profile_image_path('employees/00000000-0000-0000-0000-000000000010/123e4567-e89b-42d3-a456-826614174000.png')$$,
+  'Employee can set an owned profile photo path'
+);
+
+select extensions.is(
+  (select profile_image_path from public.employees where id = '00000000-0000-0000-0000-000000000010'::uuid),
+  'employees/00000000-0000-0000-0000-000000000010/123e4567-e89b-42d3-a456-826614174000.png',
+  'Employee profile photo path is set only on their own record'
+);
+
+select extensions.throws_ok(
+  $$select public.update_my_employee_profile_image_path('employees/00000000-0000-0000-0000-000000000011/123e4567-e89b-42d3-a456-826614174000.png')$$,
+  '42501', null, 'Employee cannot set another employee profile photo path'
+);
 
 select extensions.is(
   (select count(*) from public.employees),

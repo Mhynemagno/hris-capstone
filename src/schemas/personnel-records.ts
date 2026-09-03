@@ -7,6 +7,19 @@ const optionalText = (max: number) =>
 
 const optionalDate = isoDateSchema.optional();
 const employmentStatuses = ["active", "on_leave", "inactive", "separated"] as const;
+const profilePhotoMimeTypes = ["image/png", "image/jpeg", "image/webp"] as const;
+
+export const profilePhotoFileSchema = z.custom<File>(
+  (value) => typeof File !== "undefined" && value instanceof File,
+  "Choose an image file.",
+).superRefine((file, context) => {
+  if (!profilePhotoMimeTypes.includes(file.type as typeof profilePhotoMimeTypes[number])) {
+    context.addIssue({ code: "custom", message: "Use a PNG, JPEG, or WebP image." });
+  }
+  if (file.size < 1 || file.size > 5 * 1024 * 1024) {
+    context.addIssue({ code: "custom", message: "Use an image up to 5 MiB." });
+  }
+});
 
 export const POLICE_RANKS = [
   "Patrolman / Patrolwoman (PAT)",

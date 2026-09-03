@@ -4,6 +4,7 @@ import {
   certificationSchema,
   employeeDirectoryFiltersSchema,
   employeeSchema,
+  profilePhotoFileSchema,
   qualificationSchema,
   serviceHistorySchema,
   trainingRecordSchema,
@@ -55,6 +56,52 @@ export async function getEmployeeForCurrentUser() {
   const { data, error } = await createBrowserSupabaseClient().from("employees").select("*").maybeSingle();
   throwIfError(error);
   return data as Employee | null;
+}
+
+const profilePhotoBucket = "employee-profile-photos";
+const profilePhotoExtensions = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/webp": "webp",
+} as const;
+
+type ProfilePhotoEmployee = Pick<Employee, "id" | "profile_image_path">;
+
+export async function getEmployeeProfilePhotoUrl(objectPath: string | null) {
+  if (!objectPath) return null;
+  const { data, error } = await createBrowserSupabaseClient().storage.from(profilePhotoBucket).createSignedUrl(objectPath, 60);
+  throwIfError(error);
+  if (!data?.signedUrl) throw new Error("Unable to prepare the profile photo.");
+  return data.signedUrl;
+}
+
+export async function replaceMyEmployeeProfilePhoto(employee: ProfilePhotoEmployee, file: File) {
+  const validatedFile = profilePhotoFileSchema.parse(file);
+  const extension = profilePhotoExtensions[validatedFile.type as keyof typeof profilePhotoExtensions];
+  const objectPath = `employees/${employee.id}/${crypto.randomUUID()}.${extension}`;
+  const client = createBrowserSupabaseClient();
+  const bucket = client.storage.from(profilePhotoBucket);
+  const { error: uploadError } = await bucket.upload(objectPath, validatedFile, { contentType: validatedFile.type, upsert: false });
+  throwIfError(uploadError);
+
+  const { error: updateError } = await client.rpc("update_my_employee_profile_image_path", { target_path: objectPath });
+  if (updateError) {
+    await bucket.remove([objectPath]).catch(() => undefined);
+    throw new Error(updateError.message);
+  }
+
+  if (!employee.profile_image_path) return { path: objectPath, cleanupError: null };
+  const { error: cleanupError } = await bucket.remove([employee.profile_image_path]);
+  return { path: objectPath, cleanupError: cleanupError?.message ?? null };
+}
+
+export async function removeMyEmployeeProfilePhoto(employee: ProfilePhotoEmployee) {
+  if (!employee.profile_image_path) return { cleanupError: null };
+  const client = createBrowserSupabaseClient();
+  const { error: updateError } = await client.rpc("update_my_employee_profile_image_path", { target_path: null });
+  throwIfError(updateError);
+  const { error: cleanupError } = await client.storage.from(profilePhotoBucket).remove([employee.profile_image_path]);
+  return { cleanupError: cleanupError?.message ?? null };
 }
 
 export async function getEmployeeForProfile(profileId: string) {
