@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const requestId = "123e4567-e89b-42d3-a456-426614174000";
 const userId = "123e4567-e89b-42d3-a456-426614174001";
+const futureDate = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
 
 const mocks = vi.hoisted(() => ({
   authGetUser: vi.fn(),
@@ -42,8 +43,8 @@ describe("leave management queries", () => {
     await expect(submitLeaveRequest({
       requestId,
       leaveTypeId: requestId,
-      startsOn: "2026-08-28",
-      endsOn: "2026-08-28",
+      startsOn: futureDate,
+      endsOn: futureDate,
       reason: "Medical appointment",
     }, [new File(["evidence"], "evidence.pdf", { type: "application/pdf" })])).rejects.toThrow("request rejected");
 

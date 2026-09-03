@@ -33,4 +33,14 @@ describe("ProfileChangeRequestForm", () => {
     await user.click(screen.getByRole("button", { name: "Submit request" }));
     expect(screen.getByRole("alert")).toHaveTextContent("Change at least one contact field or add a qualification proposal.");
   });
+
+  it("shows only supported contact and emergency-contact fields", () => {
+    render(<ProfileChangeRequestForm />);
+
+    expect(screen.queryByLabelText("Address")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Personal email")).toBeInTheDocument();
+    expect(screen.getByLabelText("Phone")).toBeInTheDocument();
+    expect(screen.getByLabelText("Emergency contact name")).toBeInTheDocument();
+    expect(screen.getByLabelText("Emergency contact phone")).toBeInTheDocument();
+  });
 });

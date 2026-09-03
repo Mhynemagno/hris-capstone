@@ -6,7 +6,6 @@ const profileChangeStatuses = ["pending", "approved", "rejected", "cancelled"] a
 const contactFields = [
   "personalEmail",
   "phone",
-  "address",
   "emergencyContactName",
   "emergencyContactPhone",
 ] as const;
