@@ -8,11 +8,14 @@ import {
   getEmployee,
   getEmployeeForCurrentUser,
   getEmployeeForProfile,
+  getEmployeeProfilePhotoUrl,
   listEmployees,
   listUnlinkedEmployeeAccounts,
   listPersonnelEntries,
   saveEmployee,
   savePersonnelEntry,
+  replaceMyEmployeeProfilePhoto,
+  removeMyEmployeeProfilePhoto,
   type PersonnelKind,
 } from "@/queries/personnel-records";
 import type { EmployeeDirectoryFilters, EmployeeInput, ServiceHistoryInput, QualificationInput, CertificationInput, TrainingRecordInput } from "@/schemas/personnel-records";
@@ -35,6 +38,26 @@ export function useEmployeeForCurrentUser() {
 
 export function useEmployeeForProfile(profileId: string) {
   return useQuery({ queryKey: ["personnel-records", "profile", profileId] as const, queryFn: () => getEmployeeForProfile(profileId), enabled: Boolean(profileId) });
+}
+
+export function useEmployeeProfilePhotoUrl(objectPath: string | null) {
+  return useQuery({ queryKey: queryKeys.personnelRecords.profilePhoto(objectPath), queryFn: () => getEmployeeProfilePhotoUrl(objectPath), enabled: Boolean(objectPath) });
+}
+
+export function useReplaceMyEmployeeProfilePhoto(employee: { id: string; profile_image_path: string | null }) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) => replaceMyEmployeeProfilePhoto(employee, file),
+    onSuccess: () => { void queryClient.invalidateQueries({ queryKey: ["personnel-records", "current-user"] }); },
+  });
+}
+
+export function useRemoveMyEmployeeProfilePhoto(employee: { id: string; profile_image_path: string | null }) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => removeMyEmployeeProfilePhoto(employee),
+    onSuccess: () => { void queryClient.invalidateQueries({ queryKey: ["personnel-records", "current-user"] }); },
+  });
 }
 
 export function usePersonnelEntries(kind: PersonnelKind, employeeId: string) {

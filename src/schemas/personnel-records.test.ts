@@ -4,6 +4,7 @@ import {
   certificationSchema,
   employeeDirectoryFiltersSchema,
   employeeSchema,
+  profilePhotoFileSchema,
   serviceHistorySchema,
   trainingRecordSchema,
 } from "./personnel-records";
@@ -81,5 +82,11 @@ describe("personnel record schemas", () => {
     expect(
       employeeDirectoryFiltersSchema.parse({ page: "2", pageSize: "200", search: "  Erdene " }),
     ).toMatchObject({ page: 2, pageSize: 100, search: "Erdene" });
+  });
+
+  it("accepts only supported profile photos within the private bucket limit", () => {
+    expect(profilePhotoFileSchema.safeParse(new File(["photo"], "officer.png", { type: "image/png" })).success).toBe(true);
+    expect(profilePhotoFileSchema.safeParse(new File(["photo"], "officer.gif", { type: "image/gif" })).success).toBe(false);
+    expect(profilePhotoFileSchema.safeParse(new File([new Uint8Array(5 * 1024 * 1024 + 1)], "officer.jpg", { type: "image/jpeg" })).success).toBe(false);
   });
 });

@@ -28,6 +28,7 @@ export const queryKeys = {
     qualifications: (employeeId: string) => ["personnel-records", "qualifications", employeeId] as const,
     certifications: (employeeId: string) => ["personnel-records", "certifications", employeeId] as const,
     training: (employeeId: string) => ["personnel-records", "training", employeeId] as const,
+    profilePhoto: (objectPath: string | null) => ["personnel-records", "profile-photo", objectPath] as const,
   },
   notifications: {
     inbox: (filters: Record<string, unknown>) =>

@@ -89,6 +89,12 @@ describe("profile change request schemas", () => {
     }).success).toBe(false);
   });
 
+  it("rejects address changes from employee self-service", () => {
+    expect(profileChangeContactChangeSchema.safeParse({
+      kind: "contact", field: "address", originalValue: null, requestedValue: "New address",
+    }).success).toBe(false);
+  });
+
   it("requires a reason for rejection and keeps request caches scoped by filters", () => {
     expect(profileChangeDecisionSchema.safeParse({ requestId, decision: "rejected" }).success).toBe(false);
     expect(profileChangeDecisionSchema.parse({ requestId, decision: "approved" })).toEqual({ requestId, decision: "approved" });

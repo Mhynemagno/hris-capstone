@@ -1,9 +1,11 @@
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { Employee, TrainingRecord } from "@/lib/types/database";
+
+import { EmployeeProfilePhotoControl } from "./employee-profile-photo-control";
 
 type EmployeeProfileProps = {
   employee: Employee;
   trainings: TrainingRecord[];
+  canManagePhoto?: boolean;
 };
 
 function initials(employee: Employee) {
@@ -14,13 +16,13 @@ function valueOrNotProvided(value: string | null) {
   return value || "Not provided";
 }
 
-export function EmployeeProfile({ employee, trainings }: EmployeeProfileProps) {
+export function EmployeeProfile({ employee, trainings, canManagePhoto = false }: EmployeeProfileProps) {
   const fullName = [employee.first_name, employee.middle_name, employee.last_name].filter(Boolean).join(" ");
 
   return <div className="space-y-6">
     <section className="rounded-2xl border bg-card p-5 shadow-sm sm:p-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-        <Avatar className="size-20 border text-xl"><AvatarFallback>{initials(employee)}</AvatarFallback></Avatar>
+        <EmployeeProfilePhotoControl canManagePhoto={canManagePhoto} employee={employee} initials={initials(employee)} />
         <div className="min-w-0">
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{fullName}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{employee.rank ?? "Rank not provided"}</p>

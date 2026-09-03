@@ -26,8 +26,7 @@ export const ROLE_CONFIG: Record<AppRole, RoleConfig> = {
     navigation: [
       { href: "/admin", label: "Admin workspace", icon: "LayoutDashboard" },
       { href: "/admin/profile-change-requests", label: "Profile change requests", icon: "ContactRound" },
-      { href: "/admin/users", label: "Users", icon: "Users" },
-      { href: "/admin/roles", label: "Roles", icon: "ShieldCheck" },
+      { href: "/admin/users", label: "Account management", icon: "Users" },
       { href: "/admin/departments", label: "Departments", icon: "Building2" },
       { href: "/admin/positions", label: "Positions", icon: "BriefcaseBusiness" },
       { href: "/admin/settings", label: "Settings", icon: "Settings" },

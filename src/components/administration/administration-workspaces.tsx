@@ -124,8 +124,6 @@ function ManagedAccountsWorkspace({ invite }: { invite: boolean }) {
 
 export function UsersWorkspace() { return <ManagedAccountsWorkspace invite />; }
 
-export function RolesWorkspace() { return <ManagedAccountsWorkspace invite={false} />; }
-
 function ReferenceFilters({ label, onSearchChange, onStatusChange, search, status }: { label: string; onSearchChange: (value: string) => void; onStatusChange: (value: "active" | "inactive" | "") => void; search: string; status: "active" | "inactive" | "" }) {
   return <div className="grid gap-3 sm:grid-cols-2"><Input aria-label={`Search ${label}`} onChange={(event) => onSearchChange(event.target.value)} placeholder={`Search ${label}`} value={search} /><select aria-label={`Filter ${label} by status`} className="h-11 rounded-lg border border-input bg-background px-2.5 text-sm" onChange={(event) => onStatusChange(event.target.value as "active" | "inactive" | "")} value={status}><option value="">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select></div>;
 }

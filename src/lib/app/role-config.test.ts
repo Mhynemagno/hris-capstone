@@ -37,4 +37,11 @@ describe("role configuration", () => {
     expect(getRoleConfig("management").navigation.some((item) => item.href.includes("attendance"))).toBe(false);
     expect(getRoleConfig("management").navigation).toContainEqual({ href: "/reports", label: "Reports", icon: "ScrollText" });
   });
+
+  it("uses one account-management destination for administrator account and role work", () => {
+    const navigation = getRoleConfig("system_administrator").navigation;
+
+    expect(navigation).toContainEqual({ href: "/admin/users", label: "Account management", icon: "Users" });
+    expect(navigation.some((item) => item.href === "/admin/roles")).toBe(false);
+  });
 });
