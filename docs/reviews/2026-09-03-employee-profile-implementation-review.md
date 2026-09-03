@@ -1,6 +1,6 @@
 # Employee Profile and Account Management Review
 
-**Reviewed:** 2026-09-03  
+**Reviewed:** 2026-09-03
 **Scope:** profile completion and unified account management
 
 ## Result
@@ -33,4 +33,4 @@ The agreed employee-profile flow is now implemented: one account-management work
 | `npm run typecheck` | Passed |
 | Local database security advisor | Passed: no warnings |
 
-The full project lint, build, browser smoke pass, full Vitest suite, and full Supabase suite remain final-branch checks before merge.
+The full project lint, build, full Vitest suite, and full Supabase suite passed on the final branch. A browser smoke pass remains a recommended deployment-environment check.

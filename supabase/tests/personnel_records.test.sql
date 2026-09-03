@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(37);
+select extensions.plan(41);
 
 select extensions.has_table('public', 'employees', 'Employee records table exists');
 select extensions.has_table('public', 'service_history', 'Service history table exists');
@@ -106,6 +106,15 @@ select extensions.lives_ok(
   'HR can update official employee fields'
 );
 
+select extensions.throws_ok(
+  $$update public.employees
+      set profile_image_path = 'employees/00000000-0000-0000-0000-000000000010/123e4567-e89b-42d3-a456-826614174000.png'
+    where id = '00000000-0000-0000-0000-000000000010'::uuid$$,
+  '42501',
+  null,
+  'HR cannot directly set an employee profile photo path'
+);
+
 select extensions.lives_ok(
   $$insert into public.training_records (employee_id, course_name, provider, completed_on)
     values ('00000000-0000-0000-0000-000000000010'::uuid, 'Leadership Development', 'Police Academy', '2026-01-01')$$,
@@ -121,6 +130,11 @@ select extensions.cmp_ok(
 
 insert into public.employees (id, employee_number, first_name, last_name, personal_email, employment_status, employment_started_on)
 values ('00000000-0000-0000-0000-000000000011', 'EMP-0002', 'Other', 'Employee', 'other.fixture@example.com', 'active', '2024-01-01');
+
+insert into public.employees (id, profile_id, employee_number, first_name, last_name, personal_email, employment_status, employment_started_on)
+values
+  ('00000000-0000-0000-0000-000000000012', '00000000-0000-0000-0000-000000000001', 'EMP-0003', 'Admin', 'Linked', 'admin.linked.fixture@example.com', 'active', '2024-01-01'),
+  ('00000000-0000-0000-0000-000000000013', '00000000-0000-0000-0000-000000000002', 'EMP-0004', 'HR', 'Linked', 'hr.linked.fixture@example.com', 'active', '2024-01-01');
 
 set local request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
 
@@ -149,6 +163,20 @@ select extensions.is(
 );
 
 set local role authenticated;
+set local request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+
+select extensions.throws_ok(
+  $$select public.update_my_employee_profile_image_path('employees/00000000-0000-0000-0000-000000000012/123e4567-e89b-42d3-a456-826614174000.png')$$,
+  '42501', null, 'A linked Administrator cannot update a profile photo'
+);
+
+set local request.jwt.claim.sub = '00000000-0000-0000-0000-000000000002';
+
+select extensions.throws_ok(
+  $$select public.update_my_employee_profile_image_path('employees/00000000-0000-0000-0000-000000000013/123e4567-e89b-42d3-a456-826614174000.png')$$,
+  '42501', null, 'A linked HR user cannot update a profile photo'
+);
+
 set local request.jwt.claim.sub = '00000000-0000-0000-0000-000000000004';
 
 select extensions.lives_ok(
@@ -165,6 +193,11 @@ select extensions.is(
 select extensions.throws_ok(
   $$select public.update_my_employee_profile_image_path('employees/00000000-0000-0000-0000-000000000011/123e4567-e89b-42d3-a456-826614174000.png')$$,
   '42501', null, 'Employee cannot set another employee profile photo path'
+);
+
+select extensions.throws_ok(
+  $$select public.update_my_employee_profile_image_path('employees/00000000-0000-0000-0000-000000000010/not-a-uuid.png')$$,
+  '42501', null, 'Employee cannot use a malformed owned profile photo path'
 );
 
 select extensions.is(

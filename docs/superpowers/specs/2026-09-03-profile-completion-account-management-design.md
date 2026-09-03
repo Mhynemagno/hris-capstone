@@ -1,6 +1,6 @@
 # Profile Completion and Account Management Design
 
-**Branch:** `codex/profile-completion-account-management`  
+**Branch:** `codex/profile-completion-account-management`
 **Date:** 2026-09-03
 
 ## Goal
