@@ -51,7 +51,7 @@ select is(
 
 - [ ] **Step 2: Run the focused database test to verify failure**
 
-Run: npx supabase test db --file supabase/tests/recruitment_and_applicant_portal.test.sql
+Run: npx supabase test db supabase/tests/recruitment_and_applicant_portal.test.sql
 
 Expected: FAIL because the new function and fields do not exist.
 
@@ -73,7 +73,7 @@ Create the private applicant-profile-photos bucket with PNG/JPEG/WebP and a 5 Mi
 
 - [ ] **Step 4: Run focused SQL tests to verify pass**
 
-Run: npx supabase test db --file supabase/tests/recruitment_and_applicant_portal.test.sql
+Run: npx supabase test db supabase/tests/recruitment_and_applicant_portal.test.sql
 
 Expected: PASS, including rejected cross-owner image/document paths and attempted applicant-number updates.
 
@@ -157,7 +157,7 @@ git commit -m "feat: add applicant profile data helpers"
 - Modify: src/components/personnel-records/employee-profile-photo-control.tsx
 - Modify: src/components/personnel-records/employee-form.tsx
 - Modify: src/components/personnel-records/employee-profile.tsx
-- Test: src/components/recruitment/applicant-profile-form.test.tsx
+- Create: src/components/recruitment/applicant-profile-form.test.tsx
 - Test: src/components/recruitment/applicant-profile-photo-control.test.tsx
 - Test: src/components/personnel-records/employee-profile-photo-control.test.tsx
 
@@ -233,7 +233,7 @@ select lives_ok(
 
 - [ ] **Step 2: Run focused database tests to verify failure**
 
-Run: npx supabase test db --file supabase/tests/recruitment_and_applicant_portal.test.sql --file supabase/tests/notifications.test.sql
+Run: npx supabase test db supabase/tests/recruitment_and_applicant_portal.test.sql supabase/tests/notifications.test.sql
 
 Expected: FAIL because the new workflow status/functions are unavailable.
 
@@ -251,7 +251,7 @@ end if;
 
 - [ ] **Step 4: Run focused SQL tests to verify pass**
 
-Run: npx supabase test db --file supabase/tests/recruitment_and_applicant_portal.test.sql --file supabase/tests/notifications.test.sql
+Run: npx supabase test db supabase/tests/recruitment_and_applicant_portal.test.sql supabase/tests/notifications.test.sql
 
 Expected: PASS for notification recipient, revision authorization, delete protection, withdrawal retention, and Badge Number enforcement.
 
