@@ -32,4 +32,33 @@ describe("recruitment schemas", () => {
       criteria: [{ ordinal: 1, isRequired: true }],
     });
   });
+
+  it("accepts the applicant personal details collected before an application", () => {
+    const recruitment = schemas as typeof schemas & {
+      applicantProfileSchema: { parse: (input: unknown) => unknown };
+    };
+
+    expect(
+      recruitment.applicantProfileSchema.parse({
+        firstName: "Maria",
+        middleName: "Santos",
+        lastName: "Reyes",
+        qualifier: "Jr.",
+        placeOfBirth: "Quezon City",
+        dateOfBirth: "1998-05-16",
+        sex: "female",
+        civilStatus: "single",
+        religion: "Roman Catholic",
+        phone: "09171234567",
+        address: "Quezon City",
+      }),
+    ).toMatchObject({
+      qualifier: "Jr.",
+      placeOfBirth: "Quezon City",
+      dateOfBirth: "1998-05-16",
+      sex: "female",
+      civilStatus: "single",
+      religion: "Roman Catholic",
+    });
+  });
 });

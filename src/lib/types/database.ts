@@ -129,6 +129,12 @@ export type Employee = {
   first_name: string;
   middle_name: string | null;
   last_name: string;
+  qualifier: string | null;
+  place_of_birth: string | null;
+  date_of_birth: string | null;
+  sex: "female" | "male" | "prefer_not_to_say" | null;
+  civil_status: "single" | "married" | "widowed" | "separated" | "divorced" | null;
+  religion: string | null;
   rank: string | null;
   unit_station: string | null;
   profile_image_path: string | null;
@@ -226,11 +232,32 @@ export type JobQualificationCriterion = {
 export type Applicant = {
   id: string;
   profile_id: string;
+  applicant_number: number;
   first_name: string;
   middle_name: string | null;
   last_name: string;
+  qualifier: string | null;
+  place_of_birth: string | null;
+  date_of_birth: string | null;
+  sex: "female" | "male" | "prefer_not_to_say" | null;
+  civil_status: "single" | "married" | "widowed" | "separated" | "divorced" | null;
+  religion: string | null;
+  profile_image_path: string | null;
   phone: string | null;
   address: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ApplicantProfileDocument = {
+  id: string;
+  applicant_id: string;
+  kind: "eligibility" | "diploma";
+  object_path: string;
+  file_name: string;
+  mime_type: "application/pdf" | "image/png" | "image/jpeg";
+  size_bytes: number;
+  uploaded_by_user_id: string;
   created_at: string;
   updated_at: string;
 };

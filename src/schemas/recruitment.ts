@@ -51,8 +51,41 @@ export const applicantProfileSchema = z.object({
   firstName: z.string().trim().min(1).max(80),
   middleName: optionalText(80),
   lastName: z.string().trim().min(1).max(80),
+  qualifier: optionalText(32),
+  placeOfBirth: optionalText(160),
+  dateOfBirth: isoDateSchema.optional(),
+  sex: z.enum(["female", "male", "prefer_not_to_say"]).optional(),
+  civilStatus: z.enum(["single", "married", "widowed", "separated", "divorced"]).optional(),
+  religion: optionalText(120),
   phone: optionalText(32),
   address: optionalText(500),
+});
+
+const applicantProfilePhotoMimeTypes = ["image/png", "image/jpeg", "image/webp"] as const;
+const applicantProfileDocumentMimeTypes = ["application/pdf", "image/png", "image/jpeg"] as const;
+
+export const applicantProfilePhotoFileSchema = z.custom<File>(
+  (value) => typeof File !== "undefined" && value instanceof File,
+  "Choose an image file.",
+).superRefine((file, context) => {
+  if (!applicantProfilePhotoMimeTypes.includes(file.type as typeof applicantProfilePhotoMimeTypes[number])) {
+    context.addIssue({ code: "custom", message: "Use a PNG, JPEG, or WebP image." });
+  }
+  if (file.size < 1 || file.size > 5 * 1024 * 1024) {
+    context.addIssue({ code: "custom", message: "Use an image up to 5 MiB." });
+  }
+});
+
+export const applicantProfileDocumentFileSchema = z.custom<File>(
+  (value) => typeof File !== "undefined" && value instanceof File,
+  "Choose a document file.",
+).superRefine((file, context) => {
+  if (!applicantProfileDocumentMimeTypes.includes(file.type as typeof applicantProfileDocumentMimeTypes[number])) {
+    context.addIssue({ code: "custom", message: "Use a PDF, PNG, or JPEG document." });
+  }
+  if (file.size < 1 || file.size > 10 * 1024 * 1024) {
+    context.addIssue({ code: "custom", message: "Use a document up to 10 MiB." });
+  }
 });
 
 export const applicantDocumentSchema = z.object({
@@ -109,6 +142,8 @@ export type ApplicationStatus = z.infer<typeof applicationStatusSchema>;
 export type JobOpeningInput = z.infer<typeof jobOpeningSchema>;
 export type JobCriterionInput = z.infer<typeof jobCriterionSchema>;
 export type ApplicantProfileInput = z.infer<typeof applicantProfileSchema>;
+export type ApplicantProfilePhotoFile = z.infer<typeof applicantProfilePhotoFileSchema>;
+export type ApplicantProfileDocumentFile = z.infer<typeof applicantProfileDocumentFileSchema>;
 export type ApplicantDocumentInput = z.infer<typeof applicantDocumentSchema>;
 export type ApplicationSubmissionInput = z.infer<typeof applicationSubmissionSchema>;
 export type ApplicationStatusTransitionInput = z.infer<typeof applicationStatusTransitionSchema>;

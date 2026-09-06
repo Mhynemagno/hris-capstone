@@ -5,21 +5,27 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-keys";
 import {
   getApplicantProfile,
+  getApplicantProfilePhotoUrl,
   getApplicationAiScores,
   getMyApplication,
   getPublishedJob,
   hireApplication,
   listHrApplications,
   listHrJobs,
+  listApplicantProfileDocuments,
   listMyApplications,
   listPublishedJobs,
   saveApplicantProfile,
+  saveApplicantProfileDocuments,
+  replaceMyApplicantProfilePhoto,
+  removeMyApplicantProfilePhoto,
   retryApplicationAnalysis,
   saveJobOpening,
   submitApplication,
   transitionApplicationStatus,
 } from "@/queries/recruitment";
 import type {
+  ApplicantProfileDocumentFile,
   ApplicantProfileInput,
   ApplicationAiFilters,
   ApplicationFilters,
@@ -46,6 +52,44 @@ export function useSaveApplicantProfile() {
   return useMutation({
     mutationFn: (input: ApplicantProfileInput) => saveApplicantProfile(input),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.myProfile() }),
+  });
+}
+
+export function useApplicantProfilePhotoUrl(objectPath: string | null) {
+  return useQuery({ queryKey: queryKeys.recruitment.profilePhoto(objectPath), queryFn: () => getApplicantProfilePhotoUrl(objectPath), enabled: Boolean(objectPath) });
+}
+
+export function useReplaceMyApplicantProfilePhoto(applicant: { id: string; profile_image_path: string | null }) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) => replaceMyApplicantProfilePhoto(applicant, file),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.myProfile() });
+      void queryClient.invalidateQueries({ queryKey: ["recruitment", "profile-photo"] });
+    },
+  });
+}
+
+export function useRemoveMyApplicantProfilePhoto(applicant: { id: string; profile_image_path: string | null }) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => removeMyApplicantProfilePhoto(applicant),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.myProfile() });
+      void queryClient.invalidateQueries({ queryKey: ["recruitment", "profile-photo"] });
+    },
+  });
+}
+
+export function useApplicantProfileDocuments() {
+  return useQuery({ queryKey: queryKeys.recruitment.profileDocuments(), queryFn: listApplicantProfileDocuments });
+}
+
+export function useSaveApplicantProfileDocuments() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (documents: Array<{ kind: "eligibility" | "diploma"; file: ApplicantProfileDocumentFile }>) => saveApplicantProfileDocuments(documents),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.profileDocuments() }),
   });
 }
 
