@@ -110,6 +110,13 @@ set local role postgres;
 insert into public.applicants (id, profile_id, first_name, last_name)
 values ('00000000-0000-4000-8000-000000009201', '00000000-0000-4000-8000-000000009102', 'Applicant', 'Fixture');
 
+insert into public.applicant_profile_documents (applicant_id, kind, object_path, file_name, mime_type, size_bytes, uploaded_by_user_id)
+values
+  ('00000000-0000-4000-8000-000000009201', 'eligibility', 'applicant-profiles/00000000-0000-4000-8000-000000009102/00000000-0000-4000-8000-000000009311.pdf', 'eligibility.pdf', 'application/pdf', 1024, '00000000-0000-4000-8000-000000009102'),
+  ('00000000-0000-4000-8000-000000009201', 'diploma', 'applicant-profiles/00000000-0000-4000-8000-000000009102/00000000-0000-4000-8000-000000009312.pdf', 'diploma.pdf', 'application/pdf', 1024, '00000000-0000-4000-8000-000000009102'),
+  ((select id from public.applicants where profile_id = '00000000-0000-4000-8000-000000009100'::uuid), 'eligibility', 'applicant-profiles/00000000-0000-4000-8000-000000009100/00000000-0000-4000-8000-000000009313.pdf', 'eligibility.pdf', 'application/pdf', 1024, '00000000-0000-4000-8000-000000009100'),
+  ((select id from public.applicants where profile_id = '00000000-0000-4000-8000-000000009100'::uuid), 'diploma', 'applicant-profiles/00000000-0000-4000-8000-000000009100/00000000-0000-4000-8000-000000009314.pdf', 'diploma.pdf', 'application/pdf', 1024, '00000000-0000-4000-8000-000000009100');
+
 insert into storage.buckets (id, name, public, file_size_limit)
 values ('applicant-documents', 'applicant-documents', false, 10485760)
 on conflict (id) do nothing;
