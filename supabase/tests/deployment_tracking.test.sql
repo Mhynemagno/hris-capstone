@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(22);
+select extensions.plan(24);
 
 select extensions.has_table('public', 'deployments', 'Deployments table exists');
 select extensions.has_table('public', 'deployment_history', 'Deployment history table exists');
@@ -100,6 +100,15 @@ select extensions.lives_ok(
 );
 select extensions.is((select status from public.deployments where id::text = current_setting('test.deployment_id')), 'rejected', 'Rejection updates the deployment status');
 select extensions.is((select count(*) from public.deployment_history where deployment_id::text = current_setting('test.deployment_id')), 2::bigint, 'Update appends immutable history');
+select set_config('test.current_updated_at', (select updated_at::text from public.deployments where id::text = current_setting('test.deployment_id')), true);
+select extensions.lives_ok(
+  $$select public.update_deployment(
+    current_setting('test.deployment_id')::uuid, current_setting('test.current_updated_at')::timestamptz,
+    'Central station', null, null, 'Patrol officer', '2026-09-01', null, 'rejected', 'Historic end-date check'
+  )$$,
+  'A direct update cannot erase a historic end date'
+);
+select extensions.is((select ends_on from public.deployments where id::text = current_setting('test.deployment_id')), '2026-09-30'::date, 'Historic deployment end date remains intact');
 set local role postgres;
 select extensions.ok(exists (select 1 from public.audit_logs where entity_type = 'deployments' and entity_id = current_setting('test.deployment_id') and action = 'status_changed'), 'Status transition is audited');
 set local role authenticated;

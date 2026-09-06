@@ -56,4 +56,13 @@ describe("EmployeeForm", () => {
       personalEmail: "candidate.employee@example.test",
     }));
   });
+
+  it("shows Badge number validation next to the field", async () => {
+    const user = userEvent.setup();
+    render(<EmployeeForm onSaved={() => undefined} />);
+
+    await user.click(screen.getByRole("button", { name: /save employee/i }));
+
+    expect(screen.getByLabelText(/badge number/i).parentElement).toHaveTextContent(/expected string to have >=3 characters/i);
+  });
 });

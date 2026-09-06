@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(6);
+select extensions.plan(7);
 
 select extensions.has_function('public', 'resubmit_application', array['uuid', 'jsonb'], 'Needs Revision resubmission RPC exists');
 select extensions.has_function('public', 'delete_draft_job_opening', array['bigint'], 'Draft-only job delete RPC exists');
@@ -21,6 +21,10 @@ select extensions.ok(
       and pg_get_constraintdef(constraint_row.oid) like '%Needs Revision%'
   ),
   'Applications permit the Needs Revision status'
+);
+select extensions.ok(
+  exists (select 1 from pg_trigger where tgname = 'job_openings_protect_applied_lifecycle' and not tgisinternal),
+  'Applied job openings cannot be republished or returned to draft'
 );
 
 select * from extensions.finish();

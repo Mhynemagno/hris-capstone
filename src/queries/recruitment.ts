@@ -261,7 +261,7 @@ export async function getMyApplication(applicationId: string) {
 export async function listHrJobs(input: Partial<JobFilters> = {}) {
   const filters = jobFiltersSchema.parse(input);
   const { from, to } = pageRange(filters.page, filters.pageSize);
-  let query = createBrowserSupabaseClient().from("job_openings").select("*, job_qualification_criteria(*)", { count: "exact" }).order("updated_at", { ascending: false });
+  let query = createBrowserSupabaseClient().from("job_openings").select("*, job_qualification_criteria(*), applications(count)", { count: "exact" }).order("updated_at", { ascending: false });
   if (filters.search) query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
   if (filters.status) query = query.eq("status", filters.status);
   const { data, error, count } = await query.range(from, to);
