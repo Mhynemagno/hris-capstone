@@ -417,10 +417,7 @@ export async function hireApplication(input: HiringDecisionInput) {
   const values = hiringDecisionSchema.parse(input);
   const { data, error } = await createBrowserSupabaseClient().rpc("hire_application", {
     target_application_id: values.applicationId,
-    target_employee_number: values.employeeNumber,
-    target_department_id: values.departmentId,
-    target_position_id: values.positionId,
-    target_employment_started_on: values.employmentStartedOn,
+    target_badge_number: values.badgeNumber,
     decision_note: values.note ?? null,
   });
   throwIfError(error);

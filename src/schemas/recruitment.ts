@@ -124,10 +124,7 @@ export const applicationStatusTransitionSchema = z.object({
 
 export const hiringDecisionSchema = z.object({
   applicationId: uuidSchema,
-  employeeNumber: employeeNumberSchema,
-  departmentId: positiveInteger,
-  positionId: positiveInteger,
-  employmentStartedOn: isoDateSchema,
+  badgeNumber: employeeNumberSchema,
   note: optionalText(2_000),
 });
 
