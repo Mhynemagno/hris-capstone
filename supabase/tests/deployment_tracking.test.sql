@@ -3,10 +3,11 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(20);
+select extensions.plan(22);
 
 select extensions.has_table('public', 'deployments', 'Deployments table exists');
 select extensions.has_table('public', 'deployment_history', 'Deployment history table exists');
+select extensions.has_column('public', 'deployments', 'unit_station_id', 'Deployments retain the selected Unit/Station ID');
 select extensions.has_function('public', 'create_deployment', array['uuid', 'text', 'text', 'text', 'text', 'date', 'date', 'text', 'text'], 'Deployment creation RPC exists');
 select extensions.has_function('public', 'update_deployment', array['uuid', 'timestamp with time zone', 'text', 'text', 'text', 'text', 'date', 'date', 'text', 'text'], 'Deployment update RPC exists');
 select extensions.ok(coalesce((select relrowsecurity from pg_class where oid = to_regclass('public.deployments')), false), 'Deployments use RLS');
@@ -34,6 +35,8 @@ values
   ('00000000-0000-4000-8000-000000000701', '00000000-0000-4000-8000-000000000602', 'DEP-001', 'Deployment', 'Employee', 'deployment-employee@example.test', '2024-01-01'),
   ('00000000-0000-4000-8000-000000000702', '00000000-0000-4000-8000-000000000603', 'DEP-002', 'Other', 'Employee', 'deployment-other@example.test', '2024-01-01');
 
+insert into public.unit_stations (name) values ('Operations');
+
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000601';
 
@@ -43,6 +46,13 @@ select extensions.lives_ok(
     'Patrol officer', '2026-09-01', null, 'active', 'Primary assignment'
   )$$,
   'HR creates an active deployment'
+);
+select extensions.throws_ok(
+  $$select public.create_deployment(
+    '00000000-0000-4000-8000-000000000701'::uuid, null, 'Unknown unit', null,
+    'Invalid unit assignment', '2026-09-01', null, 'active', null
+  )$$,
+  '22023', 'Select an active Unit/Station from the catalogue.', 'Deployment RPC rejects a unit outside the catalogue'
 );
 select extensions.lives_ok(
   $$select public.create_deployment(

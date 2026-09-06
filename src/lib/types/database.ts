@@ -375,6 +375,7 @@ export type Deployment = {
   employee_id: string;
   location: string | null;
   unit: string | null;
+  unit_station_id: number | null;
   project: string | null;
   assignment_role: string;
   starts_on: string;
