@@ -6,6 +6,7 @@ import { queryKeys } from "@/lib/query-keys";
 import {
   getApplicantProfile,
   getApplicantProfilePhotoUrl,
+  deleteDraftJobOpening,
   getApplicationAiScores,
   getMyApplication,
   getMyApplicationForJob,
@@ -25,6 +26,7 @@ import {
   saveJobOpening,
   submitApplication,
   transitionApplicationStatus,
+  withdrawJobOpening,
 } from "@/queries/recruitment";
 import type {
   ApplicantProfileDocumentFile,
@@ -146,6 +148,30 @@ export function useSaveJobOpening() {
       void queryClient.invalidateQueries({ queryKey: ["reporting"] });
       void queryClient.invalidateQueries({ queryKey: ["recruitment", "public-jobs"] });
       void queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.job(job.id) });
+    },
+  });
+}
+
+export function useDeleteDraftJobOpening() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deleteDraftJobOpening,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["recruitment", "hr-jobs"] });
+      void queryClient.invalidateQueries({ queryKey: ["recruitment", "public-jobs"] });
+      void queryClient.invalidateQueries({ queryKey: ["reporting"] });
+    },
+  });
+}
+
+export function useWithdrawJobOpening() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: withdrawJobOpening,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["recruitment", "hr-jobs"] });
+      void queryClient.invalidateQueries({ queryKey: ["recruitment", "public-jobs"] });
+      void queryClient.invalidateQueries({ queryKey: ["reporting"] });
     },
   });
 }

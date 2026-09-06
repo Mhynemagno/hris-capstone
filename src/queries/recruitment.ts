@@ -385,6 +385,18 @@ export async function submitApplication(input: SubmitApplicationInput) {
   }
 }
 
+export async function deleteDraftJobOpening(jobId: number) {
+  const id = jobOpeningSchema.shape.id.unwrap().parse(jobId);
+  const { error } = await createBrowserSupabaseClient().rpc("delete_draft_job_opening", { target_job_id: id });
+  throwIfError(error);
+}
+
+export async function withdrawJobOpening(jobId: number) {
+  const id = jobOpeningSchema.shape.id.unwrap().parse(jobId);
+  const { error } = await createBrowserSupabaseClient().rpc("withdraw_job_opening", { target_job_id: id });
+  throwIfError(error);
+}
+
 export async function resubmitApplication(input: ResubmitApplicationInput) {
   const applicationId = applicationStatusTransitionSchema.shape.applicationId.parse(input.applicationId);
   const user = await requireCurrentUser();
