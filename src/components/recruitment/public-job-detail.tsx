@@ -12,6 +12,7 @@ export function PublicJobDetail({ jobId }: { jobId: number }) {
   const job = usePublishedJob(jobId);
   const [isSignedIn, setIsSignedIn] = useState(false);
   useEffect(() => {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) return;
     void createBrowserSupabaseClient().auth.getUser().then(({ data }) => setIsSignedIn(Boolean(data.user)));
   }, []);
   if (job.isLoading) return <LoadingState label="Loading job opening…" />;

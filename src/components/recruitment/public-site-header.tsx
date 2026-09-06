@@ -9,6 +9,7 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 export function PublicSiteHeader() {
   const [isSignedIn, setIsSignedIn] = useState(false);
   useEffect(() => {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) return;
     const client = createBrowserSupabaseClient();
     void client.auth.getUser().then(({ data }) => setIsSignedIn(Boolean(data.user)));
     const { data: listener } = client.auth.onAuthStateChange((_event, session) => setIsSignedIn(Boolean(session?.user)));
