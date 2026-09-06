@@ -42,14 +42,14 @@ const employee = {
 };
 
 describe("EmployeeProfile", () => {
-  it("uses a concise badge-number profile with an initials fallback", () => {
+  it("uses a concise badge-number profile with the default avatar fallback", () => {
     render(<EmployeeProfile employee={employee} trainings={[]} />);
 
     expect(screen.getByRole("heading", { name: "Ada Dela Cruz" })).toBeInTheDocument();
-    expect(screen.getByText("AD")).toBeInTheDocument();
+    expect(screen.getByAltText("Default profile avatar")).toBeInTheDocument();
     expect(screen.getByText("Badge number")).toBeInTheDocument();
     expect(screen.getByText("Police Captain (PCPT)")).toBeInTheDocument();
-    expect(screen.getAllByText("Not provided")).toHaveLength(3);
+    expect(screen.getAllByText("Not provided")).toHaveLength(9);
   });
 
   it("keeps trainings visible as promotion evidence", () => {

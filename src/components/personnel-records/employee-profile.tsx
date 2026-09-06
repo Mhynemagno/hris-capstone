@@ -8,10 +8,6 @@ type EmployeeProfileProps = {
   canManagePhoto?: boolean;
 };
 
-function initials(employee: Employee) {
-  return `${employee.first_name[0] ?? ""}${employee.last_name[0] ?? ""}`.toUpperCase() || "EP";
-}
-
 function valueOrNotProvided(value: string | null) {
   return value || "Not provided";
 }
@@ -22,7 +18,7 @@ export function EmployeeProfile({ employee, trainings, canManagePhoto = false }:
   return <div className="space-y-6">
     <section className="rounded-2xl border bg-card p-5 shadow-sm sm:p-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-        <EmployeeProfilePhotoControl canManagePhoto={canManagePhoto} employee={employee} initials={initials(employee)} />
+        <EmployeeProfilePhotoControl canManagePhoto={canManagePhoto} employee={employee} />
         <div className="min-w-0">
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{fullName}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{employee.rank ?? "Rank not provided"}</p>
@@ -36,6 +32,12 @@ export function EmployeeProfile({ employee, trainings, canManagePhoto = false }:
       <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2">
         <div><dt className="text-muted-foreground">Personal email</dt><dd className="mt-1 font-medium">{employee.personal_email}</dd></div>
         <div><dt className="text-muted-foreground">Phone</dt><dd className="mt-1 font-medium">{valueOrNotProvided(employee.phone)}</dd></div>
+        <div><dt className="text-muted-foreground">Place of birth</dt><dd className="mt-1 font-medium">{valueOrNotProvided(employee.place_of_birth)}</dd></div>
+        <div><dt className="text-muted-foreground">Date of birth</dt><dd className="mt-1 font-medium">{valueOrNotProvided(employee.date_of_birth)}</dd></div>
+        <div><dt className="text-muted-foreground">Sex</dt><dd className="mt-1 font-medium">{valueOrNotProvided(employee.sex?.replaceAll("_", " ") ?? null)}</dd></div>
+        <div><dt className="text-muted-foreground">Civil status</dt><dd className="mt-1 font-medium">{valueOrNotProvided(employee.civil_status?.replaceAll("_", " ") ?? null)}</dd></div>
+        <div><dt className="text-muted-foreground">Religion</dt><dd className="mt-1 font-medium">{valueOrNotProvided(employee.religion)}</dd></div>
+        <div><dt className="text-muted-foreground">Home address</dt><dd className="mt-1 font-medium">{valueOrNotProvided(employee.address)}</dd></div>
         <div><dt className="text-muted-foreground">Emergency contact</dt><dd className="mt-1 font-medium">{valueOrNotProvided(employee.emergency_contact_name)}</dd></div>
         <div><dt className="text-muted-foreground">Emergency phone</dt><dd className="mt-1 font-medium">{valueOrNotProvided(employee.emergency_contact_phone)}</dd></div>
       </dl>

@@ -47,6 +47,14 @@ describe("EmployeeProfilePhotoControl", () => {
     expect(screen.queryByRole("button", { name: "Remove profile photo" })).not.toBeInTheDocument();
   });
 
+  it("uses the supplied default avatar when no profile photo has been uploaded", () => {
+    mocks.usePhotoUrl.mockReturnValue({ data: null, isLoading: false });
+    render(<EmployeeProfilePhotoControl employee={{ ...employee, profile_image_path: null }} />);
+
+    expect(screen.getByAltText("Default profile avatar")).toHaveAttribute("src", expect.stringContaining("/default-profile-avatar.png"));
+    expect(screen.queryByText("EP")).not.toBeInTheDocument();
+  });
+
   it("reports an unsupported upload next to the control", async () => {
     const user = userEvent.setup({ applyAccept: false });
     render(<EmployeeProfilePhotoControl employee={employee} canManagePhoto />);

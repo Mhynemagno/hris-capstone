@@ -6,6 +6,9 @@ const optionalText = (max: number) =>
   z.string().trim().max(max).transform((value) => value || undefined).optional();
 
 const positiveInteger = z.coerce.number().int().positive();
+const optionalIsoDate = z.union([z.literal(""), isoDateSchema]).transform((value) => value || undefined).optional();
+const optionalEnum = <T extends readonly [string, ...string[]]>(values: T) =>
+  z.union([z.literal(""), z.enum(values)]).transform((value) => value || undefined).optional();
 
 export const applicationStatusSchema = z.enum([
   "Submitted",
@@ -53,9 +56,9 @@ export const applicantProfileSchema = z.object({
   lastName: z.string().trim().min(1).max(80),
   qualifier: optionalText(32),
   placeOfBirth: optionalText(160),
-  dateOfBirth: isoDateSchema.optional(),
-  sex: z.enum(["female", "male", "prefer_not_to_say"]).optional(),
-  civilStatus: z.enum(["single", "married", "widowed", "separated", "divorced"]).optional(),
+  dateOfBirth: optionalIsoDate,
+  sex: optionalEnum(["female", "male", "prefer_not_to_say"]),
+  civilStatus: optionalEnum(["single", "married", "widowed", "separated", "divorced"]),
   religion: optionalText(120),
   phone: optionalText(32),
   address: optionalText(500),
@@ -141,7 +144,7 @@ export const applicationAiFiltersSchema = applicationFiltersSchema.extend({ aiSt
 export type ApplicationStatus = z.infer<typeof applicationStatusSchema>;
 export type JobOpeningInput = z.infer<typeof jobOpeningSchema>;
 export type JobCriterionInput = z.infer<typeof jobCriterionSchema>;
-export type ApplicantProfileInput = z.infer<typeof applicantProfileSchema>;
+export type ApplicantProfileInput = z.input<typeof applicantProfileSchema>;
 export type ApplicantProfilePhotoFile = z.infer<typeof applicantProfilePhotoFileSchema>;
 export type ApplicantProfileDocumentFile = z.infer<typeof applicantProfileDocumentFileSchema>;
 export type ApplicantDocumentInput = z.infer<typeof applicantDocumentSchema>;

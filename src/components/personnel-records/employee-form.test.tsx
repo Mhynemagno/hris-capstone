@@ -12,6 +12,9 @@ describe("EmployeeForm", () => {
     expect(screen.getByLabelText(/^rank/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/unit.*station/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/first name/i)).toBeInTheDocument();
+    expect(screen.getByLabelText("Place of birth")).toBeInTheDocument();
+    expect(screen.getByLabelText("Date of birth")).toBeInTheDocument();
+    expect(screen.getByLabelText("Civil status")).toBeInTheDocument();
     expect(screen.getByLabelText(/employment start date/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /save employee/i })).toHaveClass("w-full");
   });
