@@ -82,11 +82,13 @@ select extensions.is(
 insert into public.departments (name) values ('Recruitment test department');
 insert into public.positions (department_id, title)
 select id, 'Recruitment test position' from public.departments where name = 'Recruitment test department';
+insert into public.positions (department_id, title)
+select id, 'Patrolman / Patrolwoman (PAT)' from public.departments where name = 'Recruitment test department';
 
 insert into public.job_openings (department_id, position_id, title, description, status, published_at, created_by_user_id)
 select department.id, position.id, opening.title, opening.description, opening.status, opening.published_at, '00000000-0000-4000-8000-000000009101'::uuid
 from public.departments department
-join public.positions position on position.department_id = department.id
+join public.positions position on position.department_id = department.id and position.title = 'Recruitment test position'
 cross join (
   values
     ('Published recruitment opening', 'A published opening visible to the public and applicants.', 'published'::text, now()),
@@ -165,7 +167,7 @@ select extensions.throws_ok(
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000009102';
 
 select extensions.has_function('public', 'transition_application_status', array['uuid', 'text', 'text'], 'HR transition workflow exists');
-select extensions.has_function('public', 'hire_application', array['uuid', 'text', 'bigint', 'bigint', 'date', 'text'], 'Hiring workflow exists');
+select extensions.has_function('public', 'hire_application', array['uuid', 'text', 'text'], 'Badge-number hiring workflow exists');
 
 select extensions.throws_ok(
   $$select public.transition_application_status('00000000-0000-4000-8000-000000009401'::uuid, 'Under Review', null)$$,
@@ -185,7 +187,7 @@ select extensions.lives_ok(
     'closed',
     '[{"ordinal":1,"kind":"experience","requirement":"Two years of relevant experience","isRequired":true}]'::jsonb
   ) from public.departments department
-  join public.positions position on position.department_id = department.id
+  join public.positions position on position.department_id = department.id and position.title = 'Recruitment test position'
   where department.name = 'Recruitment test department'$$,
   'HR creates a job opening and criteria through the protected workflow'
 );
@@ -378,9 +380,6 @@ select extensions.lives_ok(
   $$select public.hire_application(
     '00000000-0000-4000-8000-000000009401'::uuid,
     'EMP-2026-001',
-    (select department_id from public.job_openings where status = 'published'),
-    (select position_id from public.job_openings where status = 'published'),
-    '2026-10-15',
     'Selected after a successful interview.'
   )$$,
   'HR hiring creates the employee and pending activation request atomically'
@@ -414,7 +413,7 @@ set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000009101';
 select extensions.lives_ok(
   $$insert into public.job_openings (department_id, position_id, title, description, created_by_user_id)
     select department.id, position.id, 'HR created opening', 'An opening created directly by authorized Human Resources personnel.', '00000000-0000-4000-8000-000000009101'::uuid
-    from public.departments department join public.positions position on position.department_id = department.id
+    from public.departments department join public.positions position on position.department_id = department.id and position.title = 'Recruitment test position'
     where department.name = 'Recruitment test department'$$,
   'HR can create a draft job opening'
 );
@@ -437,7 +436,7 @@ set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000009102';
 select extensions.throws_ok(
   $$insert into public.job_openings (department_id, position_id, title, description, created_by_user_id)
     select department.id, position.id, 'Applicant created opening', 'An unauthorized opening attempt by an applicant account.', '00000000-0000-4000-8000-000000009102'::uuid
-    from public.departments department join public.positions position on position.department_id = department.id
+    from public.departments department join public.positions position on position.department_id = department.id and position.title = 'Recruitment test position'
     where department.name = 'Recruitment test department'$$,
   '42501', null, 'Applicants cannot create job openings'
 );
