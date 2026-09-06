@@ -4,6 +4,10 @@ import { describe, expect, it, vi } from "vitest";
 
 import { EmployeeForm } from "./employee-form";
 
+vi.mock("@/hooks/use-personnel-records", () => ({
+  useUnitStations: () => ({ data: [{ id: 1, name: "Station 1", is_active: true }], error: null }),
+}));
+
 describe("EmployeeForm", () => {
   it("exposes labelled official record fields and a save action", () => {
     render(<EmployeeForm onSaved={() => undefined} />);
@@ -11,6 +15,7 @@ describe("EmployeeForm", () => {
     expect(screen.getByLabelText(/badge number/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^rank/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/unit.*station/i)).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Station 1" })).toBeInTheDocument();
     expect(screen.getByLabelText(/first name/i)).toBeInTheDocument();
     expect(screen.getByLabelText("Place of birth")).toBeInTheDocument();
     expect(screen.getByLabelText("Date of birth")).toBeInTheDocument();

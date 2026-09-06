@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
+import { useUnitStations } from "@/hooks/use-personnel-records";
 import type { Employee, UnlinkedEmployeeAccount } from "@/lib/types/database";
 import { employeeSchema, POLICE_RANKS, type EmployeeInput } from "@/schemas/personnel-records";
 
@@ -18,6 +19,7 @@ type EmployeeFormProps = {
 
 export function EmployeeForm({ employee, account, onSaved, pending = false }: EmployeeFormProps) {
   const [error, setError] = useState<string | null>(null);
+  const unitStations = useUnitStations();
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -52,7 +54,7 @@ export function EmployeeForm({ employee, account, onSaved, pending = false }: Em
     <FormField htmlFor="address" label="Home address"><Input className="h-11" defaultValue={employee?.address ?? ""} id="address" name="address" /></FormField>
     <FormField htmlFor="emergency-contact-name" label="Emergency contact"><Input className="h-11" defaultValue={employee?.emergency_contact_name ?? ""} id="emergency-contact-name" name="emergencyContactName" /></FormField>
     <FormField htmlFor="emergency-contact-phone" label="Emergency contact phone"><Input className="h-11" defaultValue={employee?.emergency_contact_phone ?? ""} id="emergency-contact-phone" name="emergencyContactPhone" /></FormField>
-    <FormField htmlFor="unit-station" label="Unit / Station"><Input className="h-11" defaultValue={employee?.unit_station ?? ""} id="unit-station" name="unitStation" /></FormField>
+    <FormField htmlFor="unit-station" label="Unit / Station"><select className="h-11 w-full rounded-lg border border-input bg-background px-3 text-sm" defaultValue={employee?.unit_station ?? ""} id="unit-station" name="unitStation"><option value="">Select a unit or station</option>{employee?.unit_station && !unitStations.data?.some((unit) => unit.name === employee.unit_station) ? <option value={employee.unit_station}>{employee.unit_station}</option> : null}{unitStations.data?.map((unit) => <option key={unit.id} value={unit.name}>{unit.name}</option>)}</select>{unitStations.error ? <p className="mt-1 text-xs text-destructive">Unable to load unit stations.</p> : null}</FormField>
     <FormField htmlFor="employment-status" label="Employment status"><select className="h-11 w-full rounded-lg border border-input bg-background px-3 text-sm" defaultValue={employee?.employment_status ?? "active"} id="employment-status" name="employmentStatus"><option value="active">Active</option><option value="on_leave">On leave</option><option value="inactive">Inactive</option><option value="separated">Separated</option></select></FormField>
     <FormField htmlFor="employment-started-on" label="Employment start date"><Input className="h-11" defaultValue={employee?.employment_started_on} id="employment-started-on" name="employmentStartedOn" type="date" required /></FormField>
     <FormField htmlFor="employment-ended-on" label="Employment end date"><Input className="h-11" defaultValue={employee?.employment_ended_on ?? ""} id="employment-ended-on" name="employmentEndedOn" type="date" /></FormField>
