@@ -6,7 +6,7 @@ import { useState } from "react";
 import { ErrorState } from "@/components/ui/error-state";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
-import { useSubmitApplication } from "@/hooks/use-recruitment";
+import { useMyApplicationForJob, useSubmitApplication } from "@/hooks/use-recruitment";
 import { ApplicantProfileRequiredError } from "@/queries/recruitment";
 
 function isNonEmptyFile(value: FormDataEntryValue | null): value is File {
@@ -14,6 +14,7 @@ function isNonEmptyFile(value: FormDataEntryValue | null): value is File {
 }
 
 export function ApplicantApplicationForm({ jobId }: { jobId: number }) {
+  const existing = useMyApplicationForJob(jobId);
   const submit = useSubmitApplication();
   const [error, setError] = useState<string | null>(null);
   const [profileRequired, setProfileRequired] = useState(false);
@@ -58,6 +59,10 @@ export function ApplicantApplicationForm({ jobId }: { jobId: number }) {
       setError(cause instanceof Error ? cause.message : "We could not submit your application.");
     }
   }
+
+  if (existing.isLoading) return <p className="text-sm text-muted-foreground">Checking for an existing application…</p>;
+  if (existing.error) return <ErrorState message={existing.error.message} />;
+  if (existing.data) return <section className="rounded-xl border bg-card p-5 shadow-sm"><h2 className="font-heading text-lg font-semibold">Application already submitted</h2><p className="mt-1 text-sm text-muted-foreground">Your current application status is {existing.data.status}.</p><Link className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-primary underline-offset-4 hover:underline" href={`/applicant/applications/${existing.data.id}`}>Open existing application</Link></section>;
 
   return (
     <form

@@ -4,6 +4,10 @@ import { describe, expect, it, vi } from "vitest";
 
 import { EmployeeForm } from "./employee-form";
 
+vi.mock("@/hooks/use-personnel-records", () => ({
+  useUnitStations: () => ({ data: [{ id: 1, name: "Station 1", is_active: true }], error: null }),
+}));
+
 describe("EmployeeForm", () => {
   it("exposes labelled official record fields and a save action", () => {
     render(<EmployeeForm onSaved={() => undefined} />);
@@ -11,7 +15,11 @@ describe("EmployeeForm", () => {
     expect(screen.getByLabelText(/badge number/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^rank/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/unit.*station/i)).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Station 1" })).toBeInTheDocument();
     expect(screen.getByLabelText(/first name/i)).toBeInTheDocument();
+    expect(screen.getByLabelText("Place of birth")).toBeInTheDocument();
+    expect(screen.getByLabelText("Date of birth")).toBeInTheDocument();
+    expect(screen.getByLabelText("Civil status")).toBeInTheDocument();
     expect(screen.getByLabelText(/employment start date/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /save employee/i })).toHaveClass("w-full");
   });
@@ -47,5 +55,14 @@ describe("EmployeeForm", () => {
       lastName: "Bold",
       personalEmail: "candidate.employee@example.test",
     }));
+  });
+
+  it("shows Badge number validation next to the field", async () => {
+    const user = userEvent.setup();
+    render(<EmployeeForm onSaved={() => undefined} />);
+
+    await user.click(screen.getByRole("button", { name: /save employee/i }));
+
+    expect(screen.getByLabelText(/badge number/i).parentElement).toHaveTextContent(/expected string to have >=3 characters/i);
   });
 });

@@ -1,4 +1,4 @@
-import type { Certification, Employee, Qualification, ServiceHistory, TrainingRecord, UnlinkedEmployeeAccount } from "@/lib/types/database";
+import type { Certification, Employee, Qualification, ServiceHistory, TrainingRecord, UnlinkedEmployeeAccount, UnitStation } from "@/lib/types/database";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import {
   certificationSchema,
@@ -44,6 +44,12 @@ export async function listUnlinkedEmployeeAccounts() {
   const { data, error } = await createBrowserSupabaseClient().rpc("list_unlinked_employee_accounts");
   throwIfError(error);
   return (data ?? []) as UnlinkedEmployeeAccount[];
+}
+
+export async function listUnitStations() {
+  const { data, error } = await createBrowserSupabaseClient().from("unit_stations").select("id, name, is_active").eq("is_active", true).order("name");
+  throwIfError(error);
+  return (data ?? []) as UnitStation[];
 }
 
 export async function getEmployee(employeeId: string) {
@@ -113,7 +119,9 @@ export async function getEmployeeForProfile(profileId: string) {
 function employeePayload(input: EmployeeInput) {
   return {
     profile_id: input.profileId ?? null, employee_number: input.employeeNumber, first_name: input.firstName,
-    middle_name: input.middleName ?? null, last_name: input.lastName, rank: input.rank ?? null,
+    middle_name: input.middleName ?? null, last_name: input.lastName, qualifier: input.qualifier ?? null,
+    place_of_birth: input.placeOfBirth ?? null, date_of_birth: input.dateOfBirth ?? null, sex: input.sex ?? null,
+    civil_status: input.civilStatus ?? null, religion: input.religion ?? null, rank: input.rank ?? null,
     unit_station: input.unitStation ?? null, personal_email: input.personalEmail,
     phone: input.phone ?? null, address: input.address ?? null, emergency_contact_name: input.emergencyContactName ?? null,
     emergency_contact_phone: input.emergencyContactPhone ?? null, department_id: input.departmentId ?? null,

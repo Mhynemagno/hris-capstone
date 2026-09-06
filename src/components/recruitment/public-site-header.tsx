@@ -1,7 +1,20 @@
+"use client";
+
 import { BriefcaseBusiness } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+
+import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 export function PublicSiteHeader() {
+  const [isSignedIn, setIsSignedIn] = useState(false);
+  useEffect(() => {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) return;
+    const client = createBrowserSupabaseClient();
+    void client.auth.getUser().then(({ data }) => setIsSignedIn(Boolean(data.user)));
+    const { data: listener } = client.auth.onAuthStateChange((_event, session) => setIsSignedIn(Boolean(session?.user)));
+    return () => listener.subscription.unsubscribe();
+  }, []);
   return (
     <header className="border-b border-border bg-background/95 backdrop-blur">
       <nav
@@ -22,12 +35,7 @@ export function PublicSiteHeader() {
           >
             Careers
           </Link>
-          <Link
-            className="inline-flex min-h-11 items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/85 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-            href="/login"
-          >
-            Sign in
-          </Link>
+          <Link className="inline-flex min-h-11 items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/85 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50" href={isSignedIn ? "/applicant/applications" : "/login"}>{isSignedIn ? "My applications" : "Sign in"}</Link>
         </div>
       </nav>
     </header>

@@ -27,10 +27,7 @@ describe("recruitment hooks", () => {
       useHireApplication: () => {
         mutateAsync: (input: {
           applicationId: string;
-          employeeNumber: string;
-          departmentId: number;
-          positionId: number;
-          employmentStartedOn: string;
+          badgeNumber: string;
         }) => Promise<string>;
       };
     };
@@ -43,10 +40,7 @@ describe("recruitment hooks", () => {
     const { result } = renderHook(() => recruitment.useHireApplication(), { wrapper });
     await result.current.mutateAsync({
       applicationId,
-      employeeNumber: "EMP-2026-001",
-      departmentId: 3,
-      positionId: 4,
-      employmentStartedOn: "2026-10-15",
+      badgeNumber: "EMP-2026-001",
     });
 
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ["recruitment"] });

@@ -5,14 +5,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApplicantProfileRequiredError } from "@/queries/recruitment";
 import { ApplicantApplicationForm } from "./applicant-application-form";
 
-const submit = vi.fn();
+const { submit, existingApplication } = vi.hoisted(() => ({ submit: vi.fn(), existingApplication: vi.fn() }));
 vi.mock("@/hooks/use-recruitment", () => ({
+  useMyApplicationForJob: existingApplication,
   useSubmitApplication: () => ({ isPending: false, mutateAsync: submit }),
 }));
 
 describe("ApplicantApplicationForm", () => {
   beforeEach(() => {
     submit.mockReset();
+    existingApplication.mockReturnValue({ data: null, error: null, isLoading: false });
   });
 
   afterEach(() => {
@@ -87,5 +89,18 @@ describe("ApplicantApplicationForm", () => {
     })));
     expect(await screen.findByRole("status")).toHaveTextContent("Application submitted");
     expect(screen.getByRole("link", { name: "Track application" })).toHaveAttribute("href", "/applicant/applications/223e4567-e89b-42d3-a456-426614174000");
+  });
+
+  it("links an applicant to their existing application instead of offering a duplicate submission", () => {
+    existingApplication.mockReturnValue({
+      data: { id: "223e4567-e89b-42d3-a456-426614174000", status: "Under Review" },
+      error: null,
+      isLoading: false,
+    });
+
+    render(<ApplicantApplicationForm jobId={7} />);
+
+    expect(screen.getByRole("link", { name: "Open existing application" })).toHaveAttribute("href", "/applicant/applications/223e4567-e89b-42d3-a456-426614174000");
+    expect(screen.queryByRole("button", { name: "Submit application" })).not.toBeInTheDocument();
   });
 });

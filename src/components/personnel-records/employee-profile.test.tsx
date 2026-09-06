@@ -18,6 +18,12 @@ const employee = {
   first_name: "Ada",
   middle_name: null,
   last_name: "Dela Cruz",
+  qualifier: null,
+  place_of_birth: null,
+  date_of_birth: null,
+  sex: null,
+  civil_status: null,
+  religion: null,
   rank: "Police Captain (PCPT)",
   unit_station: "Station 1",
   profile_image_path: null,
@@ -36,14 +42,14 @@ const employee = {
 };
 
 describe("EmployeeProfile", () => {
-  it("uses a concise badge-number profile with an initials fallback", () => {
+  it("uses a concise badge-number profile with the default avatar fallback", () => {
     render(<EmployeeProfile employee={employee} trainings={[]} />);
 
     expect(screen.getByRole("heading", { name: "Ada Dela Cruz" })).toBeInTheDocument();
-    expect(screen.getByText("AD")).toBeInTheDocument();
+    expect(screen.getByAltText("Default profile avatar")).toBeInTheDocument();
     expect(screen.getByText("Badge number")).toBeInTheDocument();
     expect(screen.getByText("Police Captain (PCPT)")).toBeInTheDocument();
-    expect(screen.getAllByText("Not provided")).toHaveLength(3);
+    expect(screen.getAllByText("Not provided")).toHaveLength(9);
   });
 
   it("keeps trainings visible as promotion evidence", () => {

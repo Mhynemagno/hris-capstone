@@ -10,6 +10,7 @@ import {
   getEmployeeForProfile,
   getEmployeeProfilePhotoUrl,
   listEmployees,
+  listUnitStations,
   listUnlinkedEmployeeAccounts,
   listPersonnelEntries,
   saveEmployee,
@@ -26,6 +27,10 @@ export function useEmployeeDirectory(filters: Partial<EmployeeDirectoryFilters> 
 
 export function useUnlinkedEmployeeAccounts() {
   return useQuery({ queryKey: queryKeys.personnelRecords.unlinkedAccounts(), queryFn: listUnlinkedEmployeeAccounts });
+}
+
+export function useUnitStations() {
+  return useQuery({ queryKey: ["personnel-records", "unit-stations"] as const, queryFn: listUnitStations });
 }
 
 export function useEmployee(employeeId: string) {

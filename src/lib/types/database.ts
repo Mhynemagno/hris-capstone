@@ -129,6 +129,12 @@ export type Employee = {
   first_name: string;
   middle_name: string | null;
   last_name: string;
+  qualifier: string | null;
+  place_of_birth: string | null;
+  date_of_birth: string | null;
+  sex: "female" | "male" | "prefer_not_to_say" | null;
+  civil_status: "single" | "married" | "widowed" | "separated" | "divorced" | null;
+  religion: string | null;
   rank: string | null;
   unit_station: string | null;
   profile_image_path: string | null;
@@ -217,7 +223,7 @@ export type JobQualificationCriterion = {
   id: string;
   job_opening_id: number;
   ordinal: number;
-  kind: "education" | "experience" | "skill" | "certification" | "other";
+  kind: "education" | "eligibility" | "experience" | "skill" | "certification" | "other";
   requirement: string;
   is_required: boolean;
   created_at: string;
@@ -226,11 +232,38 @@ export type JobQualificationCriterion = {
 export type Applicant = {
   id: string;
   profile_id: string;
+  applicant_number: number;
   first_name: string;
   middle_name: string | null;
   last_name: string;
+  qualifier: string | null;
+  place_of_birth: string | null;
+  date_of_birth: string | null;
+  sex: "female" | "male" | "prefer_not_to_say" | null;
+  civil_status: "single" | "married" | "widowed" | "separated" | "divorced" | null;
+  religion: string | null;
+  profile_image_path: string | null;
   phone: string | null;
   address: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type UnitStation = {
+  id: number;
+  name: string;
+  is_active: boolean;
+};
+
+export type ApplicantProfileDocument = {
+  id: string;
+  applicant_id: string;
+  kind: "eligibility" | "diploma";
+  object_path: string;
+  file_name: string;
+  mime_type: "application/pdf" | "image/png" | "image/jpeg";
+  size_bytes: number;
+  uploaded_by_user_id: string;
   created_at: string;
   updated_at: string;
 };
@@ -239,7 +272,7 @@ export type Application = {
   id: string;
   applicant_id: string;
   job_opening_id: number;
-  status: "Submitted" | "Under Review" | "Shortlisted" | "Interview" | "Hired" | "Not Selected";
+  status: "Submitted" | "Under Review" | "Shortlisted" | "Interview" | "Needs Revision" | "Hired" | "Not Selected";
   cover_note: string | null;
   submitted_at: string;
   reviewed_at: string | null;
@@ -335,13 +368,14 @@ export type LeaveRequestHistory = {
   created_at: string;
 };
 
-export type DeploymentStatus = "planned" | "active" | "completed" | "cancelled";
+export type DeploymentStatus = "active" | "rejected";
 
 export type Deployment = {
   id: string;
   employee_id: string;
   location: string | null;
   unit: string | null;
+  unit_station_id: number | null;
   project: string | null;
   assignment_role: string;
   starts_on: string;

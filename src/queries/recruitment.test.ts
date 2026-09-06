@@ -20,6 +20,8 @@ vi.mock("@/lib/supabase/client", () => ({
   }),
 }));
 
+import * as recruitmentQueries from "./recruitment";
+
 import { getPublishedJob, retryApplicationAnalysis, saveJobOpening, submitApplication } from "./recruitment";
 
 describe("getPublishedJob", () => {
@@ -171,5 +173,52 @@ describe("retryApplicationAnalysis", () => {
     expect(mocks.rpc).toHaveBeenCalledWith("retry_application_analysis", {
       target_application_id: applicationId,
     });
+  });
+});
+
+describe("applicant profile media", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    mocks.upload.mockResolvedValue({ error: null });
+    mocks.remove.mockResolvedValue({ error: null });
+    mocks.rpc.mockResolvedValue({ error: null });
+  });
+
+  it("uploads a replacement photo before changing its database path and cleaning up the old file", async () => {
+    const queries = recruitmentQueries as typeof recruitmentQueries & {
+      replaceMyApplicantProfilePhoto: (applicant: { id: string; profile_image_path: string | null }, file: File) => Promise<{ path: string; cleanupError: string | null }>;
+    };
+    const applicant = {
+      id: "323e4567-e89b-42d3-a456-426614174000",
+      profile_image_path: "applicants/323e4567-e89b-42d3-a456-426614174000/423e4567-e89b-42d3-a456-426614174000.png",
+    };
+
+    expect(queries.replaceMyApplicantProfilePhoto).toBeTypeOf("function");
+    await expect(queries.replaceMyApplicantProfilePhoto(applicant, new File(["photo"], "applicant.webp", { type: "image/webp" }))).resolves.toMatchObject({
+      path: expect.stringMatching(/^applicants\/323e4567-e89b-42d3-a456-426614174000\//),
+      cleanupError: null,
+    });
+    expect(mocks.upload).toHaveBeenCalledBefore(mocks.rpc);
+    expect(mocks.rpc).toHaveBeenCalledBefore(mocks.remove);
+    expect(mocks.remove).toHaveBeenCalledWith([applicant.profile_image_path]);
+  });
+
+  it("uploads each required profile document before recording it through the scoped RPC", async () => {
+    const queries = recruitmentQueries as typeof recruitmentQueries & {
+      saveApplicantProfileDocuments: (documents: Array<{ kind: "eligibility" | "diploma"; file: File }>) => Promise<void>;
+    };
+    mocks.getUser.mockResolvedValue({ data: { user: { id: userId } }, error: null });
+
+    expect(queries.saveApplicantProfileDocuments).toBeTypeOf("function");
+    await expect(queries.saveApplicantProfileDocuments([
+      { kind: "eligibility", file: new File(["proof"], "eligibility.pdf", { type: "application/pdf" }) },
+    ])).resolves.toBeUndefined();
+
+    expect(mocks.upload).toHaveBeenCalledBefore(mocks.rpc);
+    expect(mocks.rpc).toHaveBeenCalledWith("save_my_applicant_profile_document", expect.objectContaining({
+      target_kind: "eligibility",
+      target_file_name: "eligibility.pdf",
+      target_mime_type: "application/pdf",
+    }));
   });
 });

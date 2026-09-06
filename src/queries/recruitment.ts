@@ -1,6 +1,8 @@
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import {
   applicantDocumentSchema,
+  applicantProfileDocumentFileSchema,
+  applicantProfilePhotoFileSchema,
   applicantProfileSchema,
   applicationAiFiltersSchema,
   applicationFiltersSchema,
@@ -10,6 +12,7 @@ import {
   jobFiltersSchema,
   jobOpeningSchema,
   type ApplicationSubmissionInput,
+  type ApplicantProfileDocumentFile,
   type ApplicantProfileInput,
   type ApplicationAiFilters,
   type ApplicationFilters,
@@ -18,14 +21,24 @@ import {
   type JobFilters,
   type JobOpeningInput,
 } from "@/schemas/recruitment";
-import type { Applicant, Application, ApplicationAiScore, ApplicantDocument, ApplicationStatusHistory, HrShortlistApplication, JobOpening, JobQualificationCriterion, PaginatedResult } from "@/lib/types/database";
+import type { Applicant, ApplicantProfileDocument, Application, ApplicationAiScore, ApplicantDocument, ApplicationStatusHistory, HrShortlistApplication, JobOpening, JobQualificationCriterion, PaginatedResult } from "@/lib/types/database";
 
 type PendingApplicantDocument = {
   kind: "cv" | "credential";
   file: File;
 };
 
+type PendingApplicantProfileDocument = {
+  kind: "eligibility" | "diploma";
+  file: ApplicantProfileDocumentFile;
+};
+
 type SubmitApplicationInput = Omit<ApplicationSubmissionInput, "documents"> & {
+  documents: PendingApplicantDocument[];
+};
+
+type ResubmitApplicationInput = {
+  applicationId: string;
   documents: PendingApplicantDocument[];
 };
 
@@ -49,6 +62,20 @@ function extensionFor(file: File) {
   }
   return extension === "jpg" ? "jpeg" : extension;
 }
+
+const applicantProfilePhotoBucket = "applicant-profile-photos";
+const applicantProfileDocumentBucket = "applicant-profile-documents";
+const applicantProfilePhotoExtensions = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/webp": "webp",
+} as const;
+
+const applicantProfileDocumentExtensions = {
+  "application/pdf": "pdf",
+  "image/png": "png",
+  "image/jpeg": "jpg",
+} as const;
 
 function pageRange(page: number, pageSize: number) {
   const from = (page - 1) * pageSize;
@@ -97,20 +124,105 @@ export async function getApplicantProfile() {
 export async function saveApplicantProfile(input: ApplicantProfileInput) {
   const values = applicantProfileSchema.parse(input);
   const user = await requireCurrentUser();
-  const { data, error } = await createBrowserSupabaseClient()
-    .from("applicants")
-    .upsert({
-      profile_id: user.id,
-      first_name: values.firstName,
-      middle_name: values.middleName ?? null,
-      last_name: values.lastName,
-      phone: values.phone ?? null,
-      address: values.address ?? null,
-    }, { onConflict: "profile_id" })
-    .select("*")
-    .single();
+  const payload = {
+    first_name: values.firstName,
+    middle_name: values.middleName ?? null,
+    last_name: values.lastName,
+    qualifier: values.qualifier ?? null,
+    place_of_birth: values.placeOfBirth ?? null,
+    date_of_birth: values.dateOfBirth ?? null,
+    sex: values.sex ?? null,
+    civil_status: values.civilStatus ?? null,
+    religion: values.religion ?? null,
+    phone: values.phone ?? null,
+    address: values.address ?? null,
+  };
+  const client = createBrowserSupabaseClient();
+  const { data: existing, error: existingError } = await client.from("applicants").select("id").maybeSingle();
+  throwIfError(existingError);
+  const { data, error } = existing
+    ? await client.from("applicants").update(payload).eq("profile_id", user.id).select("*").single()
+    : await client.from("applicants").insert({ profile_id: user.id, ...payload }).select("*").single();
   throwIfError(error);
   return data as Applicant;
+}
+
+type ProfilePhotoApplicant = Pick<Applicant, "id" | "profile_image_path">;
+
+export async function getApplicantProfilePhotoUrl(objectPath: string | null) {
+  if (!objectPath) return null;
+  const { data, error } = await createBrowserSupabaseClient().storage.from(applicantProfilePhotoBucket).createSignedUrl(objectPath, 600);
+  throwIfError(error);
+  if (!data?.signedUrl) throw new Error("Unable to prepare the profile photo.");
+  return data.signedUrl;
+}
+
+export async function replaceMyApplicantProfilePhoto(applicant: ProfilePhotoApplicant, file: File) {
+  const validatedFile = applicantProfilePhotoFileSchema.parse(file);
+  const extension = applicantProfilePhotoExtensions[validatedFile.type as keyof typeof applicantProfilePhotoExtensions];
+  const objectPath = `applicants/${applicant.id}/${crypto.randomUUID()}.${extension}`;
+  const client = createBrowserSupabaseClient();
+  const bucket = client.storage.from(applicantProfilePhotoBucket);
+  const { error: uploadError } = await bucket.upload(objectPath, validatedFile, { contentType: validatedFile.type, upsert: false });
+  throwIfError(uploadError);
+  const { error: updateError } = await client.rpc("update_my_applicant_profile_image_path", { target_path: objectPath });
+  if (updateError) {
+    await bucket.remove([objectPath]).catch(() => undefined);
+    throw new Error(updateError.message);
+  }
+  if (!applicant.profile_image_path) return { path: objectPath, cleanupError: null };
+  const { error: cleanupError } = await bucket.remove([applicant.profile_image_path]);
+  return { path: objectPath, cleanupError: cleanupError?.message ?? null };
+}
+
+export async function removeMyApplicantProfilePhoto(applicant: ProfilePhotoApplicant) {
+  if (!applicant.profile_image_path) return { cleanupError: null };
+  const client = createBrowserSupabaseClient();
+  const { error: updateError } = await client.rpc("update_my_applicant_profile_image_path", { target_path: null });
+  throwIfError(updateError);
+  const { error: cleanupError } = await client.storage.from(applicantProfilePhotoBucket).remove([applicant.profile_image_path]);
+  return { cleanupError: cleanupError?.message ?? null };
+}
+
+export async function listApplicantProfileDocuments() {
+  const { data, error } = await createBrowserSupabaseClient().from("applicant_profile_documents").select("*").order("kind");
+  throwIfError(error);
+  return (data ?? []) as ApplicantProfileDocument[];
+}
+
+export async function getApplicantProfileDocumentUrl(objectPath: string) {
+  const { data, error } = await createBrowserSupabaseClient().storage.from(applicantProfileDocumentBucket).createSignedUrl(objectPath, 600);
+  throwIfError(error);
+  if (!data?.signedUrl) throw new Error("Unable to prepare the profile document.");
+  return data.signedUrl;
+}
+
+export async function saveApplicantProfileDocuments(documents: PendingApplicantProfileDocument[]) {
+  const user = await requireCurrentUser();
+  const client = createBrowserSupabaseClient();
+  const bucket = client.storage.from(applicantProfileDocumentBucket);
+  const uploadedPaths: string[] = [];
+  try {
+    for (const document of documents) {
+      const file = applicantProfileDocumentFileSchema.parse(document.file);
+      const extension = applicantProfileDocumentExtensions[file.type as keyof typeof applicantProfileDocumentExtensions];
+      const objectPath = `applicant-profiles/${user.id}/${crypto.randomUUID()}.${extension}`;
+      const { error: uploadError } = await bucket.upload(objectPath, file, { contentType: file.type, upsert: false });
+      throwIfError(uploadError);
+      uploadedPaths.push(objectPath);
+      const { error: saveError } = await client.rpc("save_my_applicant_profile_document", {
+        target_kind: document.kind,
+        target_object_path: objectPath,
+        target_file_name: file.name,
+        target_mime_type: file.type,
+        target_size_bytes: file.size,
+      });
+      throwIfError(saveError);
+    }
+  } catch (cause) {
+    if (uploadedPaths.length > 0) await bucket.remove(uploadedPaths).catch(() => undefined);
+    throw cause;
+  }
 }
 
 export async function listMyApplications(input: Partial<ApplicationFilters> = {}) {
@@ -125,6 +237,13 @@ export async function listMyApplications(input: Partial<ApplicationFilters> = {}
   const { data, error, count } = await query.range(from, to);
   throwIfError(error);
   return { rows: (data ?? []) as Application[], count: count ?? 0, filters } satisfies PaginatedResult<Application, ApplicationFilters>;
+}
+
+export async function getMyApplicationForJob(jobId: number) {
+  const id = jobOpeningSchema.shape.id.unwrap().parse(jobId);
+  const { data, error } = await createBrowserSupabaseClient().from("applications").select("*").eq("job_opening_id", id).maybeSingle();
+  throwIfError(error);
+  return data as Application | null;
 }
 
 export async function getMyApplication(applicationId: string) {
@@ -142,7 +261,7 @@ export async function getMyApplication(applicationId: string) {
 export async function listHrJobs(input: Partial<JobFilters> = {}) {
   const filters = jobFiltersSchema.parse(input);
   const { from, to } = pageRange(filters.page, filters.pageSize);
-  let query = createBrowserSupabaseClient().from("job_openings").select("*, job_qualification_criteria(*)", { count: "exact" }).order("updated_at", { ascending: false });
+  let query = createBrowserSupabaseClient().from("job_openings").select("*, job_qualification_criteria(*), applications(count)", { count: "exact" }).order("updated_at", { ascending: false });
   if (filters.search) query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
   if (filters.status) query = query.eq("status", filters.status);
   const { data, error, count } = await query.range(from, to);
@@ -266,14 +385,51 @@ export async function submitApplication(input: SubmitApplicationInput) {
   }
 }
 
+export async function deleteDraftJobOpening(jobId: number) {
+  const id = jobOpeningSchema.shape.id.unwrap().parse(jobId);
+  const { error } = await createBrowserSupabaseClient().rpc("delete_draft_job_opening", { target_job_id: id });
+  throwIfError(error);
+}
+
+export async function withdrawJobOpening(jobId: number) {
+  const id = jobOpeningSchema.shape.id.unwrap().parse(jobId);
+  const { error } = await createBrowserSupabaseClient().rpc("withdraw_job_opening", { target_job_id: id });
+  throwIfError(error);
+}
+
+export async function resubmitApplication(input: ResubmitApplicationInput) {
+  const applicationId = applicationStatusTransitionSchema.shape.applicationId.parse(input.applicationId);
+  const user = await requireCurrentUser();
+  const client = createBrowserSupabaseClient();
+  const bucket = client.storage.from("applicant-documents");
+  const uploadedDocuments = [];
+  const uploadedPaths: string[] = [];
+  try {
+    for (const document of input.documents) {
+      const documentId = crypto.randomUUID();
+      const extension = extensionFor(document.file);
+      const objectPath = `applicants/${user.id}/${applicationId}/${documentId}.${extension}`;
+      const metadata = applicantDocumentSchema.parse({
+        kind: document.kind, objectPath, fileName: document.file.name, mimeType: document.file.type, sizeBytes: document.file.size,
+      });
+      const { error } = await bucket.upload(objectPath, document.file, { contentType: metadata.mimeType, upsert: false });
+      throwIfError(error);
+      uploadedPaths.push(objectPath);
+      uploadedDocuments.push(metadata);
+    }
+    const { error } = await client.rpc("resubmit_application", { target_application_id: applicationId, submitted_documents: uploadedDocuments });
+    throwIfError(error);
+  } catch (cause) {
+    if (uploadedPaths.length > 0) await bucket.remove(uploadedPaths).catch(() => undefined);
+    throw cause;
+  }
+}
+
 export async function hireApplication(input: HiringDecisionInput) {
   const values = hiringDecisionSchema.parse(input);
   const { data, error } = await createBrowserSupabaseClient().rpc("hire_application", {
     target_application_id: values.applicationId,
-    target_employee_number: values.employeeNumber,
-    target_department_id: values.departmentId,
-    target_position_id: values.positionId,
-    target_employment_started_on: values.employmentStartedOn,
+    target_badge_number: values.badgeNumber,
     decision_note: values.note ?? null,
   });
   throwIfError(error);
@@ -294,4 +450,4 @@ export async function getApplicantDocumentUrl(objectPath: string) {
   return data?.signedUrl ?? null;
 }
 
-export type { PendingApplicantDocument, SubmitApplicationInput };
+export type { PendingApplicantDocument, PendingApplicantProfileDocument, ResubmitApplicationInput, SubmitApplicationInput };

@@ -26,7 +26,7 @@ vi.mock("@/hooks/use-recruitment", () => ({
   useMyApplication: () => ({
     isLoading: false,
     data: {
-      application: { id: "00000000-0000-0000-0000-000000000001", status: "Shortlisted", submitted_at: "2026-08-20T00:00:00Z", cover_note: "Interested" },
+      application: { id: "00000000-0000-0000-0000-000000000001", status: "Shortlisted", submitted_at: "2026-08-20T00:00:00Z", cover_note: "Interested", applicants: { applicant_number: 12345 } },
       history: [{ id: "00000000-0000-0000-0000-000000000002", next_status: "Shortlisted", note: null }],
       documents: [],
     },
@@ -72,6 +72,10 @@ describe("HR recruitment workspace", () => {
     expect(screen.queryByRole("option", { name: "Hired" })).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Hire applicant" }));
     expect(screen.getByRole("heading", { name: "Hire applicant" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Applicant number")).toHaveValue("0-12345");
+    expect(screen.getByLabelText("Badge number")).toBeRequired();
+    expect(screen.queryByLabelText("Department")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Employment start date")).not.toBeInTheDocument();
   });
 
   it("shows queued analysis progress without asking HR to paste a CV", () => {

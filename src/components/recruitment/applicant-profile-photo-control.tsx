@@ -1,42 +1,35 @@
 "use client";
 
-import { useState } from "react";
 import Image from "next/image";
+import { useState } from "react";
 
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  useEmployeeProfilePhotoUrl,
-  useRemoveMyEmployeeProfilePhoto,
-  useReplaceMyEmployeeProfilePhoto,
-} from "@/hooks/use-personnel-records";
-import { profilePhotoFileSchema } from "@/schemas/personnel-records";
+  useApplicantProfilePhotoUrl,
+  useRemoveMyApplicantProfilePhoto,
+  useReplaceMyApplicantProfilePhoto,
+} from "@/hooks/use-recruitment";
+import { applicantProfilePhotoFileSchema } from "@/schemas/recruitment";
 
-type EmployeeProfilePhotoControlProps = {
-  employee: {
-    id: string;
-    profile_image_path: string | null;
-  };
-  canManagePhoto?: boolean;
+type ApplicantProfilePhotoControlProps = {
+  applicant: { id: string; profile_image_path: string | null };
 };
 
-export function EmployeeProfilePhotoControl({
-  employee,
-  canManagePhoto = false,
-}: EmployeeProfilePhotoControlProps) {
+export function ApplicantProfilePhotoControl({ applicant }: ApplicantProfilePhotoControlProps) {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const photo = useEmployeeProfilePhotoUrl(employee.profile_image_path);
-  const replace = useReplaceMyEmployeeProfilePhoto(employee);
-  const remove = useRemoveMyEmployeeProfilePhoto(employee);
-  const hasPhoto = Boolean(employee.profile_image_path);
+  const photo = useApplicantProfilePhotoUrl(applicant.profile_image_path);
+  const replace = useReplaceMyApplicantProfilePhoto(applicant);
+  const remove = useRemoveMyApplicantProfilePhoto(applicant);
+  const hasPhoto = Boolean(applicant.profile_image_path);
 
   async function uploadPhoto(file: File | undefined) {
     if (!file) return;
     setError(null);
     setNotice(null);
-    const validated = profilePhotoFileSchema.safeParse(file);
+    const validated = applicantProfilePhotoFileSchema.safeParse(file);
     if (!validated.success) {
       setError(validated.error.issues[0]?.message ?? "Choose a valid profile photo.");
       return;
@@ -62,9 +55,9 @@ export function EmployeeProfilePhotoControl({
 
   return <div className="shrink-0">
     <Avatar className="size-20 border text-xl">
-      <Image alt={photo.data ? "Employee profile photo" : "Default profile avatar"} className="size-full rounded-full object-cover" height={80} src={photo.data ?? "/default-profile-avatar.png"} unoptimized width={80} />
+      <Image alt={photo.data ? "Applicant profile photo" : "Default profile avatar"} className="size-full rounded-full object-cover" height={80} src={photo.data ?? "/default-profile-avatar.png"} unoptimized width={80} />
     </Avatar>
-    {canManagePhoto ? <div className="mt-3 space-y-2">
+    <div className="mt-3 space-y-2">
       <Input
         accept="image/png,image/jpeg,image/webp"
         aria-label={hasPhoto ? "Replace profile photo" : "Upload profile photo"}
@@ -76,7 +69,7 @@ export function EmployeeProfilePhotoControl({
         {remove.isPending ? "Removing…" : "Remove profile photo"}
       </Button> : null}
       <p className="text-xs text-muted-foreground">Optional. PNG, JPEG, or WebP up to 5 MB.</p>
-    </div> : null}
+    </div>
     {error ? <p className="mt-2 text-sm text-destructive" role="alert">{error}</p> : null}
     {notice ? <p className="mt-2 text-sm text-muted-foreground" role="status">{notice}</p> : null}
   </div>;

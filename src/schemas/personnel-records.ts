@@ -8,6 +8,8 @@ const optionalText = (max: number) =>
 const optionalDate = isoDateSchema.optional();
 const employmentStatuses = ["active", "on_leave", "inactive", "separated"] as const;
 const profilePhotoMimeTypes = ["image/png", "image/jpeg", "image/webp"] as const;
+const demographicSexes = ["female", "male", "prefer_not_to_say"] as const;
+const civilStatuses = ["single", "married", "widowed", "separated", "divorced"] as const;
 
 export const profilePhotoFileSchema = z.custom<File>(
   (value) => typeof File !== "undefined" && value instanceof File,
@@ -53,6 +55,12 @@ export const employeeSchema = z
     firstName: z.string().trim().min(1).max(80),
     middleName: optionalText(80),
     lastName: z.string().trim().min(1).max(80),
+    qualifier: optionalText(32),
+    placeOfBirth: optionalText(160),
+    dateOfBirth: z.preprocess((value) => value === "" ? undefined : value, isoDateSchema.optional()),
+    sex: z.preprocess((value) => value === "" ? undefined : value, z.enum(demographicSexes).optional()),
+    civilStatus: z.preprocess((value) => value === "" ? undefined : value, z.enum(civilStatuses).optional()),
+    religion: optionalText(120),
     rank: z.preprocess((value) => value === "" ? undefined : value, z.enum(POLICE_RANKS).optional()),
     unitStation: optionalText(160),
     personalEmail: z.string().trim().toLowerCase().pipe(z.email()),
