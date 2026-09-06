@@ -16,7 +16,7 @@ export function DeploymentForm({ deployment, onSaved, pending = false }: { deplo
     <FormField htmlFor="location" label="Location"><Input id="location" name="location" defaultValue={deployment?.location ?? ""} /></FormField>
     <FormField htmlFor="unit" label="Unit"><Input id="unit" name="unit" defaultValue={deployment?.unit ?? ""} /></FormField>
     <FormField htmlFor="project" label="Project"><Input id="project" name="project" defaultValue={deployment?.project ?? ""} /></FormField>
-    <FormField htmlFor="status" label="Status"><select className="h-11 w-full rounded-lg border bg-background px-3" id="status" name="status" defaultValue={deployment?.status ?? "planned"}>{["planned", "active", "completed", "cancelled"].map((status) => <option key={status}>{status}</option>)}</select></FormField>
+    <FormField htmlFor="status" label="Status"><select className="h-11 w-full rounded-lg border bg-background px-3" id="status" name="status" defaultValue={deployment?.status ?? "active"}>{["active", "rejected"].map((status) => <option key={status}>{status}</option>)}</select></FormField>
     <FormField htmlFor="starts-on" label="Start date"><Input id="starts-on" name="startsOn" type="date" required defaultValue={deployment?.starts_on} /></FormField>
     <FormField htmlFor="ends-on" label="End date"><Input id="ends-on" name="endsOn" type="date" defaultValue={deployment?.ends_on ?? ""} /></FormField>
     <FormField htmlFor="notes" label="Notes"><textarea className="min-h-24 w-full rounded-lg border bg-background p-3" id="notes" name="notes" defaultValue={deployment?.notes ?? ""} maxLength={2000} /></FormField>

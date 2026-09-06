@@ -13,7 +13,7 @@ describe("deployment tracking schemas", () => {
       project: " ",
       assignmentRole: " Analyst ",
       startsOn: "2026-09-01",
-      status: "planned",
+      status: "active",
       notes: " ",
     })).toMatchObject({
       location: null,
@@ -25,11 +25,11 @@ describe("deployment tracking schemas", () => {
     });
   });
 
-  it("rejects missing destinations, reversed dates, and incomplete completion", () => {
-    const base = { employeeId, location: "", unit: "", project: "", assignmentRole: "Analyst", startsOn: "2026-09-01", status: "planned" };
+  it("rejects missing destinations, reversed dates, and unsupported statuses", () => {
+    const base = { employeeId, location: "", unit: "", project: "", assignmentRole: "Analyst", startsOn: "2026-09-01", status: "active" };
     expect(deploymentInputSchema.safeParse(base).success).toBe(false);
     expect(deploymentInputSchema.safeParse({ ...base, unit: "Operations", startsOn: "2026-09-03", endsOn: "2026-09-01" }).success).toBe(false);
-    expect(deploymentInputSchema.safeParse({ ...base, unit: "Operations", status: "completed" }).success).toBe(false);
+    expect(deploymentInputSchema.safeParse({ ...base, unit: "Operations", status: "planned" }).success).toBe(false);
   });
 
   it("caps page size and rejects a reversed reporting range", () => {

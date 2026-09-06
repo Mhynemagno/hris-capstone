@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { isoDateSchema, paginationSchema, uuidSchema } from "./common";
 
-export const deploymentStatusSchema = z.enum(["planned", "active", "completed", "cancelled"]);
+export const deploymentStatusSchema = z.enum(["active", "rejected"]);
 const optionalText = (maximum: number) => z.string().trim().max(maximum).transform((value) => value || null).optional().default(null);
 
 export const deploymentInputSchema = z.object({
@@ -18,7 +18,6 @@ export const deploymentInputSchema = z.object({
 }).superRefine((value, context) => {
   if (!value.location && !value.unit && !value.project) context.addIssue({ code: "custom", path: ["location"], message: "Provide a location, unit, or project." });
   if (value.endsOn && value.endsOn < value.startsOn) context.addIssue({ code: "custom", path: ["endsOn"], message: "End date must be on or after start date." });
-  if (value.status === "completed" && !value.endsOn) context.addIssue({ code: "custom", path: ["endsOn"], message: "An end date is required for a completed deployment." });
 });
 
 export const deploymentUpdateSchema = deploymentInputSchema.extend({
