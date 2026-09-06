@@ -15,6 +15,7 @@ export const applicationStatusSchema = z.enum([
   "Under Review",
   "Shortlisted",
   "Interview",
+  "Needs Revision",
   "Hired",
   "Not Selected",
 ]);
@@ -22,6 +23,7 @@ export const applicationStatusSchema = z.enum([
 export const jobOpeningStatusSchema = z.enum(["draft", "published", "closed"]);
 export const jobCriterionKindSchema = z.enum([
   "education",
+  "eligibility",
   "experience",
   "skill",
   "certification",

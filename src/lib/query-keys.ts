@@ -54,6 +54,7 @@ export const queryKeys = {
     profileDocuments: () => ["recruitment", "profile-documents"] as const,
     myApplications: (filters: Record<string, unknown>) =>
       ["recruitment", "my-applications", filters] as const,
+    applicationForJob: (jobId: number) => ["recruitment", "application-for-job", jobId] as const,
     application: (applicationId: string) =>
       ["recruitment", "application", applicationId] as const,
     hrJobs: (filters: Record<string, unknown>) =>

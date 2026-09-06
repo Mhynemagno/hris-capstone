@@ -37,6 +37,11 @@ type SubmitApplicationInput = Omit<ApplicationSubmissionInput, "documents"> & {
   documents: PendingApplicantDocument[];
 };
 
+type ResubmitApplicationInput = {
+  applicationId: string;
+  documents: PendingApplicantDocument[];
+};
+
 export class ApplicantProfileRequiredError extends Error {
   readonly code = "APPLICANT_PROFILE_REQUIRED" as const;
 
@@ -234,6 +239,13 @@ export async function listMyApplications(input: Partial<ApplicationFilters> = {}
   return { rows: (data ?? []) as Application[], count: count ?? 0, filters } satisfies PaginatedResult<Application, ApplicationFilters>;
 }
 
+export async function getMyApplicationForJob(jobId: number) {
+  const id = jobOpeningSchema.shape.id.unwrap().parse(jobId);
+  const { data, error } = await createBrowserSupabaseClient().from("applications").select("*").eq("job_opening_id", id).maybeSingle();
+  throwIfError(error);
+  return data as Application | null;
+}
+
 export async function getMyApplication(applicationId: string) {
   const id = applicationStatusTransitionSchema.shape.applicationId.parse(applicationId);
   const client = createBrowserSupabaseClient();
@@ -373,6 +385,34 @@ export async function submitApplication(input: SubmitApplicationInput) {
   }
 }
 
+export async function resubmitApplication(input: ResubmitApplicationInput) {
+  const applicationId = applicationStatusTransitionSchema.shape.applicationId.parse(input.applicationId);
+  const user = await requireCurrentUser();
+  const client = createBrowserSupabaseClient();
+  const bucket = client.storage.from("applicant-documents");
+  const uploadedDocuments = [];
+  const uploadedPaths: string[] = [];
+  try {
+    for (const document of input.documents) {
+      const documentId = crypto.randomUUID();
+      const extension = extensionFor(document.file);
+      const objectPath = `applicants/${user.id}/${applicationId}/${documentId}.${extension}`;
+      const metadata = applicantDocumentSchema.parse({
+        kind: document.kind, objectPath, fileName: document.file.name, mimeType: document.file.type, sizeBytes: document.file.size,
+      });
+      const { error } = await bucket.upload(objectPath, document.file, { contentType: metadata.mimeType, upsert: false });
+      throwIfError(error);
+      uploadedPaths.push(objectPath);
+      uploadedDocuments.push(metadata);
+    }
+    const { error } = await client.rpc("resubmit_application", { target_application_id: applicationId, submitted_documents: uploadedDocuments });
+    throwIfError(error);
+  } catch (cause) {
+    if (uploadedPaths.length > 0) await bucket.remove(uploadedPaths).catch(() => undefined);
+    throw cause;
+  }
+}
+
 export async function hireApplication(input: HiringDecisionInput) {
   const values = hiringDecisionSchema.parse(input);
   const { data, error } = await createBrowserSupabaseClient().rpc("hire_application", {
@@ -401,4 +441,4 @@ export async function getApplicantDocumentUrl(objectPath: string) {
   return data?.signedUrl ?? null;
 }
 
-export type { PendingApplicantDocument, PendingApplicantProfileDocument, SubmitApplicationInput };
+export type { PendingApplicantDocument, PendingApplicantProfileDocument, ResubmitApplicationInput, SubmitApplicationInput };

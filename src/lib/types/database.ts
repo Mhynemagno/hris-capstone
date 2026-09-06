@@ -223,7 +223,7 @@ export type JobQualificationCriterion = {
   id: string;
   job_opening_id: number;
   ordinal: number;
-  kind: "education" | "experience" | "skill" | "certification" | "other";
+  kind: "education" | "eligibility" | "experience" | "skill" | "certification" | "other";
   requirement: string;
   is_required: boolean;
   created_at: string;
@@ -266,7 +266,7 @@ export type Application = {
   id: string;
   applicant_id: string;
   job_opening_id: number;
-  status: "Submitted" | "Under Review" | "Shortlisted" | "Interview" | "Hired" | "Not Selected";
+  status: "Submitted" | "Under Review" | "Shortlisted" | "Interview" | "Needs Revision" | "Hired" | "Not Selected";
   cover_note: string | null;
   submitted_at: string;
   reviewed_at: string | null;

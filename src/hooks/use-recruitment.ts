@@ -8,6 +8,7 @@ import {
   getApplicantProfilePhotoUrl,
   getApplicationAiScores,
   getMyApplication,
+  getMyApplicationForJob,
   getPublishedJob,
   hireApplication,
   listHrApplications,
@@ -20,6 +21,7 @@ import {
   replaceMyApplicantProfilePhoto,
   removeMyApplicantProfilePhoto,
   retryApplicationAnalysis,
+  resubmitApplication,
   saveJobOpening,
   submitApplication,
   transitionApplicationStatus,
@@ -34,6 +36,7 @@ import type {
   JobFilters,
   JobOpeningInput,
 } from "@/schemas/recruitment";
+import type { ResubmitApplicationInput } from "@/queries/recruitment";
 
 export function usePublishedJobs(filters: Partial<JobFilters> = {}) {
   return useQuery({ queryKey: queryKeys.recruitment.publicJobs(filters), queryFn: () => listPublishedJobs(filters) });
@@ -101,6 +104,10 @@ export function useMyApplication(applicationId: string) {
   return useQuery({ queryKey: queryKeys.recruitment.application(applicationId), queryFn: () => getMyApplication(applicationId), enabled: Boolean(applicationId) });
 }
 
+export function useMyApplicationForJob(jobId: number) {
+  return useQuery({ queryKey: queryKeys.recruitment.applicationForJob(jobId), queryFn: () => getMyApplicationForJob(jobId), enabled: Number.isInteger(jobId) && jobId > 0 });
+}
+
 export function useSubmitApplication() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -110,6 +117,18 @@ export function useSubmitApplication() {
       void queryClient.invalidateQueries({ queryKey: ["reporting"] });
       void queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.application(input.applicationId) });
       void queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.job(input.jobId) });
+    },
+  });
+}
+
+export function useResubmitApplication() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: ResubmitApplicationInput) => resubmitApplication(input),
+    onSuccess: (_, input) => {
+      void queryClient.invalidateQueries({ queryKey: ["recruitment", "my-applications"] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.application(input.applicationId) });
+      void queryClient.invalidateQueries({ queryKey: ["recruitment", "application-for-job"] });
     },
   });
 }
