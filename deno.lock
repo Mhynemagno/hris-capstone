@@ -18,6 +18,7 @@
     "npm:@types/node@20": "20.19.43",
     "npm:@types/react-dom@19": "19.2.4_@types+react@19.2.18",
     "npm:@types/react@19": "19.2.18",
+    "npm:@vladmandic/face-api@^1.7.15": "1.7.15",
     "npm:class-variance-authority@~0.7.1": "0.7.1",
     "npm:clsx@^2.1.1": "2.1.1",
     "npm:eslint-config-next@16.3.6": "16.3.6_eslint@9.39.5_typescript@5.9.3",
@@ -1480,6 +1481,9 @@
         "tinyrainbow"
       ]
     },
+    "@vladmandic/face-api@1.7.15": {
+      "integrity": "sha512-WDMmK3CfNLo8jylWqMoQgf4nIst3M0fzx1dnac96wv/dvMTN4DxC/Pq1DGtduDk1lktCamQ3MIDXFnvrdHTXDw=="
+    },
     "accepts@2.0.0": {
       "integrity": "sha512-5cvg6CtKwfgdmVqY1WIiXKc3Q1bkRqGLi+2W/6ao+6Y7gu/RCwRuAhGEzh5B4KlszSuTLgZYuqFqo5bImjNKng==",
       "dependencies": [
@@ -1685,10 +1689,6 @@
     "balanced-match@4.0.4": {
       "integrity": "sha512-BLrgEcRTwX2o6gGxGOCNyMvGSp35YofuYzw9h1IMTRmKqttAZZVU67bdb9Pr2vUHA8+j3i2tJfjO6C6+4myGTA=="
     },
-    "baseline-browser-mapping@2.11.18": {
-      "integrity": "sha512-1iEmLEYSiE1SeBoAfPo/Mnx3PzfzHUkDK61ASkCpuk3YXugYLH5DYK1SzqV55F8FMI6s0F+/tCP7Polz1QRjxw==",
-      "bin": true
-    },
     "baseline-browser-mapping@2.11.25": {
       "integrity": "sha512-gMmEShwwq7FJqMwvfRwvCl00v4kN+KOfJqXn+f4nrufak5gNHJOksd/60Dvjuz7sI8Y5WiSFBa8FEYr+zoyqCw==",
       "bin": true
@@ -1735,8 +1735,8 @@
     "browserslist@4.29.0": {
       "integrity": "sha512-3GSvyjvDI4Dur1Meg2BekJquu5uF+9R9a1+5M1Mde192eZoXbeXjzgOsgqPS2V8D5wrrip0gR5Hf/GhWQ9ZzaA==",
       "dependencies": [
-        "baseline-browser-mapping@2.11.25",
-        "caniuse-lite@1.0.30001810",
+        "baseline-browser-mapping",
+        "caniuse-lite",
         "electron-to-chromium",
         "node-releases",
         "update-browserslist-db"
@@ -1777,9 +1777,6 @@
     },
     "callsites@3.1.0": {
       "integrity": "sha512-P8BjAsXvZS+VIDUI11hHCQEv74YT67YUi5JJFNWIqL235sBmjX4+qx9Muvls5ivyNENctx46xQLQ3aTuE7ssaQ=="
-    },
-    "caniuse-lite@1.0.30001809": {
-      "integrity": "sha512-xxWVywk6a6Arlk+hymeycyn/VgqEfLDxupvhH/xiY5SJ/18kmi9o6MiO320DCUzypORHLtvh0I4i04tUhCNHNQ=="
     },
     "caniuse-lite@1.0.30001810": {
       "integrity": "sha512-TITQPUkaz+aVk5GL6NhOdwk1aEaNTSDPsGFWrTuhKGtjTF70jL/Oht2W4c6rXUe5fu7Ie19VIahAXHIIiWWNeg=="
@@ -3580,8 +3577,8 @@
         "@next/env",
         "@playwright/test",
         "@swc/helpers",
-        "baseline-browser-mapping@2.11.18",
-        "caniuse-lite@1.0.30001809",
+        "baseline-browser-mapping",
+        "caniuse-lite",
         "postcss@8.5.23",
         "react",
         "react-dom",
@@ -5009,6 +5006,7 @@
         "npm:@types/node@20",
         "npm:@types/react-dom@19",
         "npm:@types/react@19",
+        "npm:@vladmandic/face-api@^1.7.15",
         "npm:class-variance-authority@~0.7.1",
         "npm:clsx@^2.1.1",
         "npm:eslint-config-next@16.3.6",
