@@ -11,7 +11,14 @@ import type { DashboardSummary } from "@/schemas/reporting";
 
 type DashboardRole = "hr_personnel" | "management";
 
+/** Display names for metric keys whose generated label reads poorly. */
+const metricLabels: Record<string, string> = {
+  activeWorkforce: "Active personnel",
+  workforceByDepartment: "Personnel by department",
+};
+
 function formatMetricName(key: string) {
+  if (metricLabels[key]) return metricLabels[key];
   return key.replace(/([A-Z])/g, " $1").toLowerCase().replace(/^./, (value) => value.toUpperCase());
 }
 
@@ -34,7 +41,7 @@ function ManagementDashboard() {
 }
 
 function DashboardContent({ role, query }: { role: DashboardRole; query: { isLoading: boolean; error: Error | null; data: DashboardSummary | undefined } }) {
-  if (query.isLoading) return <LoadingState label="Loading workforce analytics…" />;
+  if (query.isLoading) return <LoadingState label="Loading personnel analytics…" />;
   if (query.error) return <ErrorState message={query.error.message} />;
   const data = query.data;
   if (!data) {
@@ -48,7 +55,7 @@ function DashboardContent({ role, query }: { role: DashboardRole; query: { isLoa
   }
 
   return <section aria-labelledby="page-title" className="space-y-6">
-    <PageHeader eyebrow={role === "management" ? "Management" : "HR Personnel"} id="page-title" meta={<p className="text-sm text-muted-foreground">Reporting period: {data.range.startsOn} to {data.range.endsOn}.</p>} title={role === "management" ? "Workforce analytics" : "HR operations dashboard"} />
+    <PageHeader eyebrow={role === "management" ? "Management" : "HR Personnel"} id="page-title" meta={<p className="text-sm text-muted-foreground">Reporting period: {data.range.startsOn} to {data.range.endsOn}.</p>} title={role === "management" ? "Personnel analytics" : "HR operations dashboard"} />
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{Object.entries(data.metrics).map(([key, value]) => <MetricCard key={key} label={formatMetricName(key)} value={value} />)}</div>
     <div className="grid gap-4 lg:grid-cols-2">
       {Object.entries(data.breakdowns).map(([key, rows]) => (
