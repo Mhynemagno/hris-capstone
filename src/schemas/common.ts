@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+// Installs plain-language validation messages for every schema that imports this module.
+import "./error-messages";
+
 import { APP_ROLES } from "@/lib/types/roles";
 
 export const appRoleSchema = z.enum(APP_ROLES);

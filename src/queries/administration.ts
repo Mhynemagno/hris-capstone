@@ -3,6 +3,7 @@ import { presentAuditLog, type AuditLogDisplay, type AuditPresentationLookups } 
 import type {
   AuditLog,
   Department,
+  UnitStation,
   EmployeeActivationRequest,
   ManagedUser,
   OrganizationSettings,
@@ -14,6 +15,7 @@ import type {
 import {
   auditLogFiltersSchema,
   departmentSchema,
+  unitStationSchema,
   internalInvitationSchema,
   managedUserFiltersSchema,
   managedUserDeleteSchema,
@@ -23,6 +25,7 @@ import {
   referenceDataFiltersSchema,
   type AuditLogFilters,
   type DepartmentInput,
+  type UnitStationInput,
   type InternalInvitationInput,
   type ManagedUserFilters,
   type ManagedUserDeleteInput,
@@ -187,6 +190,28 @@ export async function saveDepartment(input: DepartmentInput, departmentId?: numb
     : await client.from("departments").insert(payload).select("*").single();
   throwIfError(result.error);
   return result.data as Department;
+}
+
+export async function listUnitStationCatalogue(input: Partial<ReferenceDataFilters> = {}): Promise<PaginatedResult<UnitStation, ReferenceDataFilters>> {
+  const filters = referenceDataFilters(input);
+  const { from, to } = pageRange(filters.page);
+  let query = createBrowserSupabaseClient().from("unit_stations").select("*", { count: "exact" }).order("name");
+  if (filters.search) query = query.ilike("name", `%${filters.search}%`);
+  if (filters.status) query = query.eq("is_active", filters.status === "active");
+  const { data, error, count } = await query.range(from, to);
+  throwIfError(error);
+  return { rows: (data ?? []) as UnitStation[], count: count ?? 0, filters };
+}
+
+export async function saveUnitStation(input: UnitStationInput, unitStationId?: number) {
+  const values = unitStationSchema.parse(input);
+  const payload = { name: values.name, is_active: values.isActive };
+  const client = createBrowserSupabaseClient();
+  const result = unitStationId
+    ? await client.from("unit_stations").update(payload).eq("id", unitStationId).select("*").single()
+    : await client.from("unit_stations").insert(payload).select("*").single();
+  throwIfError(result.error);
+  return result.data as UnitStation;
 }
 
 export async function listRanks(input: Partial<ReferenceDataFilters> = {}): Promise<PaginatedResult<Rank, ReferenceDataFilters>> {

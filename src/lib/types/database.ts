@@ -258,6 +258,8 @@ export type UnitStation = {
   id: number;
   name: string;
   is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
 };
 
 export type ApplicantProfileDocument = {

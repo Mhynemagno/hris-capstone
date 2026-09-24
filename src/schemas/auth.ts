@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import "./error-messages";
+
 import { namePartsSchema, withFullName } from "./name";
 
 export const passwordSchema = z

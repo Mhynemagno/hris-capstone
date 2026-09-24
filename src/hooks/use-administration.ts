@@ -13,9 +13,11 @@ import {
   listManagedUsers,
   listRankOptions,
   listRanks,
+  listUnitStationCatalogue,
   saveDepartment,
   saveOrganizationSettings,
   saveRank,
+  saveUnitStation,
   updateManagedUser,
 } from "@/queries/administration";
 import {
@@ -30,6 +32,7 @@ import {
   type ManagedUserUpdateInput,
   type OrganizationSettingsInput,
   type RankInput,
+  type UnitStationInput,
   type ReferenceDataFilters,
 } from "@/schemas/administration";
 
@@ -120,6 +123,24 @@ export function useSaveDepartment() {
   return useMutation({
     mutationFn: ({ input, departmentId }: { input: DepartmentInput; departmentId?: number }) => saveDepartment(input, departmentId),
     onSuccess: () => invalidate("departments", "audit-logs"),
+  });
+}
+
+export function useUnitStationCatalogue(filters: Partial<ReferenceDataFilters> = {}) {
+  const parsed = referenceFilters(filters);
+  return useQuery({ queryKey: queryKeys.administration.unitStations(parsed), queryFn: () => listUnitStationCatalogue(parsed) });
+}
+
+export function useSaveUnitStation() {
+  const { invalidate } = useAdministrationMutations();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ input, unitStationId }: { input: UnitStationInput; unitStationId?: number }) => saveUnitStation(input, unitStationId),
+    onSuccess: () => {
+      invalidate("unit-stations", "audit-logs");
+      // Personnel and deployment forms read the active catalogue.
+      void queryClient.invalidateQueries({ queryKey: ["personnel-records", "unit-stations"] });
+    },
   });
 }
 

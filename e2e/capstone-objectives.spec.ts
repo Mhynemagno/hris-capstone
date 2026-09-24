@@ -12,6 +12,7 @@ test.describe.configure({ timeout: 120_000 });
 const HR = { email: "demo.hr@example.test", home: "/hr" };
 const EMPLOYEE = { email: "demo.employee@example.test", home: "/employee" };
 const MANAGEMENT = { email: "demo.management@example.test", home: "/management" };
+const ADMIN = { email: "demo.admin@example.test", home: "/admin" };
 
 // A minimal, valid PDF: the upload checks the file signature.
 const pdf = (name: string) => ({
@@ -95,6 +96,9 @@ test.describe("Objective 1: centralized personnel records", () => {
     await sections.getByRole("tab", { name: "Qualifications" }).click();
     await page.getByLabel(/^Qualification name/).fill(`BS Criminology ${runId}`);
     await page.getByLabel(/^Institution/).fill("Philippine College of Criminology");
+    await page.getByRole("button", { name: "Add qualification" }).click();
+    await expect(page.getByRole("tabpanel", { name: "Qualifications" }).getByRole("alert").filter({ hasText: "This field is required." }).first()).toBeVisible();
+    await expect(page.getByText(/Invalid ISO date|Too small|expected string/)).toHaveCount(0);
     await page.getByLabel(/^Awarded date/).fill("2014-04-10");
     await page.getByRole("button", { name: "Add qualification" }).click();
     await expect(page.getByRole("status").filter({ hasText: "Qualification added." })).toBeVisible();
@@ -202,6 +206,22 @@ test.describe("Objective 2: recruitment management", () => {
 test.describe("Objective 3: deployment tracking", () => {
   test("HR assigns and updates a deployment, and the employee can monitor it", async ({ page }) => {
     const role = `E2E Patrol ${runId}`;
+    const unit = `E2E Precinct ${runId}`;
+
+    // The administrator maintains the Unit/Station catalogue that deployments use.
+    await signIn(page, ADMIN.email, ADMIN.home);
+    await page.goto("/admin/unit-stations");
+    await page.getByRole("button", { name: "Add unit/station" }).click();
+    const panel = page.getByRole("dialog", { name: "Add unit/station" });
+    await panel.getByRole("button", { name: "Save unit/station" }).click();
+    await expect(panel.getByText("This field is required.")).toBeVisible();
+    await panel.getByLabel(/^Name/).fill(unit);
+    await panel.getByRole("button", { name: "Save unit/station" }).click();
+    await expect(page.getByRole("status").filter({ hasText: `${unit} was added.` })).toBeVisible();
+    await page.getByLabel("Search unit stations").fill(unit);
+    await expect(page.getByRole("cell", { name: unit, exact: true })).toBeVisible();
+    await signOut(page, ADMIN.email);
+
     await signIn(page, HR.email, HR.home);
 
     // Validation: a deployment needs a location, unit, or project.
@@ -213,11 +233,13 @@ test.describe("Objective 3: deployment tracking", () => {
     await expect(page.getByText("Provide a location, unit, or project.").first()).toBeVisible();
 
     await createDeployment(page, role);
+    await page.getByLabel(/^Unit assignment/).selectOption({ label: unit });
     await page.getByLabel(/^Project/).fill(`Oplan Ligtas ${runId}`);
     await page.getByRole("button", { name: "Save deployment" }).click();
     await expect(page.getByRole("status").filter({ hasText: "Deployment saved." })).toBeVisible();
     await page.reload();
     await expect(page.getByLabel(/^Project/)).toHaveValue(`Oplan Ligtas ${runId}`);
+    await expect(page.getByLabel(/^Unit assignment/)).toHaveValue(unit);
     await expect(page.getByText(/History/).first()).toBeVisible();
 
     await page.goto("/hr/deployments");

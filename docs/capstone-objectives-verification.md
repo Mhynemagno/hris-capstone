@@ -16,7 +16,7 @@ npx playwright test e2e/capstone-objectives.spec.ts e2e/iso25010-quality.spec.ts
 | --- | --- | --- | --- |
 | 1 | Centralized personnel records | Working | HR creates a profile, updates department/rank, adds service history, qualification, certification, and training, and finds it in the directory. |
 | 2 | Recruitment management | Working (fixed) | HR publishes an opening; a new applicant registers, uploads documents, and applies; HR moves the application Under Review → Shortlisted and hires; a personnel record is created; the applicant is notified. |
-| 3 | Deployment tracking | Working (fixed) | HR is told a location/unit/project is required, assigns a deployment, updates it with history, sees it in the directory; the employee sees it in their portal. |
+| 3 | Deployment tracking | Working (fixed) | The administrator adds a unit/station; HR is told a location/unit/project is required, assigns a deployment, sets its unit and project, sees its history and directory entry; the employee sees it in their portal. |
 | 4 | Promotion eligibility tracker | Working (improved) | HR adds a training credential, defines criteria (years of service, minimum rating, required training), records a rating, and saves an advisory review. |
 | 5 | Self-service portal | Working | Unauthenticated access is refused; the employee views their record and profile, applies for leave, HR rejects it with a note, and the employee sees the decision and notification and marks it read. |
 | 6 | Attendance monitoring and reporting (biometric) | Working | A device CSV is imported through the Edge Function, the unknown device ID is mapped to personnel, the log shows 08:30/17:00 as *late* from an *Import*, and the attendance report lists it. Face-recognition login/logout: kiosk and employee self-scan. |
@@ -30,6 +30,9 @@ npx playwright test e2e/capstone-objectives.spec.ts e2e/iso25010-quality.spec.ts
 2. **Editing a deployment always failed** ("Could not find the function public.update_deployment… in the schema cache"): the client sent `target_employee_id`, which `update_deployment` does not take. Only creation sends it now (`src/queries/deployment-tracking.ts`).
 3. **Hiring rejected real badge numbers.** It required `EMP-YYYY-###` while personnel records use badges like `PAT-0001`, and the error was raw JSON. Hiring now uses the personnel-record rule (3–32 characters, uppercase) and shows a readable message (`src/schemas/common.ts`, `hr-application-detail.tsx`).
 4. **No way to open a promotion review** for an employee who had not been evaluated yet (HR had to type the URL). The personnel record now links to **Promotion review**.
+5. **The Unit/Station catalogue could not be maintained.** It was empty after the demo reset and had no screen. Administrators now manage it at **Admin → Unit stations** (`/admin/unit-stations`): add, edit, deactivate, and reactivate, with every change audited (`20260925120000_unit_station_administration.sql`). A station already used on records cannot be renamed, because those records store its name; add the corrected station and deactivate the old one.
+6. **A saved unit showed as blank** on the deployment and personnel forms whenever the catalogue loaded after the form, and saving again would have cleared it. The field now waits for the catalogue.
+7. **Technical validation wording** ("Invalid ISO date", "Too small: expected string to have >=2 characters") is replaced app-wide with plain messages such as "This field is required.", "Enter a valid date.", and "Enter at least 2 characters." (`src/schemas/error-messages.ts`). Messages written for specific fields are unchanged.
 
 Each fix has a unit test.
 
@@ -37,10 +40,9 @@ Each fix has a unit test.
 
 - **Objective 7 — no charts.** Dashboards present metric cards and tables; there is no chart visualization. Prescriptive analytics are limited to promotion-readiness and training-need counts and the promotion/training report.
 - **Objective 8 — reports are generated on demand** from live data (view, filter, CSV, print). There is no scheduled or emailed report.
-- **Objective 3 — unit/station catalogue is empty** after the demo reset and has no admin screen, so "Unit assignment" cannot be used; deployments use Location or Project. The end date cannot be edited, and the directory has no status filter.
+- **Objective 3 — a deployment's end date cannot be edited**, and the directory has no status filter. The unit/station catalogue starts empty; an administrator must add the station's precincts and units.
 - **Objective 2/5 — queues show no names.** The HR application queue lists `Application {id}` and the HR leave queue has no employee column, so HR must open each item to see who it is.
 - **Objective 6 — the import needs the `import-attendance` Edge Function** running (deployed in production; `npx supabase functions serve` locally). The face-recognition path has not yet been tested with a real person on a real camera.
-- **Validation wording.** Some record forms show library messages such as "Invalid ISO date" or "Too small: expected string to have >=2 characters".
 
 ## Objective 9: ISO/IEC 25010:2023 evaluation
 
