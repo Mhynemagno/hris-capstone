@@ -149,8 +149,9 @@ Forms, directory filter, and report filters offer only Active and On leave.
 Add a "What you applied for" card at the top: job title, department, rank, closing date,
 job description, qualification criteria, submitted date, and a status badge. The status history
 shows dates and HR notes. Documents show their type (CV / credential). The applicant query is
-extended to join the job opening, department, rank, and criteria (read access for the
-applicant's own applications is enforced by existing RLS; verify and extend if needed).
+extended to join the job opening, department, rank, and criteria. Current RLS only exposes
+published, unexpired openings, so once a job closes the applicant loses it; add SELECT policies
+letting an applicant read the job opening and criteria of their own applications.
 
 ### 2.5 HR personnel record
 
@@ -170,8 +171,9 @@ Root cause: applications are queued (trigger + pgmq), but nothing invokes the
    (it authenticates via the worker secret), set in `supabase/config.toml`.
 2. Sweeper (in the same cron tick, as a SQL function): rows `queued` > 15 min or `processing`
    > 15 min become `failed` with error "Analysis timed out", enabling HR retry.
-3. Worker: when a claimed message's score row is already `processing` past the timeout, mark it
-   failed instead of silently deleting the message; stop swallowing update errors.
+3. Worker crash recovery is handled by the sweeper (a row left `processing` after a worker crash
+   is failed after 15 minutes). `failure_code` gains the value `timed_out`, and the HR UI shows
+   "Analysis timed out" for it. The worker code itself is unchanged.
 4. UI: `useApplicationAiScores` (and the HR list's score query) use a `refetchInterval` of 5 s
    while the latest status is `queued` or `processing`, and stop otherwise.
 5. Rewrite `docs/AI_SHORTLISTING_SETUP.md`: deploy command, required function secrets
