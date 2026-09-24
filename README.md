@@ -48,6 +48,19 @@ npm run test:run
 npm run build
 ```
 
+Run the browser role and session checks against the local Supabase stack with
+the fictional accounts from `supabase/seed.sql`:
+
+```bash
+npm run test:e2e
+```
+
+Playwright obtains its URL and publishable key from `supabase status` and
+refuses to run against a hosted Supabase URL. On a fresh local database, the
+demo accounts can be loaded with `npx supabase db reset --local`; this resets
+the local database, so preserve any local data you need first. CI uses its own
+disposable Supabase database for these tests.
+
 ## Vercel deployment
 
 1. Import the GitHub repository into Vercel and use the default Next.js build settings.

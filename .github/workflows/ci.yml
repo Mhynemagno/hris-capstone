@@ -45,3 +45,14 @@ jobs:
 
       - name: Run database regression tests
         run: supabase test db --local supabase/tests
+
+      - name: Seed the disposable local database for browser tests
+        run: supabase db reset --local --yes
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run role-based browser journeys
+        env:
+          HRIS_E2E_PASSWORD: DemoPass!2026
+        run: npm run test:e2e
