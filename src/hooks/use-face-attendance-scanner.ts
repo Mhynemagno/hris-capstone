@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 
 import { CAMERA_ERROR_MESSAGES, useCamera } from "@/hooks/use-camera";
-import { useRecordFaceAttendance } from "@/hooks/use-face-recognition";
+import { useRecordFaceAttendance, type FaceScanMode } from "@/hooks/use-face-recognition";
 import { FACE_RECOGNITION_CONFIG } from "@/lib/face-recognition/config";
 import { detectFacesWithDescriptors, detectFacesWithLandmarks, loadFaceModels, MODELS_FAILED_MESSAGE, type FaceApi } from "@/lib/face-recognition/face-api";
 import { assessFraming, averageEyeAspectRatio, FRAMING_MESSAGES } from "@/lib/face-recognition/geometry";
@@ -19,11 +19,11 @@ const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, 
  * every effect cancels its timers and ignores late results when the state changes or the
  * component unmounts.
  */
-export function useFaceAttendanceScanner() {
+export function useFaceAttendanceScanner(mode: FaceScanMode = "kiosk") {
   const reducer = useMemo(() => createScannerReducer(config), []);
   const [state, dispatch] = useReducer(reducer, initialScannerState);
   const camera = useCamera();
-  const record = useRecordFaceAttendance();
+  const record = useRecordFaceAttendance(mode);
   const descriptorRef = useRef<number[] | null>(null);
   const { start: startCamera, stop: stopCamera, status: cameraStatus, videoRef } = camera;
   const recordAttendance = record.mutateAsync;

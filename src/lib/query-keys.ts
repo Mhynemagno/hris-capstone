@@ -88,5 +88,6 @@ export const queryKeys = {
     unmatched: (filters: Record<string, unknown>) => ["attendance-integration", "unmatched", filters] as const,
     settings: () => ["attendance-integration", "settings"] as const,
     faceEnrollments: () => ["attendance-integration", "face-enrollments"] as const,
+    myFaceRegistration: () => ["attendance-integration", "my-face-registration"] as const,
   },
 };

@@ -1,6 +1,6 @@
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { uuidSchema } from "@/schemas/common";
-import { faceAttendanceResultSchema, faceAttendanceScanSchema, faceEnrollmentSchema, faceEnrollmentSummarySchema } from "@/schemas/face-recognition";
+import { faceAttendanceResultSchema, faceAttendanceScanSchema, faceEnrollmentSchema, faceEnrollmentSummarySchema, myFaceRegistrationSchema } from "@/schemas/face-recognition";
 
 /**
  * Face-recognition RPCs. None of them returns a stored descriptor: enrollment summaries omit
@@ -45,14 +45,30 @@ export async function deleteFaceEnrollment(employeeId: string) {
   if (error) throw toRequestError(error);
 }
 
-export async function recordFaceAttendance(input: unknown) {
+async function submitScan(rpc: "record_face_attendance" | "record_my_face_attendance", input: unknown) {
   const values = faceAttendanceScanSchema.parse(input);
   let response;
   try {
-    response = await createBrowserSupabaseClient().rpc("record_face_attendance", { target_scan_id: values.scanId, target_descriptor: values.descriptor });
+    response = await createBrowserSupabaseClient().rpc(rpc, { target_scan_id: values.scanId, target_descriptor: values.descriptor });
   } catch {
     throw new FaceRecognitionRequestError("Unable to reach the attendance service. Check the connection.", true);
   }
   if (response.error) throw toRequestError(response.error);
   return faceAttendanceResultSchema.parse(response.data);
+}
+
+/** HR kiosk: the database identifies the face among all registered employees. */
+export function recordFaceAttendance(input: unknown) {
+  return submitScan("record_face_attendance", input);
+}
+
+/** Employee self-scan: the database verifies the face against only the signed-in employee. */
+export function recordMyFaceAttendance(input: unknown) {
+  return submitScan("record_my_face_attendance", input);
+}
+
+export async function getMyFaceRegistration() {
+  const { data, error } = await createBrowserSupabaseClient().rpc("get_my_face_registration");
+  if (error) throw toRequestError(error);
+  return myFaceRegistrationSchema.parse(data);
 }

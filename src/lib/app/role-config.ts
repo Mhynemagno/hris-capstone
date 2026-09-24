@@ -109,6 +109,7 @@ export const ROLE_CONFIG: Record<AppRole, RoleConfig> = {
       { href: "/employee/deployments", label: "Deployments", icon: "MapPin" },
       { href: "/employee/promotion-eligibility", label: "Promotion eligibility", icon: "TrendingUp" },
       { href: "/employee/attendance", label: "Attendance", icon: "Clock" },
+      { href: "/employee/attendance/scan", label: "Scan attendance", icon: "Fingerprint" },
     ],
   },
   management: {

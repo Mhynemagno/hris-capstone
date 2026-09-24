@@ -74,3 +74,16 @@ test("face registration requires consent and guides the capture", async ({ page 
   await page.getByRole("button", { name: "Cancel" }).click();
   await expect(page.getByRole("button", { name: /Start face registration|Re-register face/ })).toBeVisible();
 });
+
+test("an employee reaches face attendance with their own login, without HR", async ({ page }) => {
+  await page.goto("/employee/attendance/scan");
+  await page.getByLabel("Email").fill("demo.employee@example.test");
+  await page.getByRole("textbox", { name: "Password" }).fill(demoPassword);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).toHaveURL(/\/employee\/attendance\/scan$/);
+  // The demo employee has no face registration, so the page explains how to get one.
+  await expect(page.getByText(/Face registration needed|Record attendance with your face/)).toBeVisible();
+
+  await page.goto("/hr/attendance/kiosk");
+  await expect(page).toHaveURL(/\/unauthorized$/);
+});

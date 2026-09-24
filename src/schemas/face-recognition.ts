@@ -46,6 +46,11 @@ export const faceEnrollmentSummarySchema = z.object({
   updated_at: z.string(),
 });
 
+export const myFaceRegistrationSchema = z.object({
+  registered: z.boolean(),
+  updatedAt: z.string().nullable(),
+});
+
 export type FaceEnrollmentInput = z.infer<typeof faceEnrollmentSchema>;
 export type FaceAttendanceScanInput = z.infer<typeof faceAttendanceScanSchema>;
 export type FaceAttendanceResult = z.infer<typeof faceAttendanceResultSchema>;

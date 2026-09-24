@@ -14,7 +14,8 @@ const faceApi = vi.hoisted(() => ({
 vi.mock("@/lib/face-recognition/face-api", () => ({ ...faceApi, MODELS_FAILED_MESSAGE: "The face recognition models could not be loaded." }));
 
 const record = vi.hoisted(() => vi.fn());
-vi.mock("@/queries/face-recognition", async (importOriginal) => ({ ...(await importOriginal<typeof import("@/queries/face-recognition")>()), recordFaceAttendance: record }));
+const recordMine = vi.hoisted(() => vi.fn());
+vi.mock("@/queries/face-recognition", async (importOriginal) => ({ ...(await importOriginal<typeof import("@/queries/face-recognition")>()), recordFaceAttendance: record, recordMyFaceAttendance: recordMine }));
 
 import { FaceRecognitionRequestError } from "@/queries/face-recognition";
 
@@ -26,16 +27,16 @@ const face = (ear: number) => ({ box, leftEye: eyeWithEar(ear), rightEye: eyeWit
 const blinkTimeline = (call: number) => face(call >= 6 && call <= 7 ? 0.1 : 0.3);
 
 let latest: ReturnType<typeof useFaceAttendanceScanner>;
-function Harness() {
-  const { videoRef, ...scanner } = useFaceAttendanceScanner();
+function Harness({ mode = "kiosk" }: { mode?: "kiosk" | "self" }) {
+  const { videoRef, ...scanner } = useFaceAttendanceScanner(mode);
   useEffect(() => { latest = { videoRef, ...scanner }; });
   return <video ref={videoRef} />;
 }
 
-function renderScanner() {
+function renderScanner(mode: "kiosk" | "self" = "kiosk") {
   const client = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
   const wrapper = ({ children }: { children: ReactNode }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>;
-  return render(<Harness />, { wrapper });
+  return render(<Harness mode={mode} />, { wrapper });
 }
 
 async function startScanning() {
@@ -81,6 +82,16 @@ describe("useFaceAttendanceScanner", () => {
     expect(second.scanId).toBe(first.scanId);
     expect(first.descriptor).toHaveLength(128);
     expect(latest.state).toMatchObject({ status: "success", result: { employee: { firstName: "Ana" } } });
+  });
+
+  it("sends an employee's own scan to the self-verification RPC only", async () => {
+    recordMine.mockImplementation(async ({ scanId }: { scanId: string }) => recognized(scanId));
+    renderScanner("self");
+    await startScanning();
+
+    await waitFor(() => expect(latest.state.status).toBe("success"), { timeout: 5000 });
+    expect(recordMine).toHaveBeenCalledTimes(1);
+    expect(record).not.toHaveBeenCalled();
   });
 
   it("does not retry a database rejection and records nothing for an unknown face", async () => {

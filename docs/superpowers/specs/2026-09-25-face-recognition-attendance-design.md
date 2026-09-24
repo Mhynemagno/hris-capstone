@@ -20,7 +20,9 @@ Development and demonstrations must use only test subjects, people who have cons
 ## Decisions
 
 - **Matching happens in the database.** The browser computes one probe descriptor and calls `record_face_attendance`. The database compares it with every enrollment by Euclidean distance, decides, and writes the attendance in one transaction. Stored descriptors never leave Postgres, so no client (HR included) can download the biometric gallery.
-- **The kiosk runs under an HR Personnel session** on a supervised device (`/hr/attendance/kiosk`). This matches the current role model: HR is the only role that writes attendance. The employee never signs in or selects an identity.
+- **Two ways to scan.**
+  - **Employee self-scan** (`/employee/attendance/scan`, added 2026-09-25): an employee signs in with their **own** account, with no HR login involved. The face is verified (1:1) against only that employee's registration, so an employee session can never search or probe anyone else's template.
+  - **HR kiosk** (`/hr/attendance/kiosk`): a supervised device under an HR session identifies (1:N) among all registrations. The person scanning selects nothing.
 - **Enrollment is HR-only** (`/hr/attendance/face-enrollment`), matching HR's ownership of personnel and attendance records. HR selects an employee, confirms that person's informed consent, and captures samples. The descriptor is always stored against the employee HR selected.
 - **Library.** [`@vladmandic/face-api`](https://github.com/vladmandic/face-api) 1.7.15 (MIT) is the maintained fork of `face-api.js` with the same API. The original `face-api.js` 0.22.2 has been unmaintained since 2020 and pins TensorFlow.js 1.7. The fork's bundled browser ESM build (`dist/face-api.esm.js`) works in the Next 16 production build. Three models run: `tiny_face_detector`, `face_landmark_68`, and `face_recognition` (128-D ResNet-34). `scripts/copy-face-models.mjs` copies them from the pinned package into `public/models/face-api/` on `predev` and `prebuild`, so they are served from the same origin and are not committed.
 - **No paid APIs and no images leave the device.** Everything runs in the browser except the final RPC.
@@ -46,13 +48,15 @@ The `private` schema is not exposed through the Data API. RLS is on for all thre
 | `list_face_enrollments()` | Employee ID, sample count, and timestamps. Never the descriptor. |
 | `enroll_employee_face(employee, descriptor, sample_count, consent)` | Rejects missing consent, an invalid descriptor, a sample count outside 3–10, an unknown employee, or an employee without an active linked account. It share-locks the profile so a concurrent deactivation cannot miss the new row. It then takes an advisory lock and rejects a face within the match threshold of **another** employee's enrollment (which would make recognition ambiguous). Finally it upserts, so re-registration replaces the old descriptor only when the new one commits. Audited as `enrolled` or `re_registered`. |
 | `delete_employee_face_enrollment(employee)` | Hard delete. Audited as `deleted` with reason `hr_request`. |
-| `record_face_attendance(scan_id, descriptor)` | See below. |
+| `record_face_attendance(scan_id, descriptor)` | HR kiosk: identify among all registrations. See below. |
+| `record_my_face_attendance(scan_id, descriptor)` | Employee self-scan. Requires an active `employee` account linked to a personnel record. Compares only with that employee's registration against `match_threshold` (no ambiguity check is needed for 1:1), then applies the same attendance rules. It raises "Ask HR to register it" when there is no registration. |
+| `get_my_face_registration()` | For the signed-in employee: `{ registered, updatedAt }`. No descriptor. |
 
 ## Recognition and attendance write
 
-`record_face_attendance`:
+`record_face_attendance` (kiosk). Self-scan shares steps 1, 3, 4, and 5 through `private.write_face_attendance`, and replaces step 2 with a 1:1 comparison.
 
-1. Takes an advisory lock on the scan ID. If the scan ID already exists, it returns the stored result, so a client retry after a network failure cannot record twice.
+1. Takes an advisory lock on the scan ID. If the scan ID already exists, it returns the stored result, so a client retry after a network failure cannot record twice. Only the account that created a scan ID can replay it.
 2. Finds the nearest and second-nearest enrollment by Euclidean distance. **Not recognized** when there is no enrollment, the best distance is above `match_threshold`, or the runner-up is within `ambiguity_margin` of the best. Nothing is written except the scan ledger row and an audit entry.
 3. Takes an advisory lock on employee + local date, which serializes concurrent kiosks and retries for one person.
 4. Applies the attendance rules:
@@ -100,6 +104,8 @@ INITIALIZING → READY → SEARCHING → LIVENESS → VERIFYING → RECORDING �
 - **Playwright** (`e2e/face-attendance.spec.ts`) with Chromium's fake camera: models load from the production bundle, the camera starts, detection reports "No face detected", consent is required, and the scanner closes. The fake feed contains no face, so a real match needs a consenting person at a real camera. Headless Edge ends fake camera tracks after about a second, so the spec skips there; run it with `--headed`.
 
 ## Known limitations
+
+- Self-scan has no location or device check: an employee who is signed in and present in front of any camera can record attendance from anywhere. A geofence or trusted-network check could be added later.
 
 - Blink liveness is defeatable by a video replay; the kiosk must be supervised.
 - Matching is a linear scan in PL/pgSQL, fine for a station-sized roster (hundreds of employees). A larger deployment should use `pgvector` with an index.

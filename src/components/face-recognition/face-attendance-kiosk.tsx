@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { StatusPanel } from "@/components/ui/status-panel";
 import { useFaceAttendanceScanner } from "@/hooks/use-face-attendance-scanner";
+import type { FaceScanMode } from "@/hooks/use-face-recognition";
 import { SHOW_FACE_DIAGNOSTICS } from "@/lib/face-recognition/config";
 import type { ScannerState } from "@/lib/face-recognition/scanner-machine";
 
@@ -34,8 +35,8 @@ function tone(state: ScannerState) {
   return "neutral" as const;
 }
 
-function Scanner({ onClose }: { onClose: () => void }) {
-  const { pause, retry, start, state, videoRef } = useFaceAttendanceScanner();
+export function FaceScanner({ mode, onClose }: { mode: FaceScanMode; onClose: () => void }) {
+  const { pause, retry, start, state, videoRef } = useFaceAttendanceScanner(mode);
   const live = state.status !== "initializing" && !(state.status === "error" && state.fatal);
   const busy = state.status === "verifying" || state.status === "recording";
   const running = state.status !== "initializing" && state.status !== "ready" && !(state.status === "error" && state.fatal);
@@ -92,7 +93,7 @@ function Scanner({ onClose }: { onClose: () => void }) {
  */
 export function FaceAttendanceKiosk() {
   const [open, setOpen] = useState(false);
-  if (open) return <Scanner onClose={() => setOpen(false)} />;
+  if (open) return <FaceScanner mode="kiosk" onClose={() => setOpen(false)} />;
   return (
     <StatusPanel
       action={<Button onClick={() => setOpen(true)} type="button"><ScanFace aria-hidden="true" />Open scanner</Button>}

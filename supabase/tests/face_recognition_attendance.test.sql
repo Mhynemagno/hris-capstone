@@ -3,10 +3,12 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(43);
+select extensions.plan(55);
 
 select extensions.has_function('public', 'enroll_employee_face', array['uuid', 'real[]', 'integer', 'boolean'], 'Face enrollment RPC exists');
 select extensions.has_function('public', 'record_face_attendance', array['uuid', 'real[]'], 'Face attendance RPC exists');
+select extensions.has_function('public', 'record_my_face_attendance', array['uuid', 'real[]'], 'Employee self-scan RPC exists');
+select extensions.ok(not has_function_privilege('anon', 'public.record_my_face_attendance(uuid, real[])', 'execute'), 'Anonymous users cannot self-scan');
 select extensions.ok(not has_table_privilege('authenticated', 'private.employee_face_enrollments', 'select'), 'Authenticated users cannot select face descriptors');
 select extensions.ok(not has_table_privilege('anon', 'private.employee_face_enrollments', 'select'), 'Anonymous users cannot select face descriptors');
 select extensions.ok(not has_table_privilege('authenticated', 'private.face_attendance_scans', 'insert'), 'Authenticated users cannot write scan records directly');
@@ -101,12 +103,27 @@ select extensions.is(public.record_face_attendance('00000000-0000-4000-8000-0000
 select extensions.is(public.record_face_attendance('00000000-0000-4000-8000-000000000c04', (select descriptor from face_fixture where key = 'alpha_probe')) ->> 'outcome', 'already_recorded', 'An immediate rescan does not record time out');
 select extensions.is((select count(*) from public.attendance_logs where capture_method = 'face_recognition'), 1::bigint, 'Repeated scans keep one face log');
 
+-- Employee self-scan: verified only against the signed-in employee's own registration.
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000a05';
+select extensions.is(public.get_my_face_registration() ->> 'registered', 'true', 'An employee sees that their own face is registered');
+select extensions.is(public.record_my_face_attendance('00000000-0000-4000-8000-000000000d01', (select descriptor from face_fixture where key = 'alpha_probe')) ->> 'outcome', 'not_recognized', 'Another person''s face does not pass self-scan');
+select set_config('test.self_scan', public.record_my_face_attendance('00000000-0000-4000-8000-000000000d02', (select descriptor from face_fixture where key = 'charlie'))::text, true);
+select extensions.is(current_setting('test.self_scan')::jsonb ->> 'outcome', 'time_in', 'An employee records their own time in by face');
+select extensions.is(current_setting('test.self_scan')::jsonb #>> '{employee,id}', '00000000-0000-4000-8000-000000000b03', 'Self-scan records for the signed-in employee');
+select extensions.is(public.record_my_face_attendance('00000000-0000-4000-8000-000000000d03', (select descriptor from face_fixture where key = 'charlie')) ->> 'outcome', 'already_recorded', 'Self-scan follows the same repeat-scan rule');
+select extensions.throws_ok($$ select public.record_my_face_attendance('00000000-0000-4000-8000-000000000c03', (select descriptor from face_fixture where key = 'charlie')) $$, '42501', null, 'An employee cannot replay a scan ID created by another session');
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000a01';
+select extensions.throws_ok($$ select public.record_my_face_attendance(gen_random_uuid(), (select descriptor from face_fixture where key = 'alpha')) $$, '42501', null, 'Self-scan is for employee accounts only');
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000a04';
+select extensions.throws_ok($$ select public.get_my_face_registration() $$, '42501', null, 'An administrator has no self-scan registration');
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000a01';
+
 set local role postgres;
 update private.face_recognition_settings set min_time_out_minutes = 0;
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000a01';
 select extensions.is(public.record_face_attendance('00000000-0000-4000-8000-000000000c05', (select descriptor from face_fixture where key = 'alpha_probe')) ->> 'outcome', 'time_out', 'A later scan records time out');
-select extensions.ok((select time_out is not null and status in ('present', 'late') from public.attendance_logs where capture_method = 'face_recognition'), 'Time out applies the attendance status rules');
+select extensions.ok((select time_out is not null and status in ('present', 'late') from public.attendance_logs where capture_method = 'face_recognition' and employee_id = '00000000-0000-4000-8000-000000000b01'), 'Time out applies the attendance status rules');
 select extensions.is(public.record_face_attendance('00000000-0000-4000-8000-000000000c06', (select descriptor from face_fixture where key = 'alpha_probe')) ->> 'outcome', 'already_recorded', 'A completed day rejects further scans');
 
 -- An import for a day already recorded by a face scan is a duplicate, not a second log.
@@ -131,12 +148,15 @@ set local role postgres;
 update public.profiles set is_active = false where id = '00000000-0000-4000-8000-000000000a03';
 select extensions.ok(not exists (select 1 from private.employee_face_enrollments where employee_id = '00000000-0000-4000-8000-000000000b02'), 'Deactivating the account deletes the face descriptor');
 -- The partial unique index is the final guard against a second face log for the same day.
-select extensions.throws_ok($$ insert into public.attendance_logs (employee_id, integration_id, source_event_id, external_employee_id, attendance_date, time_in, status, capture_method) select employee_id, integration_id, 'face:duplicate', external_employee_id, attendance_date, time_in, 'incomplete', 'face_recognition' from public.attendance_logs where capture_method = 'face_recognition' $$, '23505', null, 'The database rejects a second face log for one employee and day');
+select extensions.throws_ok($$ insert into public.attendance_logs (employee_id, integration_id, source_event_id, external_employee_id, attendance_date, time_in, status, capture_method) select employee_id, integration_id, 'face:duplicate', external_employee_id, attendance_date, time_in, 'incomplete', 'face_recognition' from public.attendance_logs where capture_method = 'face_recognition' and employee_id = '00000000-0000-4000-8000-000000000b01' $$, '23505', null, 'The database rejects a second face log for one employee and day');
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000a01';
 select extensions.throws_ok($$ select public.enroll_employee_face('00000000-0000-4000-8000-000000000b02', (select descriptor from face_fixture where key = 'bravo'), 5, true) $$, 'P0001', null, 'A deactivated account cannot be registered');
 select extensions.lives_ok($$ select public.delete_employee_face_enrollment('00000000-0000-4000-8000-000000000b03') $$, 'HR deletes a face registration');
 select extensions.throws_ok($$ select public.delete_employee_face_enrollment('00000000-0000-4000-8000-000000000b03') $$, 'P0001', null, 'Deleting a missing registration fails clearly');
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000a05';
+select extensions.is(public.get_my_face_registration() ->> 'registered', 'false', 'A deleted registration shows as not registered');
+select extensions.throws_ok($$ select public.record_my_face_attendance(gen_random_uuid(), (select descriptor from face_fixture where key = 'charlie')) $$, 'P0001', null, 'An unregistered employee is told to ask HR');
 
 select * from extensions.finish();
 

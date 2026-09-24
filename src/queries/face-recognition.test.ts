@@ -4,7 +4,7 @@ const rpc = vi.fn();
 const from = vi.fn();
 vi.mock("@/lib/supabase/client", () => ({ createBrowserSupabaseClient: () => ({ rpc, from }) }));
 
-import { enrollEmployeeFace, FaceRecognitionRequestError, listFaceEnrollments, recordFaceAttendance } from "./face-recognition";
+import { enrollEmployeeFace, FaceRecognitionRequestError, getMyFaceRegistration, listFaceEnrollments, recordFaceAttendance, recordMyFaceAttendance } from "./face-recognition";
 
 const descriptor = Array.from({ length: 128 }, () => 0.1);
 const scanId = "8a1f2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d";
@@ -19,6 +19,18 @@ describe("face recognition queries", () => {
     expect(rpc).toHaveBeenCalledWith("record_face_attendance", { target_scan_id: scanId, target_descriptor: descriptor });
     expect(result.outcome).toBe("not_recognized");
     expect(from).not.toHaveBeenCalled();
+  });
+
+  it("sends an employee self-scan to the verification RPC", async () => {
+    rpc.mockResolvedValue({ data: { scanId, outcome: "time_in", message: null, distance: null, employee: { id: employeeId, employeeNumber: "PAT-001", firstName: "Ana", lastName: "One" }, log: null, recordedAt: "2026-09-25T00:00:00Z" }, error: null });
+    await recordMyFaceAttendance({ scanId, descriptor });
+    expect(rpc).toHaveBeenCalledWith("record_my_face_attendance", { target_scan_id: scanId, target_descriptor: descriptor });
+  });
+
+  it("reads the signed-in employee's registration status", async () => {
+    rpc.mockResolvedValue({ data: { registered: false, updatedAt: null }, error: null });
+    await expect(getMyFaceRegistration()).resolves.toEqual({ registered: false, updatedAt: null });
+    expect(rpc).toHaveBeenCalledWith("get_my_face_registration");
   });
 
   it("marks transport failures as retryable and database rejections as final", async () => {

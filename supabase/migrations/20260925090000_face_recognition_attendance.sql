@@ -5,13 +5,19 @@
 -- never stores face images or probe descriptors from scans. See
 -- docs/superpowers/specs/2026-09-25-face-recognition-attendance-design.md.
 --
+-- Access model:
+--   * HR kiosk (record_face_attendance): an HR session identifies the face among all enrollments.
+--   * Employee self-scan (record_my_face_attendance): an employee signs in with their own account
+--     and the face is verified against only their own enrollment.
+--
 -- Isolation model:
 --   * Descriptors live in the non-exposed `private` schema. No role other than the table owner
 --     can read or write them; PostgREST cannot reach them.
 --   * Matching happens inside the database (record_face_attendance), so descriptors never
 --     leave Postgres. The browser only ever sends a probe descriptor and receives a result.
---   * Every RPC requires an active HR Personnel account, the same gate the attendance import
---     uses, and every enrollment, deletion, and scan is audited.
+--   * Enrollment, listing, deletion, and the kiosk require an active HR Personnel account (the
+--     attendance import's gate). Self-scan requires an active employee account linked to a
+--     personnel record. Every enrollment, deletion, and scan is audited.
 --   * Attendance is written into the canonical public.attendance_logs table through the same
 --     status rules as the CSV/XLSX import, with capture_method = 'face_recognition'.
 
@@ -281,21 +287,78 @@ as $$
   left join public.attendance_logs log on log.id = scan_row.attendance_log_id;
 $$;
 
-create or replace function private.record_face_attendance(target_scan_id uuid, target_descriptor real[])
+-- Idempotency: waits for any concurrent attempt with this scan ID and returns its stored result,
+-- or null when the scan ID is new. A scan ID can only be replayed by the account that created it.
+create or replace function private.previous_face_scan(target_scan_id uuid, caller_id uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare scan_row private.face_attendance_scans%rowtype;
+begin
+  if target_scan_id is null then
+    raise exception 'A scan ID is required.' using errcode = '22023';
+  end if;
+  perform pg_advisory_xact_lock(hashtext('face_scan:' || target_scan_id::text));
+  select * into scan_row from private.face_attendance_scans where id = target_scan_id;
+  if not found then
+    return null;
+  end if;
+  if scan_row.recorded_by_user_id is distinct from caller_id then
+    raise exception 'This scan belongs to another session.' using errcode = '42501';
+  end if;
+  return private.face_scan_result(scan_row);
+end;
+$$;
+
+create or replace function private.require_face_attendance_enabled()
+returns private.face_recognition_settings
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare settings_row private.face_recognition_settings%rowtype;
+begin
+  select * into settings_row from private.face_recognition_settings where id;
+  if not found or not settings_row.is_enabled then
+    raise exception 'Face attendance is unavailable.' using errcode = 'P0001';
+  end if;
+  return settings_row;
+end;
+$$;
+
+-- Records a scan that matched no one (or not the signed-in employee). Writes no attendance.
+create or replace function private.reject_face_scan(target_scan_id uuid, target_distance double precision, caller_id uuid, target_metadata jsonb)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare scan_row private.face_attendance_scans%rowtype;
+begin
+  insert into private.face_attendance_scans (id, outcome, match_distance, message, recorded_by_user_id)
+  values (target_scan_id, 'not_recognized', target_distance, 'Face not recognized.', caller_id)
+  returning * into scan_row;
+  insert into public.audit_logs (actor_user_id, entity_type, entity_id, action, metadata)
+  values (caller_id, 'face_attendance_scans', target_scan_id::text, 'not_recognized', target_metadata);
+  return private.face_scan_result(scan_row);
+end;
+$$;
+
+-- Applies the attendance rules for an identified employee. Shared by the HR kiosk and self-scan.
+create or replace function private.write_face_attendance(target_scan_id uuid, target_employee_id uuid, target_distance double precision, caller_id uuid, target_mode text)
 returns jsonb
 language plpgsql
 security definer
 set search_path = ''
 as $$
 declare
-  caller_id uuid := private.require_active_hr();
-  settings_row private.face_recognition_settings%rowtype;
+  settings_row private.face_recognition_settings%rowtype := private.require_face_attendance_enabled();
   schedule_row public.attendance_integration_settings%rowtype;
   face_integration_id uuid;
   scan_row private.face_attendance_scans%rowtype;
-  best_employee uuid;
-  best_distance double precision;
-  runner_up_distance double precision;
   employee_row public.employees%rowtype;
   log_row public.attendance_logs%rowtype;
   scan_time timestamptz := now();
@@ -304,30 +367,90 @@ declare
   result_message text;
   result_log_id uuid;
 begin
-  if target_scan_id is null then
-    raise exception 'A scan ID is required.' using errcode = '22023';
-  end if;
-
-  -- Idempotency: a retried scan returns the outcome it already produced.
-  perform pg_advisory_xact_lock(hashtext('face_scan:' || target_scan_id::text));
-  select * into scan_row from private.face_attendance_scans where id = target_scan_id;
-  if found then
-    return private.face_scan_result(scan_row);
-  end if;
-
-  if not private.is_valid_face_descriptor(target_descriptor) then
-    raise exception 'The face sample is invalid. Scan again.' using errcode = '22023';
-  end if;
-  select * into settings_row from private.face_recognition_settings where id;
-  if not found or not settings_row.is_enabled then
-    raise exception 'Face attendance is unavailable.' using errcode = 'P0001';
-  end if;
   select id into face_integration_id from public.attendance_integration_settings where adapter_key = 'face_recognition';
   -- Face scans follow the organization schedule configured for the attendance integration.
   select * into schedule_row from public.attendance_integration_settings where adapter_key = 'csv_xlsx';
   if face_integration_id is null or schedule_row.id is null then
     raise exception 'Face attendance is unavailable.' using errcode = 'P0001';
   end if;
+
+  select * into employee_row from public.employees where id = target_employee_id;
+  scan_date := (scan_time at time zone schedule_row.timezone)::date;
+
+  -- Serialize scans of one employee on one day across kiosks, devices, and retries.
+  perform pg_advisory_xact_lock(hashtext('face_attendance:' || target_employee_id::text || ':' || scan_date::text));
+
+  if exists (select 1 from public.attendance_logs where employee_id = target_employee_id and attendance_date = scan_date and capture_method = 'import') then
+    result_outcome := 'rejected';
+    result_message := 'Attendance for today was already imported for this employee.';
+  else
+    select * into log_row from public.attendance_logs
+    where employee_id = target_employee_id and attendance_date = scan_date and capture_method = 'face_recognition'
+    for update;
+
+    if not found then
+      insert into public.attendance_logs (employee_id, integration_id, source_event_id, external_employee_id, attendance_date, time_in, time_out, status, import_id, capture_method, sync_metadata)
+      values (target_employee_id, face_integration_id, 'face:' || target_employee_id::text || ':' || scan_date::text, employee_row.employee_number, scan_date, scan_time, null, 'incomplete', null, 'face_recognition', jsonb_build_object('scanId', target_scan_id, 'mode', target_mode))
+      returning id into result_log_id;
+      result_outcome := 'time_in';
+    elsif log_row.time_out is not null then
+      result_outcome := 'already_recorded';
+      result_message := 'Time in and time out are already recorded for today.';
+      result_log_id := log_row.id;
+    elsif scan_time < log_row.time_in + make_interval(mins => settings_row.min_time_out_minutes) then
+      result_outcome := 'already_recorded';
+      result_message := 'Time in is already recorded. Scan again later to record time out.';
+      result_log_id := log_row.id;
+    else
+      update public.attendance_logs
+      set time_out = scan_time,
+          status = case when (log_row.time_in at time zone schedule_row.timezone)::time > schedule_row.workday_start + make_interval(mins => schedule_row.late_grace_minutes) then 'late' else 'present' end,
+          sync_metadata = sync_metadata || jsonb_build_object('timeOutScanId', target_scan_id, 'timeOutMode', target_mode)
+      where id = log_row.id;
+      result_log_id := log_row.id;
+      result_outcome := 'time_out';
+    end if;
+  end if;
+
+  insert into private.face_attendance_scans (id, outcome, employee_id, attendance_log_id, match_distance, message, recorded_by_user_id, created_at)
+  values (target_scan_id, result_outcome, target_employee_id, result_log_id, target_distance, result_message, caller_id, scan_time)
+  returning * into scan_row;
+
+  insert into public.audit_logs (actor_user_id, entity_type, entity_id, action, metadata)
+  values (
+    caller_id,
+    case when result_log_id is null then 'face_attendance_scans' else 'attendance_logs' end,
+    coalesce(result_log_id::text, target_scan_id::text),
+    'face_' || result_outcome,
+    jsonb_build_object('employee_id', target_employee_id, 'scan_id', target_scan_id, 'mode', target_mode)
+  );
+
+  return private.face_scan_result(scan_row);
+end;
+$$;
+
+-- HR kiosk: identify (1:N) among every enrollment.
+create or replace function private.record_face_attendance(target_scan_id uuid, target_descriptor real[])
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  caller_id uuid := private.require_active_hr();
+  previous jsonb := private.previous_face_scan(target_scan_id, caller_id);
+  settings_row private.face_recognition_settings%rowtype;
+  best_employee uuid;
+  best_distance double precision;
+  runner_up_distance double precision;
+begin
+  if previous is not null then
+    return previous;
+  end if;
+  if not private.is_valid_face_descriptor(target_descriptor) then
+    raise exception 'The face sample is invalid. Scan again.' using errcode = '22023';
+  end if;
+  settings_row := private.require_face_attendance_enabled();
 
   select ranked.employee_id, ranked.distance into best_employee, best_distance
   from (
@@ -349,66 +472,88 @@ begin
   if best_employee is null
      or best_distance > settings_row.match_threshold
      or (runner_up_distance is not null and runner_up_distance - best_distance < settings_row.ambiguity_margin) then
-    insert into private.face_attendance_scans (id, outcome, match_distance, message, recorded_by_user_id, created_at)
-    values (target_scan_id, 'not_recognized', best_distance, 'Face not recognized.', caller_id, scan_time)
-    returning * into scan_row;
-    insert into public.audit_logs (actor_user_id, entity_type, entity_id, action, metadata)
-    values (caller_id, 'face_attendance_scans', target_scan_id::text, 'not_recognized', '{}'::jsonb);
-    return private.face_scan_result(scan_row);
+    return private.reject_face_scan(target_scan_id, best_distance, caller_id, jsonb_build_object('mode', 'kiosk'));
   end if;
 
-  select * into employee_row from public.employees where id = best_employee;
-  scan_date := (scan_time at time zone schedule_row.timezone)::date;
+  return private.write_face_attendance(target_scan_id, best_employee, best_distance, caller_id, 'kiosk');
+end;
+$$;
 
-  -- Serialize scans of one employee on one day across kiosks and retries.
-  perform pg_advisory_xact_lock(hashtext('face_attendance:' || best_employee::text || ':' || scan_date::text));
+-- The signed-in employee's own employee record, or an authorization error.
+create or replace function private.require_active_employee_self()
+returns uuid
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare
+  caller_id uuid := (select auth.uid());
+  own_employee uuid;
+begin
+  select employee.id into own_employee
+  from public.employees employee
+  join public.profiles profile on profile.id = employee.profile_id
+  join public.user_roles user_role on user_role.user_id = profile.id
+  where profile.id = caller_id and profile.is_active and user_role.role = 'employee'::public.app_role;
+  if caller_id is null or own_employee is null then
+    raise exception 'An active employee account linked to a personnel record is required.' using errcode = '42501';
+  end if;
+  return own_employee;
+end;
+$$;
 
-  if exists (select 1 from public.attendance_logs where employee_id = best_employee and attendance_date = scan_date and capture_method = 'import') then
-    result_outcome := 'rejected';
-    result_message := 'Attendance for today was already imported for this employee.';
-  else
-    select * into log_row from public.attendance_logs
-    where employee_id = best_employee and attendance_date = scan_date and capture_method = 'face_recognition'
-    for update;
+create or replace function private.get_my_face_registration()
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare
+  own_employee uuid := private.require_active_employee_self();
+  registered_at timestamptz;
+begin
+  select enrollment.updated_at into registered_at from private.employee_face_enrollments enrollment where enrollment.employee_id = own_employee;
+  return jsonb_build_object('registered', registered_at is not null, 'updatedAt', registered_at);
+end;
+$$;
 
-    if not found then
-      insert into public.attendance_logs (employee_id, integration_id, source_event_id, external_employee_id, attendance_date, time_in, time_out, status, import_id, capture_method, sync_metadata)
-      values (best_employee, face_integration_id, 'face:' || best_employee::text || ':' || scan_date::text, employee_row.employee_number, scan_date, scan_time, null, 'incomplete', null, 'face_recognition', jsonb_build_object('scanId', target_scan_id))
-      returning id into result_log_id;
-      result_outcome := 'time_in';
-    elsif log_row.time_out is not null then
-      result_outcome := 'already_recorded';
-      result_message := 'Time in and time out are already recorded for today.';
-      result_log_id := log_row.id;
-    elsif scan_time < log_row.time_in + make_interval(mins => settings_row.min_time_out_minutes) then
-      result_outcome := 'already_recorded';
-      result_message := 'Time in is already recorded. Scan again later to record time out.';
-      result_log_id := log_row.id;
-    else
-      update public.attendance_logs
-      set time_out = scan_time,
-          status = case when (log_row.time_in at time zone schedule_row.timezone)::time > schedule_row.workday_start + make_interval(mins => schedule_row.late_grace_minutes) then 'late' else 'present' end,
-          sync_metadata = sync_metadata || jsonb_build_object('timeOutScanId', target_scan_id)
-      where id = log_row.id;
-      result_log_id := log_row.id;
-      result_outcome := 'time_out';
-    end if;
+-- Employee self-scan: verify (1:1) against only the signed-in employee's own enrollment, so an
+-- employee session can never probe anyone else's face template.
+create or replace function private.record_my_face_attendance(target_scan_id uuid, target_descriptor real[])
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  own_employee uuid := private.require_active_employee_self();
+  caller_id uuid := (select auth.uid());
+  previous jsonb := private.previous_face_scan(target_scan_id, caller_id);
+  settings_row private.face_recognition_settings%rowtype;
+  own_distance double precision;
+begin
+  if previous is not null then
+    return previous;
+  end if;
+  if not private.is_valid_face_descriptor(target_descriptor) then
+    raise exception 'The face sample is invalid. Scan again.' using errcode = '22023';
+  end if;
+  settings_row := private.require_face_attendance_enabled();
+
+  select private.face_descriptor_distance(enrollment.descriptor, target_descriptor) into own_distance
+  from private.employee_face_enrollments enrollment
+  where enrollment.employee_id = own_employee;
+  if not found then
+    raise exception 'Your face is not registered yet. Ask HR to register it.' using errcode = 'P0001';
   end if;
 
-  insert into private.face_attendance_scans (id, outcome, employee_id, attendance_log_id, match_distance, message, recorded_by_user_id, created_at)
-  values (target_scan_id, result_outcome, best_employee, result_log_id, best_distance, result_message, caller_id, scan_time)
-  returning * into scan_row;
+  if own_distance > settings_row.match_threshold then
+    return private.reject_face_scan(target_scan_id, own_distance, caller_id, jsonb_build_object('mode', 'self', 'employee_id', own_employee));
+  end if;
 
-  insert into public.audit_logs (actor_user_id, entity_type, entity_id, action, metadata)
-  values (
-    caller_id,
-    case when result_log_id is null then 'face_attendance_scans' else 'attendance_logs' end,
-    coalesce(result_log_id::text, target_scan_id::text),
-    'face_' || result_outcome,
-    jsonb_build_object('employee_id', best_employee, 'scan_id', target_scan_id)
-  );
-
-  return private.face_scan_result(scan_row);
+  return private.write_face_attendance(target_scan_id, own_employee, own_distance, caller_id, 'self');
 end;
 $$;
 
@@ -493,6 +638,14 @@ create or replace function public.record_face_attendance(target_scan_id uuid, ta
 returns jsonb language plpgsql security definer set search_path = ''
 as $$ begin return private.record_face_attendance(target_scan_id, target_descriptor); end; $$;
 
+create or replace function public.record_my_face_attendance(target_scan_id uuid, target_descriptor real[])
+returns jsonb language plpgsql security definer set search_path = ''
+as $$ begin return private.record_my_face_attendance(target_scan_id, target_descriptor); end; $$;
+
+create or replace function public.get_my_face_registration()
+returns jsonb language plpgsql stable security definer set search_path = ''
+as $$ begin return private.get_my_face_registration(); end; $$;
+
 revoke all on function
   private.is_valid_face_descriptor(real[]),
   private.face_descriptor_distance(real[], real[]),
@@ -501,19 +654,30 @@ revoke all on function
   private.delete_employee_face_enrollment(uuid),
   private.purge_face_enrollment_on_deactivation(),
   private.face_scan_result(private.face_attendance_scans),
-  private.record_face_attendance(uuid, real[])
+  private.previous_face_scan(uuid, uuid),
+  private.require_face_attendance_enabled(),
+  private.reject_face_scan(uuid, double precision, uuid, jsonb),
+  private.write_face_attendance(uuid, uuid, double precision, uuid, text),
+  private.record_face_attendance(uuid, real[]),
+  private.require_active_employee_self(),
+  private.get_my_face_registration(),
+  private.record_my_face_attendance(uuid, real[])
 from public, anon, authenticated;
 
 revoke all on function
   public.list_face_enrollments(),
   public.enroll_employee_face(uuid, real[], integer, boolean),
   public.delete_employee_face_enrollment(uuid),
-  public.record_face_attendance(uuid, real[])
+  public.record_face_attendance(uuid, real[]),
+  public.record_my_face_attendance(uuid, real[]),
+  public.get_my_face_registration()
 from public, anon;
 
 grant execute on function
   public.list_face_enrollments(),
   public.enroll_employee_face(uuid, real[], integer, boolean),
   public.delete_employee_face_enrollment(uuid),
-  public.record_face_attendance(uuid, real[])
+  public.record_face_attendance(uuid, real[]),
+  public.record_my_face_attendance(uuid, real[]),
+  public.get_my_face_registration()
 to authenticated;
