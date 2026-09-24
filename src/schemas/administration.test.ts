@@ -8,7 +8,7 @@ import {
   managedUserFiltersSchema,
   managedUserUpdateSchema,
   organizationSettingsSchema,
-  positionSchema,
+  rankSchema,
   referenceDataFiltersSchema,
 } from "./administration";
 
@@ -23,9 +23,13 @@ describe("administration schemas", () => {
     ).toBe(true);
   });
 
+  it("validates a rank with a code and seniority order", () => {
+    expect(rankSchema.parse({ name: "Police Corporal", code: "PCpl", sortOrder: 2 })).toEqual({ name: "Police Corporal", code: "PCpl", sortOrder: 2, isActive: true });
+  });
+
   it("rejects blank reference data and invalid settings", () => {
     expect(departmentSchema.safeParse({ name: "   " }).success).toBe(false);
-    expect(positionSchema.safeParse({ title: "", code: "   " }).success).toBe(false);
+    expect(rankSchema.safeParse({ name: "Police Corporal", code: "", sortOrder: 2 }).success).toBe(false);
     expect(
       organizationSettingsSchema.safeParse({
         organizationName: "HRIS",

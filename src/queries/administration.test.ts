@@ -21,7 +21,7 @@ import {
   listAuditLogs,
   listManagedUsers,
   saveOrganizationSettings,
-  savePosition,
+  saveRank,
   updateManagedUser,
 } from "./administration";
 
@@ -207,18 +207,17 @@ describe("administration queries", () => {
       .rejects.toThrow("Administrator access is required.");
   });
 
-  it("serializes position and organization settings fields for RLS-protected writes", async () => {
+  it("serializes rank and organization settings fields for RLS-protected writes", async () => {
     const chain = createChain({ data: { id: 1 }, error: null });
     mocks.from.mockReturnValue(chain);
 
-    await savePosition({ departmentId: 3, title: "Engineer", code: "ENG", description: "Builds systems", isActive: true });
+    await saveRank({ name: "Police Corporal", code: "PCpl", sortOrder: 2, isActive: true });
     await saveOrganizationSettings({ organizationName: "HRIS", supportEmail: "support@example.com", defaultTimezone: "Asia/Ulaanbaatar" });
 
     expect(chain.insert).toHaveBeenCalledWith({
-      department_id: 3,
-      title: "Engineer",
-      code: "ENG",
-      description: "Builds systems",
+      name: "Police Corporal",
+      code: "PCpl",
+      sort_order: 2,
       is_active: true,
     });
     expect(chain.upsert).toHaveBeenCalledWith({

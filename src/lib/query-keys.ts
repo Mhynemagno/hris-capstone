@@ -14,8 +14,8 @@ export const queryKeys = {
       ["administration", "roles", filters] as const,
     departments: (filters: Record<string, unknown> = {}) =>
       ["administration", "departments", filters] as const,
-    positions: (filters: Record<string, unknown> = {}) =>
-      ["administration", "positions", filters] as const,
+    ranks: (filters: Record<string, unknown> = {}) =>
+      ["administration", "ranks", filters] as const,
     settings: () => ["administration", "settings"] as const,
     auditLogs: (filters: Record<string, unknown>) =>
       ["administration", "audit-logs", filters] as const,

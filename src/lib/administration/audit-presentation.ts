@@ -3,7 +3,7 @@ import type { AppRole } from "@/lib/types/roles";
 
 export type AuditPresentationLookups = {
   departments: Record<string, string>;
-  positions: Record<string, string>;
+  ranks: Record<string, string>;
   profiles: Record<string, string>;
 };
 
@@ -45,9 +45,9 @@ function resourceLabel(log: AuditLog, lookups: AuditPresentationLookups) {
         const departmentName = textValue(metadata.name) ?? lookups.departments[log.entity_id];
         return departmentName ? quoted("Department", departmentName) : `Department #${log.entity_id}`;
       }
-    case "positions": {
-      const positionTitle = textValue(metadata.title) ?? lookups.positions[log.entity_id];
-      return positionTitle ? quoted("Position", positionTitle) : `Position #${log.entity_id}`;
+    case "ranks": {
+      const rankName = textValue(metadata.name) ?? lookups.ranks[log.entity_id];
+      return rankName ? quoted("Rank", rankName) : `Rank #${log.entity_id}`;
     }
     case "profiles":
     case "user_roles": {

@@ -49,7 +49,7 @@ export const ROLE_CONFIG: Record<AppRole, RoleConfig> = {
       { href: "/admin/users", label: "Account management", icon: "Users", group: "Access" },
       { href: "/admin/audit-logs", label: "Audit logs", icon: "ScrollText", group: "Access" },
       { href: "/admin/departments", label: "Departments", icon: "Building2", group: "Organization" },
-      { href: "/admin/positions", label: "Positions", icon: "BriefcaseBusiness", group: "Organization" },
+      { href: "/admin/ranks", label: "Ranks", icon: "BriefcaseBusiness", group: "Organization" },
       { href: "/admin/settings", label: "Settings", icon: "Settings", group: "System" },
       { href: "/admin/integrations/attendance", label: "Attendance integration", icon: "Fingerprint", group: "System" },
     ],

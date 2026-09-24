@@ -6,8 +6,6 @@ import { deleteRecord, getDeletionImpact, type DeletableEntityType } from "@/que
 
 /** Query keys to refresh after each kind of deletion so lists update immediately. */
 const invalidationKeys: Record<DeletableEntityType, readonly (readonly string[])[]> = {
-  department: [["administration", "departments"], ["administration", "positions"], ["administration", "audit-logs"]],
-  position: [["administration", "positions"], ["administration", "audit-logs"]],
   leave_type: [["leave-management"], ["administration", "audit-logs"]],
   promotion_criterion: [["promotion-eligibility"], ["administration", "audit-logs"]],
   job_opening: [["recruitment"], ["reporting"], ["administration", "audit-logs"]],

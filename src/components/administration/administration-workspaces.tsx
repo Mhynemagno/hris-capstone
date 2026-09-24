@@ -18,22 +18,20 @@ import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { LoadingState } from "@/components/ui/loading-state";
 import { nativeSelectClassName } from "@/components/ui/native-select";
-import { Textarea } from "@/components/ui/textarea";
 import {
   useAuditLogs,
-  useDepartmentOptions,
   useDepartments,
   useInviteInternalUser,
   useManagedUsers,
   useOrganizationSettings,
-  usePositions,
+  useRanks,
   useSaveDepartment,
   useSaveOrganizationSettings,
-  useSavePosition,
+  useSaveRank,
   useUpdateManagedUser,
 } from "@/hooks/use-administration";
 import type { AuditLogDisplay } from "@/lib/administration/audit-presentation";
-import type { Department, ManagedUser, Position } from "@/lib/types/database";
+import type { Department, ManagedUser, Rank } from "@/lib/types/database";
 import { APP_ROLES, type AppRole } from "@/lib/types/roles";
 import { cn } from "@/lib/utils";
 import {
@@ -41,12 +39,12 @@ import {
   internalInvitationSchema,
   managedUserUpdateSchema,
   organizationSettingsSchema,
-  positionSchema,
+  rankSchema,
   type DepartmentInput,
   type InternalInvitationInput,
   type ManagedUserUpdateInput,
   type OrganizationSettingsInput,
-  type PositionInput,
+  type RankInput,
 } from "@/schemas/administration";
 
 const roleLabels: Record<AppRole, string> = {
@@ -425,7 +423,6 @@ export function DepartmentsWorkspace() {
   const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<Department | null>(null);
   const [creating, setCreating] = useState(false);
-  const [deleting, setDeleting] = useState<Department | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const result = useDepartments({ page, pageSize: 20, ...(search ? { search } : {}), ...(status ? { status } : {}) });
@@ -458,7 +455,7 @@ export function DepartmentsWorkspace() {
         <Button className="w-full sm:w-auto" onClick={() => setCreating(true)} type="button">Add department</Button>
       </div>
       <p className="text-sm text-muted-foreground">
-        Deactivated departments are hidden from new records but stay on historic ones. Only a department nothing refers to can be deleted.
+        Deactivated departments are hidden from new records but stay on historic ones.
       </p>
       {actionError ? <ErrorState message={actionError} /> : null}
       <SuccessMessage message={notice} />
@@ -479,13 +476,12 @@ export function DepartmentsWorkspace() {
               >
                 {department.is_active ? "Deactivate" : "Activate"}
               </Button>
-              <Button aria-label={`Delete ${department.name}`} onClick={() => setDeleting(department)} size="sm" type="button" variant="destructive">Delete</Button>
             </RowActions>
           </tr>
         )) : <tr><EmptyTableState colSpan={3} message="No departments match these filters." /></tr>}
       </DataTable>
       <PaginatedTableControls onPageChange={setPage} page={page} pageSize={20} totalCount={result.data?.count ?? 0} />
-      <AdministrationFormPanel description="Create a department for positions, personnel, and job openings." onOpenChange={setCreating} open={creating} title="Add department">
+      <AdministrationFormPanel description="Create a department for personnel and job openings." onOpenChange={setCreating} open={creating} title="Add department">
         <DepartmentForm onSaved={async (input) => { await save.mutateAsync({ input }); setCreating(false); setNotice(`${input.name} was added.`); }} pending={save.isPending} />
       </AdministrationFormPanel>
       {editing ? (
@@ -493,163 +489,128 @@ export function DepartmentsWorkspace() {
           <DepartmentForm department={editing} key={editing.id} onSaved={async (input) => { await save.mutateAsync({ input, departmentId: editing.id }); setEditing(null); setNotice("Department saved."); }} pending={save.isPending} />
         </AdministrationFormPanel>
       ) : null}
-      <DeleteRecordDialog
-        alternative={deleting?.is_active ? { label: "Deactivate instead", onSelect: () => setActive(deleting, false) } : undefined}
-        entityId={deleting?.id ?? null}
-        entityType="department"
-        noun="department"
-        onClose={() => setDeleting(null)}
-        onDeleted={() => setNotice("The department was permanently deleted.")}
-      />
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Positions
+// Ranks (shared by every department; deactivated, never deleted)
 // ---------------------------------------------------------------------------
 
-function PositionForm({ departments, onSaved, pending, position }: { departments: Department[]; onSaved: (input: PositionInput) => Promise<void>; pending: boolean; position?: Position }) {
-  const form = useForm<z.input<typeof positionSchema>, unknown, PositionInput>({
-    resolver: zodResolver(positionSchema),
+function RankForm({ onSaved, pending, rank }: { onSaved: (input: RankInput) => Promise<void>; pending: boolean; rank?: Rank }) {
+  const form = useForm<z.input<typeof rankSchema>, unknown, RankInput>({
+    resolver: zodResolver(rankSchema),
     defaultValues: {
-      departmentId: position?.department_id ?? null,
-      title: position?.title ?? "",
-      code: position?.code ?? "",
-      description: position?.description ?? "",
-      isActive: position?.is_active ?? true,
+      name: rank?.name ?? "",
+      code: rank?.code ?? "",
+      sortOrder: rank?.sort_order ?? "",
+      isActive: rank?.is_active ?? true,
     },
   });
   const [error, setError] = useState<string | null>(null);
   const errors = form.formState.errors;
-  // Active departments, plus the position's current department even if it was deactivated.
-  const choices = departments.filter((department) => department.is_active || department.id === position?.department_id);
 
-  async function submit(values: PositionInput) {
+  async function submit(values: RankInput) {
     setError(null);
     try {
       await onSaved(values);
     } catch (cause) {
-      setError(errorMessage(cause, "We could not save the position."));
+      setError(errorMessage(cause, "We could not save the rank."));
     }
   }
 
   return (
     <form className="space-y-4" noValidate onSubmit={form.handleSubmit(submit)}>
-      <FormField error={errors.title?.message} htmlFor="position-title" label="Title" required>
-        <Input id="position-title" {...form.register("title")} />
+      <FormField error={errors.name?.message} htmlFor="rank-name" label="Name" required>
+        <Input id="rank-name" {...form.register("name")} />
       </FormField>
-      <FormField description="Job openings and personnel records only offer positions from their department." error={errors.departmentId?.message} htmlFor="position-department" label="Department">
-        <select className={nativeSelectClassName} id="position-department" {...form.register("departmentId", { setValueAs: (value) => (value ? Number(value) : null) })}>
-          <option value="">No department</option>
-          {choices.map((department) => (
-            <option key={department.id} value={department.id}>{department.name}{department.is_active ? "" : " (inactive)"}</option>
-          ))}
-        </select>
+      <FormField description="Short code shown with the rank, for example Pat." error={errors.code?.message} htmlFor="rank-code" label="Code" required>
+        <Input id="rank-code" {...form.register("code")} />
       </FormField>
-      <FormField description="Optional short code, for example PAT." error={errors.code?.message} htmlFor="position-code" label="Code">
-        <Input id="position-code" {...form.register("code")} />
+      <FormField description="Seniority order: 1 is the most junior rank." error={errors.sortOrder?.message} htmlFor="rank-order" label="Order" required>
+        <Input id="rank-order" inputMode="numeric" type="number" {...form.register("sortOrder")} />
       </FormField>
-      <FormField error={errors.description?.message} htmlFor="position-description" label="Description">
-        <Textarea id="position-description" {...form.register("description")} />
-      </FormField>
-      <CheckboxField {...form.register("isActive")}>Position is active</CheckboxField>
+      <CheckboxField {...form.register("isActive")}>Rank is active</CheckboxField>
       {error ? <ErrorState message={error} /> : null}
-      <Button className="w-full" disabled={pending} type="submit">{pending ? "Saving…" : "Save position"}</Button>
+      <Button className="w-full" disabled={pending} type="submit">{pending ? "Saving…" : "Save rank"}</Button>
     </form>
   );
 }
 
-export function PositionsWorkspace() {
+export function RanksWorkspace() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<StatusFilter>("");
   const [page, setPage] = useState(1);
-  const [editing, setEditing] = useState<Position | null>(null);
+  const [editing, setEditing] = useState<Rank | null>(null);
   const [creating, setCreating] = useState(false);
-  const [deleting, setDeleting] = useState<Position | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const result = usePositions({ page, pageSize: 20, ...(search ? { search } : {}), ...(status ? { status } : {}) });
-  const departmentResult = useDepartmentOptions();
-  const save = useSavePosition();
-  const departments = useMemo(() => departmentResult.data ?? [], [departmentResult.data]);
-  const departmentNames = useMemo(() => new Map(departments.map((department) => [department.id, department.name])), [departments]);
+  const result = useRanks({ page, pageSize: 20, ...(search ? { search } : {}), ...(status ? { status } : {}) });
+  const save = useSaveRank();
   const resetPage = (callback: () => void) => {
     callback();
     setPage(1);
   };
 
-  async function setActive(position: Position, isActive: boolean) {
+  async function setActive(rank: Rank, isActive: boolean) {
     setActionError(null);
     setNotice(null);
     try {
-      await save.mutateAsync({
-        positionId: position.id,
-        input: { departmentId: position.department_id, title: position.title, code: position.code ?? undefined, description: position.description ?? undefined, isActive },
-      });
-      setNotice(`${position.title} was ${isActive ? "reactivated" : "deactivated"}.`);
+      await save.mutateAsync({ rankId: rank.id, input: { name: rank.name, code: rank.code, sortOrder: rank.sort_order, isActive } });
+      setNotice(`${rank.name} was ${isActive ? "reactivated" : "deactivated"}.`);
     } catch (cause) {
-      setActionError(errorMessage(cause, "We could not update the position."));
+      setActionError(errorMessage(cause, "We could not update the rank."));
       throw cause;
     }
   }
 
-  if (result.isLoading) return <LoadingState label="Loading positions…" />;
+  if (result.isLoading) return <LoadingState label="Loading ranks…" />;
   if (result.error) return <ErrorWithRetry error={result.error} onRetry={() => void result.refetch()} />;
   const rows = result.data?.rows ?? [];
 
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <ReferenceFilters label="positions" onSearchChange={(value) => resetPage(() => setSearch(value))} onStatusChange={(value) => resetPage(() => setStatus(value))} search={search} status={status} />
-        <Button className="w-full sm:w-auto" onClick={() => setCreating(true)} type="button">Add position</Button>
+        <ReferenceFilters label="ranks" onSearchChange={(value) => resetPage(() => setSearch(value))} onStatusChange={(value) => resetPage(() => setStatus(value))} search={search} status={status} />
+        <Button className="w-full sm:w-auto" onClick={() => setCreating(true)} type="button">Add rank</Button>
       </div>
       <p className="text-sm text-muted-foreground">
-        Deactivate positions that are no longer used. Only a position with no personnel, openings, service history, or promotion criteria can be deleted.
+        Every rank is available in every department. Deactivated ranks are hidden from new records but stay on historic ones.
       </p>
       {actionError ? <ErrorState message={actionError} /> : null}
       <SuccessMessage message={notice} />
-      <DataTable caption="Positions" columns={["Position", "Department", "Code", "Status", "Actions"]} minWidth="min-w-[760px]">
-        {rows.length ? rows.map((position) => (
-          <tr className="border-t" key={position.id}>
-            <td className="px-4 py-3 font-semibold">{position.title}</td>
-            <td className="px-4 py-3">{position.department_id ? departmentNames.get(position.department_id) ?? "—" : "No department"}</td>
-            <td className="px-4 py-3 text-muted-foreground">{position.code || "—"}</td>
-            <td className="px-4 py-3"><StatusBadge active={position.is_active} /></td>
+      <DataTable caption="Ranks" columns={["Code", "Name", "Order", "Status", "Actions"]} minWidth="min-w-[640px]">
+        {rows.length ? rows.map((rank) => (
+          <tr className="border-t" key={rank.id}>
+            <td className="px-4 py-3 font-semibold">{rank.code}</td>
+            <td className="px-4 py-3">{rank.name}</td>
+            <td className="px-4 py-3 text-muted-foreground">{rank.sort_order}</td>
+            <td className="px-4 py-3"><StatusBadge active={rank.is_active} /></td>
             <RowActions>
-              <Button onClick={() => setEditing(position)} size="sm" type="button" variant="outline">Edit</Button>
+              <Button onClick={() => setEditing(rank)} size="sm" type="button" variant="outline">Edit</Button>
               <Button
-                aria-label={`${position.is_active ? "Deactivate" : "Activate"} ${position.title}`}
+                aria-label={`${rank.is_active ? "Deactivate" : "Activate"} ${rank.name}`}
                 disabled={save.isPending}
-                onClick={() => void setActive(position, !position.is_active).catch(() => undefined)}
+                onClick={() => void setActive(rank, !rank.is_active).catch(() => undefined)}
                 size="sm"
                 type="button"
                 variant="outline"
               >
-                {position.is_active ? "Deactivate" : "Activate"}
+                {rank.is_active ? "Deactivate" : "Activate"}
               </Button>
-              <Button aria-label={`Delete ${position.title}`} onClick={() => setDeleting(position)} size="sm" type="button" variant="destructive">Delete</Button>
             </RowActions>
           </tr>
-        )) : <tr><EmptyTableState colSpan={5} message="No positions match these filters." /></tr>}
+        )) : <tr><EmptyTableState colSpan={5} message="No ranks match these filters." /></tr>}
       </DataTable>
       <PaginatedTableControls onPageChange={setPage} page={page} pageSize={20} totalCount={result.data?.count ?? 0} />
-      <AdministrationFormPanel description="Create a position and choose the department it belongs to." onOpenChange={setCreating} open={creating} title="Add position">
-        <PositionForm departments={departments} onSaved={async (input) => { await save.mutateAsync({ input }); setCreating(false); setNotice(`${input.title} was added.`); }} pending={save.isPending} />
+      <AdministrationFormPanel description="Add a police rank. It becomes available in every department." onOpenChange={setCreating} open={creating} title="Add rank">
+        <RankForm onSaved={async (input) => { await save.mutateAsync({ input, rankId: undefined }); setCreating(false); setNotice(`${input.name} was added.`); }} pending={save.isPending} />
       </AdministrationFormPanel>
       {editing ? (
-        <AdministrationFormPanel description="Changes preserve position history and department references." onOpenChange={(open) => { if (!open) setEditing(null); }} open title="Edit position">
-          <PositionForm departments={departments} key={editing.id} onSaved={async (input) => { await save.mutateAsync({ input, positionId: editing.id }); setEditing(null); setNotice("Position saved."); }} pending={save.isPending} position={editing} />
+        <AdministrationFormPanel description="Changes are audited and historical references are preserved." onOpenChange={(open) => { if (!open) setEditing(null); }} open title="Edit rank">
+          <RankForm key={editing.id} onSaved={async (input) => { await save.mutateAsync({ input, rankId: editing.id }); setEditing(null); setNotice("Rank saved."); }} pending={save.isPending} rank={editing} />
         </AdministrationFormPanel>
       ) : null}
-      <DeleteRecordDialog
-        alternative={deleting?.is_active ? { label: "Deactivate instead", onSelect: () => setActive(deleting, false) } : undefined}
-        entityId={deleting?.id ?? null}
-        entityType="position"
-        noun="position"
-        onClose={() => setDeleting(null)}
-        onDeleted={() => setNotice("The position was permanently deleted.")}
-      />
     </div>
   );
 }

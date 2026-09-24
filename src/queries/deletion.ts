@@ -2,8 +2,6 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { deleteManagedUser } from "@/queries/administration";
 
 export const DELETABLE_ENTITY_TYPES = [
-  "department",
-  "position",
   "leave_type",
   "promotion_criterion",
   "job_opening",
@@ -28,8 +26,6 @@ export type DeletionImpact = {
 };
 
 const deleteRpc: Record<Exclude<DeletableEntityType, "managed_user">, { name: string; arg: string; numeric: boolean }> = {
-  department: { name: "delete_department", arg: "target_department_id", numeric: true },
-  position: { name: "delete_position", arg: "target_position_id", numeric: true },
   leave_type: { name: "delete_leave_type", arg: "target_leave_type_id", numeric: false },
   promotion_criterion: { name: "delete_promotion_criterion", arg: "target_criterion_id", numeric: false },
   job_opening: { name: "delete_draft_job_opening", arg: "target_job_id", numeric: true },
