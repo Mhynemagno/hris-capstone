@@ -3,6 +3,8 @@
 **Branch:** `feat/14-attendance-integration`
 **Goal:** Import attendance events from a validated CSV/XLSX export without retaining biometric templates or images. The import boundary remains replaceable by a documented biometric-vendor API or webhook.
 
+> **Policy update (2026-09-25):** The rule below that the HRIS stores no biometric data is superseded for face-recognition attendance. The HRIS now stores one 128-value face descriptor per consenting employee in the non-exposed `private` schema, and never stores face images. Face scans write into `attendance_logs` with `capture_method = 'face_recognition'` and no import. See the [face-recognition attendance design](2026-09-25-face-recognition-attendance-design.md). The CSV/XLSX import contract in this document is unchanged: imported rows still must not carry biometric payloads.
+
 ## Decisions
 
 - The initial adapter accepts a documented CSV/XLSX template. A future vendor adapter must produce the same normalized event contract; it may not bypass matching, validation, idempotency, or audit rules.

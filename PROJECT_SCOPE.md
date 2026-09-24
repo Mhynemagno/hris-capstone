@@ -101,7 +101,8 @@ Profile-change request statuses: `Pending`, `Approved`, `Rejected`, and optional
 - Synchronize login/logout time logs into the HRIS.
 - Show attendance status, time-in, time-out, late arrivals, absences, and attendance history.
 - Generate attendance reports.
-- The HRIS stores attendance logs only; it must not store raw biometric templates or fingerprint data.
+- Face-recognition kiosk (capstone demonstration): HR registers consenting employees' faces; at a supervised kiosk an employee looks at the camera and blinks, and the database matches the face and records time-in/time-out without the employee choosing a name.
+- Biometric data policy (updated 2026-09-25): the HRIS stores only a numeric face descriptor per consenting employee, isolated in a non-exposed schema, matched inside the database, deleted on request or account deactivation, and audited. It does not store face images, fingerprint data, or raw vendor biometric payloads. Blink detection is a basic liveness cue, not production-grade anti-spoofing. See `docs/superpowers/specs/2026-09-25-face-recognition-attendance-design.md`.
 
 ### 4.11 Analytics Dashboard and Reports
 
@@ -127,7 +128,7 @@ Profile-change request statuses: `Pending`, `Approved`, `Rejected`, and optional
 | File storage | Supabase Storage | Résumés, credentials, leave attachments, and profile-change evidence. |
 | Backend operations | Supabase Data API and Edge Functions | CRUD through the generated API; secure multi-step workflows and integrations through Edge Functions. |
 | AI integration | An external AI model/API via Supabase Edge Function | Resume parsing, criteria matching, applicant ranking, and recommendation explanations. |
-| Attendance integration | Biometric vendor cloud API | Syncs attendance logs into Supabase. |
+| Attendance integration | CSV/XLSX import (vendor API later) and browser face recognition (`@vladmandic/face-api`) | Imports device logs; the kiosk records face-verified time-in/out through a database RPC. |
 
 ## 6. Backend Design Decision
 
@@ -161,7 +162,7 @@ The initial database design should include, at minimum:
 - HR makes final hiring decisions; AI only assists with shortlisting and ranking.
 - Management is read-only.
 - The selected biometric device must have a supported cloud/API integration before purchase. Confirm its documentation and export/webhook/API capability first.
-- Development and demonstration data must not contain real sensitive personnel or biometric data unless the institution/client provides explicit approval and adequate safeguards.
+- Development and demonstration data must not contain real sensitive personnel or biometric data unless the institution/client provides explicit approval and adequate safeguards. Face registration uses only test subjects or people who gave informed consent.
 
 ## 9. Recommended Implementation Order
 

@@ -8,6 +8,7 @@ import { LoadingState } from "@/components/ui/loading-state";
 import { useHrAttendanceLogs } from "@/hooks/use-attendance-integration";
 
 import { AttendanceStatusBadge } from "./attendance-status-badge";
+import { formatAttendanceTime } from "./attendance-time";
 
 export function HrAttendanceDirectory() {
   const query = useHrAttendanceLogs({ page: 1, pageSize: 25 });
@@ -21,13 +22,15 @@ export function HrAttendanceDirectory() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">{total > rows.length ? `Showing ${rows.length} of ${total} records` : total === 1 ? "1 record" : `${total} records`}</p>
         <div className="flex flex-wrap gap-2">
+          <Link className={buttonVariants({ variant: "outline" })} href="/hr/attendance/face-enrollment">Face registration</Link>
+          <Link className={buttonVariants({ variant: "outline" })} href="/hr/attendance/kiosk">Attendance kiosk</Link>
           <Link className={buttonVariants({ variant: "outline" })} href="/hr/attendance/unmatched">Unmatched IDs</Link>
           <Link className={buttonVariants()} href="/hr/attendance/import">Import attendance</Link>
         </div>
       </div>
       <div className="relative overflow-x-auto rounded-xl border">
         <table className="w-full min-w-[640px] text-left text-sm">
-          <caption className="sr-only">Imported attendance records</caption>
+          <caption className="sr-only">Attendance records</caption>
           <thead className="bg-muted/60">
             <tr>
               <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Date</th>
@@ -35,6 +38,7 @@ export function HrAttendanceDirectory() {
               <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Time in</th>
               <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Time out</th>
               <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Status</th>
+              <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Source</th>
             </tr>
           </thead>
           <tbody>
@@ -42,13 +46,14 @@ export function HrAttendanceDirectory() {
               <tr className="border-t" key={row.id}>
                 <td className="px-4 py-3 align-top whitespace-nowrap">{row.attendance_date}</td>
                 <td className="px-4 py-3 align-top">{row.external_employee_id}</td>
-                <td className="px-4 py-3 align-top tabular-nums">{row.time_in?.slice(11, 16) ?? "—"}</td>
-                <td className="px-4 py-3 align-top tabular-nums">{row.time_out?.slice(11, 16) ?? "—"}</td>
+                <td className="px-4 py-3 align-top tabular-nums">{formatAttendanceTime(row.time_in)}</td>
+                <td className="px-4 py-3 align-top tabular-nums">{formatAttendanceTime(row.time_out)}</td>
                 <td className="px-4 py-3 align-top"><AttendanceStatusBadge status={row.status} /></td>
+                <td className="px-4 py-3 align-top">{row.capture_method === "face_recognition" ? "Face scan" : "Import"}</td>
               </tr>
             )) : (
               <tr>
-                <td className="px-4 py-10 text-center text-muted-foreground" colSpan={5}>
+                <td className="px-4 py-10 text-center text-muted-foreground" colSpan={6}>
                   No attendance records yet. <Link className="font-medium text-primary underline underline-offset-4" href="/hr/attendance/import">Import an attendance file</Link> to get started.
                 </td>
               </tr>
