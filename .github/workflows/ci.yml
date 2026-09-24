@@ -49,6 +49,24 @@ jobs:
       - name: Seed the disposable local database for browser tests
         run: supabase db reset --local --yes
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install app dependencies for the browser tests
+        run: npm ci
+
+      - name: Expose the local Supabase URL and key to Playwright
+        run: |
+          supabase status --output env > supabase.env
+          url=$(grep '^API_URL=' supabase.env | cut -d= -f2- | tr -d '"')
+          key=$(grep '^PUBLISHABLE_KEY=' supabase.env | cut -d= -f2- | tr -d '"')
+          [ -n "$key" ] || key=$(grep '^ANON_KEY=' supabase.env | cut -d= -f2- | tr -d '"')
+          rm supabase.env
+          echo "HRIS_E2E_SUPABASE_URL=$url" >> "$GITHUB_ENV"
+          echo "HRIS_E2E_SUPABASE_PUBLISHABLE_KEY=$key" >> "$GITHUB_ENV"
+
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
 

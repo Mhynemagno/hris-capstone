@@ -41,6 +41,8 @@ const localSupabase = getLocalSupabaseEnvironment();
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false,
+  // A couple of workers keep the run fast without starving the app server.
+  workers: process.env.CI ? 1 : 2,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
   reporter: "list",
@@ -51,10 +53,14 @@ export default defineConfig({
     ...(process.platform === "win32" ? { channel: "msedge" } : {}),
   },
   webServer: {
-    command: "npm run dev -- --hostname 127.0.0.1 --port 3000",
+    // Test the production build: `next dev` compiles each route on first visit
+    // and was slow and memory-hungry enough to time out or crash mid-run.
+    // NEXT_PUBLIC_* values below are inlined at build time, so the build always
+    // targets the local Supabase stack.
+    command: "npm run build && npm run start -- --hostname 127.0.0.1 --port 3000",
     url: "http://localhost:3000",
     reuseExistingServer: false,
-    timeout: 120_000,
+    timeout: 300_000,
     env: {
       ...process.env,
       NEXT_PUBLIC_SUPABASE_URL: localSupabase.url,
