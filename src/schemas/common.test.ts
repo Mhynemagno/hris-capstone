@@ -24,6 +24,7 @@ describe("shared foundation schemas", () => {
       pageSize: 25,
     });
     expect(employeeNumberSchema.parse("EMP-2026-001")).toBe("EMP-2026-001");
-    expect(() => employeeNumberSchema.parse("employee 1")).toThrow();
+    expect(employeeNumberSchema.parse(" pat-0001 ")).toBe("PAT-0001");
+    expect(() => employeeNumberSchema.parse("P1")).toThrow();
   });
 });

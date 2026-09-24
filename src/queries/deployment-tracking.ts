@@ -61,12 +61,13 @@ export async function listEmployeeOptions(): Promise<EmployeeOption[]> {
   }));
 }
 
+/** Fields shared by create and update. A deployment's employee is fixed once created. */
 function rpcPayload(input: ReturnType<typeof deploymentInputSchema.parse>) {
-  return { target_employee_id: input.employeeId, target_location: input.location, target_unit: input.unit, target_project: input.project, target_assignment_role: input.assignmentRole, target_starts_on: input.startsOn, target_ends_on: input.endsOn, target_status: input.status, target_notes: input.notes };
+  return { target_location: input.location, target_unit: input.unit, target_project: input.project, target_assignment_role: input.assignmentRole, target_starts_on: input.startsOn, target_ends_on: input.endsOn, target_status: input.status, target_notes: input.notes };
 }
 
 export async function createDeployment(input: unknown) {
-  const values = deploymentInputSchema.parse(input); const { data, error } = await createBrowserSupabaseClient().rpc("create_deployment", rpcPayload(values)); throwIfError(error); return data as string;
+  const values = deploymentInputSchema.parse(input); const { data, error } = await createBrowserSupabaseClient().rpc("create_deployment", { target_employee_id: values.employeeId, ...rpcPayload(values) }); throwIfError(error); return data as string;
 }
 
 export async function updateDeployment(input: unknown) {

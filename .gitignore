@@ -3,6 +3,7 @@
 # dependencies
 /node_modules
 /.worktrees
+/.claude/worktrees
 /.pnp
 .pnp.*
 .yarn/*

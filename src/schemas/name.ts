@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import "./error-messages";
+
 export const namePartsSchema = z.object({
   firstName: z.string().trim().min(1, "First name is required.").max(60),
   lastName: z.string().trim().min(1, "Last name is required.").max(60),

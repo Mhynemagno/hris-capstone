@@ -26,21 +26,25 @@ import {
   useOrganizationSettings,
   useRanks,
   useSaveDepartment,
+  useSaveUnitStation,
+  useUnitStationCatalogue,
   useSaveOrganizationSettings,
   useSaveRank,
   useUpdateManagedUser,
 } from "@/hooks/use-administration";
 import type { AuditLogDisplay } from "@/lib/administration/audit-presentation";
-import type { Department, ManagedUser, Rank } from "@/lib/types/database";
+import type { Department, ManagedUser, Rank, UnitStation } from "@/lib/types/database";
 import { APP_ROLES, type AppRole } from "@/lib/types/roles";
 import { cn } from "@/lib/utils";
 import {
   departmentSchema,
+  unitStationSchema,
   internalInvitationSchema,
   managedUserUpdateSchema,
   organizationSettingsSchema,
   rankSchema,
   type DepartmentInput,
+  type UnitStationInput,
   type InternalInvitationInput,
   type ManagedUserUpdateInput,
   type OrganizationSettingsInput,
@@ -487,6 +491,113 @@ export function DepartmentsWorkspace() {
       {editing ? (
         <AdministrationFormPanel description="Changes are audited and historical references are preserved." onOpenChange={(open) => { if (!open) setEditing(null); }} open title="Edit department">
           <DepartmentForm department={editing} key={editing.id} onSaved={async (input) => { await save.mutateAsync({ input, departmentId: editing.id }); setEditing(null); setNotice("Department saved."); }} pending={save.isPending} />
+        </AdministrationFormPanel>
+      ) : null}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Unit stations (used by personnel records and deployments)
+// ---------------------------------------------------------------------------
+
+function UnitStationForm({ onSaved, pending, unitStation }: { onSaved: (input: UnitStationInput) => Promise<void>; pending: boolean; unitStation?: UnitStation }) {
+  const form = useForm<z.input<typeof unitStationSchema>, unknown, UnitStationInput>({
+    resolver: zodResolver(unitStationSchema),
+    defaultValues: { name: unitStation?.name ?? "", isActive: unitStation?.is_active ?? true },
+  });
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit(values: UnitStationInput) {
+    setError(null);
+    try {
+      await onSaved(values);
+    } catch (cause) {
+      setError(errorMessage(cause, "We could not save the unit/station."));
+    }
+  }
+
+  return (
+    <form className="space-y-4" noValidate onSubmit={form.handleSubmit(submit)}>
+      <FormField description={unitStation ? "A name already used on personnel or deployment records cannot be changed; add the corrected station and deactivate this one." : undefined} error={form.formState.errors.name?.message} htmlFor="unit-station-name" label="Name" required>
+        <Input id="unit-station-name" {...form.register("name")} />
+      </FormField>
+      <CheckboxField {...form.register("isActive")}>Unit/station is active</CheckboxField>
+      {error ? <ErrorState message={error} /> : null}
+      <Button className="w-full" disabled={pending} type="submit">{pending ? "Saving…" : "Save unit/station"}</Button>
+    </form>
+  );
+}
+
+export function UnitStationsWorkspace() {
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<StatusFilter>("");
+  const [page, setPage] = useState(1);
+  const [editing, setEditing] = useState<UnitStation | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const result = useUnitStationCatalogue({ page, pageSize: 20, ...(search ? { search } : {}), ...(status ? { status } : {}) });
+  const save = useSaveUnitStation();
+  const resetPage = (callback: () => void) => {
+    callback();
+    setPage(1);
+  };
+
+  async function setActive(unitStation: UnitStation, isActive: boolean) {
+    setActionError(null);
+    setNotice(null);
+    try {
+      await save.mutateAsync({ unitStationId: unitStation.id, input: { name: unitStation.name, isActive } });
+      setNotice(`${unitStation.name} was ${isActive ? "reactivated" : "deactivated"}.`);
+    } catch (cause) {
+      setActionError(errorMessage(cause, "We could not update the unit/station."));
+    }
+  }
+
+  if (result.isLoading) return <LoadingState label="Loading unit stations…" />;
+  if (result.error) return <ErrorWithRetry error={result.error} onRetry={() => void result.refetch()} />;
+  const rows = result.data?.rows ?? [];
+
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <ReferenceFilters label="unit stations" onSearchChange={(value) => resetPage(() => setSearch(value))} onStatusChange={(value) => resetPage(() => setStatus(value))} search={search} status={status} />
+        <Button className="w-full sm:w-auto" onClick={() => setCreating(true)} type="button">Add unit/station</Button>
+      </div>
+      <p className="text-sm text-muted-foreground">
+        Active stations appear in the Unit / Station field of personnel records and the Unit assignment field of deployments. Deactivated stations stay on historic records.
+      </p>
+      {actionError ? <ErrorState message={actionError} /> : null}
+      <SuccessMessage message={notice} />
+      <DataTable caption="Unit stations" columns={["Unit/station", "Status", "Actions"]} minWidth="min-w-[560px]">
+        {rows.length ? rows.map((unitStation) => (
+          <tr className="border-t" key={unitStation.id}>
+            <td className="px-4 py-3 font-semibold">{unitStation.name}</td>
+            <td className="px-4 py-3"><StatusBadge active={unitStation.is_active} /></td>
+            <RowActions>
+              <Button aria-label={`Edit ${unitStation.name}`} onClick={() => setEditing(unitStation)} size="sm" type="button" variant="outline">Edit</Button>
+              <Button
+                aria-label={`${unitStation.is_active ? "Deactivate" : "Activate"} ${unitStation.name}`}
+                disabled={save.isPending}
+                onClick={() => void setActive(unitStation, !unitStation.is_active)}
+                size="sm"
+                type="button"
+                variant="outline"
+              >
+                {unitStation.is_active ? "Deactivate" : "Activate"}
+              </Button>
+            </RowActions>
+          </tr>
+        )) : <tr><EmptyTableState colSpan={3} message={search || status ? "No unit stations match these filters." : "No unit stations yet. Add the station's precincts and units so they can be assigned."} /></tr>}
+      </DataTable>
+      <PaginatedTableControls onPageChange={setPage} page={page} pageSize={20} totalCount={result.data?.count ?? 0} />
+      <AdministrationFormPanel description="Create a unit or station for personnel records and deployments." onOpenChange={setCreating} open={creating} title="Add unit/station">
+        <UnitStationForm onSaved={async (input) => { await save.mutateAsync({ input }); setCreating(false); setNotice(`${input.name} was added.`); }} pending={save.isPending} />
+      </AdministrationFormPanel>
+      {editing ? (
+        <AdministrationFormPanel description="Changes are audited and historical references are preserved." onOpenChange={(open) => { if (!open) setEditing(null); }} open title="Edit unit/station">
+          <UnitStationForm key={editing.id} onSaved={async (input) => { await save.mutateAsync({ input, unitStationId: editing.id }); setEditing(null); setNotice("Unit/station saved."); }} pending={save.isPending} unitStation={editing} />
         </AdministrationFormPanel>
       ) : null}
     </div>

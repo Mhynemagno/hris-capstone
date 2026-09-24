@@ -15,11 +15,21 @@ vi.mock("@/hooks/use-deployment-tracking", () => ({
   }),
 }));
 
+const unitStations = vi.hoisted(() => ({ data: [{ id: 1, name: "Station 1" }] as { id: number; name: string }[] | undefined }));
 vi.mock("@/hooks/use-personnel-records", () => ({
-  useUnitStations: () => ({ data: [{ id: 1, name: "Station 1" }] }),
+  useUnitStations: () => ({ data: unitStations.data }),
 }));
 
 describe("DeploymentForm", () => {
+  it("keeps a saved unit selected after the catalogue finishes loading", () => {
+    unitStations.data = undefined;
+    const deployment = { id: "d1", employee_id: "123e4567-e89b-42d3-a456-426614174000", location: null, unit: "Station 1", project: null, assignment_role: "Patrol", starts_on: "2026-09-25", ends_on: null, status: "active", notes: null, updated_at: "2026-09-25T00:00:00Z" };
+    const view = render(<DeploymentForm deployment={deployment as never} onSaved={vi.fn()} />);
+    unitStations.data = [{ id: 1, name: "Station 1" }, { id: 2, name: "Station 2" }];
+    view.rerender(<DeploymentForm deployment={deployment as never} onSaved={vi.fn()} />);
+    expect(screen.getByLabelText("Unit assignment")).toHaveValue("Station 1");
+  });
+
   it("offers a searchable employee picker and a unit assignment without an end date input", async () => {
     const user = userEvent.setup();
     render(<DeploymentForm onSaved={vi.fn()} />);

@@ -28,6 +28,11 @@ export const departmentSchema = z.object({
   isActive: z.boolean().default(true),
 });
 
+export const unitStationSchema = z.object({
+  name: z.string().trim().min(2).max(160),
+  isActive: z.boolean().default(true),
+});
+
 export const rankSchema = z.object({
   name: z.string().trim().min(2).max(160),
   code: z.string().trim().min(1).max(16),
@@ -71,6 +76,7 @@ export type ManagedUserDeleteInput = z.infer<typeof managedUserDeleteSchema>;
 export type InternalInvitationInput = z.infer<typeof internalInvitationSchema>;
 export type DepartmentInput = z.infer<typeof departmentSchema>;
 export type RankInput = z.infer<typeof rankSchema>;
+export type UnitStationInput = z.infer<typeof unitStationSchema>;
 export type OrganizationSettingsInput = z.infer<typeof organizationSettingsSchema>;
 export type AdministrationFilters = z.infer<typeof administrationFiltersSchema>;
 export type ManagedUserFilters = z.infer<typeof managedUserFiltersSchema>;

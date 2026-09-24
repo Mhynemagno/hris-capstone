@@ -49,6 +49,10 @@ function resourceLabel(log: AuditLog, lookups: AuditPresentationLookups) {
       const rankName = textValue(metadata.name) ?? lookups.ranks[log.entity_id];
       return rankName ? quoted("Rank", rankName) : `Rank #${log.entity_id}`;
     }
+    case "unit_stations": {
+      const stationName = textValue(metadata.name);
+      return stationName ? quoted("Unit/station", stationName) : `Unit/station #${log.entity_id}`;
+    }
     case "profiles":
     case "user_roles": {
       const accountId = textValue(metadata.user_id) ?? log.entity_id;

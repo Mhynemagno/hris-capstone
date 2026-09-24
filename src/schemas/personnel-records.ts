@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { isoDateSchema, uuidSchema } from "./common";
+import { employeeNumberSchema, isoDateSchema, uuidSchema } from "./common";
 
 const optionalText = (max: number) =>
   z.string().trim().max(max).transform((value) => value || undefined).optional();
@@ -49,7 +49,7 @@ const hasValidDateRange = (startKey: string, endKey: string) => (value: Record<s
 export const employeeSchema = z
   .object({
     profileId: uuidSchema.optional(),
-    employeeNumber: z.string().trim().toUpperCase().min(3).max(32),
+    employeeNumber: employeeNumberSchema,
     firstName: z.string().trim().min(1).max(80),
     middleName: optionalText(80),
     lastName: z.string().trim().min(1).max(80),

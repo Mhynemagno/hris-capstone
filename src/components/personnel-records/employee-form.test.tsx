@@ -117,7 +117,7 @@ describe("EmployeeForm", () => {
 
     await user.click(screen.getByRole("button", { name: /save employee/i }));
 
-    expect(screen.getByLabelText(/badge number/i).parentElement).toHaveTextContent(/expected string to have >=3 characters/i);
+    expect(screen.getByLabelText(/badge number/i).parentElement).toHaveTextContent("Badge number must be at least 3 characters.");
   });
 
   it("keeps the linked account, department, and rank when an existing employee is edited", async () => {

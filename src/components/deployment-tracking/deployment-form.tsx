@@ -108,7 +108,7 @@ export function DeploymentForm({ deployment, onSaved, pending = false }: Deploym
         htmlFor="unit"
         label="Unit assignment"
       >
-        <NativeSelect defaultValue={deployment?.unit ?? ""} id="unit" name="unit">
+        <NativeSelect key={unitStations.data ? "catalogue" : "loading"} defaultValue={deployment?.unit ?? ""} id="unit" name="unit">
           <option value="">Select a unit/station</option>
           {deployment?.unit && !unitStations.data?.some((unit) => unit.name === deployment.unit) ? <option value={deployment.unit}>{deployment.unit}</option> : null}
           {unitStations.data?.map((unit) => <option key={unit.id} value={unit.name}>{unit.name}</option>)}

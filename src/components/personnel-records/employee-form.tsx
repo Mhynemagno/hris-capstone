@@ -140,7 +140,7 @@ export function EmployeeForm({ employee, account, onSaved, pending = false }: Em
         htmlFor="unit-station"
         label="Unit / Station"
       >
-        <NativeSelect defaultValue={employee?.unit_station ?? ""} id="unit-station" name="unitStation">
+        <NativeSelect key={unitStations.data ? "catalogue" : "loading"} defaultValue={employee?.unit_station ?? ""} id="unit-station" name="unitStation">
           <option value="">Select a unit or station</option>
           {employee?.unit_station && !unitStations.data?.some((unit) => unit.name === employee.unit_station) ? <option value={employee.unit_station}>{employee.unit_station}</option> : null}
           {unitStations.data?.map((unit) => <option key={unit.id} value={unit.name}>{unit.name}</option>)}
