@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 const applicant = {
@@ -43,5 +44,16 @@ describe("ApplicantProfileForm", () => {
     expect(screen.getByLabelText("Place of birth")).toBeInTheDocument();
     expect(screen.getByLabelText("Date of birth")).toBeInTheDocument();
     expect(screen.getByLabelText("Civil status")).toBeInTheDocument();
+  });
+
+  it("uses a telephone input and shows validation next to the field", async () => {
+    const user = userEvent.setup();
+    render(<ApplicantProfileForm />);
+
+    expect(screen.getByLabelText("Phone")).toHaveAttribute("type", "tel");
+    await user.clear(screen.getByLabelText(/^first name/i));
+    await user.click(screen.getByRole("button", { name: "Save profile" }));
+
+    await waitFor(() => expect(screen.getByLabelText(/^first name/i)).toHaveAttribute("aria-invalid", "true"));
   });
 });

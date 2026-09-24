@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -7,6 +7,58 @@ import { EmployeeForm } from "./employee-form";
 vi.mock("@/hooks/use-personnel-records", () => ({
   useUnitStations: () => ({ data: [{ id: 1, name: "Station 1", is_active: true }], error: null }),
 }));
+
+const stamp = { created_at: "2026-01-01T00:00:00Z", updated_at: "2026-01-01T00:00:00Z" };
+vi.mock("@/hooks/use-administration", () => ({
+  useDepartmentOptions: () => ({
+    data: [
+      { id: 3, name: "Operations", is_active: true, ...stamp },
+      { id: 4, name: "Records", is_active: true, ...stamp },
+      { id: 5, name: "Legacy Unit", is_active: false, ...stamp },
+    ],
+    isLoading: false,
+    error: null,
+  }),
+  usePositionOptions: () => ({
+    data: [
+      { id: 7, department_id: 3, title: "Patrol Officer", code: null, description: null, is_active: true, ...stamp },
+      { id: 8, department_id: 3, title: "Retired Title", code: null, description: null, is_active: false, ...stamp },
+      { id: 9, department_id: 4, title: "Records Clerk", code: null, description: null, is_active: true, ...stamp },
+    ],
+    isLoading: false,
+    error: null,
+  }),
+}));
+
+const existingEmployee = {
+  id: "00000000-0000-4000-8000-000000000010",
+  profile_id: "00000000-0000-4000-8000-000000001604",
+  employee_number: "PAT-0001",
+  first_name: "Ana",
+  middle_name: null,
+  last_name: "Reyes",
+  qualifier: null,
+  place_of_birth: null,
+  date_of_birth: null,
+  sex: null,
+  civil_status: null,
+  religion: null,
+  rank: null,
+  unit_station: null,
+  profile_image_path: null,
+  personal_email: "ana@example.test",
+  phone: null,
+  address: null,
+  emergency_contact_name: null,
+  emergency_contact_phone: null,
+  department_id: 3,
+  position_id: 8,
+  employment_status: "active" as const,
+  employment_started_on: "2024-01-01",
+  employment_ended_on: null,
+  created_at: "2026-01-01T00:00:00Z",
+  updated_at: "2026-01-01T00:00:00Z",
+};
 
 describe("EmployeeForm", () => {
   it("exposes labelled official record fields and a save action", () => {
@@ -64,5 +116,51 @@ describe("EmployeeForm", () => {
     await user.click(screen.getByRole("button", { name: /save employee/i }));
 
     expect(screen.getByLabelText(/badge number/i).parentElement).toHaveTextContent(/expected string to have >=3 characters/i);
+  });
+
+  it("keeps the linked account, department, and position when an existing employee is edited", async () => {
+    const onSaved = vi.fn();
+    const user = userEvent.setup();
+    const { container } = render(<EmployeeForm employee={existingEmployee} onSaved={onSaved} />);
+
+    expect(container.querySelector('input[name="profileId"]')).toHaveValue(existingEmployee.profile_id);
+    expect(screen.getByLabelText("Department")).toHaveValue("3");
+    // The saved position is inactive but remains visible and selected.
+    expect(screen.getByLabelText("Position")).toHaveValue("8");
+    expect(screen.getByRole("option", { name: "Retired Title (inactive)" })).toBeInTheDocument();
+
+    await user.clear(screen.getByLabelText(/first name/i));
+    await user.type(screen.getByLabelText(/first name/i), "Anna");
+    await user.click(screen.getByRole("button", { name: /save employee/i }));
+
+    expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({
+      firstName: "Anna",
+      profileId: existingEmployee.profile_id,
+      departmentId: 3,
+      positionId: 8,
+    }));
+  });
+
+  it("filters positions by department and clears the position when the department changes", async () => {
+    const user = userEvent.setup();
+    render(<EmployeeForm employee={existingEmployee} onSaved={() => undefined} />);
+
+    const position = screen.getByLabelText("Position");
+    expect(within(position).queryByRole("option", { name: "Records Clerk" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: /legacy unit/i })).not.toBeInTheDocument();
+
+    await user.selectOptions(screen.getByLabelText("Department"), "4");
+
+    expect(position).toHaveValue("");
+    expect(within(position).getByRole("option", { name: "Records Clerk" })).toBeInTheDocument();
+    expect(within(position).queryByRole("option", { name: "Patrol Officer" })).not.toBeInTheDocument();
+  });
+
+  it("uses telephone inputs for phone numbers and ties the end date minimum to the start date", () => {
+    render(<EmployeeForm employee={existingEmployee} onSaved={() => undefined} />);
+
+    expect(screen.getByLabelText("Phone")).toHaveAttribute("type", "tel");
+    expect(screen.getByLabelText("Emergency contact phone")).toHaveAttribute("type", "tel");
+    expect(screen.getByLabelText(/employment end date/i)).toHaveAttribute("min", "2024-01-01");
   });
 });

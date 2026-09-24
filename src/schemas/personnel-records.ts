@@ -23,6 +23,23 @@ export const profilePhotoFileSchema = z.custom<File>(
   }
 });
 
+/**
+ * Suggested education levels for qualification dropdowns. The database keeps
+ * this column as free text (max 80 chars) so historic values stay valid; forms
+ * offer these choices and show any unlisted existing value as its own option.
+ */
+export const QUALIFICATION_LEVELS = [
+  "Elementary",
+  "High School",
+  "Senior High School",
+  "Vocational / Technical",
+  "Associate Degree",
+  "Bachelor's Degree",
+  "Master's Degree",
+  "Doctorate",
+  "Other",
+] as const;
+
 export const POLICE_RANKS = [
   "Patrolman / Patrolwoman (PAT)",
   "Police Corporal (PCpl)",

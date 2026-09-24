@@ -12,6 +12,7 @@ export default defineConfig({
     environment: "jsdom",
     exclude: [
       ...configDefaults.exclude,
+      "e2e/**",
       ".worktrees/**",
       "supabase/functions/**/*.test.ts",
     ],

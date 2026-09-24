@@ -11,6 +11,11 @@ const mocks = vi.hoisted(() => ({
   useUnreadNotificationCount: vi.fn(),
 }));
 
+vi.mock("@/hooks/use-deletion", () => ({
+  useDeletionImpact: () => ({ data: undefined, error: null, isLoading: false, refetch: vi.fn() }),
+  useDeleteRecord: () => ({ error: null, isPending: false, mutateAsync: vi.fn(), reset: vi.fn() }),
+}));
+
 vi.mock("@/hooks/use-notifications", () => ({
   useMarkAllNotificationsRead: mocks.useMarkAllNotificationsRead,
   useMarkNotificationRead: mocks.useMarkNotificationRead,

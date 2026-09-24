@@ -10,6 +10,7 @@ import {
   useUnreadNotificationCount,
 } from "@/hooks/use-notifications";
 
+import { DeleteRecordDialog } from "@/components/deletion/delete-record-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +28,8 @@ function formatNotificationDate(value: string) {
 
 export function NotificationInbox() {
   const [page, setPage] = useState(1);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const notifications = useNotifications({ page, pageSize });
   const unread = useUnreadNotificationCount();
   const markOne = useMarkNotificationRead();
@@ -39,7 +42,7 @@ export function NotificationInbox() {
     <section aria-labelledby="notifications-heading" className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-2">
-          <h1 id="notifications-heading" className="text-3xl font-semibold tracking-tight">Notifications</h1>
+          <h1 id="notifications-heading" className="text-3xl font-semibold tracking-tight sm:text-4xl">Notifications</h1>
           <p className="max-w-2xl text-muted-foreground">Review your HRIS updates and decisions.</p>
         </div>
         <Button
@@ -51,6 +54,7 @@ export function NotificationInbox() {
       </div>
 
       {mutationError ? <ErrorState message={mutationError.message} /> : null}
+      {notice ? <p aria-live="polite" className="text-sm font-medium text-emerald-700 dark:text-emerald-400">{notice}</p> : null}
       {notifications.isLoading ? <LoadingState label="Loading notifications" /> : null}
       {notifications.isError ? <ErrorState message={`${notifications.error.message} Please try again.`} /> : null}
       {notificationPage && notificationPage.rows.length === 0 ? (
@@ -84,15 +88,21 @@ export function NotificationInbox() {
                     View details
                   </Link>
                 ) : <span />}
-                {notification.read_at ? null : (
-                  <Button
-                    disabled={markOne.isPending}
-                    variant="secondary"
-                    onClick={() => markOne.mutate(notification.id)}
-                  >
-                    {`Mark ${notification.title} as read`}
+                <div className="flex flex-wrap justify-end gap-2">
+                  {notification.read_at ? null : (
+                    <Button
+                      aria-label={`Mark ${notification.title} as read`}
+                      disabled={markOne.isPending}
+                      variant="secondary"
+                      onClick={() => markOne.mutate(notification.id)}
+                    >
+                      Mark as read
+                    </Button>
+                  )}
+                  <Button aria-label={`Delete notification ${notification.title}`} onClick={() => setDeletingId(notification.id)} type="button" variant="ghost">
+                    Delete
                   </Button>
-                )}
+                </div>
               </CardFooter>
             </Card>
           ))}
@@ -109,6 +119,13 @@ export function NotificationInbox() {
           </Button>
         </div>
       ) : null}
+      <DeleteRecordDialog
+        entityId={deletingId}
+        entityType="notification"
+        noun="notification"
+        onClose={() => setDeletingId(null)}
+        onDeleted={() => setNotice("Notification deleted.")}
+      />
     </section>
   );
 }

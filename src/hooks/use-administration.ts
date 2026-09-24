@@ -8,8 +8,10 @@ import {
   deleteManagedUser,
   inviteInternalUser,
   listAuditLogs,
+  listDepartmentOptions,
   listDepartments,
   listManagedUsers,
+  listPositionOptions,
   listPositions,
   saveDepartment,
   saveOrganizationSettings,
@@ -61,6 +63,16 @@ export function useDepartments(filters: Partial<ReferenceDataFilters> = {}) {
 export function usePositions(filters: Partial<ReferenceDataFilters> = {}) {
   const parsed = referenceFilters(filters);
   return useQuery({ queryKey: queryKeys.administration.positions(parsed), queryFn: () => listPositions(parsed) });
+}
+
+/** All departments for dropdowns (not paginated). */
+export function useDepartmentOptions() {
+  return useQuery({ queryKey: queryKeys.administration.departments({ options: true }), queryFn: listDepartmentOptions });
+}
+
+/** All positions for dropdowns (not paginated); filter by department in the form. */
+export function usePositionOptions() {
+  return useQuery({ queryKey: queryKeys.administration.positions({ options: true }), queryFn: listPositionOptions });
 }
 
 export function useOrganizationSettings() {

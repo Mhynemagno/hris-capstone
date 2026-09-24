@@ -1,5 +1,6 @@
 import { HrApplicationList } from "@/components/recruitment/hr-application-list";
+import { PageHeader } from "@/components/ui/page-header";
 
 export default function HrApplicationsPage() {
-  return <div className="space-y-6"><div><p className="text-sm font-medium text-primary">Recruitment</p><h1 className="mt-1 text-3xl font-semibold tracking-tight">Application queue</h1><p className="mt-2 text-muted-foreground">Review applications, record decisions, and complete hiring handoffs.</p></div><HrApplicationList /></div>;
+  return <div className="space-y-6"><PageHeader description="Review applications, record decisions, and complete hiring handoffs." eyebrow="Recruitment" title="Application queue" /><HrApplicationList /></div>;
 }

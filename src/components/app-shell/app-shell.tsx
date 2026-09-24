@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, BriefcaseBusiness, ContactRound, LayoutDashboard, PanelLeft, ScrollText, Settings, ShieldCheck, Users } from "lucide-react";
+import { Building2, BriefcaseBusiness, CalendarDays, ChartColumn, Clock, ContactRound, FileText, Fingerprint, LayoutDashboard, MapPin, PanelLeft, ScrollText, Settings, ShieldCheck, TrendingUp, UserPen, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -18,6 +18,7 @@ import {
   BreadcrumbItem,
   BreadcrumbList,
   BreadcrumbPage,
+  BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -36,7 +37,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import type { RoleConfig } from "@/lib/app/role-config";
+import type { RoleConfig, RoleNavigationIcon, RoleNavigationItem } from "@/lib/app/role-config";
 
 type AppShellProps = {
   children: ReactNode;
@@ -48,7 +49,36 @@ function getInitials(email: string | null) {
   return email?.slice(0, 2).toUpperCase() ?? "HR";
 }
 
-const navigationIcons = { LayoutDashboard, Users, ShieldCheck, Building2, BriefcaseBusiness, Settings, ScrollText, ContactRound };
+const navigationIcons: Record<RoleNavigationIcon, typeof LayoutDashboard> = {
+  LayoutDashboard,
+  Users,
+  ShieldCheck,
+  Building2,
+  BriefcaseBusiness,
+  Settings,
+  ScrollText,
+  ContactRound,
+  FileText,
+  CalendarDays,
+  MapPin,
+  TrendingUp,
+  Clock,
+  Fingerprint,
+  ChartColumn,
+  UserPen,
+};
+
+/** Keeps configured order while grouping adjacent items under one heading. */
+function groupNavigation(items: readonly RoleNavigationItem[]) {
+  const groups: { label: string; items: RoleNavigationItem[] }[] = [];
+  for (const item of items) {
+    const label = item.group ?? "Main navigation";
+    const current = groups.at(-1);
+    if (current?.label === label) current.items.push(item);
+    else groups.push({ label, items: [item] });
+  }
+  return groups;
+}
 
 export function AppShell({ children, config, email }: AppShellProps) {
   const pathname = usePathname();
@@ -74,54 +104,56 @@ export function AppShell({ children, config, email }: AppShellProps) {
                 <LayoutDashboard aria-hidden="true" className="size-4" />
               </div>
               <div className="min-w-0 group-data-[collapsible=icon]:hidden">
-                <p className="truncate text-sm font-semibold">San Juan City Police</p>
-                <p className="truncate text-xs text-muted-foreground">
+                <p className="truncate text-base font-semibold">San Juan City Police</p>
+                <p className="truncate text-xs text-sidebar-foreground/80">
                   Workforce hub
                 </p>
               </div>
             </div>
           </SidebarHeader>
           <SidebarContent>
-            <SidebarGroup>
-              <SidebarGroupLabel>Main navigation</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <nav aria-label="Main navigation">
-                  <SidebarMenu>
-                    {config.navigation.map((item) => {
-                      const isActive = activeNavigationItem?.href === item.href;
-                      const Icon = navigationIcons[item.icon];
+            <nav aria-label="Main navigation">
+              {groupNavigation(config.navigation).map((group) => (
+                <SidebarGroup key={group.label}>
+                  <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      {group.items.map((item) => {
+                        const isActive = activeNavigationItem?.href === item.href;
+                        const Icon = navigationIcons[item.icon];
 
-                      return (
-                        <SidebarMenuItem key={item.href}>
-                          <SidebarMenuButton
-                            isActive={isActive}
-                            tooltip={item.label}
-                            render={
-                              <Link
-                                href={item.href}
-                                aria-current={isActive ? "page" : undefined}
-                              />
-                            }
-                          >
-                          <Icon aria-hidden="true" />
-                            <span>{item.label}</span>
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                      );
-                    })}
-                  </SidebarMenu>
-                </nav>
-              </SidebarGroupContent>
-            </SidebarGroup>
+                        return (
+                          <SidebarMenuItem key={item.href}>
+                            <SidebarMenuButton
+                              isActive={isActive}
+                              tooltip={item.label}
+                              render={
+                                <Link
+                                  href={item.href}
+                                  aria-current={isActive ? "page" : undefined}
+                                />
+                              }
+                            >
+                              <Icon aria-hidden="true" />
+                              <span>{item.label}</span>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        );
+                      })}
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </SidebarGroup>
+              ))}
+            </nav>
           </SidebarContent>
-          <SidebarFooter className="p-4">
-            <div className="space-y-3 rounded-xl border border-sidebar-border bg-sidebar-accent/60 p-3 group-data-[collapsible=icon]:hidden">
+          <SidebarFooter className="p-3">
+            <div className="space-y-2 rounded-xl border border-sidebar-border bg-sidebar-accent/60 p-2.5 group-data-[collapsible=icon]:hidden">
               <div className="flex items-center gap-3">
                 <Avatar className="size-9">
                   <AvatarFallback>{getInitials(email)}</AvatarFallback>
                 </Avatar>
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">{email ?? "Signed in"}</p>
+                  <p className="truncate text-sm font-medium" title={email ?? undefined}>{email ?? "Signed in"}</p>
                   <Badge className="mt-1" variant="secondary">
                     {config.label}
                   </Badge>
@@ -131,7 +163,7 @@ export function AppShell({ children, config, email }: AppShellProps) {
             </div>
           </SidebarFooter>
         </Sidebar>
-        <SidebarInset id="main-content">
+        <SidebarInset className="min-w-0" id="main-content">
           <header className="sticky top-0 z-10 flex h-16 items-center gap-3 border-b bg-background/90 px-4 backdrop-blur sm:px-6">
             <SidebarTrigger aria-label="Toggle sidebar" className="min-h-11 min-w-11">
               <PanelLeft aria-hidden="true" />
@@ -142,6 +174,7 @@ export function AppShell({ children, config, email }: AppShellProps) {
                 <BreadcrumbItem className="hidden sm:block">
                   <span className="text-muted-foreground">{config.label}</span>
                 </BreadcrumbItem>
+                <BreadcrumbSeparator className="hidden sm:block" />
                 <BreadcrumbItem>
                   <BreadcrumbPage>{currentPageLabel}</BreadcrumbPage>
                 </BreadcrumbItem>
@@ -152,8 +185,8 @@ export function AppShell({ children, config, email }: AppShellProps) {
               <AccountMenu email={email} roleLabel={config.label} />
             </div>
           </header>
-          <div className="flex flex-1 flex-col px-4 py-8 sm:px-6 lg:px-10">
-            <div className="mx-auto w-full max-w-6xl">{children}</div>
+          <div className="flex min-w-0 flex-1 flex-col px-4 py-8 sm:px-6 lg:px-10">
+            <div className="mx-auto w-full max-w-6xl min-w-0">{children}</div>
           </div>
         </SidebarInset>
       </SidebarProvider>

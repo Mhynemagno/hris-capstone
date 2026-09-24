@@ -63,16 +63,24 @@ export function createDeleteManagedUserHandler(
       return json(400, { error: "You cannot delete your own account." });
     }
 
-    const { data: roleRow, error: roleError } = await callerClient
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userData.user.id)
-      .maybeSingle();
-    if (roleError) {
-      return json(500, { error: "Unable to verify administrator access." });
-    }
-    if (roleRow?.role !== "system_administrator") {
-      return json(403, { error: "Administrator access is required." });
+    // Authorisation and integrity rules live in the database: the caller must
+    // be an active administrator, the target must not be the caller or the
+    // last active administrator, and nothing may still depend on the account.
+    const { data: impact, error: impactError } = await callerClient.rpc(
+      "assert_managed_user_deletable",
+      { target_user_id: parsed.data.userId },
+    );
+    if (impactError) {
+      if (impactError.code === "42501") {
+        return json(403, { error: "Administrator access is required." });
+      }
+      if (impactError.message === "Managed account was not found.") {
+        return json(404, { error: "Account not found." });
+      }
+      if (impactError.code === "P0001") {
+        return json(409, { error: impactError.message });
+      }
+      return json(500, { error: "Unable to verify this account can be deleted." });
     }
 
     const adminClient = createSupabaseClient(url, secretKey, {
@@ -92,7 +100,11 @@ export function createDeleteManagedUserHandler(
       parsed.data.userId,
     );
     if (deleteError) {
-      return json(500, { error: "Unable to delete this account." });
+      // Foreign keys still protect history if a record was linked after the check.
+      return json(409, {
+        error:
+          "This account could not be deleted because records now depend on it. Deactivate the account instead.",
+      });
     }
 
     const { error: auditError } = await adminClient.from("audit_logs").insert({
@@ -103,6 +115,7 @@ export function createDeleteManagedUserHandler(
       metadata: {
         full_name: targetProfile.full_name,
         email: targetProfile.email,
+        removed: impact?.removes ?? [],
       },
     });
     if (auditError) {

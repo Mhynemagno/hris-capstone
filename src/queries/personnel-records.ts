@@ -118,7 +118,7 @@ export async function getEmployeeForProfile(profileId: string) {
 
 function employeePayload(input: EmployeeInput) {
   return {
-    profile_id: input.profileId ?? null, employee_number: input.employeeNumber, first_name: input.firstName,
+    employee_number: input.employeeNumber, first_name: input.firstName,
     middle_name: input.middleName ?? null, last_name: input.lastName, qualifier: input.qualifier ?? null,
     place_of_birth: input.placeOfBirth ?? null, date_of_birth: input.dateOfBirth ?? null, sex: input.sex ?? null,
     civil_status: input.civilStatus ?? null, religion: input.religion ?? null, rank: input.rank ?? null,
@@ -131,11 +131,14 @@ function employeePayload(input: EmployeeInput) {
 }
 
 export async function saveEmployee(input: EmployeeInput, employeeId?: string) {
-  const values = employeePayload(employeeSchema.parse(input));
+  const parsed = employeeSchema.parse(input);
+  const values = employeePayload(parsed);
   const client = createBrowserSupabaseClient();
+  // Updates only touch profile_id when a link is explicitly supplied, so an edit
+  // can never unlink the employee's account by omitting it.
   const result = employeeId
-    ? await client.from("employees").update(values).eq("id", employeeId).select("*").single()
-    : await client.from("employees").insert(values).select("*").single();
+    ? await client.from("employees").update(parsed.profileId ? { ...values, profile_id: parsed.profileId } : values).eq("id", employeeId).select("*").single()
+    : await client.from("employees").insert({ ...values, profile_id: parsed.profileId ?? null }).select("*").single();
   throwIfError(result.error);
   return result.data as Employee;
 }
@@ -171,8 +174,17 @@ export async function savePersonnelEntry(kind: PersonnelKind, input: ServiceHist
   return result.data as PersonnelEntry;
 }
 
+/**
+ * Deletes a qualification, certification, or training entry (HR-only via RLS;
+ * the employee_record_history trigger keeps a copy). Entries used as promotion
+ * evidence are protected by a foreign key; explain that instead of a raw error.
+ */
 export async function deletePersonnelEntry(kind: PersonnelKind, id: string) {
+  if (kind === "serviceHistory") throw new Error("Service history is part of the official record and cannot be deleted.");
   const { error } = await createBrowserSupabaseClient().from(childConfig[kind].table).delete().eq("id", id);
+  if (error && "code" in error && error.code === "23503") {
+    throw new Error("This entry is used as evidence in a promotion evaluation, so it cannot be deleted. Keep it so the evaluation stays verifiable.");
+  }
   throwIfError(error);
 }
 

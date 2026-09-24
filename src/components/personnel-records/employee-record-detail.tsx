@@ -16,11 +16,80 @@ import { RecordEntryForm } from "./record-entry-form";
 const kinds: PersonnelKind[] = ["serviceHistory", "qualification", "certification"];
 const titles: Record<PersonnelKind, string> = { serviceHistory: "Service history", qualification: "Qualifications", certification: "Certifications", training: "Training" };
 
+function entryTitle(entry: { id: string } & Record<string, unknown>) {
+  if (typeof entry.name === "string") return entry.name;
+  if (typeof entry.course_name === "string") return entry.course_name;
+  return typeof entry.employment_title === "string" && entry.employment_title ? entry.employment_title : "Service entry";
+}
+
+function entryDetail(kind: PersonnelKind, entry: Record<string, unknown>) {
+  const parts = kind === "qualification"
+    ? [entry.qualification_level, entry.institution, entry.awarded_on]
+    : kind === "certification"
+      ? [entry.issuer, entry.issued_on && `Issued ${entry.issued_on}`, entry.expires_on && `Expires ${entry.expires_on}`]
+      : [entry.started_on && `${entry.started_on} – ${entry.ended_on ?? "present"}`];
+  return parts.filter(Boolean).join(" · ");
+}
+
 function Records({ employeeId, kind }: { employeeId: string; kind: PersonnelKind }) {
-  const entries = usePersonnelEntries(kind, employeeId); const save = useSavePersonnelEntry(kind, employeeId);
+  const entries = usePersonnelEntries(kind, employeeId);
+  const save = useSavePersonnelEntry(kind, employeeId);
+  const remove = useDeletePersonnelEntry(kind, employeeId);
+  const [deleting, setDeleting] = useState<{ id: string; title: string } | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  // Service history is the official employment record: it is added to, never deleted.
+  const deletable = kind !== "serviceHistory";
+  const noun = kind === "qualification" ? "qualification" : "certification";
+
+  async function confirmDelete() {
+    if (!deleting) return;
+    setDeleteError(null);
+    try {
+      await remove.mutateAsync(deleting.id);
+      setDeleting(null);
+    } catch (cause) {
+      setDeleteError(cause instanceof Error ? cause.message : `We could not delete this ${noun}.`);
+    }
+  }
+
   if (entries.isLoading) return <LoadingState label={`Loading ${titles[kind].toLowerCase()}…`} />;
   if (entries.error) return <ErrorState message={entries.error.message} />;
-  return <section className="rounded-xl border p-4"><h2 className="text-lg font-semibold">{titles[kind]}</h2><ul className="mt-3 space-y-2 text-sm">{entries.data?.length ? entries.data.map((entry) => <li className="rounded-lg bg-muted px-3 py-2" key={entry.id}>{"name" in entry ? entry.name : "course_name" in entry ? entry.course_name : entry.employment_title ?? "Service entry"}</li>) : <li className="text-muted-foreground">No {titles[kind].toLowerCase()} recorded.</li>}</ul><RecordEntryForm employeeId={employeeId} kind={kind} onSaved={async (input) => { await save.mutateAsync({ input: input as never }); }} pending={save.isPending} /></section>;
+  return (
+    <section className="rounded-xl border bg-card p-5">
+      <h2 className="font-heading text-xl font-semibold">{titles[kind]}</h2>
+      {kind === "serviceHistory" ? <p className="mt-1 text-sm text-muted-foreground">Service history is permanent. Add a new entry to record a change.</p> : null}
+      <ul className="mt-3 space-y-2">
+        {entries.data?.length ? entries.data.map((entry) => {
+          const record = entry as unknown as { id: string } & Record<string, unknown>;
+          const title = entryTitle(record);
+          const detail = entryDetail(kind, record);
+          return (
+            <li className="flex flex-col gap-3 rounded-lg bg-muted px-4 py-3 sm:flex-row sm:items-center sm:justify-between" key={entry.id}>
+              <div>
+                <p className="font-semibold">{title}</p>
+                {detail ? <p className="text-sm text-muted-foreground">{detail}</p> : null}
+              </div>
+              {deletable ? (
+                <Button aria-label={`Delete ${noun} ${title}`} onClick={() => { setDeleteError(null); setDeleting({ id: entry.id, title }); }} size="sm" type="button" variant="destructive">Delete</Button>
+              ) : null}
+            </li>
+          );
+        }) : <li className="text-muted-foreground">No {titles[kind].toLowerCase()} recorded.</li>}
+      </ul>
+      {deleting ? (
+        <div aria-labelledby={`delete-${kind}-title`} className="mt-4 rounded-xl border border-destructive/30 bg-destructive/5 p-4" role="alertdialog">
+          <h3 className="font-semibold" id={`delete-${kind}-title`}>Delete this {noun}?</h3>
+          <p className="mt-1 text-sm text-muted-foreground">This permanently removes “{deleting.title}” from the employee record. A copy is kept in the record history for auditing. Entries used as promotion evidence cannot be deleted.</p>
+          {deleteError ? <p className="mt-2 text-sm font-medium text-destructive" role="alert">{deleteError}</p> : null}
+          <div className="mt-3 flex gap-2">
+            <Button disabled={remove.isPending} onClick={() => void confirmDelete()} size="sm" type="button" variant="destructive">{remove.isPending ? "Deleting…" : `Delete ${noun}`}</Button>
+            <Button disabled={remove.isPending} onClick={() => setDeleting(null)} size="sm" type="button" variant="outline">Cancel</Button>
+          </div>
+        </div>
+      ) : null}
+      <RecordEntryForm employeeId={employeeId} kind={kind} onSaved={async (input) => { await save.mutateAsync({ input: input as never }); }} pending={save.isPending} />
+    </section>
+  );
 }
 
 function TrainingRecords({ employeeId }: { employeeId: string }) {

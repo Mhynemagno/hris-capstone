@@ -1,14 +1,18 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useFieldArray, useForm } from "react-hook-form";
-import { useEffect, useState } from "react";
+import { useFieldArray, useForm, useWatch } from "react-hook-form";
+import { useState } from "react";
 import type { z } from "zod";
 
+import { DepartmentPositionFields } from "@/components/personnel-records/department-position-fields";
+import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
-import { useDepartments, usePositions } from "@/hooks/use-administration";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Textarea } from "@/components/ui/textarea";
+import { useDepartmentOptions, usePositionOptions } from "@/hooks/use-administration";
 import { useSaveJobOpening } from "@/hooks/use-recruitment";
 import { jobOpeningSchema, type JobOpeningInput } from "@/schemas/recruitment";
 import type { JobOpening, JobQualificationCriterion } from "@/lib/types/database";
@@ -17,70 +21,158 @@ type HrJobFormProps = {
   job?: JobOpening & { job_qualification_criteria?: JobQualificationCriterion[]; applications?: Array<{ count: number }> };
 };
 
-function defaults(job?: HrJobFormProps["job"]): JobOpeningInput {
-  return {
-    departmentId: job?.department_id ?? 1,
-    positionId: job?.position_id ?? 1,
-    title: job?.title ?? "",
-    description: job?.description ?? "",
-    location: job?.location ?? "",
-    closesOn: job?.closes_on ?? undefined,
-    status: job?.status ?? "draft",
-    criteria: (job?.job_qualification_criteria ?? []).map((criterion) => ({
+type JobFormValues = z.input<typeof jobOpeningSchema>;
+
+function defaults(job?: HrJobFormProps["job"]): JobFormValues {
+  const criteria = (job?.job_qualification_criteria ?? [])
+    .map((criterion) => ({
       id: criterion.id,
       ordinal: criterion.ordinal,
       kind: criterion.kind,
       requirement: criterion.requirement,
       isRequired: criterion.is_required,
-    })).sort((left, right) => left.ordinal - right.ordinal) || [],
+    }))
+    .sort((left, right) => left.ordinal - right.ordinal);
+  return {
+    // No silent default: HR must choose an active department and position.
+    departmentId: job?.department_id ?? undefined,
+    positionId: job?.position_id ?? undefined,
+    title: job?.title ?? "",
+    description: job?.description ?? "",
+    location: job?.location ?? "",
+    closesOn: job?.closes_on ?? undefined,
+    status: job?.status ?? "draft",
+    criteria: criteria.length ? criteria : [{ ordinal: 1, kind: "experience", requirement: "", isRequired: true }],
   };
 }
 
+function toSelectValue(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? String(value) : typeof value === "string" ? value : "";
+}
+
 export function HrJobForm({ job }: HrJobFormProps) {
-  const departments = useDepartments({ pageSize: 20 });
-  const positions = usePositions({ pageSize: 20 });
+  const departments = useDepartmentOptions();
+  const positions = usePositionOptions();
   const save = useSaveJobOpening();
   const [error, setError] = useState<string | null>(null);
-  const form = useForm<z.input<typeof jobOpeningSchema>, unknown, JobOpeningInput>({
+  const [success, setSuccess] = useState<string | null>(null);
+  const form = useForm<JobFormValues, unknown, JobOpeningInput>({
     resolver: zodResolver(jobOpeningSchema),
-    defaultValues: { ...defaults(job), criteria: defaults(job).criteria.length ? defaults(job).criteria : [{ ordinal: 1, kind: "experience", requirement: "", isRequired: true }] },
+    defaultValues: defaults(job),
   });
   const criteria = useFieldArray({ control: form.control, name: "criteria" });
-  const departmentRows = departments.data?.rows ?? [];
-  const positionRows = positions.data?.rows ?? [];
-  const defaultDepartmentId = departments.data?.rows?.[0]?.id;
-  const defaultPositionId = positions.data?.rows?.[0]?.id;
   const hasApplications = (job?.applications?.[0]?.count ?? 0) > 0;
-  useEffect(() => {
-    if (job) return;
-    if (defaultDepartmentId) form.setValue("departmentId", defaultDepartmentId);
-    if (defaultPositionId) form.setValue("positionId", defaultPositionId);
-  }, [defaultDepartmentId, defaultPositionId, form, job]);
+  const optionsLoading = departments.isLoading || positions.isLoading;
+  const departmentValue = toSelectValue(useWatch({ control: form.control, name: "departmentId" }));
+  const positionValue = toSelectValue(useWatch({ control: form.control, name: "positionId" }));
+  const errors = form.formState.errors;
+
+  function setDepartment(value: string) {
+    form.setValue("departmentId", value ? Number(value) : undefined, { shouldDirty: true, shouldValidate: form.formState.isSubmitted });
+  }
+  function setPosition(value: string) {
+    form.setValue("positionId", value ? Number(value) : undefined, { shouldDirty: true, shouldValidate: form.formState.isSubmitted });
+  }
+
+  /** The save RPC only accepts an active position inside the selected active department. */
+  function checkActiveSelection(values: JobFormValues) {
+    let ok = true;
+    const department = departments.data?.find((row) => row.id === Number(values.departmentId));
+    const position = positions.data?.find((row) => row.id === Number(values.positionId));
+    if (department && !department.is_active) {
+      form.setError("departmentId", { message: "This department is inactive. Choose an active department." });
+      ok = false;
+    }
+    if (position && (!position.is_active || position.department_id !== department?.id)) {
+      form.setError("positionId", { message: "Choose an active position in the selected department." });
+      ok = false;
+    }
+    return ok;
+  }
 
   async function saveAs(status: JobOpeningInput["status"]) {
     setError(null);
+    setSuccess(null);
     const valid = await form.trigger();
-    if (!valid) return;
+    if (!valid || !checkActiveSelection(form.getValues())) return;
     try {
       const input = jobOpeningSchema.parse({ ...form.getValues(), status, criteria: form.getValues("criteria").map((criterion, index) => ({ ...criterion, ordinal: index + 1 })) });
       await save.mutateAsync({ input, jobId: job?.id });
+      setSuccess(status === "published" ? "Job opening published." : hasApplications ? "Changes saved." : "Draft saved.");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "We could not save this job opening.");
     }
   }
 
-  return <form className="max-w-3xl space-y-5" noValidate onSubmit={(event) => { event.preventDefault(); void saveAs(hasApplications && job ? job.status : "draft"); }}>
-    <div className="grid gap-4 sm:grid-cols-2">
-      <FormField error={form.formState.errors.departmentId?.message} htmlFor="job-department" label="Department"><select className="h-11 w-full rounded-lg border bg-background px-3" id="job-department" {...form.register("departmentId", { setValueAs: Number })}>{departmentRows.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}</select></FormField>
-      <FormField error={form.formState.errors.positionId?.message} htmlFor="job-position" label="Position"><select className="h-11 w-full rounded-lg border bg-background px-3" id="job-position" {...form.register("positionId", { setValueAs: Number })}>{positionRows.map((position) => <option key={position.id} value={position.id}>{position.title}</option>)}</select></FormField>
-      <FormField error={form.formState.errors.title?.message} htmlFor="job-title" label="Title"><Input id="job-title" {...form.register("title")} /></FormField>
-      <FormField error={form.formState.errors.location?.message} htmlFor="job-location" label="Location"><Input id="job-location" {...form.register("location")} /></FormField>
-      <FormField error={form.formState.errors.closesOn?.message} htmlFor="job-closes-on" label="Applications close"><Input id="job-closes-on" type="date" {...form.register("closesOn", { setValueAs: (value) => value || undefined })} /></FormField>
-    </div>
-    <FormField error={form.formState.errors.description?.message} htmlFor="job-description" label="Description"><textarea className="min-h-40 w-full rounded-lg border bg-background p-3" id="job-description" {...form.register("description")} /></FormField>
-    <section className="space-y-3 rounded-xl border p-4"><div className="flex items-center justify-between"><h2 className="font-semibold">Qualification criteria</h2><button className="text-sm font-medium text-primary" onClick={() => criteria.append({ ordinal: criteria.fields.length + 1, kind: "other", requirement: "", isRequired: true })} type="button">Add criterion</button></div>{criteria.fields.map((field, index) => <div className="grid gap-3 rounded-lg bg-muted/50 p-3 sm:grid-cols-[10rem_1fr_auto]" key={field.id}><FormField htmlFor={`criterion-kind-${field.id}`} label={`Criterion ${index + 1} type`}><select className="h-10 w-full rounded-lg border bg-background px-2" id={`criterion-kind-${field.id}`} {...form.register(`criteria.${index}.kind`)}><option value="education">Education</option><option value="eligibility">Eligibility</option><option value="experience">Experience</option><option value="skill">Skill</option><option value="certification">Certification</option><option value="other">Other</option></select></FormField><FormField error={form.formState.errors.criteria?.[index]?.requirement?.message} htmlFor={`criterion-${field.id}`} label={`Qualification ${index + 1}`}><Input id={`criterion-${field.id}`} {...form.register(`criteria.${index}.requirement`)} /></FormField><div className="flex items-end gap-2"><label className="mb-2 flex items-center gap-1 text-sm"><input type="checkbox" {...form.register(`criteria.${index}.isRequired`)} /> Required</label>{criteria.fields.length > 1 ? <button className="mb-1 text-sm text-destructive" onClick={() => criteria.remove(index)} type="button">Remove</button> : null}</div></div>)}</section>
-    {error ? <ErrorState message={error} /> : null}
-    {hasApplications ? <p className="rounded-lg border border-amber-400/40 bg-amber-50 p-3 text-sm text-amber-950 dark:bg-amber-950/30 dark:text-amber-100">This opening has applications. Its status can only be changed by withdrawing it from the job list.</p> : null}
-    <div className="flex flex-wrap gap-3"><button className="rounded-lg border px-4 py-2 text-sm font-medium disabled:opacity-60" disabled={save.isPending} type="submit">{save.isPending ? "Saving…" : hasApplications ? "Save changes" : "Save draft"}</button>{!hasApplications ? <button className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60" disabled={save.isPending} onClick={() => void saveAs("published")} type="button">Publish opening</button> : null}</div>
-  </form>;
+  const submitDisabled = save.isPending || optionsLoading;
+
+  return (
+    <form className="max-w-3xl space-y-5" noValidate onSubmit={(event) => { event.preventDefault(); void saveAs(hasApplications && job ? job.status : "draft"); }}>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <DepartmentPositionFields
+          departmentError={errors.departmentId ? (errors.departmentId.type === "custom" || errors.departmentId.type === undefined ? errors.departmentId.message : "Select a department.") : undefined}
+          departmentId={departmentValue}
+          idPrefix="job"
+          onDepartmentChange={setDepartment}
+          onPositionChange={setPosition}
+          positionError={errors.positionId ? (errors.positionId.type === "custom" || errors.positionId.type === undefined ? errors.positionId.message : "Select a position.") : undefined}
+          positionId={positionValue}
+          required
+          savedDepartmentId={job?.department_id}
+          savedPositionId={job?.position_id}
+        />
+        <FormField error={errors.title?.message} htmlFor="job-title" label="Title" required>
+          <Input id="job-title" required {...form.register("title")} />
+        </FormField>
+        <FormField error={errors.location?.message} htmlFor="job-location" label="Location">
+          <Input id="job-location" {...form.register("location")} />
+        </FormField>
+        <FormField error={errors.closesOn?.message} htmlFor="job-closes-on" label="Applications close">
+          <Input id="job-closes-on" type="date" {...form.register("closesOn", { setValueAs: (value) => value || undefined })} />
+        </FormField>
+      </div>
+      <FormField description="At least 20 characters." error={errors.description?.message} htmlFor="job-description" label="Description" required>
+        <Textarea className="min-h-40" id="job-description" required rows={8} {...form.register("description")} />
+      </FormField>
+      <section aria-labelledby="job-criteria-heading" className="space-y-3 rounded-xl border p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-semibold" id="job-criteria-heading">Qualification criteria</h2>
+          <Button onClick={() => criteria.append({ ordinal: criteria.fields.length + 1, kind: "other", requirement: "", isRequired: true })} size="sm" type="button" variant="outline">Add criterion</Button>
+        </div>
+        {typeof errors.criteria?.message === "string" ? <p className="text-sm font-medium text-destructive" role="alert">{errors.criteria.message}</p> : null}
+        {criteria.fields.map((field, index) => (
+          <div className="grid gap-3 rounded-lg bg-muted/50 p-3 sm:grid-cols-[12rem_1fr_auto]" key={field.id}>
+            <FormField htmlFor={`criterion-kind-${field.id}`} label={`Criterion ${index + 1} type`}>
+              <NativeSelect id={`criterion-kind-${field.id}`} {...form.register(`criteria.${index}.kind`)}>
+                <option value="education">Education</option>
+                <option value="eligibility">Eligibility</option>
+                <option value="experience">Experience</option>
+                <option value="skill">Skill</option>
+                <option value="certification">Certification</option>
+                <option value="other">Other</option>
+              </NativeSelect>
+            </FormField>
+            <FormField error={errors.criteria?.[index]?.requirement?.message} htmlFor={`criterion-${field.id}`} label={`Qualification ${index + 1}`}>
+              <Input id={`criterion-${field.id}`} {...form.register(`criteria.${index}.requirement`)} />
+            </FormField>
+            <div className="flex flex-wrap items-end gap-2">
+              <label className="flex min-h-11 items-center gap-2 text-sm">
+                <input className="size-4" type="checkbox" {...form.register(`criteria.${index}.isRequired`)} /> Required
+              </label>
+              {criteria.fields.length > 1 ? (
+                <Button aria-label={`Remove qualification ${index + 1}`} onClick={() => criteria.remove(index)} size="sm" type="button" variant="ghost">Remove</Button>
+              ) : null}
+            </div>
+          </div>
+        ))}
+      </section>
+      {error ? <ErrorState message={error} /> : null}
+      {hasApplications ? <p className="rounded-lg border border-amber-400/40 bg-amber-50 p-3 text-sm text-amber-950 dark:bg-amber-950/30 dark:text-amber-100">This opening has applications. Its status can only be changed by withdrawing it from the job list.</p> : null}
+      <div className="flex flex-wrap items-center gap-3">
+        <Button disabled={submitDisabled} type="submit" variant="outline">{save.isPending ? "Saving…" : optionsLoading ? "Loading options…" : hasApplications ? "Save changes" : "Save draft"}</Button>
+        {!hasApplications ? <Button disabled={submitDisabled} onClick={() => void saveAs("published")} type="button">Publish opening</Button> : null}
+        {success && !save.isPending ? <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400" role="status">{success}</p> : null}
+      </div>
+    </form>
+  );
 }

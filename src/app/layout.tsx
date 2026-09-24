@@ -1,13 +1,19 @@
 import type { Metadata } from "next";
-import { Atkinson_Hyperlegible, Geist_Mono } from "next/font/google";
+import { Geist_Mono, Lexend, Source_Sans_3 } from "next/font/google";
 import type { ReactNode } from "react";
 
 import "./globals.css";
 
-const atkinsonHyperlegible = Atkinson_Hyperlegible({
-  variable: "--font-atkinson-hyperlegible",
-  weight: ["400", "700"],
+const sourceSans = Source_Sans_3({
+  variable: "--font-source-sans",
   subsets: ["latin"],
+  display: "swap",
+});
+
+const lexend = Lexend({
+  variable: "--font-lexend",
+  subsets: ["latin"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
@@ -25,7 +31,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html
       data-scroll-behavior="smooth"
       lang="en"
-      className={`${atkinsonHyperlegible.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${sourceSans.variable} ${lexend.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

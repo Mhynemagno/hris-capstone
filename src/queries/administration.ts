@@ -168,6 +168,16 @@ export async function listDepartments(input: Partial<ReferenceDataFilters> = {})
   return { rows: (data ?? []) as Department[], count: count ?? 0, filters };
 }
 
+/**
+ * Complete department catalogue for dropdowns (active and inactive, so an edit
+ * form can still display a record's current, now-inactive department).
+ */
+export async function listDepartmentOptions() {
+  const { data, error } = await createBrowserSupabaseClient().from("departments").select("*").order("name").limit(1000);
+  throwIfError(error);
+  return (data ?? []) as Department[];
+}
+
 export async function saveDepartment(input: DepartmentInput, departmentId?: number) {
   const values = departmentSchema.parse(input);
   const payload = { name: values.name, is_active: values.isActive };
@@ -188,6 +198,13 @@ export async function listPositions(input: Partial<ReferenceDataFilters> = {}): 
   const { data, error, count } = await query.range(from, to);
   throwIfError(error);
   return { rows: (data ?? []) as Position[], count: count ?? 0, filters };
+}
+
+/** Complete position catalogue for dropdowns; filter by department on the client. */
+export async function listPositionOptions() {
+  const { data, error } = await createBrowserSupabaseClient().from("positions").select("*").order("title").limit(1000);
+  throwIfError(error);
+  return (data ?? []) as Position[];
 }
 
 export async function savePosition(input: PositionInput, positionId?: number) {

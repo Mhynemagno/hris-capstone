@@ -1,9 +1,29 @@
 import type { AppRole } from "@/lib/types/roles";
 
+export type RoleNavigationIcon =
+  | "LayoutDashboard"
+  | "Users"
+  | "ShieldCheck"
+  | "Building2"
+  | "BriefcaseBusiness"
+  | "Settings"
+  | "ScrollText"
+  | "ContactRound"
+  | "FileText"
+  | "CalendarDays"
+  | "MapPin"
+  | "TrendingUp"
+  | "Clock"
+  | "Fingerprint"
+  | "ChartColumn"
+  | "UserPen";
+
 export type RoleNavigationItem = {
   href: `/${string}`;
   label: string;
-  icon: "LayoutDashboard" | "Users" | "ShieldCheck" | "Building2" | "BriefcaseBusiness" | "Settings" | "ScrollText" | "ContactRound";
+  icon: RoleNavigationIcon;
+  /** Sidebar section heading; related tasks share a group. */
+  group?: string;
 };
 
 export type RoleConfig = {
@@ -24,14 +44,14 @@ export const ROLE_CONFIG: Record<AppRole, RoleConfig> = {
     landingDescription:
       "Manage secure system settings, accounts, and organization data.",
     navigation: [
-      { href: "/admin", label: "Admin workspace", icon: "LayoutDashboard" },
-      { href: "/admin/profile-change-requests", label: "Profile change requests", icon: "ContactRound" },
-      { href: "/admin/users", label: "Account management", icon: "Users" },
-      { href: "/admin/departments", label: "Departments", icon: "Building2" },
-      { href: "/admin/positions", label: "Positions", icon: "BriefcaseBusiness" },
-      { href: "/admin/settings", label: "Settings", icon: "Settings" },
-      { href: "/admin/integrations/attendance", label: "Attendance integration", icon: "Settings" },
-      { href: "/admin/audit-logs", label: "Audit logs", icon: "ScrollText" },
+      { href: "/admin", label: "Admin workspace", icon: "LayoutDashboard", group: "Overview" },
+      { href: "/admin/profile-change-requests", label: "Profile change requests", icon: "UserPen", group: "Reviews" },
+      { href: "/admin/users", label: "Account management", icon: "Users", group: "Access" },
+      { href: "/admin/audit-logs", label: "Audit logs", icon: "ScrollText", group: "Access" },
+      { href: "/admin/departments", label: "Departments", icon: "Building2", group: "Organization" },
+      { href: "/admin/positions", label: "Positions", icon: "BriefcaseBusiness", group: "Organization" },
+      { href: "/admin/settings", label: "Settings", icon: "Settings", group: "System" },
+      { href: "/admin/integrations/attendance", label: "Attendance integration", icon: "Fingerprint", group: "System" },
     ],
   },
   hr_personnel: {
@@ -42,15 +62,15 @@ export const ROLE_CONFIG: Record<AppRole, RoleConfig> = {
     landingDescription:
       "Coordinate recruitment, personnel records, and HR operations.",
     navigation: [
-      { href: "/hr", label: "HR workspace", icon: "LayoutDashboard" },
-      { href: "/hr/employees", label: "Personnel records", icon: "ContactRound" },
-      { href: "/hr/jobs", label: "Job openings", icon: "BriefcaseBusiness" },
-      { href: "/hr/applications", label: "Applications", icon: "BriefcaseBusiness" },
-      { href: "/hr/leave-requests", label: "Leave requests", icon: "BriefcaseBusiness" },
-      { href: "/hr/deployments", label: "Deployments", icon: "BriefcaseBusiness" },
-      { href: "/hr/promotions", label: "Promotions", icon: "BriefcaseBusiness" },
-      { href: "/hr/attendance", label: "Attendance", icon: "BriefcaseBusiness" },
-      { href: "/reports", label: "Reports", icon: "ScrollText" },
+      { href: "/hr", label: "HR workspace", icon: "LayoutDashboard", group: "Overview" },
+      { href: "/hr/jobs", label: "Job openings", icon: "BriefcaseBusiness", group: "Recruitment" },
+      { href: "/hr/applications", label: "Applications", icon: "FileText", group: "Recruitment" },
+      { href: "/hr/employees", label: "Personnel records", icon: "ContactRound", group: "Workforce" },
+      { href: "/hr/deployments", label: "Deployments", icon: "MapPin", group: "Workforce" },
+      { href: "/hr/promotions", label: "Promotions", icon: "TrendingUp", group: "Workforce" },
+      { href: "/hr/leave-requests", label: "Leave requests", icon: "CalendarDays", group: "Time and leave" },
+      { href: "/hr/attendance", label: "Attendance", icon: "Clock", group: "Time and leave" },
+      { href: "/reports", label: "Reports", icon: "ChartColumn", group: "Insights" },
     ],
   },
   applicant: {
@@ -68,7 +88,7 @@ export const ROLE_CONFIG: Record<AppRole, RoleConfig> = {
       },
       { href: "/jobs", label: "Job openings", icon: "BriefcaseBusiness" },
       { href: "/applicant/profile", label: "My profile", icon: "ContactRound" },
-      { href: "/applicant/applications", label: "My applications", icon: "BriefcaseBusiness" },
+      { href: "/applicant/applications", label: "My applications", icon: "FileText" },
     ],
   },
   employee: {
@@ -85,10 +105,10 @@ export const ROLE_CONFIG: Record<AppRole, RoleConfig> = {
         icon: "LayoutDashboard",
       },
       { href: "/employee/profile", label: "My profile", icon: "ContactRound" },
-      { href: "/employee/leave", label: "Leave", icon: "BriefcaseBusiness" },
-      { href: "/employee/deployments", label: "Deployments", icon: "BriefcaseBusiness" },
-      { href: "/employee/promotion-eligibility", label: "Promotion eligibility", icon: "BriefcaseBusiness" },
-      { href: "/employee/attendance", label: "Attendance", icon: "BriefcaseBusiness" },
+      { href: "/employee/leave", label: "Leave", icon: "CalendarDays" },
+      { href: "/employee/deployments", label: "Deployments", icon: "MapPin" },
+      { href: "/employee/promotion-eligibility", label: "Promotion eligibility", icon: "TrendingUp" },
+      { href: "/employee/attendance", label: "Attendance", icon: "Clock" },
     ],
   },
   management: {
@@ -104,7 +124,7 @@ export const ROLE_CONFIG: Record<AppRole, RoleConfig> = {
         label: "Management workspace",
         icon: "LayoutDashboard",
       },
-      { href: "/reports", label: "Reports", icon: "ScrollText" },
+      { href: "/reports", label: "Reports", icon: "ChartColumn" },
     ],
   },
 };

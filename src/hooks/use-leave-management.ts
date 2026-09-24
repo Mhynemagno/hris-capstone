@@ -1,9 +1,12 @@
 "use client";
 import { useMutation,useQuery,useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-keys";
-import { cancelLeaveRequest,createLeaveType,decideLeaveRequest,getLeaveAttachmentUrl,getLeaveRequest,leaveRequestFilters,listActiveLeaveTypes,listHrLeaveRequests,listMyLeaveRequests,submitLeaveRequest,updateLeaveType } from "@/queries/leave-management";
+import { cancelLeaveRequest,createLeaveType,decideLeaveRequest,getLeaveAttachmentUrl,getLeaveRequest,leaveRequestFilters,listActiveLeaveTypes,listHrLeaveRequests,listLeaveTypes,listMyLeaveRequests,submitLeaveRequest,updateLeaveType } from "@/queries/leave-management";
 import type { LeaveRequestFilters } from "@/schemas/leave-management";
-export function useActiveLeaveTypes(){return useQuery({queryKey:queryKeys.leaveManagement.types(),queryFn:listActiveLeaveTypes});}
+/** All leave types visible to the caller, including inactive ones (HR admin list). */
+export function useLeaveTypes(){return useQuery({queryKey:queryKeys.leaveManagement.types(),queryFn:listLeaveTypes});}
+/** Leave types an employee can request right now (is_active = true). */
+export function useRequestableLeaveTypes(){return useQuery({queryKey:[...queryKeys.leaveManagement.types(),"active"],queryFn:listActiveLeaveTypes});}
 export function useMyLeaveRequests(input:Partial<LeaveRequestFilters>={}){const filters=leaveRequestFilters(input);return useQuery({queryKey:queryKeys.leaveManagement.mine(filters),queryFn:()=>listMyLeaveRequests(filters)});}
 export function useHrLeaveRequests(input:Partial<LeaveRequestFilters>={}){const filters=leaveRequestFilters(input);return useQuery({queryKey:queryKeys.leaveManagement.hrQueue(filters),queryFn:()=>listHrLeaveRequests(filters)});}
 export function useLeaveRequest(id:string){return useQuery({queryKey:queryKeys.leaveManagement.request(id),queryFn:()=>getLeaveRequest(id),enabled:Boolean(id)});}

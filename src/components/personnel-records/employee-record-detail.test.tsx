@@ -14,6 +14,10 @@ vi.mock("@/hooks/use-personnel-records", () => ({
   usePersonnelEntries: mocks.useEntries,
   useSavePersonnelEntry: () => ({ isPending: false, mutateAsync: vi.fn() }),
 }));
+vi.mock("@/hooks/use-administration", () => ({
+  useDepartmentOptions: () => ({ data: [], isLoading: false, error: null }),
+  usePositionOptions: () => ({ data: [], isLoading: false, error: null }),
+}));
 vi.mock("./employee-editor", () => ({ EmployeeEditor: () => <div>Employee editor</div> }));
 
 import { EmployeeRecordDetail } from "./employee-record-detail";

@@ -1,2 +1,3 @@
 import { HrPromotionDirectory } from "@/components/promotion-eligibility/hr-promotion-directory";
-export default function HrPromotionsPage() { return <section className="space-y-4"><div><p className="text-sm font-medium text-primary">Promotion eligibility</p><h1 className="text-3xl font-semibold">Promotion reviews</h1><p className="mt-2 text-muted-foreground">Review readiness without changing an employee’s rank automatically.</p></div><HrPromotionDirectory /></section>; }
+import { PageHeader } from "@/components/ui/page-header";
+export default function HrPromotionsPage() { return <section className="space-y-4"><PageHeader description="Review readiness without changing an employee’s rank automatically." eyebrow="Promotion eligibility" title="Promotion reviews" /><HrPromotionDirectory /></section>; }

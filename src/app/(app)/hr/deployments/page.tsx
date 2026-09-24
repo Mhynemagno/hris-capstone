@@ -1,2 +1,3 @@
 import { HrDeploymentDirectory } from "@/components/deployment-tracking/hr-deployment-directory";
-export default function HrDeploymentsPage() { return <section className="space-y-4"><div><p className="text-sm font-medium text-primary">Personnel deployments</p><h1 className="text-3xl font-semibold">Deployments</h1><p className="mt-2 text-muted-foreground">Create and maintain personnel assignments without losing their history.</p></div><HrDeploymentDirectory /></section>; }
+import { PageHeader } from "@/components/ui/page-header";
+export default function HrDeploymentsPage() { return <section className="space-y-4"><PageHeader description="Create and maintain personnel assignments without losing their history." eyebrow="Personnel deployments" title="Deployments" /><HrDeploymentDirectory /></section>; }
