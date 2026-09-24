@@ -154,7 +154,7 @@ export function EmployeeRecordDetail({ employeeId }: { employeeId: string }) {
     certifications: <Records employeeId={employeeId} kind="certification" />,
     training: <TrainingRecords employeeId={employeeId} />,
   };
-  return <div className="space-y-6"><div><Link className="text-sm text-primary underline-offset-4 hover:underline" href="/hr/employees">Back to employees</Link><h1 className="mt-3 text-3xl font-semibold tracking-tight">{employee.data.first_name} {employee.data.last_name}</h1><p className="mt-1 text-muted-foreground">{employee.data.employee_number} · {employee.data.employment_status.replace("_", " ")}</p></div><RecordTabs active={active} idPrefix="rec" onChange={showTab} />{RECORD_TABS.map((tab) => (
+  return <div className="space-y-6"><div><Link className="text-sm text-primary underline-offset-4 hover:underline" href="/hr/employees">Back to employees</Link><h1 className="mt-3 text-3xl font-semibold tracking-tight">{employee.data.first_name} {employee.data.last_name}</h1><p className="mt-1 text-muted-foreground">{employee.data.employee_number} · {employee.data.employment_status.replace("_", " ")}</p><Link className="mt-2 inline-flex min-h-11 items-center text-sm font-medium text-primary underline-offset-4 hover:underline" href={`/hr/promotions/${employee.data.id}`}>Promotion review</Link></div><RecordTabs active={active} idPrefix="rec" onChange={showTab} />{RECORD_TABS.map((tab) => (
     // Every panel stays mounted (hidden when inactive) so unsaved edits survive a tab switch.
     <div aria-labelledby={`rec-tab-${tab.key}`} hidden={tab.key !== active} id={`rec-panel-${tab.key}`} key={tab.key} role="tabpanel">{panels[tab.key]}</div>
   ))}</div>;

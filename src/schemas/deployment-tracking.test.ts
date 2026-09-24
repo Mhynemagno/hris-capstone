@@ -32,6 +32,12 @@ describe("deployment tracking schemas", () => {
     expect(deploymentInputSchema.safeParse({ ...base, unit: "Operations", status: "planned" }).success).toBe(false);
   });
 
+  it("accepts its own parsed output, so the form and the query can both validate", () => {
+    const once = deploymentInputSchema.parse({ employeeId: "3f1e2d3c-4b5a-4968-8776-655443322110", location: "San Juan", unit: "", project: "", assignmentRole: "Patrol", startsOn: "2026-09-25", status: "active", notes: "" });
+    expect(once).toMatchObject({ unit: null, project: null, notes: null });
+    expect(deploymentInputSchema.parse(once)).toEqual(once);
+  });
+
   it("caps page size and rejects a reversed reporting range", () => {
     expect(deploymentFiltersSchema.parse({ page: "2", pageSize: "200", status: "active" })).toMatchObject({ page: 2, pageSize: 100, status: "active" });
     expect(deploymentFiltersSchema.safeParse({ startsOn: "2026-09-03", endsOn: "2026-09-01" }).success).toBe(false);

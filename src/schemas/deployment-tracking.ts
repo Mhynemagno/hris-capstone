@@ -3,7 +3,8 @@ import { z } from "zod";
 import { isoDateSchema, paginationSchema, uuidSchema } from "./common";
 
 export const deploymentStatusSchema = z.enum(["active", "rejected"]);
-const optionalText = (maximum: number) => z.string().trim().max(maximum).transform((value) => value || null).optional().default(null);
+// Accepts null as well as text so already-parsed input (the form parses, then the query) validates again.
+const optionalText = (maximum: number) => z.string().trim().max(maximum).nullable().optional().transform((value) => value || null);
 
 export const deploymentInputSchema = z.object({
   employeeId: uuidSchema,

@@ -14,6 +14,7 @@ export default defineConfig({
       ...configDefaults.exclude,
       "e2e/**",
       ".worktrees/**",
+      ".claude/**",
       "supabase/functions/**/*.test.ts",
     ],
     globals: true,

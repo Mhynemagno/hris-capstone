@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { ApplicationAiScore } from "@/lib/types/database";
 import { useApplicationAiScores, useHireApplication, useMyApplication, useRetryApplicationAnalysis, useTransitionApplicationStatus } from "@/hooks/use-recruitment";
 import { getApplicantDocumentUrl } from "@/queries/recruitment";
-import type { ApplicationStatus } from "@/schemas/recruitment";
+import { hiringDecisionSchema, type ApplicationStatus } from "@/schemas/recruitment";
 
 /**
  * Review transitions accepted by private.transition_application_status
@@ -86,8 +86,13 @@ export function HrApplicationDetail({ applicationId }: { applicationId: string }
     setError(null);
     setHireSuccess(null);
     const data = new FormData(form);
+    const input = hiringDecisionSchema.safeParse({ applicationId, badgeNumber: String(data.get("badgeNumber") ?? ""), note: String(data.get("hireNote") || "") || undefined });
+    if (!input.success) {
+      setError(input.error.issues[0]?.message ?? "Check the hire details.");
+      return;
+    }
     try {
-      await hire.mutateAsync({ applicationId, badgeNumber: String(data.get("badgeNumber")), note: String(data.get("hireNote") || "") || undefined });
+      await hire.mutateAsync(input.data);
       setHireSuccess("Applicant hired. Their employee record has been created.");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "We could not hire this applicant.");

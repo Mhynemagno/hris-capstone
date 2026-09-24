@@ -3,6 +3,7 @@
   "specifiers": {
     "jsr:@std/assert@1": "1.0.19",
     "jsr:@std/internal@^1.0.12": "1.0.14",
+    "npm:@axe-core/playwright@^4.13.0": "4.13.0_playwright-core@1.63.0",
     "npm:@base-ui/react@^1.7.0": "1.7.0_@types+react@19.2.18_react@19.2.8_react-dom@19.2.8",
     "npm:@hookform/resolvers@^5.8.0": "5.9.1_react-hook-form@7.86.0_zod@4.4.3_react@19.2.8",
     "npm:@playwright/test@^1.63.0": "1.63.0",
@@ -73,6 +74,13 @@
         "css-tree",
         "is-potential-custom-element-name",
         "lru-cache@11.5.2"
+      ]
+    },
+    "@axe-core/playwright@4.13.0_playwright-core@1.63.0": {
+      "integrity": "sha512-6YLx+kxXu5GJceG4ozFg+33a2EMTdjYwWGloJ3sb9Kta5pp+ZNS53uxGVog5JetIY8s++P5UrtX+cri+u0VAVg==",
+      "dependencies": [
+        "axe-core",
+        "playwright-core"
       ]
     },
     "@babel/code-frame@7.29.7": {
@@ -4992,6 +5000,7 @@
   "workspace": {
     "packageJson": {
       "dependencies": [
+        "npm:@axe-core/playwright@^4.13.0",
         "npm:@base-ui/react@^1.7.0",
         "npm:@hookform/resolvers@^5.8.0",
         "npm:@playwright/test@^1.63.0",
