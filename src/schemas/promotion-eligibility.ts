@@ -19,7 +19,7 @@ export const promotionCriterionRequirementSchema = z.object({
 });
 
 export const promotionCriterionSchema = z.object({
-  targetPositionId: positiveInteger,
+  targetRankId: positiveInteger,
   minimumYearsOfService: z.coerce.number().int().min(0).max(100),
   minimumPerformanceRating: optionalRating,
   requirements: z.array(promotionCriterionRequirementSchema).max(30).default([]),
@@ -57,7 +57,7 @@ export const promotionEvidenceSchema = z.object({
 
 export const promotionEvaluationSchema = z.object({
   employeeId: uuidSchema,
-  targetPositionId: positiveInteger,
+  targetRankId: positiveInteger,
   criterionId: uuidSchema,
   evaluatedOn: isoDateSchema,
   recommendation: promotionRecommendationSchema,
@@ -73,7 +73,7 @@ export const promotionEvaluationUpdateSchema = promotionEvaluationSchema.extend(
 export const promotionEvaluationFiltersSchema = paginationSchema.extend({
   pageSize: z.coerce.number().int().positive().transform((value) => Math.min(value, 100)).default(25),
   employeeId: uuidSchema.optional(),
-  targetPositionId: positiveInteger.optional(),
+  targetRankId: positiveInteger.optional(),
   readiness: promotionReadinessSchema.optional(),
   recommendation: promotionRecommendationSchema.optional(),
   search: z.string().trim().max(200).transform((value) => value || undefined).optional(),
@@ -82,8 +82,8 @@ export const promotionEvaluationFiltersSchema = paginationSchema.extend({
 export const employeePromotionEligibilitySchema = z.object({
   employeeId: uuidSchema,
   evaluationId: uuidSchema,
-  targetPositionId: positiveInteger,
-  targetPositionTitle: z.string(),
+  targetRankId: positiveInteger,
+  targetRankName: z.string(),
   calculatedAt: z.string().datetime({ offset: true }),
   yearsOfService: z.number().int().min(0),
   isReady: z.boolean(),

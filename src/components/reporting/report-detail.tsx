@@ -50,8 +50,6 @@ export const REPORT_STATUS_FILTERS: Record<ReportKey, { label: string; options: 
     options: [
       { value: "active", label: "Active" },
       { value: "on_leave", label: "On leave" },
-      { value: "inactive", label: "Inactive" },
-      { value: "separated", label: "Separated" },
     ],
   },
   deployments: {

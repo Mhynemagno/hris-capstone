@@ -11,11 +11,11 @@ import {
   listDepartmentOptions,
   listDepartments,
   listManagedUsers,
-  listPositionOptions,
-  listPositions,
+  listRankOptions,
+  listRanks,
   saveDepartment,
   saveOrganizationSettings,
-  savePosition,
+  saveRank,
   updateManagedUser,
 } from "@/queries/administration";
 import {
@@ -29,7 +29,7 @@ import {
   type ManagedUserDeleteInput,
   type ManagedUserUpdateInput,
   type OrganizationSettingsInput,
-  type PositionInput,
+  type RankInput,
   type ReferenceDataFilters,
 } from "@/schemas/administration";
 
@@ -60,9 +60,9 @@ export function useDepartments(filters: Partial<ReferenceDataFilters> = {}) {
   return useQuery({ queryKey: queryKeys.administration.departments(parsed), queryFn: () => listDepartments(parsed) });
 }
 
-export function usePositions(filters: Partial<ReferenceDataFilters> = {}) {
+export function useRanks(filters: Partial<ReferenceDataFilters> = {}) {
   const parsed = referenceFilters(filters);
-  return useQuery({ queryKey: queryKeys.administration.positions(parsed), queryFn: () => listPositions(parsed) });
+  return useQuery({ queryKey: queryKeys.administration.ranks(parsed), queryFn: () => listRanks(parsed) });
 }
 
 /** All departments for dropdowns (not paginated). */
@@ -70,9 +70,9 @@ export function useDepartmentOptions() {
   return useQuery({ queryKey: queryKeys.administration.departments({ options: true }), queryFn: listDepartmentOptions });
 }
 
-/** All positions for dropdowns (not paginated); filter by department in the form. */
-export function usePositionOptions() {
-  return useQuery({ queryKey: queryKeys.administration.positions({ options: true }), queryFn: listPositionOptions });
+/** All ranks for dropdowns (not paginated), junior to senior. Every rank applies to every department. */
+export function useRankOptions() {
+  return useQuery({ queryKey: queryKeys.administration.ranks({ options: true }), queryFn: listRankOptions });
 }
 
 export function useOrganizationSettings() {
@@ -119,15 +119,15 @@ export function useSaveDepartment() {
   const { invalidate } = useAdministrationMutations();
   return useMutation({
     mutationFn: ({ input, departmentId }: { input: DepartmentInput; departmentId?: number }) => saveDepartment(input, departmentId),
-    onSuccess: () => invalidate("departments", "positions", "audit-logs"),
+    onSuccess: () => invalidate("departments", "audit-logs"),
   });
 }
 
-export function useSavePosition() {
+export function useSaveRank() {
   const { invalidate } = useAdministrationMutations();
   return useMutation({
-    mutationFn: ({ input, positionId }: { input: PositionInput; positionId?: number }) => savePosition(input, positionId),
-    onSuccess: () => invalidate("positions", "audit-logs"),
+    mutationFn: ({ input, rankId }: { input: RankInput; rankId?: number }) => saveRank(input, rankId),
+    onSuccess: () => invalidate("ranks", "audit-logs"),
   });
 }
 

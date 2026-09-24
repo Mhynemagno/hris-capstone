@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 
 const blankProfile: ApplicantProfileInput = {
   firstName: "", middleName: "", lastName: "", qualifier: "", placeOfBirth: "", dateOfBirth: undefined,
-  sex: undefined, civilStatus: undefined, religion: "", phone: "", address: "",
+  gender: undefined, civilStatus: undefined, religion: "", phone: "", address: "",
 };
 
 function formatApplicantNumber(value: number) {
@@ -38,7 +38,7 @@ export function ApplicantProfileForm() {
     form.reset({
       firstName: profile.data.first_name, middleName: profile.data.middle_name ?? "", lastName: profile.data.last_name,
       qualifier: profile.data.qualifier ?? "", placeOfBirth: profile.data.place_of_birth ?? "", dateOfBirth: profile.data.date_of_birth ?? undefined,
-      sex: profile.data.sex ?? undefined, civilStatus: profile.data.civil_status ?? undefined, religion: profile.data.religion ?? "",
+      gender: profile.data.gender ?? undefined, civilStatus: profile.data.civil_status ?? undefined, religion: profile.data.religion ?? "",
       phone: profile.data.phone ?? "", address: profile.data.address ?? "",
     });
   }, [form, profile.data]);
@@ -63,7 +63,7 @@ export function ApplicantProfileForm() {
       <FormField error={form.formState.errors.qualifier?.message} htmlFor="applicant-qualifier" label="Qualifier"><Input id="applicant-qualifier" placeholder="Jr., Sr., III" {...form.register("qualifier")} /></FormField>
       <FormField error={form.formState.errors.placeOfBirth?.message} htmlFor="applicant-place-of-birth" label="Place of birth"><Input id="applicant-place-of-birth" {...form.register("placeOfBirth")} /></FormField>
       <FormField error={form.formState.errors.dateOfBirth?.message} htmlFor="applicant-date-of-birth" label="Date of birth"><Input id="applicant-date-of-birth" type="date" {...form.register("dateOfBirth")} /></FormField>
-      <FormField error={form.formState.errors.sex?.message} htmlFor="applicant-sex" label="Sex"><select className={nativeSelectClassName} id="applicant-sex" {...form.register("sex")}><option value="">Not provided</option><option value="female">Female</option><option value="male">Male</option><option value="prefer_not_to_say">Prefer not to say</option></select></FormField>
+      <FormField error={form.formState.errors.gender?.message} htmlFor="applicant-gender" label="Gender"><select className={nativeSelectClassName} id="applicant-gender" {...form.register("gender")}><option value="">Not provided</option><option value="female">Female</option><option value="male">Male</option><option value="prefer_not_to_say">Prefer not to say</option></select></FormField>
       <FormField error={form.formState.errors.civilStatus?.message} htmlFor="applicant-civil-status" label="Civil status"><select className={nativeSelectClassName} id="applicant-civil-status" {...form.register("civilStatus")}><option value="">Not provided</option><option value="single">Single</option><option value="married">Married</option><option value="widowed">Widowed</option><option value="separated">Separated</option><option value="divorced">Divorced</option></select></FormField>
       <FormField error={form.formState.errors.religion?.message} htmlFor="applicant-religion" label="Religion"><Input id="applicant-religion" {...form.register("religion")} /></FormField>
       <FormField error={form.formState.errors.phone?.message} htmlFor="applicant-phone" label="Phone"><Input autoComplete="tel" id="applicant-phone" type="tel" {...form.register("phone")} /></FormField>

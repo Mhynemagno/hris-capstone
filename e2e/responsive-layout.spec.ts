@@ -4,7 +4,7 @@ import { test, expect } from "@playwright/test";
 // horizontal scrolling (wide tables scroll inside their own container) and
 // must not render visible text smaller than 14px.
 const sets: [string, string, string[]][] = [
-  ["demo.admin@example.test", "/admin", ["/admin", "/admin/users", "/admin/departments", "/admin/positions", "/admin/settings", "/admin/audit-logs", "/admin/profile-change-requests", "/admin/integrations/attendance"]],
+  ["demo.admin@example.test", "/admin", ["/admin", "/admin/users", "/admin/departments", "/admin/ranks", "/admin/settings", "/admin/audit-logs", "/admin/profile-change-requests", "/admin/integrations/attendance"]],
   ["demo.hr@example.test", "/hr", ["/hr", "/hr/employees", "/hr/jobs", "/hr/applications", "/hr/leave-requests", "/hr/deployments", "/hr/promotions", "/hr/promotions/criteria", "/hr/attendance", "/reports"]],
   ["demo.employee@example.test", "/employee", ["/employee", "/employee/profile", "/employee/leave", "/employee/deployments", "/employee/attendance", "/notifications"]],
   ["demo.applicant@example.test", "/applicant", ["/applicant", "/applicant/profile", "/applicant/applications", "/jobs"]],

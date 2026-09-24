@@ -9,9 +9,9 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { useUnitStations } from "@/hooks/use-personnel-records";
 import type { Employee, UnlinkedEmployeeAccount } from "@/lib/types/database";
-import { employeeSchema, POLICE_RANKS, type EmployeeInput } from "@/schemas/personnel-records";
+import { employeeSchema, type EmployeeInput } from "@/schemas/personnel-records";
 
-import { DepartmentPositionFields } from "./department-position-fields";
+import { DepartmentRankFields } from "./department-rank-fields";
 
 type EmployeeFormProps = {
   employee?: Employee;
@@ -24,7 +24,7 @@ export function EmployeeForm({ employee, account, onSaved, pending = false }: Em
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [departmentId, setDepartmentId] = useState(employee?.department_id ? String(employee.department_id) : "");
-  const [positionId, setPositionId] = useState(employee?.position_id ? String(employee.position_id) : "");
+  const [rankId, setRankId] = useState(employee?.rank_id ? String(employee.rank_id) : "");
   const [startedOn, setStartedOn] = useState(employee?.employment_started_on ?? "");
   const unitStations = useUnitStations();
   // Preserve the linked account: creating from an account binds it, editing keeps the existing link.
@@ -39,7 +39,7 @@ export function EmployeeForm({ employee, account, onSaved, pending = false }: Em
       ...form,
       profileId: form.profileId || undefined,
       departmentId: form.departmentId || undefined,
-      positionId: form.positionId || undefined,
+      rankId: form.rankId || undefined,
       employmentEndedOn: form.employmentEndedOn || undefined,
     });
     if (!parsed.success) {
@@ -67,13 +67,6 @@ export function EmployeeForm({ employee, account, onSaved, pending = false }: Em
       <FormField error={e.employeeNumber} htmlFor="employee-number" label="Badge number" required>
         <Input className="h-11" defaultValue={employee?.employee_number} id="employee-number" name="employeeNumber" placeholder="PAT-0001" required />
       </FormField>
-      <FormField error={e.rank} htmlFor="rank" label="Rank">
-        <NativeSelect defaultValue={employee?.rank ?? ""} id="rank" name="rank">
-          <option value="">Not provided</option>
-          {employee?.rank && !(POLICE_RANKS as readonly string[]).includes(employee.rank) ? <option value={employee.rank}>{employee.rank}</option> : null}
-          {POLICE_RANKS.map((rank) => <option key={rank} value={rank}>{rank}</option>)}
-        </NativeSelect>
-      </FormField>
       <FormField error={e.personalEmail} htmlFor="personal-email" label="Personal email" required>
         <Input className="h-11" defaultValue={employee?.personal_email ?? account?.email ?? ""} id="personal-email" name="personalEmail" type="email" autoComplete="email" required />
       </FormField>
@@ -95,8 +88,8 @@ export function EmployeeForm({ employee, account, onSaved, pending = false }: Em
       <FormField error={e.dateOfBirth} htmlFor="date-of-birth" label="Date of birth">
         <Input className="h-11" defaultValue={employee?.date_of_birth ?? ""} id="date-of-birth" name="dateOfBirth" type="date" />
       </FormField>
-      <FormField error={e.sex} htmlFor="sex" label="Sex">
-        <NativeSelect defaultValue={employee?.sex ?? ""} id="sex" name="sex">
+      <FormField error={e.gender} htmlFor="gender" label="Gender">
+        <NativeSelect defaultValue={employee?.gender ?? ""} id="gender" name="gender">
           <option value="">Not provided</option>
           <option value="female">Female</option>
           <option value="male">Male</option>
@@ -128,18 +121,18 @@ export function EmployeeForm({ employee, account, onSaved, pending = false }: Em
       <FormField error={e.emergencyContactPhone} htmlFor="emergency-contact-phone" label="Emergency contact phone">
         <Input className="h-11" defaultValue={employee?.emergency_contact_phone ?? ""} id="emergency-contact-phone" name="emergencyContactPhone" type="tel" />
       </FormField>
-      <DepartmentPositionFields
+      <DepartmentRankFields
         departmentError={e.departmentId}
         departmentId={departmentId}
         departmentName="departmentId"
         idPrefix="employee"
         onDepartmentChange={setDepartmentId}
-        onPositionChange={setPositionId}
-        positionError={e.positionId}
-        positionId={positionId}
-        positionName="positionId"
+        onRankChange={setRankId}
+        rankError={e.rankId}
+        rankId={rankId}
+        rankName="rankId"
         savedDepartmentId={employee?.department_id}
-        savedPositionId={employee?.position_id}
+        savedRankId={employee?.rank_id}
       />
       <FormField
         description={unitStations.error ? "Unit stations could not be loaded. Refresh the page to try again." : undefined}
@@ -157,8 +150,6 @@ export function EmployeeForm({ employee, account, onSaved, pending = false }: Em
         <NativeSelect defaultValue={employee?.employment_status ?? "active"} id="employment-status" name="employmentStatus">
           <option value="active">Active</option>
           <option value="on_leave">On leave</option>
-          <option value="inactive">Inactive</option>
-          <option value="separated">Separated</option>
         </NativeSelect>
       </FormField>
       <FormField error={e.employmentStartedOn} htmlFor="employment-started-on" label="Employment start date" required>

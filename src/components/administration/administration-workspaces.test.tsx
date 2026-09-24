@@ -11,10 +11,10 @@ const hooks = vi.hoisted(() => ({
   useManagedRoles: vi.fn(),
   useManagedUsers: vi.fn(),
   useOrganizationSettings: vi.fn(),
-  usePositions: vi.fn(),
+  useRanks: vi.fn(),
   useSaveDepartment: vi.fn(),
   useSaveOrganizationSettings: vi.fn(),
-  useSavePosition: vi.fn(),
+  useSaveRank: vi.fn(),
   useUpdateManagedUser: vi.fn(),
 }));
 
@@ -27,10 +27,10 @@ vi.mock("@/hooks/use-administration", () => ({
   useManagedRoles: hooks.useManagedRoles,
   useManagedUsers: hooks.useManagedUsers,
   useOrganizationSettings: hooks.useOrganizationSettings,
-  usePositions: hooks.usePositions,
+  useRanks: hooks.useRanks,
   useSaveDepartment: hooks.useSaveDepartment,
   useSaveOrganizationSettings: hooks.useSaveOrganizationSettings,
-  useSavePosition: hooks.useSavePosition,
+  useSaveRank: hooks.useSaveRank,
   useUpdateManagedUser: hooks.useUpdateManagedUser,
 }));
 
@@ -42,7 +42,7 @@ const deletion = vi.hoisted(() => ({
 vi.mock("@/hooks/use-deletion", () => deletion);
 
 import { AdministrationFormPanel } from "./administration-form-panel";
-import { AuditLogsWorkspace, DepartmentsWorkspace, SettingsWorkspace, UsersWorkspace } from "./administration-workspaces";
+import { AuditLogsWorkspace, DepartmentsWorkspace, RanksWorkspace, SettingsWorkspace, UsersWorkspace } from "./administration-workspaces";
 import { PaginatedTableControls } from "./paginated-table-controls";
 
 describe("administration shared controls", () => {
@@ -216,58 +216,48 @@ describe("administration shared controls", () => {
     expect(screen.getByRole("dialog", { name: /audit record details/i })).toHaveTextContent("system_administrator");
   });
 
-  it("separates deactivation from deletion and explains a blocked delete with dependent counts", async () => {
+  it("lets administrators deactivate departments but never delete them", async () => {
     const user = userEvent.setup();
     const saveDepartment = vi.fn().mockResolvedValue(undefined);
-    const deleteMutation = { isPending: false, error: null, mutateAsync: vi.fn(), reset: vi.fn() };
-    hooks.useDepartments.mockReturnValue({ data: { rows: [{ id: 7, name: "Operations", is_active: true }], count: 1 }, error: null, isLoading: false, refetch: vi.fn() });
+    hooks.useDepartments.mockReturnValue({ data: { rows: [{ id: 7, name: "Intelligence Section", is_active: true }], count: 1 }, error: null, isLoading: false, refetch: vi.fn() });
     hooks.useSaveDepartment.mockReturnValue({ isPending: false, mutateAsync: saveDepartment });
-    deletion.useDeleteRecord.mockReturnValue(deleteMutation);
-    deletion.useDeletionImpact.mockImplementation((_type: string, id: number | null) => ({
-      isLoading: false,
-      error: null,
-      refetch: vi.fn(),
-      data: id === null ? undefined : {
-        entityType: "department", entityId: "7", label: "Operations", canDelete: false,
-        blockers: [{ label: "personnel records", count: 12 }, { label: "positions", count: 3 }],
-        reasons: [], removes: [],
-        alternative: "Deactivate the department to hide it from new records while keeping history intact.",
-      },
-    }));
 
     render(<DepartmentsWorkspace />);
-    expect(screen.getByRole("button", { name: /deactivate operations/i })).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /delete operations/i }));
 
-    const dialog = await screen.findByRole("alertdialog");
-    expect(dialog).toHaveTextContent("This department can't be deleted");
-    expect(dialog).toHaveTextContent("12 personnel records");
-    expect(dialog).toHaveTextContent("3 positions");
-    expect(screen.getByRole("button", { name: "Delete department" })).toBeDisabled();
-    expect(deleteMutation.mutateAsync).not.toHaveBeenCalled();
-
-    await user.click(screen.getByRole("button", { name: "Deactivate instead" }));
-    expect(saveDepartment).toHaveBeenCalledWith({ departmentId: 7, input: { name: "Operations", isActive: false } });
+    expect(screen.queryByRole("button", { name: /delete/i })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /deactivate intelligence section/i }));
+    expect(saveDepartment).toHaveBeenCalledWith({ departmentId: 7, input: { name: "Intelligence Section", isActive: false } });
   });
 
-  it("deletes an unreferenced department only after confirmation", async () => {
+  it("lists ranks by code and name without a delete action", () => {
+    hooks.useRanks.mockReturnValue({
+      data: { rows: [{ id: 1, name: "Patrolman / Patrolwoman", code: "Pat", sort_order: 1, is_active: true, created_at: "", updated_at: "" }], count: 1 },
+      error: null, isLoading: false, refetch: vi.fn(),
+    });
+    hooks.useSaveRank.mockReturnValue({ isPending: false, mutateAsync: vi.fn() });
+
+    render(<RanksWorkspace />);
+
+    expect(screen.getByRole("columnheader", { name: "Code" })).toBeInTheDocument();
+    expect(screen.getByRole("cell", { name: "Pat" })).toBeInTheDocument();
+    expect(screen.getByRole("cell", { name: "Patrolman / Patrolwoman" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /delete/i })).not.toBeInTheDocument();
+  });
+
+  it("saves a rank with its name, code, and seniority order", async () => {
     const user = userEvent.setup();
-    const deleteMutation = { isPending: false, error: null, mutateAsync: vi.fn().mockResolvedValue(undefined), reset: vi.fn() };
-    hooks.useDepartments.mockReturnValue({ data: { rows: [{ id: 8, name: "Legacy", is_active: false }], count: 1 }, error: null, isLoading: false, refetch: vi.fn() });
-    hooks.useSaveDepartment.mockReturnValue({ isPending: false, mutateAsync: vi.fn() });
-    deletion.useDeleteRecord.mockReturnValue(deleteMutation);
-    deletion.useDeletionImpact.mockImplementation((_type: string, id: number | null) => ({
-      isLoading: false, error: null, refetch: vi.fn(),
-      data: id === null ? undefined : { entityType: "department", entityId: "8", label: "Legacy", canDelete: true, blockers: [], reasons: [], removes: [], alternative: null },
-    }));
+    const saveRank = vi.fn().mockResolvedValue(undefined);
+    hooks.useRanks.mockReturnValue({ data: { rows: [], count: 0 }, error: null, isLoading: false, refetch: vi.fn() });
+    hooks.useSaveRank.mockReturnValue({ isPending: false, mutateAsync: saveRank });
 
-    render(<DepartmentsWorkspace />);
-    await user.click(screen.getByRole("button", { name: /delete legacy/i }));
-    expect(await screen.findByRole("alertdialog")).toHaveTextContent("permanently removes");
-    expect(deleteMutation.mutateAsync).not.toHaveBeenCalled();
-    await user.click(screen.getByRole("button", { name: "Delete department" }));
+    render(<RanksWorkspace />);
+    await user.click(screen.getByRole("button", { name: "Add rank" }));
+    await user.type(screen.getByLabelText(/^name/i), "Police Corporal");
+    await user.type(screen.getByLabelText(/^code/i), "PCpl");
+    await user.clear(screen.getByLabelText(/^order/i));
+    await user.type(screen.getByLabelText(/^order/i), "2");
+    await user.click(screen.getByRole("button", { name: /save rank/i }));
 
-    expect(deleteMutation.mutateAsync).toHaveBeenCalledWith(8);
-    expect(await screen.findByRole("status")).toHaveTextContent("permanently deleted");
+    expect(saveRank).toHaveBeenCalledWith({ input: { name: "Police Corporal", code: "PCpl", sortOrder: 2, isActive: true }, rankId: undefined });
   });
 });

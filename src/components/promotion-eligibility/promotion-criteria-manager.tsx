@@ -11,7 +11,8 @@ import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { LoadingState } from "@/components/ui/loading-state";
 import { nativeSelectClassName } from "@/components/ui/native-select";
-import { usePositionOptions } from "@/hooks/use-administration";
+import { useRankOptions } from "@/hooks/use-administration";
+import { rankLabel } from "@/lib/ranks";
 import { useCreatePromotionCriterion, usePromotionCriteria, useSetPromotionCriterionActive } from "@/hooks/use-promotion-eligibility";
 import type { PromotionCriterionRequirement } from "@/lib/types/database";
 import { promotionCriterionSchema } from "@/schemas/promotion-eligibility";
@@ -26,14 +27,14 @@ export const PERFORMANCE_RATING_OPTIONS = [
 
 const recordKindLabels = { certification: "Certification", qualification: "Qualification", training: "Training" } as const;
 
-type FieldErrors = Partial<Record<"targetPositionId" | "minimumYearsOfService" | "minimumPerformanceRating" | "requiredName" | "form", string>>;
+type FieldErrors = Partial<Record<"targetRankId" | "minimumYearsOfService" | "minimumPerformanceRating" | "requiredName" | "form", string>>;
 
-function CriterionForm({ positionOptions, takenPositionIds }: { positionOptions: { value: string; label: string; description?: string }[]; takenPositionIds: Set<number> }) {
+function CriterionForm({ rankOptions, takenRankIds }: { rankOptions: { value: string; label: string; description?: string }[]; takenRankIds: Set<number> }) {
   const create = useCreatePromotionCriterion();
-  const [positionId, setPositionId] = useState<string | null>(null);
+  const [rankId, setRankId] = useState<string | null>(null);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [notice, setNotice] = useState<string | null>(null);
-  const available = positionOptions.filter((option) => !takenPositionIds.has(Number(option.value)));
+  const available = rankOptions.filter((option) => !takenRankIds.has(Number(option.value)));
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -43,7 +44,7 @@ function CriterionForm({ positionOptions, takenPositionIds }: { positionOptions:
     const form = Object.fromEntries(new FormData(formElement));
     const requiredName = String(form.requiredName ?? "").trim();
     const parsed = promotionCriterionSchema.safeParse({
-      targetPositionId: positionId ?? "",
+      targetRankId: rankId ?? "",
       minimumYearsOfService: form.minimumYearsOfService,
       minimumPerformanceRating: form.minimumPerformanceRating,
       requirements: requiredName
@@ -55,7 +56,7 @@ function CriterionForm({ positionOptions, takenPositionIds }: { positionOptions:
       for (const issue of parsed.error.issues) {
         const key = String(issue.path[0] ?? "form");
         const field = key === "requirements" ? "requiredName" : (key as keyof FieldErrors);
-        next[field] ??= key === "targetPositionId" ? "Choose the position these criteria apply to." : issue.message;
+        next[field] ??= key === "targetRankId" ? "Choose the rank these criteria apply to." : issue.message;
       }
       setErrors(next);
       return;
@@ -63,7 +64,7 @@ function CriterionForm({ positionOptions, takenPositionIds }: { positionOptions:
     try {
       await create.mutateAsync(parsed.data);
       formElement.reset();
-      setPositionId(null);
+      setRankId(null);
       setNotice("Promotion criteria saved.");
     } catch (cause) {
       setErrors({ form: cause instanceof Error ? cause.message : "Unable to save criteria." });
@@ -73,14 +74,14 @@ function CriterionForm({ positionOptions, takenPositionIds }: { positionOptions:
   return (
     <form className="grid gap-4 rounded-xl border bg-card p-5 sm:grid-cols-2" noValidate onSubmit={submit}>
       <h2 className="font-heading text-xl font-semibold sm:col-span-2">Add promotion criteria</h2>
-      <FormField description="Each position can have one set of criteria." error={errors.targetPositionId} htmlFor="target-position" label="Target position" required>
+      <FormField description="Each rank can have one set of criteria." error={errors.targetRankId} htmlFor="target-rank" label="Target rank" required>
         <Combobox
-          emptyMessage="No position without criteria matches that search."
-          id="target-position"
-          onValueChange={setPositionId}
+          emptyMessage="No rank without criteria matches that search."
+          id="target-rank"
+          onValueChange={setRankId}
           options={available}
-          placeholder="Search positions"
-          value={positionId}
+          placeholder="Search ranks"
+          value={rankId}
         />
       </FormField>
       <FormField error={errors.minimumYearsOfService} htmlFor="minimum-years" label="Minimum years of service" required>
@@ -119,18 +120,18 @@ function CriterionForm({ positionOptions, takenPositionIds }: { positionOptions:
 
 export function PromotionCriteriaManager() {
   const criteria = usePromotionCriteria();
-  const positions = usePositionOptions();
+  const ranks = useRankOptions();
   const setActive = useSetPromotionCriterionActive();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
-  const positionTitles = useMemo(() => new Map((positions.data ?? []).map((position) => [position.id, position.title])), [positions.data]);
-  const positionOptions = useMemo(
-    () => (positions.data ?? []).filter((position) => position.is_active).map((position) => ({ value: String(position.id), label: position.title, description: position.code ?? undefined })),
-    [positions.data],
+  const rankTitles = useMemo(() => new Map((ranks.data ?? []).map((rank) => [rank.id, rankLabel(rank)])), [ranks.data]);
+  const rankOptions = useMemo(
+    () => (ranks.data ?? []).filter((rank) => rank.is_active).map((rank) => ({ value: String(rank.id), label: rankLabel(rank) })),
+    [ranks.data],
   );
-  const takenPositionIds = useMemo(() => new Set((criteria.data ?? []).map((criterion) => criterion.target_position_id)), [criteria.data]);
+  const takenRankIds = useMemo(() => new Set((criteria.data ?? []).map((criterion) => criterion.target_rank_id)), [criteria.data]);
   const deletingCriterion = criteria.data?.find((criterion) => criterion.id === deletingId);
 
   async function toggle(id: string, isActive: boolean, title: string) {
@@ -147,7 +148,7 @@ export function PromotionCriteriaManager() {
 
   return (
     <div className="space-y-6">
-      <CriterionForm positionOptions={positionOptions} takenPositionIds={takenPositionIds} />
+      <CriterionForm rankOptions={rankOptions} takenRankIds={takenRankIds} />
 
       <section aria-labelledby="existing-criteria" className="space-y-3">
         <h2 className="font-heading text-xl font-semibold" id="existing-criteria">Existing criteria</h2>
@@ -159,7 +160,7 @@ export function PromotionCriteriaManager() {
         {criteria.isLoading ? <LoadingState label="Loading promotion criteria…" /> : criteria.error ? <ErrorState message={criteria.error.message} /> : criteria.data?.length ? (
           <ul className="grid gap-3">
             {criteria.data.map((criterion) => {
-              const title = positionTitles.get(criterion.target_position_id) ?? `Position #${criterion.target_position_id}`;
+              const title = rankTitles.get(criterion.target_rank_id) ?? `Rank #${criterion.target_rank_id}`;
               const requirements = (criterion.promotion_criteria_requirements ?? []) as PromotionCriterionRequirement[];
               const rating = PERFORMANCE_RATING_OPTIONS.find((option) => option.value === criterion.minimum_performance_rating);
               return (
@@ -208,7 +209,7 @@ export function PromotionCriteriaManager() {
       <DeleteRecordDialog
         alternative={deletingCriterion?.is_active ? {
           label: "Deactivate instead",
-          onSelect: () => toggle(deletingCriterion.id, false, positionTitles.get(deletingCriterion.target_position_id) ?? "this position"),
+          onSelect: () => toggle(deletingCriterion.id, false, rankTitles.get(deletingCriterion.target_rank_id) ?? "this rank"),
         } : undefined}
         entityId={deletingId}
         entityType="promotion_criterion"

@@ -7,7 +7,7 @@ import type {
   ManagedUser,
   OrganizationSettings,
   PaginatedResult,
-  Position,
+  Rank,
   Profile,
   UserRole,
 } from "@/lib/types/database";
@@ -19,7 +19,7 @@ import {
   managedUserDeleteSchema,
   managedUserUpdateSchema,
   organizationSettingsSchema,
-  positionSchema,
+  rankSchema,
   referenceDataFiltersSchema,
   type AuditLogFilters,
   type DepartmentInput,
@@ -28,7 +28,7 @@ import {
   type ManagedUserDeleteInput,
   type ManagedUserUpdateInput,
   type OrganizationSettingsInput,
-  type PositionInput,
+  type RankInput,
   type ReferenceDataFilters,
 } from "@/schemas/administration";
 
@@ -189,39 +189,38 @@ export async function saveDepartment(input: DepartmentInput, departmentId?: numb
   return result.data as Department;
 }
 
-export async function listPositions(input: Partial<ReferenceDataFilters> = {}): Promise<PaginatedResult<Position, ReferenceDataFilters>> {
+export async function listRanks(input: Partial<ReferenceDataFilters> = {}): Promise<PaginatedResult<Rank, ReferenceDataFilters>> {
   const filters = referenceDataFilters(input);
   const { from, to } = pageRange(filters.page);
-  let query = createBrowserSupabaseClient().from("positions").select("*", { count: "exact" }).order("title");
-  if (filters.search) query = query.or(`title.ilike.%${filters.search}%,code.ilike.%${filters.search}%`);
+  let query = createBrowserSupabaseClient().from("ranks").select("*", { count: "exact" }).order("sort_order");
+  if (filters.search) query = query.or(`name.ilike.%${filters.search}%,code.ilike.%${filters.search}%`);
   if (filters.status) query = query.eq("is_active", filters.status === "active");
   const { data, error, count } = await query.range(from, to);
   throwIfError(error);
-  return { rows: (data ?? []) as Position[], count: count ?? 0, filters };
+  return { rows: (data ?? []) as Rank[], count: count ?? 0, filters };
 }
 
-/** Complete position catalogue for dropdowns; filter by department on the client. */
-export async function listPositionOptions() {
-  const { data, error } = await createBrowserSupabaseClient().from("positions").select("*").order("title").limit(1000);
+/** Complete rank catalogue for dropdowns, junior to senior (every rank applies to every department). */
+export async function listRankOptions() {
+  const { data, error } = await createBrowserSupabaseClient().from("ranks").select("*").order("sort_order").limit(1000);
   throwIfError(error);
-  return (data ?? []) as Position[];
+  return (data ?? []) as Rank[];
 }
 
-export async function savePosition(input: PositionInput, positionId?: number) {
-  const values = positionSchema.parse(input);
+export async function saveRank(input: RankInput, rankId?: number) {
+  const values = rankSchema.parse(input);
   const payload = {
-    department_id: values.departmentId,
-    title: values.title,
-    code: values.code ?? null,
-    description: values.description ?? null,
+    name: values.name,
+    code: values.code,
+    sort_order: values.sortOrder,
     is_active: values.isActive,
   };
   const client = createBrowserSupabaseClient();
-  const result = positionId
-    ? await client.from("positions").update(payload).eq("id", positionId).select("*").single()
-    : await client.from("positions").insert(payload).select("*").single();
+  const result = rankId
+    ? await client.from("ranks").update(payload).eq("id", rankId).select("*").single()
+    : await client.from("ranks").insert(payload).select("*").single();
   throwIfError(result.error);
-  return result.data as Position;
+  return result.data as Rank;
 }
 
 export async function getOrganizationSettings() {
@@ -260,11 +259,11 @@ export async function listAuditLogs(input: Partial<AuditLogFilters> = {}): Promi
   const departmentIds = [...new Set(rows
     .filter((row) => row.entity_type === "departments" && typeof row.metadata.name !== "string")
     .map((row) => row.entity_id))];
-  const positionIds = [...new Set(rows
-    .filter((row) => row.entity_type === "positions" && typeof row.metadata.title !== "string")
+  const rankIds = [...new Set(rows
+    .filter((row) => row.entity_type === "ranks" && typeof row.metadata.name !== "string")
     .map((row) => row.entity_id))];
 
-  const lookups: AuditPresentationLookups = { profiles: {}, departments: {}, positions: {} };
+  const lookups: AuditPresentationLookups = { profiles: {}, departments: {}, ranks: {} };
   if (profileIds.length) {
     const { data: profileRows, error: profileError } = await client
       .from("profiles")
@@ -286,14 +285,14 @@ export async function listAuditLogs(input: Partial<AuditLogFilters> = {}): Promi
       lookups.departments[String(department.id)] = department.name;
     }
   }
-  if (positionIds.length) {
-    const { data: positionRows, error: positionError } = await client
-      .from("positions")
-      .select("id, title")
-      .in("id", positionIds);
-    throwIfError(positionError);
-    for (const position of (positionRows ?? []) as Array<Pick<Position, "id" | "title">>) {
-      lookups.positions[String(position.id)] = position.title;
+  if (rankIds.length) {
+    const { data: rankRows, error: rankError } = await client
+      .from("ranks")
+      .select("id, name")
+      .in("id", rankIds);
+    throwIfError(rankError);
+    for (const rank of (rankRows ?? []) as Array<Pick<Rank, "id" | "name">>) {
+      lookups.ranks[String(rank.id)] = rank.name;
     }
   }
 

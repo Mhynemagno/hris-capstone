@@ -43,7 +43,7 @@ export const jobCriterionSchema = z.object({
 export const jobOpeningSchema = z.object({
   id: positiveInteger.optional(),
   departmentId: positiveInteger,
-  positionId: positiveInteger,
+  rankId: positiveInteger,
   title: z.string().trim().min(2).max(160),
   description: z.string().trim().min(20).max(10_000),
   location: optionalText(160),
@@ -59,7 +59,7 @@ export const applicantProfileSchema = z.object({
   qualifier: optionalText(32),
   placeOfBirth: optionalText(160),
   dateOfBirth: optionalIsoDate,
-  sex: optionalEnum(["female", "male", "prefer_not_to_say"]),
+  gender: optionalEnum(["female", "male", "prefer_not_to_say"]),
   civilStatus: optionalEnum(["single", "married", "widowed", "separated", "divorced"]),
   religion: optionalText(120),
   phone: optionalText(32),

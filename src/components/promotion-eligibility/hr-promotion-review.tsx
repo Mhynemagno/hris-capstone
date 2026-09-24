@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { LoadingState } from "@/components/ui/loading-state";
 import { nativeSelectClassName } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
-import { usePositionOptions } from "@/hooks/use-administration";
+import { useRankOptions } from "@/hooks/use-administration";
+import { rankLabel } from "@/lib/ranks";
 import {
   useCreatePerformanceRating,
   useCreatePromotionEvaluation,
@@ -43,7 +44,7 @@ type RatingFieldErrors = Partial<Record<"rating" | "reviewPeriodStartsOn" | "rev
 export function HrPromotionReview({ employeeId }: { employeeId: string }) {
   const detail = useHrPromotionEmployee(employeeId);
   const criteria = usePromotionCriteria({ isActive: true });
-  const positions = usePositionOptions();
+  const ranks = useRankOptions();
   const createRating = useCreatePerformanceRating();
   const createEvaluation = useCreatePromotionEvaluation();
   const [ratingStart, setRatingStart] = useState("");
@@ -59,8 +60,10 @@ export function HrPromotionReview({ employeeId }: { employeeId: string }) {
     return <ErrorState message={detail.error?.message ?? criteria.error?.message ?? "Employee record was not found."} />;
   }
   const data = detail.data;
-  const positionTitle = (positionId: number) =>
-    positions.data?.find((position) => position.id === positionId)?.title ?? (positions.isLoading ? "Loading position…" : `Position #${positionId}`);
+  const rankTitle = (rankId: number) => {
+    const rank = ranks.data?.find((row) => row.id === rankId);
+    return rank ? rankLabel(rank) : ranks.isLoading ? "Loading rank…" : `Rank #${rankId}`;
+  };
 
   async function submitRating(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -118,7 +121,7 @@ export function HrPromotionReview({ employeeId }: { employeeId: string }) {
     try {
       await createEvaluation.mutateAsync({
         employeeId,
-        targetPositionId: criterion.target_position_id,
+        targetRankId: criterion.target_rank_id,
         criterionId: criterion.id,
         evaluatedOn: form.evaluatedOn,
         recommendation: form.recommendation,
@@ -126,7 +129,7 @@ export function HrPromotionReview({ employeeId }: { employeeId: string }) {
         evidence: [],
       });
       formElement.reset();
-      setEvaluationSuccess(`Advisory review saved for ${positionTitle(criterion.target_position_id)}.`);
+      setEvaluationSuccess(`Advisory review saved for ${rankTitle(criterion.target_rank_id)}.`);
     } catch (cause) {
       setEvaluationError(cause instanceof Error ? cause.message : "Unable to save the promotion review.");
     }
@@ -214,17 +217,17 @@ export function HrPromotionReview({ employeeId }: { employeeId: string }) {
         <h2 className="text-lg font-semibold">Promotion recommendation</h2>
         <form className="grid gap-4 rounded-xl border p-4 sm:grid-cols-2" onSubmit={submitEvaluation}>
           <FormField
-            description={criteria.data?.length ? "Each option is the target position for an active criteria set." : "No active criteria exist. Create criteria first."}
+            description={criteria.data?.length ? "Each option is the target rank for an active criteria set." : "No active criteria exist. Create criteria first."}
             error={criterionError}
             htmlFor="criterion"
-            label="Target position (active criteria)"
+            label="Target rank (active criteria)"
             required
           >
             <select className={nativeSelectClassName} defaultValue="" id="criterion" name="criterionId" required>
               <option value="">Choose criteria</option>
               {criteria.data?.map((criterion) => (
                 <option key={criterion.id} value={criterion.id}>
-                  {positionTitle(criterion.target_position_id)} · {criterion.minimum_years_of_service}+ yrs
+                  {rankTitle(criterion.target_rank_id)} · {criterion.minimum_years_of_service}+ yrs
                   {criterion.minimum_performance_rating ? ` · rating ≥ ${criterion.minimum_performance_rating}` : ""}
                 </option>
               ))}

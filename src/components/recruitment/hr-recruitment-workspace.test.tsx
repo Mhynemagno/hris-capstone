@@ -29,13 +29,13 @@ vi.mock("@/hooks/use-administration", () => ({
       { id: 5, name: "Finance", is_active: true, created_at: "", updated_at: "" },
     ],
   }),
-  usePositionOptions: () => ({
+  useRankOptions: () => ({
     isLoading: false,
     error: null,
     data: [
-      { id: 2, department_id: 1, title: "Recruiter", code: null, description: null, is_active: true, created_at: "", updated_at: "" },
-      { id: 3, department_id: 1, title: "Retired Recruiter", code: null, description: null, is_active: false, created_at: "", updated_at: "" },
-      { id: 6, department_id: 5, title: "Accountant", code: null, description: null, is_active: true, created_at: "", updated_at: "" },
+      { id: 2, name: "Patrolman / Patrolwoman", code: "Pat", sort_order: 1, is_active: true, created_at: "", updated_at: "" },
+      { id: 3, name: "Retired Rank", code: "RET", sort_order: 2, is_active: false, created_at: "", updated_at: "" },
+      { id: 6, name: "Police Corporal", code: "PCpl", sort_order: 3, is_active: true, created_at: "", updated_at: "" },
     ],
   }),
 }));
@@ -73,13 +73,12 @@ describe("HR recruitment workspace", () => {
     render(<HrJobForm />);
 
     expect(screen.getByLabelText(/^department/i)).toHaveValue("");
-    expect(screen.getByLabelText(/^position/i)).toBeDisabled();
     await user.selectOptions(screen.getByLabelText(/^department/i), "1");
-    // Only active positions in the chosen department are offered.
-    expect(screen.getByRole("option", { name: "Recruiter" })).toBeInTheDocument();
-    expect(screen.queryByRole("option", { name: /retired recruiter/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("option", { name: "Accountant" })).not.toBeInTheDocument();
-    await user.selectOptions(screen.getByLabelText(/^position/i), "2");
+    // Every active rank is offered, whatever the department.
+    expect(screen.getByRole("option", { name: "Pat — Patrolman / Patrolwoman" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "PCpl — Police Corporal" })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: /retired rank/i })).not.toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText(/^rank/i), "2");
     await user.click(screen.getByLabelText(/^title/i));
     await user.paste("Senior Recruiter");
     await user.click(screen.getByLabelText(/^description/i));
@@ -89,32 +88,31 @@ describe("HR recruitment workspace", () => {
     await user.click(screen.getByRole("button", { name: "Save draft" }));
 
     await waitFor(() => expect(mocks.saveJob).toHaveBeenCalledWith(expect.objectContaining({
-      input: expect.objectContaining({ status: "draft", departmentId: 1, positionId: 2, criteria: [expect.objectContaining({ requirement: "Five years of experience" })] }),
+      input: expect.objectContaining({ status: "draft", departmentId: 1, rankId: 2, criteria: [expect.objectContaining({ requirement: "Five years of experience" })] }),
     })));
     expect(await screen.findByRole("status")).toHaveTextContent("Draft saved.");
   });
 
-  it("requires a department and position instead of defaulting to the first one", async () => {
+  it("requires a department and rank instead of defaulting to the first one", async () => {
     const user = userEvent.setup();
     render(<HrJobForm />);
 
     await user.click(screen.getByRole("button", { name: "Save draft" }));
 
     expect(await screen.findByText("Select a department.")).toBeInTheDocument();
-    expect(screen.getByText("Select a position.")).toBeInTheDocument();
+    expect(screen.getByText("Select a rank.")).toBeInTheDocument();
     expect(mocks.saveJob).not.toHaveBeenCalled();
   });
 
-  it("resets the position when the department changes", async () => {
+  it("keeps the chosen rank when the department changes", async () => {
     const user = userEvent.setup();
     render(<HrJobForm />);
 
     await user.selectOptions(screen.getByLabelText(/^department/i), "1");
-    await user.selectOptions(screen.getByLabelText(/^position/i), "2");
+    await user.selectOptions(screen.getByLabelText(/^rank/i), "2");
     await user.selectOptions(screen.getByLabelText(/^department/i), "5");
 
-    expect(screen.getByLabelText(/^position/i)).toHaveValue("");
-    expect(screen.getByRole("option", { name: "Accountant" })).toBeInTheDocument();
+    expect(screen.getByLabelText(/^rank/i)).toHaveValue("2");
   });
 
   it("allows HR to move an application forward and open the hire decision", async () => {
@@ -161,6 +159,14 @@ describe("HR recruitment workspace", () => {
     expect(screen.getByText(/You can retry when the service is available/)).toBeInTheDocument();
   });
 
+  it("tells HR when an analysis timed out and still offers a retry", () => {
+    mocks.scores = [{ id: "00000000-0000-0000-0000-000000000003", status: "failed", score: null, explanation: null, failure_code: "timed_out" }];
+
+    render(<HrApplicationDetail applicationId="00000000-0000-0000-0000-000000000001" />);
+    expect(screen.getByText(/Analysis timed out\./)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Retry analysis" })).toBeInTheDocument();
+  });
+
   it("shows AI score loading errors instead of misreporting them as not analyzed", () => {
     mocks.scoreError = new Error("Unable to load recommendations");
     render(<HrApplicationDetail applicationId="00000000-0000-0000-0000-000000000001" />);
@@ -201,9 +207,9 @@ describe("HR recruitment workspace", () => {
     expect(mocks.transition).not.toHaveBeenCalled();
 
     await user.selectOptions(screen.getByLabelText("Next status"), "Not Selected");
-    await user.type(screen.getByLabelText("Note"), "Position filled");
+    await user.type(screen.getByLabelText("Note"), "Vacancy filled");
     await user.click(screen.getByRole("button", { name: "Update status" }));
-    expect(mocks.transition).toHaveBeenCalledWith(expect.objectContaining({ nextStatus: "Not Selected", note: "Position filled" }));
+    expect(mocks.transition).toHaveBeenCalledWith(expect.objectContaining({ nextStatus: "Not Selected", note: "Vacancy filled" }));
     expect(await screen.findByText("Invalid application status transition.")).toBeInTheDocument();
   });
 });

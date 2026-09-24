@@ -165,7 +165,7 @@ describe("saveJobOpening", () => {
   it("saves the opening and its criteria through one transactional RPC", async () => {
     await expect(saveJobOpening({
       departmentId: 1,
-      positionId: 2,
+      rankId: 2,
       title: "Public Safety Analyst",
       description: "Analyze public safety data and support evidence-based operational decisions.",
       status: "draft",

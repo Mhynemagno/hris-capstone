@@ -27,27 +27,21 @@ describe("personnel record schemas", () => {
     });
   });
 
-  it("accepts only the supplied police rank catalogue", () => {
-    expect(employeeSchema.parse({
+  it("records the rank by its catalogue id and allows only Active or On leave", () => {
+    const base = {
       employeeNumber: "PAT-0001",
       firstName: "Ana",
       lastName: "Dela Cruz",
       personalEmail: "ana@example.com",
       employmentStartedOn: "2024-01-01",
-      rank: "Police Captain (PCPT)",
+    };
+    expect(employeeSchema.parse({ ...base, rankId: "9", unitStation: "Station 1", employmentStatus: "on_leave" })).toMatchObject({
+      rankId: 9,
       unitStation: "Station 1",
-    })).toMatchObject({
-      rank: "Police Captain (PCPT)",
-      unitStation: "Station 1",
+      employmentStatus: "on_leave",
     });
-    expect(employeeSchema.safeParse({
-      employeeNumber: "PAT-0001",
-      firstName: "Ana",
-      lastName: "Dela Cruz",
-      personalEmail: "ana@example.com",
-      employmentStartedOn: "2024-01-01",
-      rank: "Commander",
-    }).success).toBe(false);
+    expect(employeeSchema.safeParse({ ...base, employmentStatus: "separated" }).success).toBe(false);
+    expect(employeeSchema.safeParse({ ...base, employmentStatus: "inactive" }).success).toBe(false);
   });
 
   it("rejects inverted official-record date ranges", () => {

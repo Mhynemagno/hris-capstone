@@ -11,10 +11,10 @@ vi.mock("@/hooks/use-administration", () => ({
     isLoading: false,
     error: null,
   }),
-  usePositionOptions: () => ({
+  useRankOptions: () => ({
     data: [
-      { id: 7, department_id: 3, title: "Patrol Officer", code: null, description: null, is_active: true, ...stamp },
-      { id: 9, department_id: 4, title: "Records Clerk", code: null, description: null, is_active: true, ...stamp },
+      { id: 7, name: "Patrolman / Patrolwoman", code: "Pat", sort_order: 1, is_active: true, ...stamp },
+      { id: 9, name: "Police Corporal", code: "PCpl", sort_order: 2, is_active: true, ...stamp },
     ],
     isLoading: false,
     error: null,
@@ -51,15 +51,14 @@ describe("RecordEntryForm", () => {
     }), training.id));
   });
 
-  it("records service history with a department-filtered position and optional title", async () => {
+  it("records service history with a department, a rank, and an optional title", async () => {
     const user = userEvent.setup();
     const onSaved = vi.fn().mockResolvedValue(undefined);
     render(<RecordEntryForm employeeId={employeeId} kind="serviceHistory" onSaved={onSaved} />);
 
-    expect(screen.getByLabelText("Position")).toBeDisabled();
     await user.selectOptions(screen.getByLabelText("Department"), "4");
-    expect(screen.queryByRole("option", { name: "Patrol Officer" })).not.toBeInTheDocument();
-    await user.selectOptions(screen.getByLabelText("Position"), "9");
+    expect(screen.getByRole("option", { name: "Pat — Patrolman / Patrolwoman" })).toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText("Rank"), "9");
     await user.type(screen.getByLabelText(/start date/i), "2025-01-01");
     expect(screen.getByLabelText(/end date/i)).toHaveAttribute("min", "2025-01-01");
     await user.type(screen.getByLabelText("Notes"), "Transferred");
@@ -67,7 +66,7 @@ describe("RecordEntryForm", () => {
 
     await waitFor(() => expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({
       departmentId: 4,
-      positionId: 9,
+      rankId: 9,
       employmentTitle: undefined,
       notes: "Transferred",
       startedOn: "2025-01-01",

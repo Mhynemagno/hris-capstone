@@ -36,8 +36,8 @@ select extensions.ok(
   'Required applicant document objects cannot be deleted through the broad owner policy'
 );
 select extensions.ok(
-  exists (select 1 from pg_constraint where conname = 'applicants_sex_check' and pg_get_constraintdef(oid) like '%prefer_not_to_say%'),
-  'Applicant sex values are constrained to the application type contract'
+  exists (select 1 from pg_constraint where conname = 'applicants_gender_check' and pg_get_constraintdef(oid) like '%prefer_not_to_say%'),
+  'Applicant gender values are constrained to the application type contract'
 );
 select extensions.ok(
   exists (select 1 from pg_constraint where conname = 'employees_civil_status_check' and pg_get_constraintdef(oid) like '%divorced%'),

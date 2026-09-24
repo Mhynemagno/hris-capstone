@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(63);
+select extensions.plan(67);
 
 delete from public.applications;
 delete from public.job_openings;
@@ -80,15 +80,13 @@ select extensions.is(
 );
 
 insert into public.departments (name) values ('Recruitment test department');
-insert into public.positions (department_id, title)
-select id, 'Recruitment test position' from public.departments where name = 'Recruitment test department';
-insert into public.positions (department_id, title)
-select id, 'Patrolman / Patrolwoman (PAT)' from public.departments where name = 'Recruitment test department';
+insert into public.ranks (name, code, sort_order) values ('Recruitment test rank', 'RTR', 9201);
+insert into public.ranks (name, code, sort_order) values ('Patrolman / Patrolwoman', 'Pat', 9202) on conflict (code) do nothing;
 
-insert into public.job_openings (department_id, position_id, title, description, status, published_at, created_by_user_id)
-select department.id, position.id, opening.title, opening.description, opening.status, opening.published_at, '00000000-0000-4000-8000-000000009101'::uuid
+insert into public.job_openings (department_id, rank_id, title, description, status, published_at, created_by_user_id)
+select department.id, rank.id, opening.title, opening.description, opening.status, opening.published_at, '00000000-0000-4000-8000-000000009101'::uuid
 from public.departments department
-join public.positions position on position.department_id = department.id and position.title = 'Recruitment test position'
+cross join (select id from public.ranks where code = 'RTR') rank
 cross join (
   values
     ('Published recruitment opening', 'A published opening visible to the public and applicants.', 'published'::text, now()),
@@ -186,7 +184,7 @@ select extensions.lives_ok(
   $$select public.save_job_opening(
     null,
     department.id,
-    position.id,
+    rank.id,
     'Transactional opening',
     'A job opening created together with its qualification criteria in one transaction.',
     null,
@@ -194,7 +192,7 @@ select extensions.lives_ok(
     'closed',
     '[{"ordinal":1,"kind":"experience","requirement":"Two years of relevant experience","isRequired":true}]'::jsonb
   ) from public.departments department
-  join public.positions position on position.department_id = department.id and position.title = 'Recruitment test position'
+  cross join (select id from public.ranks where code = 'RTR') rank
   where department.name = 'Recruitment test department'$$,
   'HR creates a job opening and criteria through the protected workflow'
 );
@@ -207,7 +205,7 @@ select extensions.lives_ok(
   $$select public.save_job_opening(
     opening.id,
     opening.department_id,
-    opening.position_id,
+    opening.rank_id,
     'Transactional opening updated',
     'The edited job opening and its replacement qualification criteria remain consistent.',
     'Headquarters',
@@ -231,7 +229,7 @@ select extensions.throws_ok(
   $$select public.save_job_opening(
     opening.id,
     opening.department_id,
-    opening.position_id,
+    opening.rank_id,
     'Transactional opening updated',
     'The edited job opening and its replacement qualification criteria remain consistent.',
     'Headquarters',
@@ -407,6 +405,37 @@ select extensions.ok(exists (
     and entity_id = '00000000-0000-4000-8000-000000009401'
     and action = 'hired'
 ), 'Hiring writes an audit record');
+select extensions.is(
+  (select rank.code from public.employees employee join public.ranks rank on rank.id = employee.rank_id
+    join public.applications application on application.hired_employee_id = employee.id
+    where application.id = '00000000-0000-4000-8000-000000009401'::uuid),
+  'Pat', 'Hiring assigns the Patrolman / Patrolwoman rank looked up by its code');
+select extensions.is(
+  (select employee.department_id from public.employees employee
+    join public.applications application on application.hired_employee_id = employee.id
+    join public.job_openings opening on opening.id = application.job_opening_id
+    where application.id = '00000000-0000-4000-8000-000000009401'::uuid),
+  (select opening.department_id from public.applications application
+    join public.job_openings opening on opening.id = application.job_opening_id
+    where application.id = '00000000-0000-4000-8000-000000009401'::uuid),
+  'Hiring places the new employee in the department of the job they applied for');
+
+-- Applicants keep seeing the job they applied for after it stops being published.
+insert into public.job_qualification_criteria (job_opening_id, ordinal, kind, requirement)
+select job_opening_id, 1, 'skill', 'Clear written communication' from public.applications where id = '00000000-0000-4000-8000-000000009401'::uuid;
+update public.job_openings set status = 'closed', published_at = null
+where id = (select job_opening_id from public.applications where id = '00000000-0000-4000-8000-000000009401'::uuid);
+set local role authenticated;
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000009102';
+select extensions.is(
+  (select count(*) from public.job_openings opening join public.applications application on application.job_opening_id = opening.id
+    where application.id = '00000000-0000-4000-8000-000000009401'::uuid),
+  1::bigint, 'The applicant still sees a closed job they applied to');
+select extensions.cmp_ok(
+  (select count(*) from public.job_qualification_criteria criteria join public.applications application on application.job_opening_id = criteria.job_opening_id
+    where application.id = '00000000-0000-4000-8000-000000009401'::uuid),
+  '>', 0::bigint, 'The applicant still sees the criteria of a closed job they applied to');
+set local role postgres;
 
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000009103';
@@ -418,9 +447,9 @@ select extensions.is((select status from public.employee_activation_requests whe
 
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000009101';
 select extensions.lives_ok(
-  $$insert into public.job_openings (department_id, position_id, title, description, created_by_user_id)
-    select department.id, position.id, 'HR created opening', 'An opening created directly by authorized Human Resources personnel.', '00000000-0000-4000-8000-000000009101'::uuid
-    from public.departments department join public.positions position on position.department_id = department.id and position.title = 'Recruitment test position'
+  $$insert into public.job_openings (department_id, rank_id, title, description, created_by_user_id)
+    select department.id, rank.id, 'HR created opening', 'An opening created directly by authorized Human Resources personnel.', '00000000-0000-4000-8000-000000009101'::uuid
+    from public.departments department cross join (select id from public.ranks where code = 'RTR') rank
     where department.name = 'Recruitment test department'$$,
   'HR can create a draft job opening'
 );
@@ -441,9 +470,9 @@ select extensions.throws_ok(
 
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000009102';
 select extensions.throws_ok(
-  $$insert into public.job_openings (department_id, position_id, title, description, created_by_user_id)
-    select department.id, position.id, 'Applicant created opening', 'An unauthorized opening attempt by an applicant account.', '00000000-0000-4000-8000-000000009102'::uuid
-    from public.departments department join public.positions position on position.department_id = department.id and position.title = 'Recruitment test position'
+  $$insert into public.job_openings (department_id, rank_id, title, description, created_by_user_id)
+    select department.id, rank.id, 'Applicant created opening', 'An unauthorized opening attempt by an applicant account.', '00000000-0000-4000-8000-000000009102'::uuid
+    from public.departments department cross join (select id from public.ranks where code = 'RTR') rank
     where department.name = 'Recruitment test department'$$,
   '42501', null, 'Applicants cannot create job openings'
 );

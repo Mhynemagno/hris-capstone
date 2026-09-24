@@ -16,10 +16,10 @@ vi.mock("@/queries/administration", () => ({
   listAuditLogs: vi.fn(),
   listDepartments: vi.fn(),
   listManagedUsers: mocks.listManagedUsers,
-  listPositions: vi.fn(),
+  listRanks: vi.fn(),
   saveDepartment: vi.fn(),
   saveOrganizationSettings: vi.fn(),
-  savePosition: vi.fn(),
+  saveRank: vi.fn(),
   updateManagedUser: mocks.updateManagedUser,
 }));
 

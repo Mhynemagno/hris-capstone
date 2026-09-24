@@ -13,7 +13,7 @@ const lookups = {
     [targetId]: "Officer Grace Hopper",
   },
   departments: {},
-  positions: {},
+  ranks: {},
 };
 
 function auditLog(overrides: Partial<AuditLog>): AuditLog {
@@ -73,14 +73,14 @@ describe("presentAuditLog", () => {
   it("uses safe fallback labels when historical lookup data is unavailable", () => {
     const entry = presentAuditLog(auditLog({
       actor_user_id: null,
-      entity_type: "positions",
+      entity_type: "ranks",
       entity_id: "42",
       action: "update",
       metadata: {},
-    }), { profiles: {}, departments: {}, positions: {} });
+    }), { profiles: {}, departments: {}, ranks: {} });
 
-    expect(entry.recordLabel).toBe("Position #42");
+    expect(entry.recordLabel).toBe("Rank #42");
     expect(entry.actionLabel).toBe("Updated");
-    expect(entry.summary).toBe("Position #42 updated");
+    expect(entry.summary).toBe("Rank #42 updated");
   });
 });

@@ -5,7 +5,7 @@ import * as schemas from "./index";
 const validJob = {
   title: "Recruitment Officer",
   departmentId: 1,
-  positionId: 2,
+  rankId: 2,
   description: "Coordinate candidate sourcing, screening, and recruitment records.",
   location: "Ulaanbaatar",
   closesOn: "2026-10-01",
@@ -46,7 +46,7 @@ describe("recruitment schemas", () => {
         qualifier: "Jr.",
         placeOfBirth: "Quezon City",
         dateOfBirth: "1998-05-16",
-        sex: "female",
+        gender: "female",
         civilStatus: "single",
         religion: "Roman Catholic",
         phone: "09171234567",
@@ -56,7 +56,7 @@ describe("recruitment schemas", () => {
       qualifier: "Jr.",
       placeOfBirth: "Quezon City",
       dateOfBirth: "1998-05-16",
-      sex: "female",
+      gender: "female",
       civilStatus: "single",
       religion: "Roman Catholic",
     });

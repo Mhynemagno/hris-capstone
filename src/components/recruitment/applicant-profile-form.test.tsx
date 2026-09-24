@@ -11,7 +11,7 @@ const applicant = {
   qualifier: null,
   place_of_birth: null,
   date_of_birth: null,
-  sex: null,
+  gender: null,
   civil_status: null,
   religion: null,
   phone: null,
@@ -44,6 +44,8 @@ describe("ApplicantProfileForm", () => {
     expect(screen.getByLabelText("Place of birth")).toBeInTheDocument();
     expect(screen.getByLabelText("Date of birth")).toBeInTheDocument();
     expect(screen.getByLabelText("Civil status")).toBeInTheDocument();
+    expect(screen.getByLabelText("Gender")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Sex")).not.toBeInTheDocument();
   });
 
   it("uses a telephone input and shows validation next to the field", async () => {

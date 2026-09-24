@@ -26,7 +26,7 @@ export {
   departmentSchema,
   managedUserUpdateSchema,
   organizationSettingsSchema,
-  positionSchema,
+  rankSchema,
 } from "./administration";
 export {
   applicantDocumentSchema,
@@ -103,7 +103,7 @@ export type {
   DepartmentInput,
   ManagedUserUpdateInput,
   OrganizationSettingsInput,
-  PositionInput,
+  RankInput,
 } from "./administration";
 export {
   leaveAttachmentSchema,

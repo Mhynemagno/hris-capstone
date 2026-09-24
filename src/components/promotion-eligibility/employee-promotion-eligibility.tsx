@@ -21,8 +21,8 @@ export function EmployeePromotionEligibility() {
       <p className="rounded-lg bg-muted p-3 text-sm">This is a readiness review, not an automatic promotion decision.</p>
       <dl className="grid gap-4 rounded-xl border p-5 sm:grid-cols-3">
         <div>
-          <dt className="text-sm text-muted-foreground">Target position</dt>
-          <dd className="mt-1 font-medium">{summary.target_position_title}</dd>
+          <dt className="text-sm text-muted-foreground">Target rank</dt>
+          <dd className="mt-1 font-medium">{summary.target_rank_name}</dd>
         </div>
         <div>
           <dt className="text-sm text-muted-foreground">Years of service</dt>

@@ -35,12 +35,11 @@ export type Department = {
   updated_at: string;
 };
 
-export type Position = {
+export type Rank = {
   id: number;
-  department_id: number | null;
-  title: string;
-  code: string | null;
-  description: string | null;
+  name: string;
+  code: string;
+  sort_order: number;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -132,10 +131,9 @@ export type Employee = {
   qualifier: string | null;
   place_of_birth: string | null;
   date_of_birth: string | null;
-  sex: "female" | "male" | "prefer_not_to_say" | null;
+  gender: "female" | "male" | "prefer_not_to_say" | null;
   civil_status: "single" | "married" | "widowed" | "separated" | "divorced" | null;
   religion: string | null;
-  rank: string | null;
   unit_station: string | null;
   profile_image_path: string | null;
   personal_email: string;
@@ -144,8 +142,8 @@ export type Employee = {
   emergency_contact_name: string | null;
   emergency_contact_phone: string | null;
   department_id: number | null;
-  position_id: number | null;
-  employment_status: "active" | "on_leave" | "inactive" | "separated";
+  rank_id: number | null;
+  employment_status: "active" | "on_leave";
   employment_started_on: string;
   employment_ended_on: string | null;
   created_at: string;
@@ -164,7 +162,7 @@ export type ServiceHistory = {
   id: string;
   employee_id: string;
   department_id: number | null;
-  position_id: number | null;
+  rank_id: number | null;
   employment_title: string | null;
   started_on: string;
   ended_on: string | null;
@@ -207,7 +205,7 @@ export type TrainingRecord = {
 export type JobOpening = {
   id: number;
   department_id: number | null;
-  position_id: number | null;
+  rank_id: number | null;
   title: string;
   description: string;
   location: string | null;
@@ -229,6 +227,13 @@ export type JobQualificationCriterion = {
   created_at: string;
 };
 
+/** A job opening as the applicant sees it on their application page. */
+export type AppliedJob = Pick<JobOpening, "id" | "title" | "description" | "location" | "closes_on" | "status"> & {
+  departments: { name: string } | null;
+  ranks: Pick<Rank, "name" | "code"> | null;
+  job_qualification_criteria: Pick<JobQualificationCriterion, "id" | "kind" | "requirement" | "is_required" | "ordinal">[];
+};
+
 export type Applicant = {
   id: string;
   profile_id: string;
@@ -239,7 +244,7 @@ export type Applicant = {
   qualifier: string | null;
   place_of_birth: string | null;
   date_of_birth: string | null;
-  sex: "female" | "male" | "prefer_not_to_say" | null;
+  gender: "female" | "male" | "prefer_not_to_say" | null;
   civil_status: "single" | "married" | "widowed" | "separated" | "divorced" | null;
   religion: string | null;
   profile_image_path: string | null;
@@ -290,7 +295,7 @@ export type ApplicationStatusHistory = {
   note: string | null;
   created_at: string;
 };
-export type ApplicationAiScore = { id: string; application_id: string; status: "queued" | "processing" | "completed" | "failed"; score: number | null; explanation: string | null; provider: string | null; model: string | null; model_version: string | null; completed_at: string | null; created_at: string; };
+export type ApplicationAiScore = { id: string; application_id: string; status: "queued" | "processing" | "completed" | "failed"; score: number | null; explanation: string | null; provider: string | null; model: string | null; model_version: string | null; failure_code: string | null; completed_at: string | null; created_at: string; };
 export type HrShortlistApplication = Application & { ai_score_id: string | null; ai_score_status: "queued" | "processing" | "completed" | "failed" | "unscored"; ai_score: number | null; ai_explanation: string | null; ai_model: string | null; };
 
 export type ApplicantDocument = {
@@ -399,7 +404,7 @@ export type DeploymentHistory = {
 
 export type PromotionCriterion = {
   id: string;
-  target_position_id: number;
+  target_rank_id: number;
   minimum_years_of_service: number;
   minimum_performance_rating: number | null;
   is_active: boolean;
@@ -436,7 +441,7 @@ export type PerformanceRating = {
 export type PromotionEvaluation = {
   id: string;
   employee_id: string;
-  target_position_id: number;
+  target_rank_id: number;
   criterion_id: string;
   evaluated_on: string;
   criteria_snapshot: Record<string, unknown>;
@@ -464,8 +469,8 @@ export type PromotionEvaluationEvidence = {
 export type EmployeePromotionEligibilitySummary = {
   employee_id: string;
   evaluation_id: string;
-  target_position_id: number;
-  target_position_title: string;
+  target_rank_id: number;
+  target_rank_name: string;
   calculated_at: string;
   years_of_service: number;
   is_ready: boolean;
