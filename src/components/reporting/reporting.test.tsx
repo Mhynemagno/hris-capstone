@@ -18,8 +18,8 @@ vi.mock("@/hooks/use-reporting", () => ({
 describe("reporting dashboard", () => {
   it("shows management analytics without mutation controls", () => {
     render(<ReportingDashboard role="management" />);
-    expect(screen.getByRole("heading", { name: "Workforce analytics" })).toBeVisible();
-    expect(screen.getByText("Active workforce")).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Personnel analytics" })).toBeVisible();
+    expect(screen.getByText("Active personnel")).toBeVisible();
     expect(screen.queryByRole("button", { name: /new|approve|import|edit/i })).not.toBeInTheDocument();
   });
 });

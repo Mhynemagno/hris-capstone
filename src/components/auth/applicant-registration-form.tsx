@@ -69,10 +69,10 @@ export function ApplicantRegistrationForm() {
 
   if (confirmationPending) {
     return (
-      <div aria-live="polite" className="space-y-3 rounded-lg border border-sky-200 bg-sky-50 p-4 text-slate-900" role="status">
+      <div aria-live="polite" className="space-y-3 rounded-lg border border-primary/25 bg-accent p-4 text-foreground" role="status">
         <p className="font-semibold">Check your email</p>
         <p className="text-sm text-slate-700">We created your account. Open the confirmation link we sent before signing in.</p>
-        <a className="inline-flex min-h-11 items-center font-medium text-sky-800 underline underline-offset-4" href="/login">
+        <a className="inline-flex min-h-11 items-center font-medium text-primary underline underline-offset-4" href="/login">
           Return to sign in
         </a>
       </div>
@@ -106,7 +106,7 @@ export function ApplicantRegistrationForm() {
       <button
         aria-controls="registration-password"
         aria-pressed={passwordVisible}
-        className="-mt-2 inline-flex min-h-11 items-center gap-2 text-sm font-medium text-sky-800 underline-offset-4 hover:underline"
+        className="-mt-2 inline-flex min-h-11 items-center gap-2 text-sm font-medium text-primary underline-offset-4 hover:underline"
         onClick={() => setPasswordVisible((visible) => !visible)}
         type="button"
       >
@@ -114,7 +114,7 @@ export function ApplicantRegistrationForm() {
         {passwordVisible ? "Hide password" : "Show password"}
       </button>
       {error ? <ErrorState message={error} /> : null}
-      <button className="h-11 w-full rounded-md bg-sky-400 px-4 font-medium text-slate-950 disabled:opacity-60" disabled={pending} type="submit">
+      <button className="h-11 w-full rounded-md bg-primary px-4 font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60" disabled={pending} type="submit">
         {pending ? "Creating account…" : "Create account"}
       </button>
     </form>

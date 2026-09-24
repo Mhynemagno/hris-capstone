@@ -65,9 +65,9 @@ export const ROLE_CONFIG: Record<AppRole, RoleConfig> = {
       { href: "/hr", label: "HR workspace", icon: "LayoutDashboard", group: "Overview" },
       { href: "/hr/jobs", label: "Job openings", icon: "BriefcaseBusiness", group: "Recruitment" },
       { href: "/hr/applications", label: "Applications", icon: "FileText", group: "Recruitment" },
-      { href: "/hr/employees", label: "Personnel records", icon: "ContactRound", group: "Workforce" },
-      { href: "/hr/deployments", label: "Deployments", icon: "MapPin", group: "Workforce" },
-      { href: "/hr/promotions", label: "Promotions", icon: "TrendingUp", group: "Workforce" },
+      { href: "/hr/employees", label: "Personnel records", icon: "ContactRound", group: "Personnel" },
+      { href: "/hr/deployments", label: "Deployments", icon: "MapPin", group: "Personnel" },
+      { href: "/hr/promotions", label: "Promotions", icon: "TrendingUp", group: "Personnel" },
       { href: "/hr/leave-requests", label: "Leave requests", icon: "CalendarDays", group: "Time and leave" },
       { href: "/hr/attendance", label: "Attendance", icon: "Clock", group: "Time and leave" },
       { href: "/reports", label: "Reports", icon: "ChartColumn", group: "Insights" },
@@ -117,7 +117,7 @@ export const ROLE_CONFIG: Record<AppRole, RoleConfig> = {
     homeHref: "/management",
     landingTitle: "Management workspace",
     landingDescription:
-      "Review workforce information and organizational insights.",
+      "Review personnel information and organizational insights.",
     navigation: [
       {
         href: "/management",

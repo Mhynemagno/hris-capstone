@@ -33,7 +33,7 @@ export function PublicCareersLanding() {
           <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-[minmax(0,1fr)_20rem] lg:px-8 lg:py-24">
             <div className="max-w-3xl space-y-6">
               <div aria-hidden="true" className="h-1 w-14 bg-brand-command-red" />
-              <p className="text-sm font-semibold tracking-[0.18em] text-blue-200 uppercase">
+              <p className="text-sm font-semibold tracking-[0.18em] text-sidebar-primary uppercase">
                 San Juan City Police careers
               </p>
               <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-6xl">

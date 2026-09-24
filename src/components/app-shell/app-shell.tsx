@@ -89,7 +89,8 @@ export function AppShell({ children, config, email }: AppShellProps) {
 
   return (
     <TooltipProvider>
-      <SidebarProvider>
+      {/* The inset panel is the scroll container, so dragging or overscrolling never shifts the frame around it. */}
+      <SidebarProvider className="h-svh overflow-hidden">
         <a
           href="#main-content"
           className="sr-only fixed top-4 left-4 z-50 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground focus:not-sr-only focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
@@ -106,7 +107,7 @@ export function AppShell({ children, config, email }: AppShellProps) {
               <div className="min-w-0 group-data-[collapsible=icon]:hidden">
                 <p className="truncate text-base font-semibold">San Juan City Police</p>
                 <p className="truncate text-xs text-sidebar-foreground/80">
-                  Workforce hub
+                  HR information system
                 </p>
               </div>
             </div>
@@ -163,7 +164,7 @@ export function AppShell({ children, config, email }: AppShellProps) {
             </div>
           </SidebarFooter>
         </Sidebar>
-        <SidebarInset className="min-w-0" id="main-content">
+        <SidebarInset className="min-w-0 overflow-y-auto overscroll-contain" id="main-content">
           <header className="sticky top-0 z-10 flex h-16 items-center gap-3 border-b bg-background/90 px-4 backdrop-blur sm:px-6">
             <SidebarTrigger aria-label="Toggle sidebar" className="min-h-11 min-w-11">
               <PanelLeft aria-hidden="true" />

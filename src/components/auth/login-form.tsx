@@ -48,7 +48,7 @@ export function LoginForm({ error, nextPath }: LoginFormProps) {
       </FormField>
       {error ? <ErrorState message={error} /> : null}
       <button
-        className="min-h-11 w-full rounded-md bg-sky-400 px-4 py-2 font-medium text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
+        className="min-h-11 w-full rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
         disabled={pending}
         type="submit"
       >
