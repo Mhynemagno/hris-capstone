@@ -70,8 +70,10 @@ export function useFaceAttendanceScanner(mode: FaceScanMode = "kiosk") {
           if (status === "searching") {
             const framing = assessFraming(faces.map((face) => face.box), { width: video.videoWidth, height: video.videoHeight }, config.framing);
             dispatch(framing.ok ? { type: "FRAME_ACCEPTED", now: performance.now() } : { type: "FRAME_REJECTED", guidance: FRAMING_MESSAGES[framing.issue] });
-          } else if (faces.length !== 1) {
-            dispatch({ type: "FACE_LOST", guidance: FRAMING_MESSAGES[faces.length === 0 ? "no_face" : "multiple_faces"] });
+          } else if (faces.length === 0) {
+            dispatch({ type: "FACE_MISSED", guidance: FRAMING_MESSAGES.no_face });
+          } else if (faces.length > 1) {
+            dispatch({ type: "FACE_LOST", guidance: FRAMING_MESSAGES.multiple_faces });
           } else {
             dispatch({ type: "LIVENESS_FRAME", ear: averageEyeAspectRatio(faces[0].leftEye, faces[0].rightEye), now: performance.now() });
           }
