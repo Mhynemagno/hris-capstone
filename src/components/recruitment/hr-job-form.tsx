@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { useState } from "react";
 import type { z } from "zod";
@@ -51,6 +52,7 @@ function toSelectValue(value: unknown) {
 }
 
 export function HrJobForm({ job }: HrJobFormProps) {
+  const router = useRouter();
   const departments = useDepartmentOptions();
   const positions = usePositionOptions();
   const save = useSaveJobOpening();
@@ -98,7 +100,11 @@ export function HrJobForm({ job }: HrJobFormProps) {
     try {
       const input = jobOpeningSchema.parse({ ...form.getValues(), status, criteria: form.getValues("criteria").map((criterion, index) => ({ ...criterion, ordinal: index + 1 })) });
       await save.mutateAsync({ input, jobId: job?.id });
-      setSuccess(status === "published" ? "Job opening published." : hasApplications ? "Changes saved." : "Draft saved.");
+      if (status === "published") {
+        router.replace("/hr/jobs");
+        return;
+      }
+      setSuccess(hasApplications ? "Changes saved." : "Draft saved.");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "We could not save this job opening.");
     }

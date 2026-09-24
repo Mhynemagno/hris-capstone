@@ -17,12 +17,12 @@ export function ApplicantApplicationForm({ jobId }: { jobId: number }) {
   const existing = useMyApplicationForJob(jobId);
   const submit = useSubmitApplication();
   const [error, setError] = useState<string | null>(null);
-  const [profileRequired, setProfileRequired] = useState(false);
+  const [profileAction, setProfileAction] = useState<{ href: string; label: string } | null>(null);
   const [submittedApplicationId, setSubmittedApplicationId] = useState<string | null>(null);
 
   async function onSubmit(form: HTMLFormElement) {
     setError(null);
-    setProfileRequired(false);
+    setProfileAction(null);
     setSubmittedApplicationId(null);
 
     const data = new FormData(form);
@@ -51,7 +51,7 @@ export function ApplicantApplicationForm({ jobId }: { jobId: number }) {
       setSubmittedApplicationId(applicationId);
     } catch (cause) {
       if (cause instanceof ApplicantProfileRequiredError) {
-        setProfileRequired(true);
+        setProfileAction({ href: cause.actionHref, label: cause.actionLabel });
         setError(cause.message);
         return;
       }
@@ -88,10 +88,10 @@ export function ApplicantApplicationForm({ jobId }: { jobId: number }) {
         <Input accept=".pdf,.png,.jpg,.jpeg" aria-describedby="application-credentials-help" id="application-credentials" multiple name="credentials" type="file" />
       </FormField>
       <p className="text-sm text-muted-foreground" id="application-credentials-help">Add certificates or other supporting documents as PDF, PNG, or JPEG files up to 10 MB each.</p>
-      {profileRequired && error ? (
+      {profileAction && error ? (
         <div className="rounded-lg border border-primary/30 bg-primary/5 p-4" role="alert">
           <p className="text-sm font-medium text-foreground">{error}</p>
-          <Link className="mt-2 inline-flex text-sm font-semibold text-primary underline-offset-4 hover:underline" href="/applicant/profile">Complete profile</Link>
+          <Link className="mt-2 inline-flex text-sm font-semibold text-primary underline-offset-4 hover:underline" href={profileAction.href}>{profileAction.label}</Link>
         </div>
       ) : error ? <ErrorState message={error} /> : null}
       {submittedApplicationId ? <div aria-live="polite" className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-emerald-950" role="status"><p className="font-semibold">Application submitted</p><p className="mt-1 text-sm">Your application and documents were received.</p><Link className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold underline underline-offset-4" href={`/applicant/applications/${submittedApplicationId}`}>Track application</Link></div> : null}

@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(9);
+select extensions.plan(11);
 
 select extensions.has_schema('reporting', 'Private reporting schema exists');
 select extensions.has_function('public', 'get_hr_dashboard_summary', array['date', 'date'], 'HR dashboard RPC exists');
@@ -39,11 +39,31 @@ select extensions.is(
   public.get_hr_report('deployments', '2026-08-01', '2026-08-31', null, null, 1, 25) ->> 'reportKey',
   'deployments', 'HR receives the requested whitelisted report'
 );
+select extensions.is(
+  public.get_hr_report(
+    target_report_key => 'deployments',
+    target_department_id => null,
+    target_status => null,
+    target_page => 1,
+    target_page_size => 25
+  ) ->> 'reportKey',
+  'deployments', 'HR report RPC accepts requests that omit optional date filters'
+);
 
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000001502';
 select extensions.ok(
   public.get_management_report('employee-performance', '2026-08-01', '2026-08-31', null, null, 1, 25) ? 'rows',
   'Management receives a report payload'
+);
+select extensions.is(
+  public.get_management_report(
+    target_report_key => 'employee-performance',
+    target_department_id => null,
+    target_status => null,
+    target_page => 1,
+    target_page_size => 25
+  ) ->> 'reportKey',
+  'employee-performance', 'Management report RPC accepts requests that omit optional date filters'
 );
 
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000001503';

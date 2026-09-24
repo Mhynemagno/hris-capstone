@@ -93,6 +93,27 @@ describe("submitApplication", () => {
     }));
   });
 
+  it("classifies missing eligibility and diploma records as a profile requirement", async () => {
+    const profileQuery = {
+      maybeSingle: vi.fn().mockResolvedValue({ data: { id: "323e4567-e89b-42d3-a456-426614174000" }, error: null }),
+      select: vi.fn(),
+    };
+    profileQuery.select.mockReturnValue(profileQuery);
+    mocks.from.mockReturnValue(profileQuery);
+    mocks.rpc.mockResolvedValue({ data: null, error: { message: "Upload your eligibility and diploma documents before applying." } });
+    mocks.remove.mockResolvedValue({ error: null });
+
+    await expect(submitApplication({
+      applicationId,
+      jobId: 7,
+      coverNote: "Ready to contribute.",
+      documents: [{ kind: "cv", file: new File(["CV"], "cv.pdf", { type: "application/pdf" }) }],
+    })).rejects.toMatchObject({
+      code: "APPLICANT_PROFILE_REQUIRED",
+      message: expect.stringContaining("My profile"),
+    });
+  });
+
   it("rejects a Word document before uploading it", async () => {
     const profileQuery = {
       maybeSingle: vi.fn().mockResolvedValue({ data: { id: "323e4567-e89b-42d3-a456-426614174000" }, error: null }),
