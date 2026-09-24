@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
@@ -12,8 +13,8 @@ import type { PersonnelKind } from "@/queries/personnel-records";
 
 import { EmployeeEditor } from "./employee-editor";
 import { RecordEntryForm } from "./record-entry-form";
+import { parseRecordTab, RecordTabs, type RecordTabKey } from "./record-tabs";
 
-const kinds: PersonnelKind[] = ["serviceHistory", "qualification", "certification"];
 const titles: Record<PersonnelKind, string> = { serviceHistory: "Service history", qualification: "Qualifications", certification: "Certifications", training: "Training" };
 
 function entryTitle(entry: { id: string } & Record<string, unknown>) {
@@ -133,7 +134,18 @@ function TrainingRecords({ employeeId }: { employeeId: string }) {
 
 export function EmployeeRecordDetail({ employeeId }: { employeeId: string }) {
   const employee = useEmployee(employeeId);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const active = parseRecordTab(searchParams.get("tab"));
+
+  function showTab(key: RecordTabKey) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", key);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }
+
   if (employee.isLoading) return <LoadingState label="Loading employee record…" />;
   if (employee.error || !employee.data) return <ErrorState message={employee.error?.message ?? "Employee record was not found."} />;
-  return <div className="space-y-8"><div><Link className="text-sm text-primary underline-offset-4 hover:underline" href="/hr/employees">Back to employees</Link><h1 className="mt-3 text-3xl font-semibold tracking-tight">{employee.data.first_name} {employee.data.last_name}</h1><p className="mt-1 text-muted-foreground">{employee.data.employee_number} · {employee.data.employment_status.replace("_", " ")}</p></div><section><h2 className="mb-4 text-xl font-semibold">Official record</h2><EmployeeEditor employee={employee.data} /></section>{kinds.map((kind) => <Records employeeId={employeeId} key={kind} kind={kind} />)}<TrainingRecords employeeId={employeeId} /></div>;
+  return <div className="space-y-6"><div><Link className="text-sm text-primary underline-offset-4 hover:underline" href="/hr/employees">Back to employees</Link><h1 className="mt-3 text-3xl font-semibold tracking-tight">{employee.data.first_name} {employee.data.last_name}</h1><p className="mt-1 text-muted-foreground">{employee.data.employee_number} · {employee.data.employment_status.replace("_", " ")}</p></div><RecordTabs active={active} idPrefix="rec" onChange={showTab} /><div aria-labelledby={`rec-tab-${active}`} id={`rec-panel-${active}`} role="tabpanel">{active === "official" ? <EmployeeEditor employee={employee.data} /> : active === "service-history" ? <Records employeeId={employeeId} kind="serviceHistory" /> : active === "qualifications" ? <Records employeeId={employeeId} kind="qualification" /> : active === "certifications" ? <Records employeeId={employeeId} kind="certification" /> : <TrainingRecords employeeId={employeeId} />}</div></div>;
 }
