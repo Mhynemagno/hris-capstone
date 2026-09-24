@@ -10,7 +10,7 @@ const applicationSteps = [
   {
     description: "Review the responsibilities, requirements, location, and closing date for each role.",
     icon: SearchCheck,
-    title: "Find a position",
+    title: "Find a job opening",
   },
   {
     description: "Create an applicant account so you can securely manage your application details.",
@@ -48,7 +48,7 @@ export function PublicCareersLanding() {
                   className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/85 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
                   href="/jobs"
                 >
-                  Explore open positions
+                  Explore job openings
                   <ArrowRight aria-hidden="true" className="size-4" />
                 </Link>
                 <Link
@@ -62,19 +62,19 @@ export function PublicCareersLanding() {
             <aside className="self-end rounded-2xl border border-sidebar-border bg-sidebar-accent/70 p-6 shadow-lg">
               <p className="text-sm font-semibold">Public recruitment portal</p>
               <p className="mt-2 text-sm leading-6 text-slate-300">
-                Open positions are published here. Sign in only when you are
+                Job openings are published here. Sign in only when you are
                 ready to manage an application.
               </p>
             </aside>
           </div>
         </section>
 
-        <section id="open-positions" className="scroll-mt-20">
+        <section id="job-openings" className="scroll-mt-20">
           <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
             <div className="flex flex-col gap-4 border-b border-border/80 pb-6 sm:flex-row sm:items-end sm:justify-between">
               <div className="max-w-2xl space-y-2">
                 <p className="text-sm font-semibold tracking-[0.16em] text-primary uppercase">
-                  Open positions
+                  Job openings
                 </p>
                 <h2 className="text-3xl font-semibold tracking-tight">
                   Find your next role in public service.

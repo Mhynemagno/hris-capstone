@@ -6,14 +6,14 @@ import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { useState } from "react";
 import type { z } from "zod";
 
-import { DepartmentPositionFields } from "@/components/personnel-records/department-position-fields";
+import { DepartmentRankFields } from "@/components/personnel-records/department-rank-fields";
 import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
-import { useDepartmentOptions, usePositionOptions } from "@/hooks/use-administration";
+import { useDepartmentOptions, useRankOptions } from "@/hooks/use-administration";
 import { useSaveJobOpening } from "@/hooks/use-recruitment";
 import { jobOpeningSchema, type JobOpeningInput } from "@/schemas/recruitment";
 import type { JobOpening, JobQualificationCriterion } from "@/lib/types/database";
@@ -35,9 +35,9 @@ function defaults(job?: HrJobFormProps["job"]): JobFormValues {
     }))
     .sort((left, right) => left.ordinal - right.ordinal);
   return {
-    // No silent default: HR must choose an active department and position.
+    // No silent default: HR must choose an active department and rank.
     departmentId: job?.department_id ?? undefined,
-    positionId: job?.position_id ?? undefined,
+    rankId: job?.rank_id ?? undefined,
     title: job?.title ?? "",
     description: job?.description ?? "",
     location: job?.location ?? "",
@@ -54,7 +54,7 @@ function toSelectValue(value: unknown) {
 export function HrJobForm({ job }: HrJobFormProps) {
   const router = useRouter();
   const departments = useDepartmentOptions();
-  const positions = usePositionOptions();
+  const ranks = useRankOptions();
   const save = useSaveJobOpening();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -64,29 +64,29 @@ export function HrJobForm({ job }: HrJobFormProps) {
   });
   const criteria = useFieldArray({ control: form.control, name: "criteria" });
   const hasApplications = (job?.applications?.[0]?.count ?? 0) > 0;
-  const optionsLoading = departments.isLoading || positions.isLoading;
+  const optionsLoading = departments.isLoading || ranks.isLoading;
   const departmentValue = toSelectValue(useWatch({ control: form.control, name: "departmentId" }));
-  const positionValue = toSelectValue(useWatch({ control: form.control, name: "positionId" }));
+  const rankValue = toSelectValue(useWatch({ control: form.control, name: "rankId" }));
   const errors = form.formState.errors;
 
   function setDepartment(value: string) {
     form.setValue("departmentId", value ? Number(value) : undefined, { shouldDirty: true, shouldValidate: form.formState.isSubmitted });
   }
-  function setPosition(value: string) {
-    form.setValue("positionId", value ? Number(value) : undefined, { shouldDirty: true, shouldValidate: form.formState.isSubmitted });
+  function setRank(value: string) {
+    form.setValue("rankId", value ? Number(value) : undefined, { shouldDirty: true, shouldValidate: form.formState.isSubmitted });
   }
 
-  /** The save RPC only accepts an active position inside the selected active department. */
+  /** The save RPC only accepts an active department and an active rank. */
   function checkActiveSelection(values: JobFormValues) {
     let ok = true;
     const department = departments.data?.find((row) => row.id === Number(values.departmentId));
-    const position = positions.data?.find((row) => row.id === Number(values.positionId));
+    const rank = ranks.data?.find((row) => row.id === Number(values.rankId));
     if (department && !department.is_active) {
       form.setError("departmentId", { message: "This department is inactive. Choose an active department." });
       ok = false;
     }
-    if (position && (!position.is_active || position.department_id !== department?.id)) {
-      form.setError("positionId", { message: "Choose an active position in the selected department." });
+    if (rank && !rank.is_active) {
+      form.setError("rankId", { message: "This rank is inactive. Choose an active rank." });
       ok = false;
     }
     return ok;
@@ -115,17 +115,17 @@ export function HrJobForm({ job }: HrJobFormProps) {
   return (
     <form className="max-w-3xl space-y-5" noValidate onSubmit={(event) => { event.preventDefault(); void saveAs(hasApplications && job ? job.status : "draft"); }}>
       <div className="grid gap-4 sm:grid-cols-2">
-        <DepartmentPositionFields
+        <DepartmentRankFields
           departmentError={errors.departmentId ? (errors.departmentId.type === "custom" || errors.departmentId.type === undefined ? errors.departmentId.message : "Select a department.") : undefined}
           departmentId={departmentValue}
           idPrefix="job"
           onDepartmentChange={setDepartment}
-          onPositionChange={setPosition}
-          positionError={errors.positionId ? (errors.positionId.type === "custom" || errors.positionId.type === undefined ? errors.positionId.message : "Select a position.") : undefined}
-          positionId={positionValue}
+          onRankChange={setRank}
+          rankError={errors.rankId ? (errors.rankId.type === "custom" || errors.rankId.type === undefined ? errors.rankId.message : "Select a rank.") : undefined}
+          rankId={rankValue}
           required
           savedDepartmentId={job?.department_id}
-          savedPositionId={job?.position_id}
+          savedRankId={job?.rank_id}
         />
         <FormField error={errors.title?.message} htmlFor="job-title" label="Title" required>
           <Input id="job-title" required {...form.register("title")} />

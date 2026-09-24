@@ -44,6 +44,8 @@ describe("ApplicantProfileForm", () => {
     expect(screen.getByLabelText("Place of birth")).toBeInTheDocument();
     expect(screen.getByLabelText("Date of birth")).toBeInTheDocument();
     expect(screen.getByLabelText("Civil status")).toBeInTheDocument();
+    expect(screen.getByLabelText("Gender")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Sex")).not.toBeInTheDocument();
   });
 
   it("uses a telephone input and shows validation next to the field", async () => {

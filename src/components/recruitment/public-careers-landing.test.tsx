@@ -31,7 +31,7 @@ it("connects visitors to live career openings and the application path", () => {
     screen.getByRole("link", { name: "View Patrol Officer opening" }),
   ).toHaveAttribute("href", "/jobs/7");
   expect(
-    screen.getByRole("link", { name: /explore open positions/i }),
+    screen.getByRole("link", { name: /explore job openings/i }),
   ).toHaveAttribute("href", "/jobs");
   expect(
     screen.getByRole("link", { name: /create an applicant account/i }),

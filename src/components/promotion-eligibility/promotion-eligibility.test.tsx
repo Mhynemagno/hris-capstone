@@ -10,7 +10,7 @@ const hooks = vi.hoisted(() => ({
   useCreatePerformanceRating: vi.fn(),
   useCreatePromotionEvaluation: vi.fn(),
 }));
-const adminHooks = vi.hoisted(() => ({ usePositionOptions: vi.fn() }));
+const adminHooks = vi.hoisted(() => ({ useRankOptions: vi.fn() }));
 vi.mock("@/hooks/use-promotion-eligibility", () => hooks);
 vi.mock("@/hooks/use-administration", () => adminHooks);
 
@@ -18,14 +18,14 @@ import { EmployeePromotionEligibility } from "./employee-promotion-eligibility";
 import { HrPromotionDirectory } from "./hr-promotion-directory";
 import { HrPromotionReview } from "./hr-promotion-review";
 
-const positions = [
-  { id: 7, title: "Senior Police Officer", is_active: true },
-  { id: 9, title: "Police Chief Inspector", is_active: true },
+const ranks = [
+  { id: 7, name: "Senior Police Officer", code: "SPO", sort_order: 1, is_active: true },
+  { id: 9, name: "Police Chief Inspector", code: "PCI", sort_order: 2, is_active: true },
 ];
 
 describe("promotion eligibility presentation", () => {
   it("renders only the employee-safe readiness summary", () => {
-    hooks.useMyPromotionEligibility.mockReturnValue({ isLoading: false, data: { target_position_title: "Senior Officer", years_of_service: 3, is_ready: false, missing_requirements: ["First-aid certification"] } });
+    hooks.useMyPromotionEligibility.mockReturnValue({ isLoading: false, data: { target_rank_name: "Senior Officer", years_of_service: 3, is_ready: false, missing_requirements: ["First-aid certification"] } });
     render(<EmployeePromotionEligibility />);
     expect(screen.getByText("First-aid certification")).toBeInTheDocument();
     expect(screen.queryByText(/recommendation|performance rating|HR notes/i)).not.toBeInTheDocument();
@@ -33,9 +33,9 @@ describe("promotion eligibility presentation", () => {
 
   it("labels the HR directory as an advisory review without a promotion action", () => {
     hooks.usePromotionEvaluations.mockReturnValue({ isLoading: false, data: { rows: [], count: 0 } });
-    adminHooks.usePositionOptions.mockReturnValue({ isLoading: false, data: positions });
+    adminHooks.useRankOptions.mockReturnValue({ isLoading: false, data: ranks });
     render(<HrPromotionDirectory />);
-    expect(screen.getByText(/never change an employee.?s position automatically/i)).toBeInTheDocument();
+    expect(screen.getByText(/never change an employee.?s rank automatically/i)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /promote/i })).not.toBeInTheDocument();
     expect(screen.getByText("No promotion reviews have been recorded yet.")).toBeVisible();
   });
@@ -59,21 +59,21 @@ describe("HrPromotionReview", () => {
     hooks.usePromotionCriteria.mockReturnValue({
       isLoading: false,
       error: null,
-      data: [{ id: "c1", target_position_id: 9, minimum_years_of_service: 5, minimum_performance_rating: 3, is_active: true }],
+      data: [{ id: "c1", target_rank_id: 9, minimum_years_of_service: 5, minimum_performance_rating: 3, is_active: true }],
     });
     hooks.useCreatePerformanceRating.mockReturnValue({ isPending: false, mutateAsync: createRating });
     hooks.useCreatePromotionEvaluation.mockReturnValue({ isPending: false, mutateAsync: vi.fn() });
-    adminHooks.usePositionOptions.mockReturnValue({ isLoading: false, data: positions });
+    adminHooks.useRankOptions.mockReturnValue({ isLoading: false, data: ranks });
     render(<HrPromotionReview employeeId="00000000-0000-4000-8000-000000000201" />);
     return { createRating };
   }
 
-  it("labels criteria options with the target position title", () => {
+  it("labels criteria options with the target rank title", () => {
     setup();
-    const criterion = screen.getByRole("combobox", { name: /Target position/ });
+    const criterion = screen.getByRole("combobox", { name: /Target rank/ });
     const labels = within(criterion).getAllByRole("option").map((option) => option.textContent);
-    expect(labels[1]).toContain("Police Chief Inspector");
-    expect(labels.join(" ")).not.toMatch(/Position 9/);
+    expect(labels[1]).toContain("PCI — Police Chief Inspector");
+    expect(labels.join(" ")).not.toMatch(/Rank #9/);
   });
 
   it("offers a 1–5 rating select with descriptors and shows existing ratings with them", () => {

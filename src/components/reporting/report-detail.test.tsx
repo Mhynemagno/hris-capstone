@@ -45,6 +45,9 @@ describe("ReportDetail filters", () => {
     expect(screen.getByLabelText("Deployment status")).toBeInTheDocument();
     expect(optionValues(screen.getByLabelText("Deployment status"))).toEqual(["", "active", "rejected"]);
 
+    rerender(<ReportDetail reportKey="employee-performance" role="hr_personnel" />);
+    expect(optionValues(screen.getByLabelText("Employment status"))).toEqual(["", "active", "on_leave"]);
+
     rerender(<ReportDetail reportKey="hiring-decisions" role="hr_personnel" />);
     expect(optionValues(screen.getByLabelText("Decision"))).toEqual(["", "Hired", "Not Selected"]);
 

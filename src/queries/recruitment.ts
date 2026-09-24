@@ -146,7 +146,7 @@ export async function saveApplicantProfile(input: ApplicantProfileInput) {
     qualifier: values.qualifier ?? null,
     place_of_birth: values.placeOfBirth ?? null,
     date_of_birth: values.dateOfBirth ?? null,
-    sex: values.sex ?? null,
+    gender: values.gender ?? null,
     civil_status: values.civilStatus ?? null,
     religion: values.religion ?? null,
     phone: values.phone ?? null,
@@ -291,7 +291,7 @@ export async function saveJobOpening(input: JobOpeningInput, jobId?: number) {
   const { data, error } = await client.rpc("save_job_opening", {
     target_job_id: jobId ?? null,
     target_department_id: values.departmentId,
-    target_position_id: values.positionId,
+    target_rank_id: values.rankId,
     target_title: values.title,
     target_description: values.description,
     target_location: values.location ?? null,

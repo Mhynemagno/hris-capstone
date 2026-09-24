@@ -16,7 +16,7 @@ vi.mock("@/hooks/use-personnel-records", () => ({
 }));
 vi.mock("@/hooks/use-administration", () => ({
   useDepartmentOptions: () => ({ data: [], isLoading: false, error: null }),
-  usePositionOptions: () => ({ data: [], isLoading: false, error: null }),
+  useRankOptions: () => ({ data: [], isLoading: false, error: null }),
 }));
 vi.mock("./employee-editor", () => ({ EmployeeEditor: () => <div>Employee editor</div> }));
 

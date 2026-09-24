@@ -9,6 +9,10 @@ vi.mock("@/hooks/use-personnel-records", () => ({
   useReplaceMyEmployeeProfilePhoto: () => ({ isPending: false, mutateAsync: vi.fn() }),
 }));
 
+vi.mock("@/hooks/use-administration", () => ({
+  useRankOptions: () => ({ data: [{ id: 9, name: "Police Captain", code: "PCapt", sort_order: 9, is_active: true, created_at: "", updated_at: "" }] }),
+}));
+
 import { EmployeeProfile } from "./employee-profile";
 
 const employee = {
@@ -21,10 +25,9 @@ const employee = {
   qualifier: null,
   place_of_birth: null,
   date_of_birth: null,
-  sex: null,
+  gender: null,
   civil_status: null,
   religion: null,
-  rank: "Police Captain (PCPT)",
   unit_station: "Station 1",
   profile_image_path: null,
   personal_email: "ada@example.com",
@@ -33,7 +36,7 @@ const employee = {
   emergency_contact_name: null,
   emergency_contact_phone: null,
   department_id: null,
-  position_id: null,
+  rank_id: 9,
   employment_status: "active" as const,
   employment_started_on: "2024-01-01",
   employment_ended_on: null,
@@ -48,7 +51,7 @@ describe("EmployeeProfile", () => {
     expect(screen.getByRole("heading", { name: "Ada Dela Cruz" })).toBeInTheDocument();
     expect(screen.getByAltText("Default profile avatar")).toBeInTheDocument();
     expect(screen.getByText("Badge number")).toBeInTheDocument();
-    expect(screen.getByText("Police Captain (PCPT)")).toBeInTheDocument();
+    expect(screen.getByText("PCapt — Police Captain")).toBeInTheDocument();
     expect(screen.getAllByText("Not provided")).toHaveLength(9);
   });
 

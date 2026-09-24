@@ -6,9 +6,9 @@ const optionalText = (max: number) =>
   z.string().trim().max(max).transform((value) => value || undefined).optional();
 
 const optionalDate = isoDateSchema.optional();
-const employmentStatuses = ["active", "on_leave", "inactive", "separated"] as const;
+const employmentStatuses = ["active", "on_leave"] as const;
 const profilePhotoMimeTypes = ["image/png", "image/jpeg", "image/webp"] as const;
-const demographicSexes = ["female", "male", "prefer_not_to_say"] as const;
+const genders = ["female", "male", "prefer_not_to_say"] as const;
 const civilStatuses = ["single", "married", "widowed", "separated", "divorced"] as const;
 
 export const profilePhotoFileSchema = z.custom<File>(
@@ -40,25 +40,6 @@ export const QUALIFICATION_LEVELS = [
   "Other",
 ] as const;
 
-export const POLICE_RANKS = [
-  "Patrolman / Patrolwoman (PAT)",
-  "Police Corporal (PCpl)",
-  "Police Staff Sergeant (PSSg)",
-  "Police Master Sergeant (PMSg)",
-  "Police Senior Master Sergeant (PSMS)",
-  "Police Chief Master Sergeant (PCMS)",
-  "Police Executive Master Sergeant (PEMS)",
-  "Police Lieutenant (PLT)",
-  "Police Captain (PCPT)",
-  "Police Major (PMAJ)",
-  "Police Lieutenant Colonel (PLTCOL)",
-  "Police Colonel (PCOL)",
-  "Police Brigadier General (PBGEN)",
-  "Police Major General (PMGEN)",
-  "Police Lieutenant General (PLTGEN)",
-  "Police General (PGEN)",
-] as const;
-
 const hasValidDateRange = (startKey: string, endKey: string) => (value: Record<string, unknown>) => {
   const start = value[startKey];
   const end = value[endKey];
@@ -75,10 +56,9 @@ export const employeeSchema = z
     qualifier: optionalText(32),
     placeOfBirth: optionalText(160),
     dateOfBirth: z.preprocess((value) => value === "" ? undefined : value, isoDateSchema.optional()),
-    sex: z.preprocess((value) => value === "" ? undefined : value, z.enum(demographicSexes).optional()),
+    gender: z.preprocess((value) => value === "" ? undefined : value, z.enum(genders).optional()),
     civilStatus: z.preprocess((value) => value === "" ? undefined : value, z.enum(civilStatuses).optional()),
     religion: optionalText(120),
-    rank: z.preprocess((value) => value === "" ? undefined : value, z.enum(POLICE_RANKS).optional()),
     unitStation: optionalText(160),
     personalEmail: z.string().trim().toLowerCase().pipe(z.email()),
     phone: optionalText(32),
@@ -86,7 +66,7 @@ export const employeeSchema = z
     emergencyContactName: optionalText(160),
     emergencyContactPhone: optionalText(32),
     departmentId: z.coerce.number().int().positive().optional(),
-    positionId: z.coerce.number().int().positive().optional(),
+    rankId: z.coerce.number().int().positive().optional(),
     employmentStatus: z.enum(employmentStatuses).default("active"),
     employmentStartedOn: isoDateSchema,
     employmentEndedOn: optionalDate,
@@ -101,7 +81,7 @@ export const serviceHistorySchema = z
     id: uuidSchema.optional(),
     employeeId: uuidSchema,
     departmentId: z.coerce.number().int().positive().optional(),
-    positionId: z.coerce.number().int().positive().optional(),
+    rankId: z.coerce.number().int().positive().optional(),
     employmentTitle: optionalText(160),
     startedOn: isoDateSchema,
     endedOn: optionalDate,
@@ -160,7 +140,7 @@ export const employeeDirectoryFiltersSchema = z.object({
   pageSize: z.coerce.number().int().positive().transform((value) => Math.min(value, 100)).default(25),
   search: z.string().trim().max(120).transform((value) => value || undefined).optional(),
   departmentId: z.coerce.number().int().positive().optional(),
-  positionId: z.coerce.number().int().positive().optional(),
+  rankId: z.coerce.number().int().positive().optional(),
   employmentStatus: z.enum(employmentStatuses).optional(),
 });
 

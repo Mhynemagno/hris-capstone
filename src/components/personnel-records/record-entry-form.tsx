@@ -12,7 +12,7 @@ import type { Qualification, TrainingRecord } from "@/lib/types/database";
 import type { PersonnelKind } from "@/queries/personnel-records";
 import { certificationSchema, QUALIFICATION_LEVELS, qualificationSchema, serviceHistorySchema, trainingRecordSchema } from "@/schemas/personnel-records";
 
-import { DepartmentPositionFields } from "./department-position-fields";
+import { DepartmentRankFields } from "./department-rank-fields";
 
 const fields: Record<PersonnelKind, { title: string; primary: string; secondary: string; date: string; expiry?: string }> = {
   serviceHistory: { title: "Service history", primary: "Employment title", secondary: "Notes", date: "Start date", expiry: "End date" },
@@ -27,7 +27,7 @@ const errorFieldFor: Record<string, string> = {
   notes: "notes", institution: "secondary", issuer: "secondary", provider: "secondary",
   startedOn: "date", awardedOn: "date", issuedOn: "date", completedOn: "date",
   endedOn: "expiry", expiresOn: "expiry",
-  departmentId: "departmentId", positionId: "positionId", qualificationLevel: "qualificationLevel",
+  departmentId: "departmentId", rankId: "rankId", qualificationLevel: "qualificationLevel",
   fieldOfStudy: "fieldOfStudy", credentialId: "credentialId", hours: "hours",
 };
 
@@ -50,7 +50,7 @@ export function RecordEntryForm({ employeeId, kind, onSaved, pending = false, tr
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [success, setSuccess] = useState<string | null>(null);
   const [departmentId, setDepartmentId] = useState("");
-  const [positionId, setPositionId] = useState("");
+  const [rankId, setRankId] = useState("");
   const [startDate, setStartDate] = useState(training?.completed_on ?? qualification?.awarded_on ?? "");
   const config = fields[kind];
   const isTrainingEdit = kind === "training" && Boolean(training);
@@ -69,7 +69,7 @@ export function RecordEntryForm({ employeeId, kind, onSaved, pending = false, tr
     setFieldErrors({});
     const form = Object.fromEntries(new FormData(formElement));
     const base = kind === "serviceHistory"
-      ? { employeeId, departmentId: form.departmentId || undefined, positionId: form.positionId || undefined, employmentTitle: text(form.primary), notes: text(form.notes), startedOn: form.date, endedOn: form.expiry || undefined }
+      ? { employeeId, departmentId: form.departmentId || undefined, rankId: form.rankId || undefined, employmentTitle: text(form.primary), notes: text(form.notes), startedOn: form.date, endedOn: form.expiry || undefined }
       : kind === "qualification"
         ? { employeeId, name: form.primary, institution: form.secondary, qualificationLevel: text(form.qualificationLevel), fieldOfStudy: text(form.fieldOfStudy), awardedOn: form.date }
         : kind === "certification"
@@ -92,7 +92,7 @@ export function RecordEntryForm({ employeeId, kind, onSaved, pending = false, tr
       if (!editId) {
         formElement.reset();
         setDepartmentId("");
-        setPositionId("");
+        setRankId("");
         setStartDate("");
       }
       setSuccess(editId ? `${config.title} saved.` : `${config.title} added.`);
@@ -107,20 +107,20 @@ export function RecordEntryForm({ employeeId, kind, onSaved, pending = false, tr
   return (
     <form className="mt-4 grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-2" noValidate onSubmit={submit}>
       {isServiceHistory ? (
-        <DepartmentPositionFields
+        <DepartmentRankFields
           departmentError={e.departmentId}
           departmentId={departmentId}
           departmentName="departmentId"
           idPrefix={`${kind}`}
           onDepartmentChange={setDepartmentId}
-          onPositionChange={setPositionId}
-          positionError={e.positionId}
-          positionId={positionId}
-          positionName="positionId"
+          onRankChange={setRankId}
+          rankError={e.rankId}
+          rankId={rankId}
+          rankName="rankId"
         />
       ) : null}
       <FormField
-        description={isServiceHistory ? "Optional. Use when the title differs from the position." : undefined}
+        description={isServiceHistory ? "Optional. Use when the assignment title differs from the rank." : undefined}
         error={e.primary}
         htmlFor={`${kind}-primary`}
         label={config.primary}

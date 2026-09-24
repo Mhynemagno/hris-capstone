@@ -87,15 +87,15 @@ describe("personnel-record queries", () => {
       return { update, insert, eq };
     }
 
-    it("keeps department and position on edit and never sends profile_id when no link is supplied", async () => {
+    it("keeps department and rank on edit and never sends profile_id when no link is supplied", async () => {
       const table = mockTable();
 
-      await saveEmployee({ ...baseInput, departmentId: 3, positionId: 7 }, employeeId);
+      await saveEmployee({ ...baseInput, departmentId: 3, rankId: 7 }, employeeId);
 
       expect(from).toHaveBeenCalledWith("employees");
       expect(table.eq).toHaveBeenCalledWith("id", employeeId);
       const values = table.update.mock.calls[0]![0];
-      expect(values).toMatchObject({ department_id: 3, position_id: 7 });
+      expect(values).toMatchObject({ department_id: 3, rank_id: 7 });
       expect(values).not.toHaveProperty("profile_id");
     });
 
@@ -103,9 +103,9 @@ describe("personnel-record queries", () => {
       const table = mockTable();
       const profileId = "00000000-0000-4000-8000-000000001604";
 
-      await saveEmployee({ ...baseInput, profileId, departmentId: 3, positionId: 7 }, employeeId);
+      await saveEmployee({ ...baseInput, profileId, departmentId: 3, rankId: 7 }, employeeId);
 
-      expect(table.update.mock.calls[0]![0]).toMatchObject({ profile_id: profileId, department_id: 3, position_id: 7 });
+      expect(table.update.mock.calls[0]![0]).toMatchObject({ profile_id: profileId, department_id: 3, rank_id: 7 });
     });
 
     it("stores an explicit null link when creating an unlinked record", async () => {
@@ -113,7 +113,7 @@ describe("personnel-record queries", () => {
 
       await saveEmployee(baseInput);
 
-      expect(table.insert.mock.calls[0]![0]).toMatchObject({ profile_id: null, department_id: null, position_id: null });
+      expect(table.insert.mock.calls[0]![0]).toMatchObject({ profile_id: null, department_id: null, rank_id: null });
     });
   });
 

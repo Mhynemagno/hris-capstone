@@ -33,7 +33,7 @@ export async function listEmployees(input: Partial<EmployeeDirectoryFilters> = {
     .range(from, to);
   if (filters.search) query = query.or(`employee_number.ilike.%${filters.search}%,first_name.ilike.%${filters.search}%,last_name.ilike.%${filters.search}%`);
   if (filters.departmentId) query = query.eq("department_id", filters.departmentId);
-  if (filters.positionId) query = query.eq("position_id", filters.positionId);
+  if (filters.rankId) query = query.eq("rank_id", filters.rankId);
   if (filters.employmentStatus) query = query.eq("employment_status", filters.employmentStatus);
   const { data, error, count } = await query;
   throwIfError(error);
@@ -120,12 +120,12 @@ function employeePayload(input: EmployeeInput) {
   return {
     employee_number: input.employeeNumber, first_name: input.firstName,
     middle_name: input.middleName ?? null, last_name: input.lastName, qualifier: input.qualifier ?? null,
-    place_of_birth: input.placeOfBirth ?? null, date_of_birth: input.dateOfBirth ?? null, sex: input.sex ?? null,
-    civil_status: input.civilStatus ?? null, religion: input.religion ?? null, rank: input.rank ?? null,
+    place_of_birth: input.placeOfBirth ?? null, date_of_birth: input.dateOfBirth ?? null, gender: input.gender ?? null,
+    civil_status: input.civilStatus ?? null, religion: input.religion ?? null,
     unit_station: input.unitStation ?? null, personal_email: input.personalEmail,
     phone: input.phone ?? null, address: input.address ?? null, emergency_contact_name: input.emergencyContactName ?? null,
     emergency_contact_phone: input.emergencyContactPhone ?? null, department_id: input.departmentId ?? null,
-    position_id: input.positionId ?? null, employment_status: input.employmentStatus,
+    rank_id: input.rankId ?? null, employment_status: input.employmentStatus,
     employment_started_on: input.employmentStartedOn, employment_ended_on: input.employmentEndedOn ?? null,
   };
 }
@@ -147,7 +147,7 @@ type PersonnelEntry = ServiceHistory | Qualification | Certification | TrainingR
 type PersonnelKind = "serviceHistory" | "qualification" | "certification" | "training";
 
 const childConfig = {
-  serviceHistory: { table: "service_history", schema: serviceHistorySchema, payload: (v: ServiceHistoryInput) => ({ employee_id: v.employeeId, department_id: v.departmentId ?? null, position_id: v.positionId ?? null, employment_title: v.employmentTitle ?? null, started_on: v.startedOn, ended_on: v.endedOn ?? null, notes: v.notes ?? null }) },
+  serviceHistory: { table: "service_history", schema: serviceHistorySchema, payload: (v: ServiceHistoryInput) => ({ employee_id: v.employeeId, department_id: v.departmentId ?? null, rank_id: v.rankId ?? null, employment_title: v.employmentTitle ?? null, started_on: v.startedOn, ended_on: v.endedOn ?? null, notes: v.notes ?? null }) },
   qualification: { table: "qualifications", schema: qualificationSchema, payload: (v: QualificationInput) => ({ employee_id: v.employeeId, name: v.name, institution: v.institution, qualification_level: v.qualificationLevel ?? null, field_of_study: v.fieldOfStudy ?? null, awarded_on: v.awardedOn, notes: v.notes ?? null }) },
   certification: { table: "certifications", schema: certificationSchema, payload: (v: CertificationInput) => ({ employee_id: v.employeeId, name: v.name, issuer: v.issuer, credential_id: v.credentialId ?? null, issued_on: v.issuedOn, expires_on: v.expiresOn ?? null, notes: v.notes ?? null }) },
   training: { table: "training_records", schema: trainingRecordSchema, payload: (v: TrainingRecordInput) => ({ employee_id: v.employeeId, course_name: v.courseName, provider: v.provider, completed_on: v.completedOn, expires_on: v.expiresOn ?? null, hours: v.hours ?? null, notes: v.notes ?? null }) },

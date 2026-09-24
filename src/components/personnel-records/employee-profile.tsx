@@ -1,3 +1,5 @@
+import { useRankOptions } from "@/hooks/use-administration";
+import { rankLabel } from "@/lib/ranks";
 import type { Employee, TrainingRecord } from "@/lib/types/database";
 
 import { EmployeeProfilePhotoControl } from "./employee-profile-photo-control";
@@ -14,6 +16,8 @@ function valueOrNotProvided(value: string | null) {
 
 export function EmployeeProfile({ employee, trainings, canManagePhoto = false }: EmployeeProfileProps) {
   const fullName = [employee.first_name, employee.middle_name, employee.last_name].filter(Boolean).join(" ");
+  const ranks = useRankOptions();
+  const rank = employee.rank_id ? ranks.data?.find((row) => row.id === employee.rank_id) : undefined;
 
   return <div className="space-y-6">
     <section className="rounded-2xl border bg-card p-5 shadow-sm sm:p-6">
@@ -21,7 +25,7 @@ export function EmployeeProfile({ employee, trainings, canManagePhoto = false }:
         <EmployeeProfilePhotoControl canManagePhoto={canManagePhoto} employee={employee} />
         <div className="min-w-0">
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{fullName}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{employee.rank ?? "Rank not provided"}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{rank ? rankLabel(rank) : "Rank not provided"}</p>
           <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm"><span><span className="text-muted-foreground">Badge number</span> <strong>{employee.employee_number}</strong></span><span><span className="text-muted-foreground">Unit / Station</span> <strong>{valueOrNotProvided(employee.unit_station)}</strong></span></div>
         </div>
       </div>
@@ -34,7 +38,7 @@ export function EmployeeProfile({ employee, trainings, canManagePhoto = false }:
         <div><dt className="text-muted-foreground">Phone</dt><dd className="mt-1 font-medium">{valueOrNotProvided(employee.phone)}</dd></div>
         <div><dt className="text-muted-foreground">Place of birth</dt><dd className="mt-1 font-medium">{valueOrNotProvided(employee.place_of_birth)}</dd></div>
         <div><dt className="text-muted-foreground">Date of birth</dt><dd className="mt-1 font-medium">{valueOrNotProvided(employee.date_of_birth)}</dd></div>
-        <div><dt className="text-muted-foreground">Sex</dt><dd className="mt-1 font-medium">{valueOrNotProvided(employee.sex?.replaceAll("_", " ") ?? null)}</dd></div>
+        <div><dt className="text-muted-foreground">Gender</dt><dd className="mt-1 font-medium">{valueOrNotProvided(employee.gender?.replaceAll("_", " ") ?? null)}</dd></div>
         <div><dt className="text-muted-foreground">Civil status</dt><dd className="mt-1 font-medium">{valueOrNotProvided(employee.civil_status?.replaceAll("_", " ") ?? null)}</dd></div>
         <div><dt className="text-muted-foreground">Religion</dt><dd className="mt-1 font-medium">{valueOrNotProvided(employee.religion)}</dd></div>
         <div><dt className="text-muted-foreground">Home address</dt><dd className="mt-1 font-medium">{valueOrNotProvided(employee.address)}</dd></div>

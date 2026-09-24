@@ -19,11 +19,11 @@ vi.mock("@/hooks/use-administration", () => ({
     isLoading: false,
     error: null,
   }),
-  usePositionOptions: () => ({
+  useRankOptions: () => ({
     data: [
-      { id: 7, department_id: 3, title: "Patrol Officer", code: null, description: null, is_active: true, ...stamp },
-      { id: 8, department_id: 3, title: "Retired Title", code: null, description: null, is_active: false, ...stamp },
-      { id: 9, department_id: 4, title: "Records Clerk", code: null, description: null, is_active: true, ...stamp },
+      { id: 7, name: "Patrolman / Patrolwoman", code: "Pat", sort_order: 1, is_active: true, ...stamp },
+      { id: 8, name: "Retired Rank", code: "RET", sort_order: 2, is_active: false, ...stamp },
+      { id: 9, name: "Police Corporal", code: "PCpl", sort_order: 3, is_active: true, ...stamp },
     ],
     isLoading: false,
     error: null,
@@ -40,10 +40,9 @@ const existingEmployee = {
   qualifier: null,
   place_of_birth: null,
   date_of_birth: null,
-  sex: null,
+  gender: null,
   civil_status: null,
   religion: null,
-  rank: null,
   unit_station: null,
   profile_image_path: null,
   personal_email: "ana@example.test",
@@ -52,7 +51,7 @@ const existingEmployee = {
   emergency_contact_name: null,
   emergency_contact_phone: null,
   department_id: 3,
-  position_id: 8,
+  rank_id: 8,
   employment_status: "active" as const,
   employment_started_on: "2024-01-01",
   employment_ended_on: null,
@@ -72,6 +71,9 @@ describe("EmployeeForm", () => {
     expect(screen.getByLabelText("Place of birth")).toBeInTheDocument();
     expect(screen.getByLabelText("Date of birth")).toBeInTheDocument();
     expect(screen.getByLabelText("Civil status")).toBeInTheDocument();
+    expect(screen.getByLabelText("Gender")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Sex")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Position")).not.toBeInTheDocument();
     expect(screen.getByLabelText(/employment start date/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /save employee/i })).toHaveClass("w-full");
   });
@@ -118,16 +120,16 @@ describe("EmployeeForm", () => {
     expect(screen.getByLabelText(/badge number/i).parentElement).toHaveTextContent(/expected string to have >=3 characters/i);
   });
 
-  it("keeps the linked account, department, and position when an existing employee is edited", async () => {
+  it("keeps the linked account, department, and rank when an existing employee is edited", async () => {
     const onSaved = vi.fn();
     const user = userEvent.setup();
     const { container } = render(<EmployeeForm employee={existingEmployee} onSaved={onSaved} />);
 
     expect(container.querySelector('input[name="profileId"]')).toHaveValue(existingEmployee.profile_id);
     expect(screen.getByLabelText("Department")).toHaveValue("3");
-    // The saved position is inactive but remains visible and selected.
-    expect(screen.getByLabelText("Position")).toHaveValue("8");
-    expect(screen.getByRole("option", { name: "Retired Title (inactive)" })).toBeInTheDocument();
+    // The saved rank is inactive but remains visible and selected.
+    expect(screen.getByLabelText("Rank")).toHaveValue("8");
+    expect(screen.getByRole("option", { name: "RET — Retired Rank (inactive)" })).toBeInTheDocument();
 
     await user.clear(screen.getByLabelText(/first name/i));
     await user.type(screen.getByLabelText(/first name/i), "Anna");
@@ -137,23 +139,30 @@ describe("EmployeeForm", () => {
       firstName: "Anna",
       profileId: existingEmployee.profile_id,
       departmentId: 3,
-      positionId: 8,
+      rankId: 8,
     }));
   });
 
-  it("filters positions by department and clears the position when the department changes", async () => {
+  it("offers every active rank in every department and keeps the rank when the department changes", async () => {
     const user = userEvent.setup();
     render(<EmployeeForm employee={existingEmployee} onSaved={() => undefined} />);
 
-    const position = screen.getByLabelText("Position");
-    expect(within(position).queryByRole("option", { name: "Records Clerk" })).not.toBeInTheDocument();
+    const rank = screen.getByLabelText("Rank");
+    expect(within(rank).getByRole("option", { name: "Pat — Patrolman / Patrolwoman" })).toBeInTheDocument();
+    expect(within(rank).getByRole("option", { name: "PCpl — Police Corporal" })).toBeInTheDocument();
     expect(screen.queryByRole("option", { name: /legacy unit/i })).not.toBeInTheDocument();
 
     await user.selectOptions(screen.getByLabelText("Department"), "4");
 
-    expect(position).toHaveValue("");
-    expect(within(position).getByRole("option", { name: "Records Clerk" })).toBeInTheDocument();
-    expect(within(position).queryByRole("option", { name: "Patrol Officer" })).not.toBeInTheDocument();
+    expect(rank).toHaveValue("8");
+    expect(within(rank).getByRole("option", { name: "PCpl — Police Corporal" })).toBeInTheDocument();
+  });
+
+  it("offers only the Active and On leave employment statuses", () => {
+    render(<EmployeeForm employee={existingEmployee} onSaved={() => undefined} />);
+
+    const status = screen.getByLabelText(/employment status/i);
+    expect(within(status).getAllByRole("option").map((option) => option.textContent)).toEqual(["Active", "On leave"]);
   });
 
   it("uses telephone inputs for phone numbers and ties the end date minimum to the start date", () => {

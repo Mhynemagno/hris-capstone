@@ -2,8 +2,9 @@
 
 import { FormField } from "@/components/ui/form-field";
 import { NativeSelect } from "@/components/ui/native-select";
-import { useDepartmentOptions, usePositionOptions } from "@/hooks/use-administration";
-import type { Department, Position } from "@/lib/types/database";
+import { useDepartmentOptions, useRankOptions } from "@/hooks/use-administration";
+import { rankLabel } from "@/lib/ranks";
+import type { Department, Rank } from "@/lib/types/database";
 
 export type SelectChoice = { value: string; label: string };
 
@@ -36,97 +37,84 @@ export function buildDepartmentChoices(
   return choices;
 }
 
-/** Position choices that belong to the selected department. */
-export function buildPositionChoices(
-  positions: readonly Position[] | undefined,
-  departmentId: string,
-  savedPositionId: number | null | undefined,
+/**
+ * Rank choices, junior to senior. Every rank applies to every department, so
+ * the list never depends on the selected department. A saved inactive rank
+ * stays selectable and is labelled "(inactive)".
+ */
+export function buildRankChoices(
+  ranks: readonly Rank[] | undefined,
+  savedRankId: number | null | undefined,
   { activeOnly = true }: ChoiceOptions = {},
 ): SelectChoice[] {
-  const rows = positions ?? [];
-  const selectedDepartment = departmentId ? Number(departmentId) : null;
+  const rows = [...(ranks ?? [])].sort((a, b) => a.sort_order - b.sort_order);
   const choices = rows
-    .filter((position) => selectedDepartment !== null && position.department_id === selectedDepartment)
-    .filter((position) => !activeOnly || position.is_active || position.id === savedPositionId)
-    .map((position) => ({
-      value: String(position.id),
-      label: position.is_active ? position.title : `${position.title} (inactive)`,
-    }));
-  const saved = savedPositionId ? rows.find((position) => position.id === savedPositionId) : undefined;
-  if (savedPositionId && !choices.some((choice) => choice.value === String(savedPositionId))) {
-    if (!positions) {
-      choices.unshift({ value: String(savedPositionId), label: "Current position (loading…)" });
-    } else if (saved && (saved.department_id === null || selectedDepartment === null)) {
-      // Legacy record whose position has no (or no selected) department: keep it visible.
-      choices.unshift({ value: String(saved.id), label: saved.is_active ? saved.title : `${saved.title} (inactive)` });
-    }
+    .filter((rank) => !activeOnly || rank.is_active || rank.id === savedRankId)
+    .map((rank) => ({ value: String(rank.id), label: rank.is_active ? rankLabel(rank) : `${rankLabel(rank)} (inactive)` }));
+  if (savedRankId && !rows.some((rank) => rank.id === savedRankId)) {
+    choices.unshift({ value: String(savedRankId), label: ranks ? "Current rank (unavailable)" : "Current rank (loading…)" });
   }
   return choices;
 }
 
-type DepartmentPositionFieldsProps = {
+type DepartmentRankFieldsProps = {
   idPrefix: string;
   departmentId: string;
-  positionId: string;
+  rankId: string;
   onDepartmentChange: (departmentId: string) => void;
-  onPositionChange: (positionId: string) => void;
+  onRankChange: (rankId: string) => void;
   /** The record's saved values; kept selectable even if inactive. */
   savedDepartmentId?: number | null;
-  savedPositionId?: number | null;
+  savedRankId?: number | null;
   departmentName?: string;
-  positionName?: string;
+  rankName?: string;
   departmentError?: string;
-  positionError?: string;
+  rankError?: string;
   required?: boolean;
   activeOnly?: boolean;
   departmentLabel?: string;
-  positionLabel?: string;
+  rankLabel?: string;
   departmentPlaceholder?: string;
-  positionPlaceholder?: string;
+  rankPlaceholder?: string;
 };
 
 /**
- * Department select plus a Position select filtered to that department.
- * Changing the department clears the position. Render inside a grid; the two
+ * Independent Department and Rank selects. Render inside a grid; the two
  * fields are returned as siblings.
  */
-export function DepartmentPositionFields({
+export function DepartmentRankFields({
   idPrefix,
   departmentId,
-  positionId,
+  rankId,
   onDepartmentChange,
-  onPositionChange,
+  onRankChange,
   savedDepartmentId,
-  savedPositionId,
+  savedRankId,
   departmentName,
-  positionName,
+  rankName,
   departmentError,
-  positionError,
+  rankError,
   required = false,
   activeOnly = true,
   departmentLabel = "Department",
-  positionLabel = "Position",
+  rankLabel: rankFieldLabel = "Rank",
   departmentPlaceholder = "Select a department",
-  positionPlaceholder = "Select a position",
-}: DepartmentPositionFieldsProps) {
+  rankPlaceholder = "Select a rank",
+}: DepartmentRankFieldsProps) {
   const departments = useDepartmentOptions();
-  const positions = usePositionOptions();
+  const ranks = useRankOptions();
   const departmentChoices = buildDepartmentChoices(departments.data, savedDepartmentId, { activeOnly });
-  const positionChoices = buildPositionChoices(positions.data, departmentId, savedPositionId, { activeOnly });
-  // Never disable while a value is set: disabled controls are left out of form data.
-  const positionDisabled = !departmentId && !positionId;
+  const rankChoices = buildRankChoices(ranks.data, savedRankId, { activeOnly });
   const departmentDescription = departments.isLoading
     ? "Loading departments…"
     : departments.error
       ? "Departments could not be loaded. Refresh the page to try again."
       : undefined;
-  const positionDescription = positions.isLoading
-    ? "Loading positions…"
-    : positions.error
-      ? "Positions could not be loaded. Refresh the page to try again."
-      : departmentId && !positionChoices.length
-        ? "No active positions in this department yet."
-        : undefined;
+  const rankDescription = ranks.isLoading
+    ? "Loading ranks…"
+    : ranks.error
+      ? "Ranks could not be loaded. Refresh the page to try again."
+      : undefined;
 
   return (
     <>
@@ -135,10 +123,7 @@ export function DepartmentPositionFields({
           aria-busy={departments.isLoading || undefined}
           id={`${idPrefix}-department`}
           name={departmentName}
-          onChange={(event) => {
-            onDepartmentChange(event.target.value);
-            onPositionChange("");
-          }}
+          onChange={(event) => onDepartmentChange(event.target.value)}
           required={required}
           value={departmentId}
         >
@@ -150,18 +135,17 @@ export function DepartmentPositionFields({
           ))}
         </NativeSelect>
       </FormField>
-      <FormField description={positionDescription} error={positionError} htmlFor={`${idPrefix}-position`} label={positionLabel} required={required}>
+      <FormField description={rankDescription} error={rankError} htmlFor={`${idPrefix}-rank`} label={rankFieldLabel} required={required}>
         <NativeSelect
-          aria-busy={positions.isLoading || undefined}
-          disabled={positionDisabled}
-          id={`${idPrefix}-position`}
-          name={positionName}
-          onChange={(event) => onPositionChange(event.target.value)}
+          aria-busy={ranks.isLoading || undefined}
+          id={`${idPrefix}-rank`}
+          name={rankName}
+          onChange={(event) => onRankChange(event.target.value)}
           required={required}
-          value={positionId}
+          value={rankId}
         >
-          <option value="">{positionDisabled ? "Select a department first" : positionPlaceholder}</option>
-          {positionChoices.map((choice) => (
+          <option value="">{rankPlaceholder}</option>
+          {rankChoices.map((choice) => (
             <option key={choice.value} value={choice.value}>
               {choice.label}
             </option>

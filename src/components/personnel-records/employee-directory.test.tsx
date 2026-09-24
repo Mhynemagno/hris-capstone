@@ -18,12 +18,12 @@ vi.mock("@/hooks/use-administration", () => ({
       { id: 4, name: "Records", is_active: false, created_at: "", updated_at: "" },
     ],
   }),
-  usePositionOptions: () => ({
+  useRankOptions: () => ({
     isLoading: false,
     error: null,
     data: [
-      { id: 7, department_id: 3, title: "Patrol Officer", code: null, description: null, is_active: true, created_at: "", updated_at: "" },
-      { id: 9, department_id: 4, title: "Records Clerk", code: null, description: null, is_active: true, created_at: "", updated_at: "" },
+      { id: 7, name: "Patrolman / Patrolwoman", code: "Pat", sort_order: 1, is_active: true, created_at: "", updated_at: "" },
+      { id: 9, name: "Police Corporal", code: "PCpl", sort_order: 2, is_active: true, created_at: "", updated_at: "" },
     ],
   }),
 }));
@@ -36,7 +36,7 @@ const employee = {
   last_name: "Reyes",
   employee_number: "PAT-0001",
   department_id: 3,
-  position_id: 7,
+  rank_id: 7,
   employment_status: "on_leave",
 };
 
@@ -46,34 +46,34 @@ describe("EmployeeDirectory", () => {
     mocks.useEmployeeDirectory.mockReturnValue({ data: { rows: [employee], count: 1 }, error: null, isLoading: false });
   });
 
-  it("lists records in an accessible table with department, position, and a visible action", () => {
+  it("lists records in an accessible table with department, rank, and a visible action", () => {
     render(<EmployeeDirectory />);
 
     const table = screen.getByRole("table", { name: "Personnel records" });
     expect(within(table).getByRole("cell", { name: "Operations" })).toBeInTheDocument();
-    expect(within(table).getByRole("cell", { name: "Patrol Officer" })).toBeInTheDocument();
+    expect(within(table).getByRole("cell", { name: "Pat" })).toBeInTheDocument();
     expect(within(table).getByRole("cell", { name: "On leave" })).toBeInTheDocument();
     expect(within(table).getByRole("link", { name: /view record for ana reyes/i })).toHaveAttribute("href", `/hr/employees/${employee.id}`);
     expect(screen.getByText("1 record")).toBeInTheDocument();
   });
 
-  it("filters by department, dependent position, and employment status, then clears", async () => {
+  it("filters by department, rank, and employment status, then clears", async () => {
     const user = userEvent.setup();
     render(<EmployeeDirectory />);
 
     expect(screen.getByRole("button", { name: "Clear filters" })).toBeDisabled();
-    expect(screen.getByLabelText("Position")).toBeDisabled();
     await user.selectOptions(screen.getByLabelText("Department"), "3");
-    expect(within(screen.getByLabelText("Position")).queryByRole("option", { name: "Records Clerk" })).not.toBeInTheDocument();
-    await user.selectOptions(screen.getByLabelText("Position"), "7");
+    expect(within(screen.getByLabelText("Rank")).getByRole("option", { name: "PCpl — Police Corporal" })).toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText("Rank"), "7");
+    expect(within(screen.getByLabelText("Employment status")).getAllByRole("option").map((option) => option.textContent)).toEqual(["All statuses", "Active", "On leave"]);
     await user.selectOptions(screen.getByLabelText("Employment status"), "on_leave");
 
-    expect(mocks.useEmployeeDirectory).toHaveBeenLastCalledWith(expect.objectContaining({ departmentId: 3, positionId: 7, employmentStatus: "on_leave" }));
+    expect(mocks.useEmployeeDirectory).toHaveBeenLastCalledWith(expect.objectContaining({ departmentId: 3, rankId: 7, employmentStatus: "on_leave" }));
     // Filters can find records in inactive departments.
     expect(screen.getByRole("option", { name: "Records (inactive)" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Clear filters" }));
-    expect(mocks.useEmployeeDirectory).toHaveBeenLastCalledWith({ search: "", departmentId: undefined, positionId: undefined, employmentStatus: undefined });
+    expect(mocks.useEmployeeDirectory).toHaveBeenLastCalledWith({ search: "", departmentId: undefined, rankId: undefined, employmentStatus: undefined });
   });
 
   it("explains an empty filtered result", async () => {

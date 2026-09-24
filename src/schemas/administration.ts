@@ -3,9 +3,6 @@ import { z } from "zod";
 import { appRoleSchema, paginationSchema, uuidSchema } from "./common";
 import { namePartsSchema, withFullName } from "./name";
 
-const optionalTrimmedText = (max: number) =>
-  z.string().trim().max(max).transform((value) => value || undefined).optional();
-
 const optionalFilterText = (max: number) =>
   z.string().trim().max(max).transform((value) => value || undefined).optional();
 

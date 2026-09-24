@@ -9,44 +9,42 @@ import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { LoadingState } from "@/components/ui/loading-state";
 import { NativeSelect } from "@/components/ui/native-select";
-import { useDepartmentOptions, usePositionOptions } from "@/hooks/use-administration";
+import { useDepartmentOptions, useRankOptions } from "@/hooks/use-administration";
 import { useEmployeeDirectory, useUnlinkedEmployeeAccounts } from "@/hooks/use-personnel-records";
 import type { Employee } from "@/lib/types/database";
 
-import { DepartmentPositionFields } from "./department-position-fields";
+import { DepartmentRankFields } from "./department-rank-fields";
 import { EmployeeAccountPicker } from "./employee-account-picker";
 
 const employmentStatusLabels: Record<Employee["employment_status"], string> = {
   active: "Active",
   on_leave: "On leave",
-  inactive: "Inactive",
-  separated: "Separated",
 };
 
 export function EmployeeDirectory() {
   const [search, setSearch] = useState("");
   const [departmentId, setDepartmentId] = useState("");
-  const [positionId, setPositionId] = useState("");
+  const [rankId, setRankId] = useState("");
   const [employmentStatus, setEmploymentStatus] = useState<Employee["employment_status"] | "">("");
   const { data, error, isLoading } = useEmployeeDirectory({
     search,
     departmentId: departmentId ? Number(departmentId) : undefined,
-    positionId: positionId ? Number(positionId) : undefined,
+    rankId: rankId ? Number(rankId) : undefined,
     employmentStatus: employmentStatus || undefined,
   });
   const accounts = useUnlinkedEmployeeAccounts();
   const departments = useDepartmentOptions();
-  const positions = usePositionOptions();
+  const ranks = useRankOptions();
   const departmentNames = useMemo(() => new Map((departments.data ?? []).map((row) => [row.id, row.name])), [departments.data]);
-  const positionTitles = useMemo(() => new Map((positions.data ?? []).map((row) => [row.id, row.title])), [positions.data]);
-  const hasFilters = Boolean(search || departmentId || positionId || employmentStatus);
+  const rankCodes = useMemo(() => new Map((ranks.data ?? []).map((row) => [row.id, row.code])), [ranks.data]);
+  const hasFilters = Boolean(search || departmentId || rankId || employmentStatus);
   const rows = data?.rows ?? [];
   const total = data?.count ?? 0;
 
   function clearFilters() {
     setSearch("");
     setDepartmentId("");
-    setPositionId("");
+    setRankId("");
     setEmploymentStatus("");
   }
 
@@ -62,15 +60,15 @@ export function EmployeeDirectory() {
         <FormField htmlFor="employee-search" label="Search">
           <Input id="employee-search" onChange={(event) => setSearch(event.target.value)} placeholder="Name or badge number" type="search" value={search} />
         </FormField>
-        <DepartmentPositionFields
+        <DepartmentRankFields
           activeOnly={false}
           departmentId={departmentId}
           departmentPlaceholder="All departments"
           idPrefix="employee-filter"
           onDepartmentChange={setDepartmentId}
-          onPositionChange={setPositionId}
-          positionId={positionId}
-          positionPlaceholder="All positions"
+          onRankChange={setRankId}
+          rankId={rankId}
+          rankPlaceholder="All ranks"
         />
         <FormField htmlFor="employee-filter-status" label="Employment status">
           <NativeSelect id="employee-filter-status" onChange={(event) => setEmploymentStatus(event.target.value as Employee["employment_status"] | "")} value={employmentStatus}>
@@ -94,7 +92,7 @@ export function EmployeeDirectory() {
                 <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Employee</th>
                 <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Badge number</th>
                 <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Department</th>
-                <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Position</th>
+                <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Rank</th>
                 <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Status</th>
                 <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col"><span className="sr-only">Actions</span></th>
               </tr>
@@ -105,7 +103,7 @@ export function EmployeeDirectory() {
                   <td className="px-4 py-3 align-top font-medium">{employee.first_name} {employee.last_name}</td>
                   <td className="px-4 py-3 align-top tabular-nums">{employee.employee_number}</td>
                   <td className="px-4 py-3 align-top">{employee.department_id ? departmentNames.get(employee.department_id) ?? "—" : "—"}</td>
-                  <td className="px-4 py-3 align-top">{employee.position_id ? positionTitles.get(employee.position_id) ?? "—" : "—"}</td>
+                  <td className="px-4 py-3 align-top">{employee.rank_id ? rankCodes.get(employee.rank_id) ?? "—" : "—"}</td>
                   <td className="px-4 py-3 align-top">{employmentStatusLabels[employee.employment_status]}</td>
                   <td className="px-4 py-3 align-top text-right">
                     <Link className={buttonVariants({ size: "sm", variant: "outline" })} href={`/hr/employees/${employee.id}`}>
