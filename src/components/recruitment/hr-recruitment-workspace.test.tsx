@@ -7,6 +7,7 @@ import { HrApplicationDetail } from "./hr-application-detail";
 import { HrApplicationList } from "./hr-application-list";
 
 const mocks = vi.hoisted(() => ({
+  replace: vi.fn(),
   saveJob: vi.fn(),
   transition: vi.fn(),
   hire: vi.fn(),
@@ -16,6 +17,8 @@ const mocks = vi.hoisted(() => ({
   applications: [] as Array<Record<string, unknown>>,
   applicationStatus: "Shortlisted",
 }));
+
+vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: mocks.replace }) }));
 
 vi.mock("@/hooks/use-administration", () => ({
   useDepartmentOptions: () => ({

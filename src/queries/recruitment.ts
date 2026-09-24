@@ -45,14 +45,29 @@ type ResubmitApplicationInput = {
 export class ApplicantProfileRequiredError extends Error {
   readonly code = "APPLICANT_PROFILE_REQUIRED" as const;
 
-  constructor() {
-    super("Complete your applicant profile before applying.");
+  constructor(
+    message = "Complete your applicant profile before applying.",
+    readonly actionHref = "/applicant/profile",
+    readonly actionLabel = "Complete profile",
+  ) {
+    super(message);
     this.name = "ApplicantProfileRequiredError";
   }
 }
 
 function throwIfError(error: { message: string } | null) {
   if (error) throw new Error(error.message);
+}
+
+function throwApplicationSubmissionError(error: { message: string } | null) {
+  if (error && /eligibility/i.test(error.message) && /diploma/i.test(error.message)) {
+    throw new ApplicantProfileRequiredError(
+      "Upload your Eligibility and Diploma documents under My profile > Required documents before applying.",
+      "/applicant/profile#applicant-documents",
+      "Update required documents",
+    );
+  }
+  throwIfError(error);
 }
 
 function extensionFor(file: File) {
@@ -375,7 +390,7 @@ export async function submitApplication(input: SubmitApplicationInput) {
       submitted_cover_note: values.coverNote ?? null,
       submitted_documents: values.documents,
     });
-    throwIfError(error);
+    throwApplicationSubmissionError(error);
     return (data as string | null) ?? values.applicationId;
   } catch (cause) {
     if (uploadedPaths.length > 0) {
