@@ -18,9 +18,8 @@ const result = (outcome: FaceAttendanceResult["outcome"], message: string | null
   recordedAt: "2026-09-25T00:00:00Z",
 });
 
-const stable = Array.from({ length: FACE_RECOGNITION_CONFIG.stableFramesBeforeLiveness }, (_, index): ScannerEvent => ({ type: "FRAME_ACCEPTED", now: index }));
-const blink = [0.3, 0.3, 0.3, 0.1, 0.1, 0.3, 0.3].map((ear, index): ScannerEvent => ({ type: "LIVENESS_FRAME", ear, now: 100 + index * 60 }));
-const toVerifying: ScannerEvent[] = [{ type: "INIT_SUCCEEDED" }, { type: "START" }, ...stable, ...blink];
+const stable = Array.from({ length: FACE_RECOGNITION_CONFIG.stableFramesBeforeVerify }, (_, index): ScannerEvent => ({ type: "FRAME_ACCEPTED", now: index }));
+const toVerifying: ScannerEvent[] = [{ type: "INIT_SUCCEEDED" }, { type: "START" }, ...stable];
 
 describe("scanner state machine", () => {
   it("walks the full happy path to cooldown and back to searching", () => {
@@ -36,36 +35,13 @@ describe("scanner state machine", () => {
     expect(reduce(cooldown, { type: "COOLDOWN_ELAPSED" }).status).toBe("searching");
   });
 
-  it("requires several consecutive stable frames before the blink challenge", () => {
+  it("reads the face straight after several consecutive well-framed frames, with no blink challenge", () => {
+    expect(play([{ type: "INIT_SUCCEEDED" }, { type: "START" }, ...stable]).status).toBe("verifying");
+  });
+
+  it("requires several consecutive stable frames before reading the face", () => {
     const state = play([{ type: "INIT_SUCCEEDED" }, { type: "START" }, stable[0], { type: "FRAME_REJECTED", guidance: "Move closer to the camera." }, stable[0]]);
     expect(state).toMatchObject({ status: "searching", stableFrames: 1 });
-  });
-
-  it("never reaches the descriptor step before the blink passes", () => {
-    const state = play([{ type: "INIT_SUCCEEDED" }, { type: "START" }, ...stable, { type: "DESCRIPTOR_READY", scanId: "early" }]);
-    expect(state.status).toBe("liveness");
-  });
-
-  it("returns to searching when the face is lost during the blink challenge", () => {
-    const state = play([{ type: "INIT_SUCCEEDED" }, { type: "START" }, ...stable, { type: "FACE_LOST", guidance: "More than one face is visible." }]);
-    expect(state).toMatchObject({ status: "searching", guidance: "More than one face is visible." });
-  });
-
-  it("keeps the blink challenge through a few frames where the face is missed", () => {
-    const missed: ScannerEvent = { type: "FACE_MISSED", guidance: "No face detected. Look at the camera." };
-    const blinkWithDropouts = [blink[0], blink[1], blink[2], missed, blink[3], missed, missed, blink[5]];
-    expect(play([{ type: "INIT_SUCCEEDED" }, { type: "START" }, ...stable, ...blinkWithDropouts]).status).toBe("verifying");
-  });
-
-  it("returns to searching once the face stays missing", () => {
-    const missed = Array.from({ length: FACE_RECOGNITION_CONFIG.blink.maxMissedFrames + 1 }, (): ScannerEvent => ({ type: "FACE_MISSED", guidance: "No face detected. Look at the camera." }));
-    const state = play([{ type: "INIT_SUCCEEDED" }, { type: "START" }, ...stable, ...missed]);
-    expect(state).toMatchObject({ status: "searching", guidance: "No face detected. Look at the camera." });
-  });
-
-  it("fails the blink challenge on timeout", () => {
-    const state = play([{ type: "INIT_SUCCEEDED" }, { type: "START" }, ...stable, { type: "LIVENESS_FRAME", ear: 0.3, now: FACE_RECOGNITION_CONFIG.blink.timeoutMs + 10 }]);
-    expect(state).toMatchObject({ status: "error", kind: "liveness_timeout", fatal: false });
   });
 
   it("shows 'Face not recognized' for an unknown face", () => {
@@ -87,12 +63,6 @@ describe("scanner state machine", () => {
   it("labels a database rejection separately from a connection problem", () => {
     const state = play([...toVerifying, { type: "DESCRIPTOR_READY", scanId: "s" }, { type: "RECORD_FAILED", message: "HR access is required.", retryable: false }]);
     expect(state).toMatchObject({ status: "error", kind: "service", message: "HR access is required." });
-  });
-
-  it("ends the blink challenge from the watchdog even without frames", () => {
-    const state = play([{ type: "INIT_SUCCEEDED" }, { type: "START" }, ...stable, { type: "LIVENESS_EXPIRED" }]);
-    expect(state).toMatchObject({ status: "error", kind: "liveness_timeout" });
-    expect(reduce(play([{ type: "INIT_SUCCEEDED" }, { type: "START" }]), { type: "LIVENESS_EXPIRED" }).status).toBe("searching");
   });
 
   it("ignores late events that do not belong to the current state", () => {
@@ -119,7 +89,7 @@ describe("scanner state machine", () => {
   });
 
   it("pauses to ready from a running state", () => {
-    const liveness = play([{ type: "INIT_SUCCEEDED" }, { type: "START" }, ...stable]);
-    expect(reduce(liveness, { type: "STOP" }).status).toBe("ready");
+    const searching = play([{ type: "INIT_SUCCEEDED" }, { type: "START" }, stable[0]]);
+    expect(reduce(searching, { type: "STOP" }).status).toBe("ready");
   });
 });

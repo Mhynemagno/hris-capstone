@@ -96,7 +96,6 @@ describe("FaceAttendanceKiosk", () => {
 
   it.each([
     [{ status: "searching", stableFrames: 0, guidance: null }, /look at the camera/i],
-    [{ status: "liveness", blink: { phase: "open", startedAt: 0, openFrames: 3, closedFrames: 0, reopenFrames: 0, baseline: 0.3, baselineTotal: 0.9, lastEar: 0.3 }, missedFrames: 0 }, /blink slowly once/i],
     [{ status: "verifying" }, /verifying identity/i],
     [{ status: "initializing" }, /loading face models/i],
   ] as [ScannerState, RegExp][])("prompts for %o", async (state, text) => {

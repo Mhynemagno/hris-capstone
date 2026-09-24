@@ -4,10 +4,10 @@ import { useEffect, type ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { FACE_RECOGNITION_CONFIG } from "@/lib/face-recognition/config";
-import { eyeWithEar, syntheticDescriptor } from "@/test/face-fixtures";
+import { syntheticDescriptor } from "@/test/face-fixtures";
 import { fakeStream, installGetUserMedia, installLiveVideoElement } from "@/test/media-mocks";
 
-const faceApi = vi.hoisted(() => ({ loadFaceModels: vi.fn(), detectFacesWithDescriptors: vi.fn(), detectFacesWithLandmarks: vi.fn() }));
+const faceApi = vi.hoisted(() => ({ loadFaceModels: vi.fn(), detectFacesWithDescriptors: vi.fn(), detectFaces: vi.fn() }));
 vi.mock("@/lib/face-recognition/face-api", () => ({ ...faceApi, MODELS_FAILED_MESSAGE: "The face recognition models could not be loaded." }));
 
 const enroll = vi.hoisted(() => vi.fn());
@@ -17,7 +17,7 @@ import { useFaceEnrollmentCapture } from "./use-face-enrollment-capture";
 
 const employeeId = "3f1e2d3c-4b5a-4968-8776-655443322110";
 const box = { x: 220, y: 140, width: 200, height: 200 };
-const sample = (value: number, faceBox = box) => ({ box: faceBox, leftEye: eyeWithEar(0.3), rightEye: eyeWithEar(0.3, 3), descriptor: syntheticDescriptor(value) });
+const sample = (value: number, faceBox = box) => ({ box: faceBox, descriptor: syntheticDescriptor(value) });
 const required = FACE_RECOGNITION_CONFIG.enrollment.requiredSamples;
 const timeout = { timeout: (required + 3) * FACE_RECOGNITION_CONFIG.enrollment.sampleIntervalMs + 2000 };
 

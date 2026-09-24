@@ -28,7 +28,7 @@ export function EmployeeFaceScan() {
   return (
     <StatusPanel
       action={<Button onClick={() => setOpen(true)} type="button"><ScanFace aria-hidden="true" />Open camera</Button>}
-      description="Look at the camera and blink once. Your first scan of the day records time in; a later scan records time out. No photos are stored."
+      description="Look at the camera. Your first scan of the day records time in; a later scan records time out. No photos are stored."
       kind="empty"
       title="Record attendance with your face"
     />

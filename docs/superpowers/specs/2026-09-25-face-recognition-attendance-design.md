@@ -1,13 +1,15 @@
 # Face-recognition attendance design
 
 **Branch:** `feat/face-recognition-attendance`
-**Goal:** Let an employee record attendance at a supervised kiosk without choosing their name: the browser camera finds one face, runs a blink challenge, and the database matches the face against consenting enrolled employees and writes the attendance through the existing attendance log.
+**Goal:** Let an employee record attendance at a supervised kiosk without choosing their name: the browser camera finds one face and the database matches the face against consenting enrolled employees and writes the attendance through the existing attendance log.
 
 ## Policy change
 
 The project previously forbade storing biometric data (`PROJECT_SCOPE.md` §4.10, the [attendance integration design](2026-08-24-attendance-integration-design.md)). **This feature intentionally overrides that rule for the capstone demonstration.** The HRIS now stores exactly one kind of biometric data: a 128-value face descriptor per consenting employee. It still never stores face photos, video, or the probe descriptors captured at scan time.
 
-Development and demonstrations must use only test subjects, people who have consented, or anonymized faces. Blink detection is a basic liveness cue for a supervised kiosk; it is **not** production-grade anti-spoofing (it does not stop a replayed video or a mask).
+Development and demonstrations must use only test subjects, people who have consented, or anonymized faces.
+
+**No liveness check (changed 2026-09-25).** The original blink challenge was removed at the client's request because real users could not pass it reliably. The scanner therefore does **not** detect a photo, a phone screen, or a video held up to the camera. Mitigations: the HR kiosk is meant for a supervised device, and employee self-scan requires the employee's own login and matches only that employee's registration. Every scan is audited.
 
 ## Audit of the existing system (before this change)
 
@@ -87,27 +89,26 @@ Tunables live in `src/lib/face-recognition/config.ts`. The server-side threshold
 **Kiosk state machine** (`scanner-machine.ts`, one state at a time; events that do not belong to the current state are ignored, so late async results cannot overlap phases):
 
 ```text
-INITIALIZING → READY → SEARCHING → LIVENESS → VERIFYING → RECORDING → SUCCESS | ERROR → COOLDOWN → SEARCHING
+INITIALIZING → READY → SEARCHING → VERIFYING → RECORDING → SUCCESS | ERROR → COOLDOWN → SEARCHING
 ```
 
-- **SEARCHING:** landmark detection every 250 ms, never overlapping. Three consecutive well-framed single-face frames are needed.
-- **LIVENESS:** landmark-only detection every 60 ms. Eye aspect ratio (EAR) from the 68-point eye landmarks must show at least 3 open frames (EAR ≥ 0.24), then at least 1 closed frame (EAR ≤ max(0.19, 0.72 × the person's open baseline); detection runs at about 6–10 fps, so a normal blink is often a single frame), then at least 2 open frames, all within 8 s. A watchdog timer ends the challenge at 8 s even if no frame can be analysed. Eyes closed at the start never satisfy the first phase, half-closed frames count as neither open nor closed, and zero or several faces returns to SEARCHING.
-- **VERIFYING:** only now is one descriptor computed, and exactly one face is required.
+- **SEARCHING:** face-box detection every 250 ms, never overlapping. Three consecutive well-framed single-face frames are needed.
+- **VERIFYING:** one descriptor is computed, and exactly one face is required.
 - **RECORDING:** one scan UUID per attempt. Transport failures retry twice with the same UUID and are shown as a connection problem; database rejections are not retried and are shown as a service rejection.
-- **SUCCESS** (4 s) shows the employee, the action, and the time. **ERROR** (3.5 s) shows "Face not recognized.", the rule message, a blink timeout, or a connection problem. **COOLDOWN** (2.5 s) runs no recognition.
+- **SUCCESS** (4 s) shows the employee, the action, and the time. **ERROR** (3.5 s) shows "Face not recognized.", the rule message, or a connection problem. **COOLDOWN** (2.5 s) runs no recognition.
 - Camera denial, a missing camera, model failure, or a camera that stops (page hidden, device unplugged, track ended) is fatal until the user selects Try again. Closing the scanner, navigating away, hiding the page, or unmounting stops every track and clears every timer.
 
 ## Testing
 
 - **pgTAP** (`supabase/tests/face_recognition_attendance.test.sql`, 43 assertions): no table privileges for `anon`/`authenticated`; HR-account deletion is not blocked; employee and administrator denied every RPC; consent, descriptor, and duplicate-face validation; re-registration keeps one row; audit rows; threshold acceptance and rejection; ambiguity rejection; no log for rejected scans; time-in/time-out and status; retry idempotency; already-recorded rules; the unique-index guard; an import on a face-scanned day is a duplicate; the distance is withheld; unlinked employees cannot enroll; employee self-read isolation; deactivation purge; deletion.
-- **Vitest:** geometry (EAR, framing, aggregation), the blink sequence (initially closed, noise, ambiguous frames, baseline, timeout), the state machine, schemas, queries (no table reads, retryable errors), camera hook (constraints, cleanup on unmount/hidden page, late streams, the play race, error mapping), scanner hook with mocked detection (full flow, same-scan-ID retry, unknown face, several faces, closed eyes, denied camera, model failure, track end, unmount), enrollment capture, and components.
+- **Vitest:** geometry (framing, aggregation), the state machine, schemas, queries (no table reads, retryable errors), camera hook (constraints, cleanup on unmount/hidden page, late streams, the play race, error mapping), scanner hook with mocked detection (full flow, same-scan-ID retry, unknown face, several faces, denied camera, model failure, track end, unmount), enrollment capture, and components.
 - **Playwright** (`e2e/face-attendance.spec.ts`) with Chromium's fake camera: models load from the production bundle, the camera starts, detection reports "No face detected", consent is required, and the scanner closes. The fake feed contains no face, so a real match needs a consenting person at a real camera. Headless Edge ends fake camera tracks after about a second, so the spec skips there; run it with `--headed`.
 
 ## Known limitations
 
 - Self-scan has no location or device check: an employee who is signed in and present in front of any camera can record attendance from anywhere. A geofence or trusted-network check could be added later.
 
-- Blink liveness is defeatable by a video replay; the kiosk must be supervised.
+- There is no liveness check: a photo or screen of a registered employee can record attendance for them. The kiosk must be supervised.
 - Matching is a linear scan in PL/pgSQL, fine for a station-sized roster (hundreds of employees). A larger deployment should use `pgvector` with an index.
 - Thresholds are tuned from library guidance, not measured on the client's population, so tune `match_threshold` with consenting test subjects.
 - Face scans and CSV imports are separate capture methods; whichever records an employee-day first wins, and the other is reported as a duplicate or rejection.

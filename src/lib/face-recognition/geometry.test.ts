@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { eyeWithEar, syntheticDescriptor } from "@/test/face-fixtures";
+import { syntheticDescriptor } from "@/test/face-fixtures";
 
 import { FACE_RECOGNITION_CONFIG } from "./config";
-import { aggregateDescriptors, assessFraming, averageEyeAspectRatio, euclideanDistance, eyeAspectRatio } from "./geometry";
+import { aggregateDescriptors, assessFraming, euclideanDistance } from "./geometry";
 
 const frame = { width: 640, height: 480 };
 const centred = { x: 220, y: 140, width: 200, height: 200 };
@@ -16,17 +16,6 @@ describe("euclideanDistance", () => {
 
   it("rejects descriptors of different lengths", () => {
     expect(() => euclideanDistance([1], [1, 2])).toThrow();
-  });
-});
-
-describe("eye aspect ratio", () => {
-  it("computes EAR from six landmarks", () => {
-    expect(eyeAspectRatio(eyeWithEar(0.3))).toBeCloseTo(0.3);
-    expect(averageEyeAspectRatio(eyeWithEar(0.3), eyeWithEar(0.1, 3))).toBeCloseTo(0.2);
-  });
-
-  it("requires six landmarks", () => {
-    expect(() => eyeAspectRatio(eyeWithEar(0.3).slice(0, 5))).toThrow();
   });
 });
 
