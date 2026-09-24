@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(66);
+select extensions.plan(67);
 
 delete from public.applications;
 delete from public.job_openings;
@@ -410,6 +410,15 @@ select extensions.is(
     join public.applications application on application.hired_employee_id = employee.id
     where application.id = '00000000-0000-4000-8000-000000009401'::uuid),
   'Pat', 'Hiring assigns the Patrolman / Patrolwoman rank looked up by its code');
+select extensions.is(
+  (select employee.department_id from public.employees employee
+    join public.applications application on application.hired_employee_id = employee.id
+    join public.job_openings opening on opening.id = application.job_opening_id
+    where application.id = '00000000-0000-4000-8000-000000009401'::uuid),
+  (select opening.department_id from public.applications application
+    join public.job_openings opening on opening.id = application.job_opening_id
+    where application.id = '00000000-0000-4000-8000-000000009401'::uuid),
+  'Hiring places the new employee in the department of the job they applied for');
 
 -- Applicants keep seeing the job they applied for after it stops being published.
 insert into public.job_qualification_criteria (job_opening_id, ordinal, kind, requirement)

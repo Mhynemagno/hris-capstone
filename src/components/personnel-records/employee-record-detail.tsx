@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
@@ -13,7 +13,7 @@ import type { PersonnelKind } from "@/queries/personnel-records";
 
 import { EmployeeEditor } from "./employee-editor";
 import { RecordEntryForm } from "./record-entry-form";
-import { parseRecordTab, RecordTabs, type RecordTabKey } from "./record-tabs";
+import { parseRecordTab, RECORD_TABS, RecordTabs, type RecordTabKey } from "./record-tabs";
 
 const titles: Record<PersonnelKind, string> = { serviceHistory: "Service history", qualification: "Qualifications", certification: "Certifications", training: "Training" };
 
@@ -147,5 +147,15 @@ export function EmployeeRecordDetail({ employeeId }: { employeeId: string }) {
 
   if (employee.isLoading) return <LoadingState label="Loading employee record…" />;
   if (employee.error || !employee.data) return <ErrorState message={employee.error?.message ?? "Employee record was not found."} />;
-  return <div className="space-y-6"><div><Link className="text-sm text-primary underline-offset-4 hover:underline" href="/hr/employees">Back to employees</Link><h1 className="mt-3 text-3xl font-semibold tracking-tight">{employee.data.first_name} {employee.data.last_name}</h1><p className="mt-1 text-muted-foreground">{employee.data.employee_number} · {employee.data.employment_status.replace("_", " ")}</p></div><RecordTabs active={active} idPrefix="rec" onChange={showTab} /><div aria-labelledby={`rec-tab-${active}`} id={`rec-panel-${active}`} role="tabpanel">{active === "official" ? <EmployeeEditor employee={employee.data} /> : active === "service-history" ? <Records employeeId={employeeId} kind="serviceHistory" /> : active === "qualifications" ? <Records employeeId={employeeId} kind="qualification" /> : active === "certifications" ? <Records employeeId={employeeId} kind="certification" /> : <TrainingRecords employeeId={employeeId} />}</div></div>;
+  const panels: Record<RecordTabKey, ReactNode> = {
+    official: <EmployeeEditor employee={employee.data} />,
+    "service-history": <Records employeeId={employeeId} kind="serviceHistory" />,
+    qualifications: <Records employeeId={employeeId} kind="qualification" />,
+    certifications: <Records employeeId={employeeId} kind="certification" />,
+    training: <TrainingRecords employeeId={employeeId} />,
+  };
+  return <div className="space-y-6"><div><Link className="text-sm text-primary underline-offset-4 hover:underline" href="/hr/employees">Back to employees</Link><h1 className="mt-3 text-3xl font-semibold tracking-tight">{employee.data.first_name} {employee.data.last_name}</h1><p className="mt-1 text-muted-foreground">{employee.data.employee_number} · {employee.data.employment_status.replace("_", " ")}</p></div><RecordTabs active={active} idPrefix="rec" onChange={showTab} />{RECORD_TABS.map((tab) => (
+    // Every panel stays mounted (hidden when inactive) so unsaved edits survive a tab switch.
+    <div aria-labelledby={`rec-tab-${tab.key}`} hidden={tab.key !== active} id={`rec-panel-${tab.key}`} key={tab.key} role="tabpanel">{panels[tab.key]}</div>
+  ))}</div>;
 }

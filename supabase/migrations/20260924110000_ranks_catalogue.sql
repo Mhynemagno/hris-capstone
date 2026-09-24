@@ -26,6 +26,8 @@ alter table public.ranks drop constraint if exists positions_description_length_
 alter table public.ranks drop column description;
 alter table public.ranks drop constraint if exists positions_code_format_check;
 alter table public.ranks rename column title to name;
+-- Legacy titles were unique only per department and codes allowed 32 characters, so the global
+-- name uniqueness and the 16-character code rule are added by the reset, once legacy rows are gone.
 update public.ranks set code = coalesce(nullif(btrim(code), ''), 'LEGACY-' || id);
 alter table public.ranks
   alter column code set not null,
@@ -33,10 +35,8 @@ alter table public.ranks
 update public.ranks set sort_order = 1000 + id;
 alter table public.ranks
   alter column sort_order set not null,
-  add constraint ranks_name_key unique (name),
   add constraint ranks_code_key unique (code),
   add constraint ranks_sort_order_key unique (sort_order),
-  add constraint ranks_code_check check (code = btrim(code) and char_length(code) between 1 and 16),
   add constraint ranks_name_check check (char_length(btrim(name)) between 2 and 160),
   add constraint ranks_sort_order_check check (sort_order between 1 and 10000);
 alter table public.ranks rename constraint positions_pkey to ranks_pkey;
@@ -497,7 +497,7 @@ begin
   if patrol_rank.id is null then raise exception 'Configure the active Patrolman / Patrolwoman (Pat) rank before hiring.' using errcode = 'P0001'; end if;
   if employee_profile.email is null then raise exception 'Applicant account profile is incomplete.' using errcode = 'P0001'; end if;
   insert into public.employees (profile_id, employee_number, first_name, middle_name, last_name, qualifier, place_of_birth, date_of_birth, gender, civil_status, religion, personal_email, phone, address, department_id, rank_id, employment_status, employment_started_on)
-  values (applicant_row.profile_id, upper(btrim(target_badge_number)), applicant_row.first_name, applicant_row.middle_name, applicant_row.last_name, applicant_row.qualifier, applicant_row.place_of_birth, applicant_row.date_of_birth, applicant_row.gender, applicant_row.civil_status, applicant_row.religion, lower(btrim(employee_profile.email)), applicant_row.phone, applicant_row.address, null, patrol_rank.id, 'active', current_date)
+  values (applicant_row.profile_id, upper(btrim(target_badge_number)), applicant_row.first_name, applicant_row.middle_name, applicant_row.last_name, applicant_row.qualifier, applicant_row.place_of_birth, applicant_row.date_of_birth, applicant_row.gender, applicant_row.civil_status, applicant_row.religion, lower(btrim(employee_profile.email)), applicant_row.phone, applicant_row.address, (select opening.department_id from public.job_openings opening where opening.id = application_row.job_opening_id), patrol_rank.id, 'active', current_date)
   returning id into new_employee_id;
   update public.applications set status = 'Hired', hired_employee_id = new_employee_id, reviewed_at = coalesce(reviewed_at, now()), updated_at = now() where id = target_application_id;
   insert into public.employee_activation_requests (employee_id, profile_id, application_id, requested_by_user_id) values (new_employee_id, applicant_row.profile_id, target_application_id, caller_id);

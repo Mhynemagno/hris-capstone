@@ -42,13 +42,23 @@ restart identity;
 select pgmq.purge_queue('application_analysis');
 
 -- Keep only employee rows linked to a login; clear their organization placement.
+-- Personnel history references employees (ON DELETE RESTRICT) and its trigger would record the
+-- reset itself, so history is cleared first and the trigger is paused for these two statements.
+truncate table public.employee_record_history restart identity;
+alter table public.employees disable trigger employees_write_record_history;
 delete from public.employees where profile_id is null;
 update public.employees
 set department_id = null, rank_id = null, unit_station = null, employment_status = 'active';
+alter table public.employees enable trigger employees_write_record_history;
 
 delete from public.unit_stations;
 delete from public.ranks;
 delete from public.departments;
+
+-- Rules the legacy position rows could not meet (see 20260924110000_ranks_catalogue.sql).
+alter table public.ranks
+  add constraint ranks_name_key unique (name),
+  add constraint ranks_code_check check (code = btrim(code) and char_length(code) between 1 and 16);
 
 insert into public.ranks (name, code, sort_order) values
   ('Patrolman / Patrolwoman', 'Pat', 1),
@@ -75,5 +85,5 @@ insert into public.departments (name) values
   ('Drug Enforcement Unit'),
   ('Police Community Precincts / Sub-Stations');
 
--- Last, so the reset's own trigger-written history and audit rows are cleared too.
-truncate table public.employee_record_history, public.notifications, public.audit_logs restart identity;
+-- Last, so the reset's own trigger-written audit rows are cleared too.
+truncate table public.notifications, public.audit_logs restart identity;

@@ -72,7 +72,10 @@ describe("EmployeeRecordDetail", () => {
     expect(screen.getByRole("tab", { name: "Qualifications" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("heading", { name: "Qualifications" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Service history" })).not.toBeInTheDocument();
-    expect(screen.queryByText("Employee editor")).not.toBeInTheDocument();
+    // Other panels stay mounted but hidden, so unsaved official-record edits survive a tab switch.
+    expect(screen.getByText("Employee editor")).not.toBeVisible();
+    expect(screen.getByRole("tab", { name: "Official record" })).toHaveAttribute("aria-controls", "rec-panel-official");
+    expect(document.getElementById("rec-panel-official")).toHaveAttribute("hidden");
 
     await user.click(screen.getByRole("tab", { name: "Training" }));
     expect(mocks.replace).toHaveBeenCalledWith("/hr/employees/00000000-0000-4000-8000-000000000010?tab=training", { scroll: false });
