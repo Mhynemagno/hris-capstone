@@ -2,16 +2,34 @@
 
 import { useState } from "react";
 
+import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { LoadingState } from "@/components/ui/loading-state";
+import { NativeSelect } from "@/components/ui/native-select";
+import { PageHeader } from "@/components/ui/page-header";
+import { Textarea } from "@/components/ui/textarea";
 import type { ApplicationAiScore } from "@/lib/types/database";
 import { useApplicationAiScores, useHireApplication, useMyApplication, useRetryApplicationAnalysis, useTransitionApplicationStatus } from "@/hooks/use-recruitment";
 import { getApplicantDocumentUrl } from "@/queries/recruitment";
 import type { ApplicationStatus } from "@/schemas/recruitment";
 
-const statuses: ApplicationStatus[] = ["Submitted", "Under Review", "Shortlisted", "Interview", "Needs Revision", "Not Selected"];
+/**
+ * Review transitions accepted by private.transition_application_status
+ * (supabase/migrations/20260906185626_recruitment_workflow_feedback.sql).
+ * Hiring is a separate flow; Needs Revision, Hired, and Not Selected have no
+ * HR review transitions.
+ */
+export const allowedNextStatuses: Record<ApplicationStatus, readonly ApplicationStatus[]> = {
+  Submitted: ["Under Review"],
+  "Under Review": ["Shortlisted", "Interview", "Needs Revision", "Not Selected"],
+  Shortlisted: ["Interview", "Needs Revision", "Not Selected"],
+  Interview: ["Shortlisted", "Needs Revision", "Not Selected"],
+  "Needs Revision": [],
+  Hired: [],
+  "Not Selected": [],
+};
 
 function formatApplicantNumber(value: number | undefined) {
   if (value === undefined) return "Not available";
@@ -31,8 +49,11 @@ export function HrApplicationDetail({ applicationId }: { applicationId: string }
   const transition = useTransitionApplicationStatus();
   const hire = useHireApplication();
   const aiScores = useApplicationAiScores(applicationId);
-  const [nextStatus, setNextStatus] = useState<ApplicationStatus>("Under Review");
+  const [nextStatus, setNextStatus] = useState<ApplicationStatus | "">("");
   const [note, setNote] = useState("");
+  const [statusError, setStatusError] = useState<string | null>(null);
+  const [statusSuccess, setStatusSuccess] = useState<string | null>(null);
+  const [hireSuccess, setHireSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [documentUrls, setDocumentUrls] = useState<Record<string, string>>({});
   const [hireOpen, setHireOpen] = useState(false);
@@ -42,8 +63,111 @@ export function HrApplicationDetail({ applicationId }: { applicationId: string }
   const { application, history, documents } = result.data;
   const applicantNumber = (application as typeof application & { applicants?: { applicant_number?: number } }).applicants?.applicant_number;
   const canHire = application.status === "Shortlisted" || application.status === "Interview";
-  async function updateStatus() { setError(null); try { await transition.mutateAsync({ applicationId, nextStatus, note: note.trim() || undefined }); } catch (cause) { setError(cause instanceof Error ? cause.message : "We could not update this application."); } }
+  const nextOptions = allowedNextStatuses[application.status] ?? [];
+  async function updateStatus() {
+    setError(null);
+    setStatusError(null);
+    setStatusSuccess(null);
+    if (!nextStatus) {
+      setStatusError("Choose the next status.");
+      return;
+    }
+    try {
+      await transition.mutateAsync({ applicationId, nextStatus, note: note.trim() || undefined });
+      setStatusSuccess(`Status updated to ${nextStatus}.`);
+      setNextStatus("");
+      setNote("");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "We could not update this application.");
+    }
+  }
   async function openDocument(id: string, path: string) { try { const url = await getApplicantDocumentUrl(path); if (url) setDocumentUrls((current) => ({ ...current, [id]: url })); } catch (cause) { setError(cause instanceof Error ? cause.message : "We could not open this document."); } }
-  async function submitHire(form: HTMLFormElement) { setError(null); const data = new FormData(form); try { await hire.mutateAsync({ applicationId, badgeNumber: String(data.get("badgeNumber")), note: String(data.get("hireNote") || "") || undefined }); } catch (cause) { setError(cause instanceof Error ? cause.message : "We could not hire this applicant."); } }
-  return <section className="max-w-3xl space-y-5"><div className="rounded-xl border p-5"><h1 className="text-2xl font-semibold">Application {application.id.slice(0, 8)}</h1><p className="mt-2 text-sm text-muted-foreground">Current status: {application.status}</p>{application.cover_note ? <p className="mt-4 whitespace-pre-wrap text-sm">{application.cover_note}</p> : null}</div>{aiScores.error ? <ErrorState message={aiScores.error.message} /> : <AnalysisRecommendation applicationId={applicationId} onError={(message) => setError(message || null)} score={aiScores.data?.[0]} />}<section className="rounded-xl border p-5"><h2 className="font-semibold">Review workflow</h2><div className="mt-4 grid gap-3 sm:grid-cols-2"><FormField htmlFor="next-status" label="Next status"><select className="h-11 w-full rounded-lg border bg-background px-3" id="next-status" onChange={(event) => setNextStatus(event.target.value as ApplicationStatus)} value={nextStatus}>{statuses.map((status) => <option key={status} value={status}>{status}</option>)}</select></FormField><FormField htmlFor="transition-note" label="Note"><Input id="transition-note" onChange={(event) => setNote(event.target.value)} value={note} /></FormField></div><div className="mt-4 flex gap-3"><button className="min-h-11 rounded-lg border px-4 py-2 text-sm font-medium" disabled={transition.isPending} onClick={() => void updateStatus()} type="button">Update status</button>{canHire ? <button className="min-h-11 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground" onClick={() => setHireOpen((open) => !open)} type="button">{hireOpen ? "Close hire form" : "Hire applicant"}</button> : null}</div></section>{hireOpen && canHire ? <form className="space-y-3 rounded-xl border p-5" noValidate onSubmit={(event) => { event.preventDefault(); void submitHire(event.currentTarget); }}><h2 className="text-lg font-semibold">Hire applicant</h2><div className="grid gap-3 sm:grid-cols-2"><FormField htmlFor="hire-applicant-number" label="Applicant number"><Input id="hire-applicant-number" readOnly value={formatApplicantNumber(applicantNumber)} /></FormField><FormField htmlFor="hire-badge-number" label="Badge number"><Input id="hire-badge-number" name="badgeNumber" required /></FormField></div><FormField htmlFor="hire-note" label="Notes"><textarea className="min-h-20 w-full rounded-lg border bg-background p-3" id="hire-note" name="hireNote" /></FormField><button className="min-h-11 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground" disabled={hire.isPending} type="submit">Confirm hire</button></form> : null}<section className="rounded-xl border p-5"><h2 className="font-semibold">Documents</h2><ul className="mt-3 space-y-2 text-sm">{documents.map((document) => <li key={document.id}>{documentUrls[document.id] ? <a className="text-primary underline" href={documentUrls[document.id]} rel="noreferrer" target="_blank">{document.file_name}</a> : <button className="text-primary underline" onClick={() => void openDocument(document.id, document.object_path)} type="button">Open {document.file_name}</button>}</li>)}</ul></section><section className="rounded-xl border p-5"><h2 className="font-semibold">History</h2><ol className="mt-3 space-y-2 text-sm">{history.map((entry) => <li key={entry.id}>{entry.next_status}{entry.note ? ` — ${entry.note}` : ""}</li>)}</ol></section>{error ? <ErrorState message={error} /> : null}</section>;
+  async function submitHire(form: HTMLFormElement) {
+    setError(null);
+    setHireSuccess(null);
+    const data = new FormData(form);
+    try {
+      await hire.mutateAsync({ applicationId, badgeNumber: String(data.get("badgeNumber")), note: String(data.get("hireNote") || "") || undefined });
+      setHireSuccess("Applicant hired. Their employee record has been created.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "We could not hire this applicant.");
+    }
+  }
+  return (
+    <section className="max-w-3xl space-y-5">
+      <PageHeader
+        description={`Current status: ${application.status}`}
+        eyebrow="Recruitment"
+        meta={application.cover_note ? <p className="whitespace-pre-wrap text-sm">{application.cover_note}</p> : undefined}
+        title={`Application ${application.id.slice(0, 8)}`}
+      />
+      {aiScores.error ? <ErrorState message={aiScores.error.message} /> : <AnalysisRecommendation applicationId={applicationId} onError={(message) => setError(message || null)} score={aiScores.data?.[0]} />}
+      <section aria-labelledby="review-workflow-heading" className="rounded-xl border p-5">
+        <h2 className="font-semibold" id="review-workflow-heading">Review workflow</h2>
+        {nextOptions.length ? (
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <FormField description="Only the steps allowed from the current status are listed." error={statusError ?? undefined} htmlFor="next-status" label="Next status">
+              <NativeSelect id="next-status" onChange={(event) => { setStatusError(null); setNextStatus(event.target.value as ApplicationStatus | ""); }} value={nextStatus}>
+                <option value="">Choose next status</option>
+                {nextOptions.map((status) => <option key={status} value={status}>{status}</option>)}
+              </NativeSelect>
+            </FormField>
+            <FormField description="Included in the applicant's notification." htmlFor="transition-note" label="Note">
+              <Textarea id="transition-note" maxLength={2000} onChange={(event) => setNote(event.target.value)} rows={3} value={note} />
+            </FormField>
+          </div>
+        ) : (
+          <p className="mt-3 text-sm text-muted-foreground">No review status changes are available from {application.status}.</p>
+        )}
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          {nextOptions.length ? (
+            <Button disabled={transition.isPending} onClick={() => void updateStatus()} type="button" variant="outline">
+              {transition.isPending ? "Updating status…" : "Update status"}
+            </Button>
+          ) : null}
+          {canHire ? (
+            <Button onClick={() => setHireOpen((open) => !open)} type="button">{hireOpen ? "Close hire form" : "Hire applicant"}</Button>
+          ) : null}
+          {statusSuccess && !transition.isPending ? <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400" role="status">{statusSuccess}</p> : null}
+          {hireSuccess ? <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400" role="status">{hireSuccess}</p> : null}
+        </div>
+      </section>
+      {hireOpen && canHire ? (
+        <form className="space-y-3 rounded-xl border p-5" noValidate onSubmit={(event) => { event.preventDefault(); void submitHire(event.currentTarget); }}>
+          <h2 className="text-lg font-semibold">Hire applicant</h2>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <FormField htmlFor="hire-applicant-number" label="Applicant number">
+              <Input id="hire-applicant-number" readOnly value={formatApplicantNumber(applicantNumber)} />
+            </FormField>
+            <FormField htmlFor="hire-badge-number" label="Badge number" required>
+              <Input id="hire-badge-number" name="badgeNumber" required />
+            </FormField>
+          </div>
+          <FormField htmlFor="hire-note" label="Notes">
+            <Textarea id="hire-note" maxLength={2000} name="hireNote" />
+          </FormField>
+          <Button disabled={hire.isPending} type="submit">{hire.isPending ? "Hiring…" : "Confirm hire"}</Button>
+        </form>
+      ) : null}
+      <section className="rounded-xl border p-5">
+        <h2 className="font-semibold">Documents</h2>
+        {documents.length ? (
+          <ul className="mt-3 space-y-2 text-sm">
+            {documents.map((document) => (
+              <li key={document.id}>
+                {documentUrls[document.id]
+                  ? <a className="inline-flex min-h-10 items-center text-primary underline" href={documentUrls[document.id]} rel="noreferrer" target="_blank">{document.file_name}</a>
+                  : <button className="inline-flex min-h-10 items-center text-primary underline" onClick={() => void openDocument(document.id, document.object_path)} type="button">Open {document.file_name}</button>}
+              </li>
+            ))}
+          </ul>
+        ) : <p className="mt-3 text-sm text-muted-foreground">No documents were attached.</p>}
+      </section>
+      <section className="rounded-xl border p-5">
+        <h2 className="font-semibold">History</h2>
+        <ol className="mt-3 space-y-2 text-sm">{history.map((entry) => <li key={entry.id}>{entry.next_status}{entry.note ? ` — ${entry.note}` : ""}</li>)}</ol>
+      </section>
+      {error ? <ErrorState message={error} /> : null}
+    </section>
+  );
 }

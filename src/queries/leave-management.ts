@@ -6,7 +6,10 @@ import { uuidSchema } from "@/schemas/common";
 function throwIfError(error: { message: string } | null) { if (error) throw new Error(error.message); }
 export function leaveRequestFilters(input: unknown = {}) { return leaveRequestFiltersSchema.parse(input); }
 
-export async function listActiveLeaveTypes() { const { data, error } = await createBrowserSupabaseClient().from("leave_types").select("*").order("name"); throwIfError(error); return (data ?? []) as LeaveType[]; }
+/** Every leave type the caller can see (HR sees inactive types too); for the admin leave-type list. */
+export async function listLeaveTypes() { const { data, error } = await createBrowserSupabaseClient().from("leave_types").select("*").order("name"); throwIfError(error); return (data ?? []) as LeaveType[]; }
+/** Only leave types that can currently be requested (submit_leave_request rejects inactive types). */
+export async function listActiveLeaveTypes() { const { data, error } = await createBrowserSupabaseClient().from("leave_types").select("*").eq("is_active", true).order("name"); throwIfError(error); return (data ?? []) as LeaveType[]; }
 export async function listMyLeaveRequests(input: Partial<LeaveRequestFilters> = {}): Promise<PaginatedResult<LeaveRequest, LeaveRequestFilters>> { const filters = leaveRequestFilters(input); const from=(filters.page-1)*filters.pageSize; let query=createBrowserSupabaseClient().from("leave_requests").select("*",{count:"exact"}).order("created_at",{ascending:false}).range(from,from+filters.pageSize-1); if(filters.status) query=query.eq("status",filters.status); const {data,error,count}=await query; throwIfError(error); return {rows:(data??[]) as LeaveRequest[],count:count??0,filters}; }
 export async function listHrLeaveRequests(input: Partial<LeaveRequestFilters> = {}) { return listMyLeaveRequests(input); }
 export async function getLeaveRequest(requestId: string) { const id=uuidSchema.parse(requestId); const {data,error}=await createBrowserSupabaseClient().from("leave_requests").select("*, leave_request_attachments(*), leave_request_history(*)").eq("id",id).maybeSingle(); throwIfError(error); return data as (LeaveRequest & { leave_request_attachments: LeaveRequestAttachment[]; leave_request_history: unknown[] }) | null; }

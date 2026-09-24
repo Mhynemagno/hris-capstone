@@ -69,4 +69,27 @@ describe("ApplicantRegistrationForm", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(mocks.replace).not.toHaveBeenCalled();
   });
+
+  it("shows per-field errors next to each invalid field", async () => {
+    const user = userEvent.setup();
+    render(<ApplicantRegistrationForm />);
+
+    await user.type(screen.getByRole("textbox", { name: "Email" }), "not-an-email");
+    await user.type(screen.getByLabelText("Password"), "123");
+    await user.click(screen.getByRole("button", { name: /create account/i }));
+
+    expect(screen.getByText("First name is required.")).toBeVisible();
+    expect(screen.getByRole("textbox", { name: "First name" })).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByText("Enter a valid email address.")).toBeVisible();
+    expect(screen.getByText("Password must be at least 6 characters.")).toBeVisible();
+    expect(mocks.signUp).not.toHaveBeenCalled();
+  });
+
+  it("lets applicants reveal the new password", async () => {
+    const user = userEvent.setup();
+    render(<ApplicantRegistrationForm />);
+    expect(screen.getByLabelText("Password")).toHaveAttribute("autocomplete", "new-password");
+    await user.click(screen.getByRole("button", { name: "Show password" }));
+    expect(screen.getByLabelText("Password")).toHaveAttribute("type", "text");
+  });
 });

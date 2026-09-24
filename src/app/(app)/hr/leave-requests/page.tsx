@@ -1,3 +1,4 @@
 import { HrLeaveQueue } from "@/components/leave-management/hr-leave";
 import { LeaveTypeManager } from "@/components/leave-management/leave-type-manager";
-export default function HrLeaveRequestsPage(){return <section className="space-y-6"><h1 className="text-3xl font-semibold">Leave requests</h1><LeaveTypeManager/><HrLeaveQueue/></section>}
+import { PageHeader } from "@/components/ui/page-header";
+export default function HrLeaveRequestsPage(){return <section className="space-y-6"><PageHeader description="Manage leave types and review employee leave requests." eyebrow="Leave management" title="Leave requests" /><LeaveTypeManager/><HrLeaveQueue/></section>}

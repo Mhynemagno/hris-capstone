@@ -1,5 +1,5 @@
 import userEvent from "@testing-library/user-event";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({ mutateAsync: vi.fn(), useEmployeeForCurrentUser: vi.fn(), usePersonnelEntries: vi.fn() }));
@@ -18,9 +18,9 @@ describe("ProfileChangeRequestForm", () => {
   it("adds a qualification proposal and submits it for approval", async () => {
     const user = userEvent.setup();
     render(<ProfileChangeRequestForm />);
-    await user.type(screen.getByLabelText("Qualification name"), "Bachelor of Science");
-    await user.type(screen.getByLabelText("Institution"), "Mongolian University");
-    await user.type(screen.getByLabelText("Awarded on"), "2024-06-01");
+    await user.type(screen.getByLabelText(/Qualification name/), "Bachelor of Science");
+    await user.type(screen.getByLabelText(/Institution/), "Mongolian University");
+    await user.type(screen.getByLabelText(/Awarded on/), "2024-06-01");
     await user.click(screen.getByRole("button", { name: "Add proposal to request" }));
     expect(screen.getByRole("list", { name: "Qualification proposals" })).toHaveTextContent("Bachelor of Science");
     await user.click(screen.getByRole("button", { name: "Submit request" }));
@@ -32,6 +32,30 @@ describe("ProfileChangeRequestForm", () => {
     render(<ProfileChangeRequestForm />);
     await user.click(screen.getByRole("button", { name: "Submit request" }));
     expect(screen.getByRole("alert")).toHaveTextContent("Change at least one contact field or add a qualification proposal.");
+  });
+
+  it("offers standard qualification levels and keeps an existing unlisted level selectable", async () => {
+    mocks.usePersonnelEntries.mockReturnValue({ data: [{ id: "00000000-0000-4000-8000-000000000301", name: "Police Academy Diploma", institution: "Law Enforcement University", qualification_level: "Police Academy", field_of_study: null, awarded_on: "2019-06-01", notes: null }] });
+    const user = userEvent.setup();
+    render(<ProfileChangeRequestForm />);
+    const level = screen.getByLabelText("Qualification level");
+    expect(level.tagName).toBe("SELECT");
+    expect(within(level).getByRole("option", { name: "Bachelor's Degree" })).toBeInTheDocument();
+
+    await user.selectOptions(screen.getByLabelText("Requested action"), "edit");
+    await user.selectOptions(screen.getByLabelText(/Existing qualification/), "00000000-0000-4000-8000-000000000301");
+
+    expect(screen.getByLabelText("Qualification level")).toHaveValue("Police Academy");
+  });
+
+  it("shows inline errors for incomplete qualification proposals", async () => {
+    const user = userEvent.setup();
+    render(<ProfileChangeRequestForm />);
+    await user.click(screen.getByRole("button", { name: "Add proposal to request" }));
+
+    expect(screen.getByText("Enter the qualification name (at least 2 characters).")).toBeVisible();
+    expect(screen.getByLabelText(/Qualification name/)).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByText("Enter the date the qualification was awarded.")).toBeVisible();
   });
 
   it("shows only supported contact and emergency-contact fields", () => {

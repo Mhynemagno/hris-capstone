@@ -1,5 +1,5 @@
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
-import type { Deployment, DeploymentHistory, PaginatedResult } from "@/lib/types/database";
+import type { Deployment, DeploymentHistory, Employee, PaginatedResult } from "@/lib/types/database";
 import { uuidSchema } from "@/schemas/common";
 import { deploymentFiltersSchema, deploymentInputSchema, deploymentUpdateSchema, type DeploymentFilters } from "@/schemas/deployment-tracking";
 
@@ -38,6 +38,27 @@ export async function getDeployment(deploymentId: string) {
   const deployment = data as DeploymentWithHistory;
   deployment.deployment_history.sort((left, right) => left.created_at.localeCompare(right.created_at));
   return deployment;
+}
+
+export const EMPLOYEE_OPTIONS_LIMIT = 2000;
+
+export type EmployeeOption = { id: string; fullName: string; employeeNumber: string };
+
+/** Every employee (up to 2000) for pickers such as the deployment employee combobox. */
+export async function listEmployeeOptions(): Promise<EmployeeOption[]> {
+  const { data, error } = await createBrowserSupabaseClient()
+    .from("employees")
+    .select("id, employee_number, first_name, middle_name, last_name, qualifier")
+    .order("last_name")
+    .order("first_name")
+    .order("employee_number")
+    .limit(EMPLOYEE_OPTIONS_LIMIT);
+  throwIfError(error);
+  return ((data ?? []) as Pick<Employee, "id" | "employee_number" | "first_name" | "middle_name" | "last_name" | "qualifier">[]).map((row) => ({
+    id: row.id,
+    employeeNumber: row.employee_number,
+    fullName: [row.first_name, row.middle_name, row.last_name, row.qualifier].filter(Boolean).join(" "),
+  }));
 }
 
 function rpcPayload(input: ReturnType<typeof deploymentInputSchema.parse>) {

@@ -1,2 +1,3 @@
 import { HrDeploymentEditor } from "@/components/deployment-tracking/hr-deployment-editor";
-export default async function DeploymentDetailPage({ params }: { params: Promise<{ deploymentId: string }> }) { const { deploymentId } = await params; return <section className="space-y-4"><h1 className="text-3xl font-semibold">Deployment details</h1><HrDeploymentEditor deploymentId={deploymentId} /></section>; }
+import { PageHeader } from "@/components/ui/page-header";
+export default async function DeploymentDetailPage({ params }: { params: Promise<{ deploymentId: string }> }) { const { deploymentId } = await params; return <section className="space-y-4"><PageHeader description="Update this assignment. Every change is kept in its history." eyebrow="Personnel deployments" title="Deployment details" /><HrDeploymentEditor deploymentId={deploymentId} /></section>; }
