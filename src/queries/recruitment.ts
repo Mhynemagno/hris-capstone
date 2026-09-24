@@ -21,7 +21,7 @@ import {
   type JobFilters,
   type JobOpeningInput,
 } from "@/schemas/recruitment";
-import type { Applicant, ApplicantProfileDocument, Application, ApplicationAiScore, ApplicantDocument, ApplicationStatusHistory, HrShortlistApplication, JobOpening, JobQualificationCriterion, PaginatedResult } from "@/lib/types/database";
+import type { Applicant, ApplicantProfileDocument, Application, AppliedJob, ApplicationAiScore, ApplicantDocument, ApplicationStatusHistory, HrShortlistApplication, JobOpening, JobQualificationCriterion, PaginatedResult } from "@/lib/types/database";
 
 type PendingApplicantDocument = {
   kind: "cv" | "credential";
@@ -265,12 +265,12 @@ export async function getMyApplication(applicationId: string) {
   const id = applicationStatusTransitionSchema.shape.applicationId.parse(applicationId);
   const client = createBrowserSupabaseClient();
   const [{ data: application, error: applicationError }, { data: history, error: historyError }, { data: documents, error: documentsError }] = await Promise.all([
-    client.from("applications").select("*, job_openings(*), applicants(*)").eq("id", id).maybeSingle(),
+    client.from("applications").select("*, job_openings(id, title, description, location, closes_on, status, departments(name), ranks(name, code), job_qualification_criteria(id, kind, requirement, is_required, ordinal)), applicants(*)").eq("id", id).maybeSingle(),
     client.from("application_status_history").select("*").eq("application_id", id).order("created_at"),
     client.from("applicant_documents").select("*").eq("application_id", id).order("created_at"),
   ]);
   throwIfError(applicationError); throwIfError(historyError); throwIfError(documentsError);
-  return application ? { application: application as Application, history: (history ?? []) as ApplicationStatusHistory[], documents: (documents ?? []) as ApplicantDocument[] } : null;
+  return application ? { application: application as Application & { job_openings: AppliedJob | null }, history: (history ?? []) as ApplicationStatusHistory[], documents: (documents ?? []) as ApplicantDocument[] } : null;
 }
 
 export async function listHrJobs(input: Partial<JobFilters> = {}) {

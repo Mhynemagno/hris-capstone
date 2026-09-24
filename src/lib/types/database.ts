@@ -227,6 +227,13 @@ export type JobQualificationCriterion = {
   created_at: string;
 };
 
+/** A job opening as the applicant sees it on their application page. */
+export type AppliedJob = Pick<JobOpening, "id" | "title" | "description" | "location" | "closes_on" | "status"> & {
+  departments: { name: string } | null;
+  ranks: Pick<Rank, "name" | "code"> | null;
+  job_qualification_criteria: Pick<JobQualificationCriterion, "id" | "kind" | "requirement" | "is_required" | "ordinal">[];
+};
+
 export type Applicant = {
   id: string;
   profile_id: string;
