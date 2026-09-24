@@ -159,6 +159,14 @@ describe("HR recruitment workspace", () => {
     expect(screen.getByText(/You can retry when the service is available/)).toBeInTheDocument();
   });
 
+  it("tells HR when an analysis timed out and still offers a retry", () => {
+    mocks.scores = [{ id: "00000000-0000-0000-0000-000000000003", status: "failed", score: null, explanation: null, failure_code: "timed_out" }];
+
+    render(<HrApplicationDetail applicationId="00000000-0000-0000-0000-000000000001" />);
+    expect(screen.getByText(/Analysis timed out\./)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Retry analysis" })).toBeInTheDocument();
+  });
+
   it("shows AI score loading errors instead of misreporting them as not analyzed", () => {
     mocks.scoreError = new Error("Unable to load recommendations");
     render(<HrApplicationDetail applicationId="00000000-0000-0000-0000-000000000001" />);

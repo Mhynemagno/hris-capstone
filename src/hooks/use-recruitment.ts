@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { analysisRefetchInterval } from "@/lib/recruitment/analysis-polling";
 import { queryKeys } from "@/lib/query-keys";
 import {
   getApplicantProfile,
@@ -177,11 +178,21 @@ export function useWithdrawJobOpening() {
 }
 
 export function useHrApplications(filters: Partial<ApplicationAiFilters> = {}) {
-  return useQuery({ queryKey: queryKeys.recruitment.applications(filters), queryFn: () => listHrApplications(filters) });
+  return useQuery({
+    queryKey: queryKeys.recruitment.applications(filters),
+    queryFn: () => listHrApplications(filters),
+    refetchInterval: (query) => analysisRefetchInterval((query.state.data?.rows ?? []).map((row) => row.ai_score_status)),
+  });
 }
 
 export function useApplicationAiScores(applicationId: string) {
-  return useQuery({ queryKey: queryKeys.recruitment.aiScores(applicationId), queryFn: () => getApplicationAiScores(applicationId), enabled: Boolean(applicationId) });
+  return useQuery({
+    queryKey: queryKeys.recruitment.aiScores(applicationId),
+    queryFn: () => getApplicationAiScores(applicationId),
+    enabled: Boolean(applicationId),
+    // The newest attempt decides: keep refreshing until it completes, fails, or times out.
+    refetchInterval: (query) => analysisRefetchInterval([query.state.data?.[0]?.status]),
+  });
 }
 
 export function useRetryApplicationAnalysis() {

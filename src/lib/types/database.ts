@@ -295,7 +295,7 @@ export type ApplicationStatusHistory = {
   note: string | null;
   created_at: string;
 };
-export type ApplicationAiScore = { id: string; application_id: string; status: "queued" | "processing" | "completed" | "failed"; score: number | null; explanation: string | null; provider: string | null; model: string | null; model_version: string | null; completed_at: string | null; created_at: string; };
+export type ApplicationAiScore = { id: string; application_id: string; status: "queued" | "processing" | "completed" | "failed"; score: number | null; explanation: string | null; provider: string | null; model: string | null; model_version: string | null; failure_code: string | null; completed_at: string | null; created_at: string; };
 export type HrShortlistApplication = Application & { ai_score_id: string | null; ai_score_status: "queued" | "processing" | "completed" | "failed" | "unscored"; ai_score: number | null; ai_explanation: string | null; ai_model: string | null; };
 
 export type ApplicantDocument = {
