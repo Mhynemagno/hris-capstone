@@ -1,7 +1,17 @@
 import { execSync } from "node:child_process";
 import { defineConfig, devices } from "@playwright/test";
 
+const localHosts = new Set(["localhost", "127.0.0.1"]);
+
 function getLocalSupabaseEnvironment() {
+  // Workers re-evaluate this config; reuse what the main process resolved so
+  // `supabase status` runs once instead of once per worker.
+  const cachedUrl = process.env.HRIS_E2E_SUPABASE_URL;
+  const cachedKey = process.env.HRIS_E2E_SUPABASE_PUBLISHABLE_KEY;
+  if (cachedUrl && cachedKey && localHosts.has(new URL(cachedUrl).hostname)) {
+    return { url: cachedUrl, publishableKey: cachedKey };
+  }
+
   const status = execSync("npx supabase status --output env", {
     encoding: "utf8",
   });
@@ -17,10 +27,12 @@ function getLocalSupabaseEnvironment() {
   if (!url || !publishableKey) {
     throw new Error("Start the local Supabase stack before running Playwright.");
   }
-  if (!new Set(["localhost", "127.0.0.1"]).has(new URL(url).hostname)) {
+  if (!localHosts.has(new URL(url).hostname)) {
     throw new Error("Playwright is restricted to a local Supabase instance.");
   }
 
+  process.env.HRIS_E2E_SUPABASE_URL = url;
+  process.env.HRIS_E2E_SUPABASE_PUBLISHABLE_KEY = publishableKey;
   return { url, publishableKey };
 }
 
