@@ -9,6 +9,26 @@ let loading: Promise<FaceApi> | null = null;
 
 export const MODELS_FAILED_MESSAGE = "The face recognition models could not be loaded. Check the connection and try again.";
 
+// The bundle exposes setBackend at runtime but its type declarations omit it.
+type TfBackendControl = { setBackend(name: string): Promise<boolean> };
+
+// Without an explicit choice, TensorFlow.js falls back from WebGL to its WASM backend, whose
+// .wasm binaries are not served, and model loading throws. Browsers without WebGL (GPU
+// blocklisted, hardware acceleration off, remote desktops) therefore use the CPU backend.
+const BACKENDS = ["webgl", "cpu"] as const;
+
+async function selectBackend(faceapi: FaceApi): Promise<void> {
+  const tf = faceapi.tf as unknown as TfBackendControl;
+  for (const backend of BACKENDS) {
+    try {
+      if (await tf.setBackend(backend)) return;
+    } catch {
+      // Try the next backend.
+    }
+  }
+  throw new Error("No TensorFlow.js backend could be initialized.");
+}
+
 /**
  * Loads the library and the three models (detector, 68-point landmarks, recognition) once per
  * page. A failed load is not cached, so the user can retry.
@@ -16,6 +36,7 @@ export const MODELS_FAILED_MESSAGE = "The face recognition models could not be l
 export function loadFaceModels(baseUrl: string = FACE_RECOGNITION_CONFIG.modelBaseUrl): Promise<FaceApi> {
   loading ??= (async () => {
     const faceapi = await import("@vladmandic/face-api/dist/face-api.esm.js");
+    await selectBackend(faceapi);
     await Promise.all([
       faceapi.nets.tinyFaceDetector.loadFromUri(baseUrl),
       faceapi.nets.faceLandmark68Net.loadFromUri(baseUrl),
