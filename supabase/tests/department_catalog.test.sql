@@ -11,8 +11,8 @@ select extensions.is(
     from public.departments
     where is_active
   ),
-  3::bigint,
-  'Only the three client-provided departments are active'
+  9::bigint,
+  'Only the nine client-provided departments are active'
 );
 
 select extensions.is(
@@ -21,18 +21,17 @@ select extensions.is(
     from public.departments
     where is_active
   ),
-  'Administrative & Intelligence Division | Operations Division | Women and Children Protection Desk',
-  'Active departments match Departments.txt exactly'
+  'Drug Enforcement Unit | Intelligence Section | Police Community Precincts / Sub-Stations | '
+    || 'Station Administrative and Resource Management Section | Station Investigation and Detective Management Section | '
+    || 'Station Warrant and Subpoena Section | Tactical Operations Center | Traffic and Investigation Unit | '
+    || 'Women and Children Protection Desk',
+  'Active departments match the client department list exactly'
 );
 
-select extensions.ok(
-  not exists (
-    select 1
-    from public.departments
-    where name = 'Demo Operations'
-      and is_active
-  ),
-  'The former demo department is not active'
+select extensions.is(
+  (select count(*) from public.departments),
+  9::bigint,
+  'No former departments remain after the reset'
 );
 
 select * from extensions.finish();

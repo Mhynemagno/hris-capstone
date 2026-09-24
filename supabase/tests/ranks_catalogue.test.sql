@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(14);
+select extensions.plan(20);
 
 select has_table('public', 'ranks', 'ranks table exists');
 select hasnt_table('public', 'positions', 'positions table is gone');
@@ -30,6 +30,14 @@ select is(
     where n.nspname in ('public', 'private', 'reporting') and p.prosrc ~* 'position'),
   0, 'no function body still mentions position'
 );
+
+select is((select count(*)::int from public.ranks), 12, 'twelve ranks seeded');
+select is((select string_agg(code, ',' order by sort_order) from public.ranks),
+  'Pat,PCpl,PSSg,PMSg,PSMSg,PCMSg,PEMSg,PLt,PCapt,PMAJ,PLTCOL,PCOL', 'rank codes in seniority order');
+select is((select name from public.ranks where code = 'Pat'), 'Patrolman / Patrolwoman', 'Pat is Patrolman / Patrolwoman');
+select is((select count(*)::int from public.departments), 9, 'nine departments seeded');
+select is((select count(*)::int from public.job_openings), 0, 'job openings cleared');
+select ok((select count(*) from auth.users) > 0, 'accounts kept');
 
 select * from finish();
 rollback;
