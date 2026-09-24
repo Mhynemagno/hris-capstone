@@ -3,12 +3,16 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(8);
+select extensions.plan(9);
 
 select extensions.has_function('private', 'fail_stale_application_analyses', array['interval'], 'Stale analysis sweeper exists');
 select extensions.ok(
   exists (select 1 from cron.job where jobname = 'process-application-analysis' and schedule = '* * * * *'),
   'The analysis worker is scheduled every minute'
+);
+select extensions.is(
+  (select count(*)::int from cron.job where jobname like 'process-application-analysis%'),
+  1, 'Only one analysis schedule exists'
 );
 
 -- Fixture: three applications with a stale queued, a stale processing, and a fresh attempt.

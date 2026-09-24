@@ -52,11 +52,15 @@ begin
     url := rtrim(base_url, '/') || '/functions/v1/process-application-analysis',
     headers := jsonb_build_object('Content-Type', 'application/json', 'x-analysis-worker-secret', worker_secret),
     body := '{}'::jsonb,
-    timeout_milliseconds := 5000
+    -- The worker analyses up to five applications per call, so allow it time to answer.
+    timeout_milliseconds := 120000
   );
 end;
 $$;
 revoke all on function private.run_application_analysis_tick() from public, anon, authenticated;
 
-select cron.unschedule(jobid) from cron.job where jobname = 'process-application-analysis';
+-- Replaces any earlier hand-made schedule (the hosted project had a broken
+-- 'process-application-analysis-every-minute' job whose SQL failed every minute).
+select cron.unschedule(jobid) from cron.job
+where jobname in ('process-application-analysis', 'process-application-analysis-every-minute');
 select cron.schedule('process-application-analysis', '* * * * *', 'select private.run_application_analysis_tick();');
