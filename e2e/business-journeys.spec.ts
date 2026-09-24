@@ -30,7 +30,7 @@ function isoDate(daysFromToday: number) {
 }
 
 test.describe("administrator master data", () => {
-  test("creates a department, deletes it safely, and the change survives reload", async ({ page }) => {
+  test("creates a department that survives reload and cannot be deleted", async ({ page }) => {
     const name = `E2E Department ${runId}`;
     await signIn(page, "demo.admin@example.test", "/admin");
     await page.goto("/admin/departments");
@@ -53,32 +53,18 @@ test.describe("administrator master data", () => {
     await page.getByLabel("Search departments").fill(name);
     await expect(page.getByRole("cell", { name, exact: true })).toBeVisible();
 
-    await page.getByRole("button", { name: `Delete ${name}` }).click();
-    const dialog = page.getByRole("alertdialog");
-    await expect(dialog).toContainText("permanently removes");
-    await dialog.getByRole("button", { name: "Delete department" }).click();
-    await expect(dialog).toBeHidden();
-    await expect(page.getByRole("status")).toContainText("permanently deleted");
-
-    await page.reload();
-    await page.getByLabel("Search departments").fill(name);
-    await expect(page.getByText(/No departments match/)).toBeVisible();
+    await expect(page.getByRole("button", { name: `Delete ${name}` })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: `Deactivate ${name}` })).toBeVisible();
   });
 
-  test("blocks deleting a department that other records depend on and offers deactivation", async ({ page }) => {
+  test("lists the station ranks with their codes and offers no deletion", async ({ page }) => {
     await signIn(page, "demo.admin@example.test", "/admin");
-    await page.goto("/admin/departments");
-    await page.getByLabel("Search departments").fill("Operations Division");
-    await page.getByRole("button", { name: "Delete Operations Division" }).click();
-
-    const dialog = page.getByRole("alertdialog");
-    await expect(dialog).toContainText("can't be deleted");
-    await expect(dialog).toContainText(/\d+ positions/);
-    await expect(dialog.getByRole("button", { name: "Delete department" })).toBeDisabled();
-    await expect(dialog.getByRole("button", { name: "Deactivate instead" })).toBeVisible();
-    await dialog.getByRole("button", { name: "Cancel" }).click();
-    await expect(dialog).toBeHidden();
-    await expect(page.getByRole("cell", { name: "Operations Division", exact: true })).toBeVisible();
+    await page.goto("/admin/ranks");
+    await expect(page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Ranks" })).toHaveAttribute("aria-current", "page");
+    await expect(page.getByRole("cell", { name: "Pat", exact: true })).toBeVisible();
+    await expect(page.getByRole("cell", { name: "Patrolman / Patrolwoman", exact: true })).toBeVisible();
+    await expect(page.getByRole("cell", { name: "PCOL", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: /^Delete/ })).toHaveCount(0);
   });
 });
 
@@ -146,7 +132,7 @@ test.describe("leave journey", () => {
 });
 
 test.describe("personnel records and profile changes", () => {
-  test("editing a personnel record keeps its department, position, and linked account", async ({ page }) => {
+  test("editing a personnel record keeps its department, rank, and linked account", async ({ page }) => {
     const phone = `0917${String(Math.floor(Math.random() * 1e7)).padStart(7, "0")}`;
     await signIn(page, "demo.hr@example.test", "/hr");
     await page.goto("/hr/employees");
@@ -154,11 +140,15 @@ test.describe("personnel records and profile changes", () => {
     await expect(page).toHaveURL(/\/hr\/employees\/[0-9a-f-]{36}$/, { timeout: 30_000 });
     const recordUrl = page.url();
 
+    await expect(page.getByRole("tab", { name: "Official record" })).toHaveAttribute("aria-selected", "true");
     const department = page.getByLabel(/^Department/).first();
-    const position = page.getByLabel(/^Position/).first();
+    const rank = page.getByLabel(/^Rank/).first();
+    await department.selectOption({ label: "Intelligence Section" });
+    await rank.selectOption({ label: "PCpl — Police Corporal" });
     const departmentBefore = await department.inputValue();
-    const positionBefore = await position.inputValue();
+    const rankBefore = await rank.inputValue();
     expect(departmentBefore).not.toBe("");
+    expect(rankBefore).not.toBe("");
 
     await page.getByLabel(/^Phone/).first().fill(phone);
     await page.getByRole("button", { name: "Save employee" }).click();
@@ -167,7 +157,7 @@ test.describe("personnel records and profile changes", () => {
 
     await expect(page.getByLabel(/^Phone/).first()).toHaveValue(phone);
     await expect(page.getByLabel(/^Department/).first()).toHaveValue(departmentBefore);
-    await expect(page.getByLabel(/^Position/).first()).toHaveValue(positionBefore);
+    await expect(page.getByLabel(/^Rank/).first()).toHaveValue(rankBefore);
     await signOut(page, "demo.hr@example.test");
 
     // The linked account still resolves to the same record after the edit.
@@ -210,10 +200,21 @@ test.describe("read-only and public journeys", () => {
     await expect(page).toHaveURL(/\/unauthorized$/);
   });
 
-  test("public visitors can browse published openings without signing in", async ({ page }) => {
+  test("public visitors can browse an opening HR published, without signing in", async ({ page }) => {
+    const title = `E2E Opening ${runId}`;
+    await signIn(page, "demo.hr@example.test", "/hr");
+    await page.goto("/hr/jobs/new");
+    await page.getByLabel(/^Department/).selectOption({ label: "Tactical Operations Center" });
+    await page.getByLabel(/^Rank/).selectOption({ label: "Pat — Patrolman / Patrolwoman" });
+    await page.getByLabel(/^Title/).fill(title);
+    await page.getByLabel(/^Description/).fill("An opening published by the end-to-end journey tests.");
+    await page.getByLabel("Qualification 1").fill("Physically and mentally fit");
+    await page.getByRole("button", { name: "Publish opening" }).click();
+    await expect(page).toHaveURL(/\/hr\/jobs$/);
+    await signOut(page, "demo.hr@example.test");
+
     await page.goto("/jobs");
-    await expect(page.getByText("Demo Officer Opening")).toBeVisible();
-    await page.getByRole("link", { name: /Demo Officer Opening/ }).first().click();
-    await expect(page.getByRole("heading", { name: /Demo Officer Opening/ })).toBeVisible();
+    await page.getByRole("link", { name: new RegExp(title) }).first().click();
+    await expect(page.getByRole("heading", { name: new RegExp(title) })).toBeVisible();
   });
 });

@@ -207,9 +207,9 @@ describe("HR recruitment workspace", () => {
     expect(mocks.transition).not.toHaveBeenCalled();
 
     await user.selectOptions(screen.getByLabelText("Next status"), "Not Selected");
-    await user.type(screen.getByLabelText("Note"), "Position filled");
+    await user.type(screen.getByLabelText("Note"), "Vacancy filled");
     await user.click(screen.getByRole("button", { name: "Update status" }));
-    expect(mocks.transition).toHaveBeenCalledWith(expect.objectContaining({ nextStatus: "Not Selected", note: "Position filled" }));
+    expect(mocks.transition).toHaveBeenCalledWith(expect.objectContaining({ nextStatus: "Not Selected", note: "Vacancy filled" }));
     expect(await screen.findByText("Invalid application status transition.")).toBeInTheDocument();
   });
 });

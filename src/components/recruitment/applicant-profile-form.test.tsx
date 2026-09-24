@@ -11,7 +11,7 @@ const applicant = {
   qualifier: null,
   place_of_birth: null,
   date_of_birth: null,
-  sex: null,
+  gender: null,
   civil_status: null,
   religion: null,
   phone: null,

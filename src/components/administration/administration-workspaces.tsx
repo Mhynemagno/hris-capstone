@@ -705,7 +705,7 @@ export function SettingsWorkspace() {
 const AUDIT_ENTITY_SUGGESTIONS = [
   "applications", "attendance_imports", "attendance_integration_settings", "attendance_unmatched_events", "deployments",
   "departments", "employees", "job_openings", "leave_requests", "leave_types", "organization_settings", "performance_ratings",
-  "positions", "profile_change_requests", "profiles", "promotion_criteria", "promotion_evaluations", "user_roles",
+  "profile_change_requests", "ranks", "profiles", "promotion_criteria", "promotion_evaluations", "user_roles",
 ];
 const AUDIT_ACTION_SUGGESTIONS = ["insert", "update", "delete", "created", "updated", "hired", "imported", "resolved", "queued"];
 
