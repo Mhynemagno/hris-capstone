@@ -33,10 +33,10 @@ update public.user_roles set role = case user_id
   else 'employee'::public.app_role
 end where user_id in ('00000000-0000-4000-8000-000000000801'::uuid, '00000000-0000-4000-8000-000000000802'::uuid, '00000000-0000-4000-8000-000000000803'::uuid);
 
-insert into public.positions (id, title, is_active) overriding system value
-values (9901, 'Senior Officer', true);
+insert into public.ranks (id, name, code, sort_order, is_active) overriding system value
+values (9901, 'Senior Officer', 'SNR', 9901, true);
 
-insert into public.employees (id, profile_id, employee_number, first_name, last_name, personal_email, position_id, employment_started_on)
+insert into public.employees (id, profile_id, employee_number, first_name, last_name, personal_email, rank_id, employment_started_on)
 values
   ('00000000-0000-4000-8000-000000000811', '00000000-0000-4000-8000-000000000802', 'PRO-001', 'Promotion', 'Employee', 'promotion-employee@example.test', 9901, '2020-01-01'),
   ('00000000-0000-4000-8000-000000000812', '00000000-0000-4000-8000-000000000803', 'PRO-002', 'Other', 'Employee', 'promotion-other@example.test', 9901, '2020-01-01');
@@ -63,7 +63,7 @@ select extensions.lives_ok(
 select extensions.lives_ok($$select public.create_performance_rating('00000000-0000-4000-8000-000000000811'::uuid, 5, '2025-01-01', '2025-12-31', 'Strong review')$$, 'HR records an overall rating');
 select extensions.lives_ok($$select public.create_promotion_evaluation('00000000-0000-4000-8000-000000000811'::uuid, 9901, current_setting('test.criterion_id')::uuid, '2026-08-24', 'recommended', 'Ready for manual consideration', '[]'::jsonb)$$, 'HR creates an advisory evaluation');
 select extensions.ok((select is_ready from public.promotion_evaluations where employee_id = '00000000-0000-4000-8000-000000000811'), 'Matching records and rating produce readiness');
-select extensions.is((select position_id from public.employees where id = '00000000-0000-4000-8000-000000000811'::uuid), 9901::bigint, 'Evaluation never changes the employee position');
+select extensions.is((select rank_id from public.employees where id = '00000000-0000-4000-8000-000000000811'::uuid), 9901::bigint, 'Evaluation never changes the employee rank');
 
 set local role postgres;
 select extensions.ok(exists (select 1 from public.audit_logs where entity_type = 'promotion_evaluations' and action = 'created'), 'Evaluation is audited');

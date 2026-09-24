@@ -53,37 +53,15 @@ values
   ('00000000-0000-4000-8000-000000008106', 'employee')
 on conflict (user_id) do update set role = excluded.role, assigned_at = now();
 
-insert into public.departments (name) values ('Operations Division') on conflict (name) do update set is_active = true;
-insert into public.positions (department_id, title)
-select id, 'Demo Officer' from public.departments where name = 'Operations Division'
-on conflict (department_id, title) do update set is_active = true;
-
-insert into public.employees (profile_id, employee_number, first_name, last_name, personal_email, department_id, position_id, employment_status, employment_started_on)
-select
-  '00000000-0000-4000-8000-000000008103'::uuid,
-  'DEMO-001',
-  'Demo',
-  'Employee',
-  'demo.employee@example.test',
-  department.id,
-  position.id,
-  'active',
-  '2024-01-01'
-from public.departments department
-join public.positions position on position.department_id = department.id and position.title = 'Demo Officer'
-where department.name = 'Operations Division'
+-- Ranks and departments come from migrations (20260924111000_demo_data_reset.sql); the demo
+-- employee starts without a department or rank, matching the client's reset data.
+insert into public.employees (profile_id, employee_number, first_name, last_name, personal_email, employment_status, employment_started_on)
+values ('00000000-0000-4000-8000-000000008103', 'DEMO-001', 'Demo', 'Employee', 'demo.employee@example.test', 'active', '2024-01-01')
 on conflict (profile_id) do update set first_name = excluded.first_name, last_name = excluded.last_name, personal_email = excluded.personal_email;
 
 insert into public.leave_types (name, description, requires_attachment, created_by_user_id, updated_by_user_id)
 select 'Demo leave', 'Fictitious demo leave type', false, '00000000-0000-4000-8000-000000008102'::uuid, '00000000-0000-4000-8000-000000008102'::uuid
 where not exists (select 1 from public.leave_types where name = 'Demo leave');
-
-insert into public.job_openings (department_id, position_id, title, description, status, published_at, created_by_user_id)
-select department.id, position.id, 'Demo Officer Opening', 'Fictitious opening used only for local HRIS demonstrations.', 'published', now(), '00000000-0000-4000-8000-000000008102'::uuid
-from public.departments department
-join public.positions position on position.department_id = department.id and position.title = 'Demo Officer'
-where department.name = 'Operations Division'
-  and not exists (select 1 from public.job_openings where title = 'Demo Officer Opening');
 
 insert into public.applicants (profile_id, first_name, last_name)
 values ('00000000-0000-4000-8000-000000008104', 'Demo', 'Applicant')

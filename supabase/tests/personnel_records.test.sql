@@ -12,7 +12,7 @@ select extensions.has_table('public', 'certifications', 'Certifications table ex
 select extensions.has_table('public', 'training_records', 'Training records table exists');
 select extensions.has_table('public', 'employee_record_history', 'Personnel history table exists');
 select extensions.has_column('public', 'employees', 'profile_id', 'Employees can link to an account');
-select extensions.has_column('public', 'employees', 'rank', 'Employees record their police rank');
+select extensions.has_column('public', 'employees', 'rank_id', 'Employees record their police rank');
 select extensions.has_column('public', 'employees', 'unit_station', 'Employees record their unit or station');
 select extensions.has_column('public', 'employees', 'profile_image_path', 'Employees can have an optional private profile photo');
 select extensions.has_function('public', 'update_my_employee_profile_image_path', array['text'], 'Employee profile photo path uses a protected RPC');
@@ -56,10 +56,8 @@ where user_id between '00000000-0000-0000-0000-000000000001'::uuid
 insert into public.departments (name)
 values ('Personnel fixture department');
 
-insert into public.positions (department_id, title)
-select id, 'Personnel fixture position'
-from public.departments
-where name = 'Personnel fixture department';
+insert into public.ranks (name, code, sort_order)
+values ('Personnel fixture rank', 'PFR', 9101);
 
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-0000-0000-000000000002';
@@ -67,7 +65,7 @@ set local request.jwt.claim.sub = '00000000-0000-0000-0000-000000000002';
 select extensions.lives_ok(
   $$insert into public.employees (
     id, profile_id, employee_number, first_name, last_name, personal_email,
-    department_id, position_id, employment_status, employment_started_on
+    department_id, rank_id, employment_status, employment_started_on
   )
   select
     '00000000-0000-0000-0000-000000000010'::uuid,
@@ -77,12 +75,12 @@ select extensions.lives_ok(
     'Bat',
     'employee.fixture@example.com',
     department.id,
-    position.id,
+    rank.id,
     'active',
     '2024-01-01'::date
   from public.departments department
-  join public.positions position on position.department_id = department.id
-  where department.name = 'Personnel fixture department'$$,
+  cross join public.ranks rank
+  where department.name = 'Personnel fixture department' and rank.code = 'PFR'$$,
   'HR can create an official employee record'
 );
 
@@ -270,9 +268,9 @@ select extensions.throws_ok(
 );
 
 select extensions.throws_ok(
-  $$insert into public.employees (employee_number, first_name, last_name, personal_email, employment_status, employment_started_on, rank)
-    values ('EMP-0003', 'Invalid', 'Rank', 'invalid.rank@example.com', 'active', '2024-01-01', 'Commander')$$,
-  '23514',
+  $$insert into public.employees (employee_number, first_name, last_name, personal_email, employment_status, employment_started_on, rank_id)
+    values ('EMP-9003', 'Invalid', 'Rank', 'invalid.rank@example.com', 'active', '2024-01-01', -1)$$,
+  '23503',
   null,
   'Employee records reject a rank outside the supplied police catalogue'
 );

@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(44);
+select extensions.plan(32);
 
 -- Fixture accounts: two administrators, HR, an unused applicant, and an applicant with an application.
 insert into auth.users (id, aud, role, email, created_at, updated_at)
@@ -23,25 +23,21 @@ end
 where user_id between '00000000-0000-4000-8000-000000009501'::uuid and '00000000-0000-4000-8000-000000009505'::uuid;
 
 insert into public.departments (name) values ('Deletion unused department'), ('Deletion used department');
-insert into public.positions (department_id, title)
-select id, 'Deletion used position' from public.departments where name = 'Deletion used department';
-insert into public.positions (department_id, title)
-select id, 'Deletion unused position' from public.departments where name = 'Deletion used department';
-insert into public.positions (department_id, title)
-select id, 'Deletion criterion position' from public.departments where name = 'Deletion used department';
+insert into public.ranks (name, code, sort_order)
+values ('Deletion used rank', 'DUR', 9301), ('Deletion criterion rank', 'DCR', 9302);
 
-insert into public.job_openings (department_id, position_id, title, description, status, published_at, created_by_user_id)
-select position.department_id, position.id, opening.title, 'An opening used by the safe deletion regression tests.', opening.status, opening.published_at, '00000000-0000-4000-8000-000000009503'::uuid
-from public.positions position
+insert into public.job_openings (department_id, rank_id, title, description, status, published_at, created_by_user_id)
+select (select id from public.departments where name = 'Deletion used department'), rank.id, opening.title, 'An opening used by the safe deletion regression tests.', opening.status, opening.published_at, '00000000-0000-4000-8000-000000009503'::uuid
+from public.ranks rank
 cross join (values ('Deletion draft opening', 'draft'::text, null::timestamptz), ('Deletion published opening', 'published'::text, now())) opening(title, status, published_at)
-where position.title = 'Deletion used position';
+where rank.code = 'DUR';
 
 insert into public.leave_types (id, name, created_by_user_id, updated_by_user_id)
 values ('00000000-0000-4000-8000-000000009521', 'Deletion unused leave', '00000000-0000-4000-8000-000000009503', '00000000-0000-4000-8000-000000009503');
 
-insert into public.promotion_criteria (id, target_position_id, minimum_years_of_service, created_by_user_id, updated_by_user_id)
+insert into public.promotion_criteria (id, target_rank_id, minimum_years_of_service, created_by_user_id, updated_by_user_id)
 select '00000000-0000-4000-8000-000000009531', id, 2, '00000000-0000-4000-8000-000000009503', '00000000-0000-4000-8000-000000009503'
-from public.positions where title = 'Deletion criterion position';
+from public.ranks where code = 'DCR';
 insert into public.promotion_criteria_requirements (criterion_id, ordinal, record_kind, required_name, label)
 values ('00000000-0000-4000-8000-000000009531', 1, 'training', 'Leadership course', 'Leadership course');
 
@@ -53,12 +49,6 @@ values ('00000000-0000-4000-8000-000000009541', '00000000-0000-4000-8000-0000000
 -- ---------------------------------------------------------------------------
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000009503';
-select extensions.throws_ok(
-  $$select public.get_deletion_impact('department', (select id::text from public.departments where name = 'Deletion unused department'))$$,
-  '42501', 'Administrator access is required.', 'HR cannot preview department deletion');
-select extensions.throws_ok(
-  $$select public.delete_department((select id from public.departments where name = 'Deletion unused department'))$$,
-  '42501', 'Administrator access is required.', 'HR cannot delete departments');
 
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000009501';
 select extensions.throws_ok(
@@ -68,7 +58,7 @@ select extensions.throws_ok(
   $$select public.get_deletion_impact('employee', '00000000-0000-4000-8000-000000009501')$$,
   '22023', 'Deletion is not supported for this record type.', 'History-bearing records such as employees are never deletable');
 select extensions.throws_ok(
-  $$select public.get_deletion_impact('department', 'not-a-number')$$,
+  $$select public.get_deletion_impact('managed_user', 'not-a-uuid')$$,
   '22023', 'The record identifier is not valid.', 'Malformed identifiers are rejected cleanly');
 
 set local role anon;
@@ -77,65 +67,19 @@ select extensions.throws_ok(
   '42501', null, 'Anonymous callers cannot reach deletion RPCs');
 
 -- ---------------------------------------------------------------------------
--- Departments
+-- Departments and ranks are never deletable (client decision 2026-09-24)
 -- ---------------------------------------------------------------------------
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000009501';
-select extensions.is(
-  (public.get_deletion_impact('department', (select id::text from public.departments where name = 'Deletion unused department')) ->> 'canDelete')::boolean,
-  true, 'An unreferenced department can be deleted');
-select extensions.is(
-  (public.get_deletion_impact('department', (select id::text from public.departments where name = 'Deletion used department')) ->> 'canDelete')::boolean,
-  false, 'A department with positions cannot be deleted');
-select extensions.ok(
-  public.get_deletion_impact('department', (select id::text from public.departments where name = 'Deletion used department')) -> 'blockers'
-    @> '[{"label": "positions", "count": 3}]'::jsonb,
-  'Department impact reports the dependent position count, including SET NULL references');
-select extensions.throws_like(
-  $$select public.delete_department((select id from public.departments where name = 'Deletion used department'))$$,
-  '%cannot be deleted. It is still used by%Deactivate the department%', 'Blocked department deletion explains why and offers deactivation');
-select extensions.lives_ok(
-  $$select public.delete_department((select id from public.departments where name = 'Deletion unused department'))$$,
-  'An administrator can delete an unreferenced department');
-
-set local role postgres;
-select extensions.is((select count(*) from public.departments where name = 'Deletion unused department'), 0::bigint, 'The department row is removed');
-select extensions.is((select count(*) from public.departments where name = 'Deletion used department'), 1::bigint, 'The referenced department is kept');
-select extensions.ok(exists (
-  select 1 from public.audit_logs where entity_type = 'departments' and action = 'delete'
-    and metadata ->> 'name' = 'Deletion unused department' and actor_user_id = '00000000-0000-4000-8000-000000009501'
-), 'Department deletion is audited with the acting administrator');
-
--- ---------------------------------------------------------------------------
--- Positions
--- ---------------------------------------------------------------------------
-set local role authenticated;
-set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000009501';
-select extensions.ok(
-  public.get_deletion_impact('position', (select id::text from public.positions where title = 'Deletion used position')) -> 'blockers'
-    @> '[{"label": "job openings", "count": 2}]'::jsonb,
-  'Position impact reports dependent job openings');
-select extensions.ok(
-  public.get_deletion_impact('position', (select id::text from public.positions where title = 'Deletion criterion position')) -> 'blockers'
-    @> '[{"label": "promotion criteria", "count": 1}]'::jsonb,
-  'Position impact reports dependent promotion criteria');
-select extensions.lives_ok(
-  $$select public.delete_position((select id from public.positions where title = 'Deletion unused position'))$$,
-  'An administrator can delete an unreferenced position');
-set local role postgres;
-select extensions.is((select count(*) from public.positions where title = 'Deletion unused position'), 0::bigint, 'The position row is removed');
-
--- The only active patrol position cannot be deleted because hiring depends on it.
-update public.positions set is_active = false
-where lower(title) in ('patrolman', 'patrolwoman', 'patrolman / patrolwoman', 'patrolman / patrolwoman (pat)');
-insert into public.positions (department_id, title)
-select id, 'Patrolman' from public.departments where name = 'Deletion used department';
-set local role authenticated;
-set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000009501';
-select extensions.ok(
-  public.get_deletion_impact('position', (select id::text from public.positions where title = 'Patrolman' and is_active)) -> 'reasons'
-    ? 'Hiring requires at least one active Patrolman or Patrolwoman position.',
-  'The last active patrol position is protected');
+select extensions.throws_ok(
+  $$select public.get_deletion_impact('department', (select id::text from public.departments where name = 'Deletion unused department'))$$,
+  '22023', 'Deletion is not supported for this record type.', 'Departments are never deletable');
+select extensions.throws_ok(
+  $$select public.get_deletion_impact('position', (select id::text from public.ranks where code = 'DUR'))$$,
+  '22023', 'Deletion is not supported for this record type.', 'Ranks are never deletable');
+select extensions.throws_ok(
+  $$delete from public.departments where name = 'Deletion unused department'$$,
+  '42501', null, 'Administrators cannot delete department rows directly');
 
 -- ---------------------------------------------------------------------------
 -- Leave types and promotion criteria (HR-owned)
@@ -164,9 +108,9 @@ select extensions.ok(exists (
 
 -- Criteria with evaluation evidence can still be deactivated (but not deleted).
 set local role postgres;
-insert into public.promotion_criteria (id, target_position_id, minimum_years_of_service, created_by_user_id, updated_by_user_id)
+insert into public.promotion_criteria (id, target_rank_id, minimum_years_of_service, created_by_user_id, updated_by_user_id)
 select '00000000-0000-4000-8000-000000009532', id, 1, '00000000-0000-4000-8000-000000009503', '00000000-0000-4000-8000-000000009503'
-from public.positions where title = 'Deletion used position';
+from public.ranks where code = 'DUR';
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000009501';
 select extensions.throws_ok(
@@ -245,7 +189,7 @@ values ('00000000-0000-4000-8000-000000009581', 'DEL-EMP-1', 'Grant', 'Check', '
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000009503';
 select extensions.lives_ok(
-  $$update public.employees set qualifier = 'Jr.', place_of_birth = 'San Juan', date_of_birth = '1990-01-01', sex = 'female', civil_status = 'single', religion = 'None', phone = '09170000000'
+  $$update public.employees set qualifier = 'Jr.', place_of_birth = 'San Juan', date_of_birth = '1990-01-01', gender = 'female', civil_status = 'single', religion = 'None', phone = '09170000000'
     where id = '00000000-0000-4000-8000-000000009581'$$,
   'HR can update every field the personnel edit form sends');
 set local role postgres;

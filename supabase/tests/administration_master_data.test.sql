@@ -11,10 +11,10 @@ select extensions.has_table(
   'Organization settings has a dedicated table'
 );
 select extensions.has_column(
-  'public', 'positions', 'code', 'Positions support a unique optional code'
+  'public', 'ranks', 'code', 'Ranks have a unique code'
 );
 select extensions.has_column(
-  'public', 'positions', 'description', 'Positions support an optional description'
+  'public', 'ranks', 'sort_order', 'Ranks have a seniority order'
 );
 select extensions.has_function(
   'private',
@@ -170,19 +170,19 @@ select extensions.lives_ok(
   'Administrator can create departments'
 );
 select extensions.lives_ok(
-  $$insert into public.positions (department_id, title) values ((select id from public.departments where name = 'Administration UI Test Department'), 'Administration UI Test Position')$$,
-  'Administrator can create department-assigned positions'
+  $$insert into public.ranks (name, code, sort_order) values ('Administration UI Test Rank', 'AUTR', 9001)$$,
+  'Administrator can create ranks'
 );
 select extensions.lives_ok(
   $$update public.departments set is_active = false where name = 'Administration UI Test Department'$$,
   'Administrator can deactivate departments'
 );
 select extensions.lives_ok(
-  $$update public.positions set is_active = false where title = 'Administration UI Test Position'$$,
-  'Administrator can deactivate positions'
+  $$update public.ranks set is_active = false where name = 'Administration UI Test Rank'$$,
+  'Administrator can deactivate ranks'
 );
 select extensions.cmp_ok(
-  (select count(*) from public.audit_logs where entity_type in ('departments', 'positions')),
+  (select count(*) from public.audit_logs where entity_type in ('departments', 'ranks')),
   '>', 0::bigint,
   'Reference-data changes are audited'
 );
@@ -193,15 +193,15 @@ select extensions.throws_ok(
   '42501', null,
   'HR cannot create departments'
 );
-update public.positions
-set title = 'Denied Update'
-where title = 'Administration UI Test Position';
+update public.ranks
+set name = 'Denied Update'
+where name = 'Administration UI Test Rank';
 
 set local role postgres;
 select extensions.is(
-  (select title from public.positions where title = 'Administration UI Test Position'),
-  'Administration UI Test Position',
-  'HR cannot update positions'
+  (select name from public.ranks where name = 'Administration UI Test Rank'),
+  'Administration UI Test Rank',
+  'HR cannot update ranks'
 );
 
 set local role authenticated;

@@ -8,7 +8,7 @@ select extensions.plan(21);
 select extensions.has_table('public', 'profiles', 'profiles table exists');
 select extensions.has_table('public', 'user_roles', 'user_roles table exists');
 select extensions.has_table('public', 'departments', 'departments table exists');
-select extensions.has_table('public', 'positions', 'positions table exists');
+select extensions.has_table('public', 'ranks', 'ranks table exists');
 select extensions.has_table('public', 'audit_logs', 'audit_logs table exists');
 select extensions.is(
   (select count(*) from auth.users where email like 'demo.%@example.test' and instance_id = '00000000-0000-0000-0000-000000000000'::uuid),
