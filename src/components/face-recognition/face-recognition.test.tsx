@@ -4,7 +4,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ScannerState } from "@/lib/face-recognition/scanner-machine";
 
-const scanner = vi.hoisted(() => ({ state: { status: "ready" } as ScannerState, start: vi.fn(), pause: vi.fn(), retry: vi.fn() }));
+const scanner = vi.hoisted(() => ({
+  state: { status: "ready" } as ScannerState,
+  start: vi.fn(),
+  pause: vi.fn(),
+  retry: vi.fn(),
+  lowLight: false,
+  diagnostics: { backend: "wasm" as string | null, detectionMs: 42 as number | null, brightness: 70 as number | null },
+}));
 vi.mock("@/hooks/use-face-attendance-scanner", () => ({ useFaceAttendanceScanner: () => ({ ...scanner, videoRef: { current: null } }) }));
 
 const capture = vi.hoisted(() => ({ state: { phase: "idle" } as { phase: string }, begin: vi.fn(), cancel: vi.fn() }));
@@ -33,6 +40,8 @@ import { FaceEnrollmentPanel } from "./face-enrollment-panel";
 beforeEach(() => {
   vi.clearAllMocks();
   scanner.state = { status: "ready" };
+  scanner.lowLight = false;
+  window.history.replaceState({}, "", "/");
   capture.state = { phase: "idle" };
   enrollments.data = [];
 });
@@ -50,6 +59,29 @@ describe("FaceAttendanceKiosk", () => {
 
     await user.click(screen.getByRole("button", { name: /close scanner/i }));
     expect(screen.queryByLabelText("Camera preview")).not.toBeInTheDocument();
+  });
+
+  it("suggests more light when the face is dark", async () => {
+    scanner.state = { status: "searching", stableFrames: 0, guidance: null };
+    scanner.lowLight = true;
+    const user = userEvent.setup();
+    render(<FaceAttendanceKiosk />);
+    await user.click(screen.getByRole("button", { name: /open scanner/i }));
+    expect(screen.getByText(/Your face looks dark/)).toBeInTheDocument();
+  });
+
+  it("shows backend and timing diagnostics only when ?diagnostics=1 is in the URL", async () => {
+    scanner.state = { status: "searching", stableFrames: 0, guidance: null };
+    const user = userEvent.setup();
+    const view = render(<FaceAttendanceKiosk />);
+    await user.click(screen.getByRole("button", { name: /open scanner/i }));
+    expect(screen.queryByTestId("face-diagnostics")).not.toBeInTheDocument();
+    view.unmount();
+
+    window.history.replaceState({}, "", "/hr/attendance/kiosk?diagnostics=1");
+    render(<FaceAttendanceKiosk />);
+    await user.click(screen.getByRole("button", { name: /open scanner/i }));
+    expect(screen.getByTestId("face-diagnostics")).toHaveTextContent("backend wasm · detection 42 ms · brightness 70");
   });
 
   it("shows the recognized employee and recorded time", async () => {

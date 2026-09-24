@@ -81,5 +81,19 @@ export type FaceRecognitionConfig = typeof FACE_RECOGNITION_CONFIG;
 export type BlinkConfig = Record<keyof FaceRecognitionConfig["blink"], number>;
 export type FramingConfig = Record<keyof FaceRecognitionConfig["framing"], number>;
 
-/** Distances and EAR values are shown only in development builds. */
+/**
+ * Below this mean face brightness (0-255) the eye landmarks get noisy and blinks are missed,
+ * so the scanner suggests more light. A dim room measured ~81; a well-lit face is ~120-170.
+ */
+export const LOW_LIGHT_BRIGHTNESS = 90;
+
+/**
+ * Distances, EAR, backend, and detection time are shown in development builds, or in any
+ * build when the page URL has `?diagnostics=1` (for troubleshooting a specific device).
+ */
 export const SHOW_FACE_DIAGNOSTICS = process.env.NODE_ENV === "development";
+
+export function faceDiagnosticsEnabled() {
+  if (SHOW_FACE_DIAGNOSTICS) return true;
+  return typeof window !== "undefined" && new URLSearchParams(window.location.search).get("diagnostics") === "1";
+}

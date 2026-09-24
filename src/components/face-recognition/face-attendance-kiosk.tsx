@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { StatusPanel } from "@/components/ui/status-panel";
 import { useFaceAttendanceScanner } from "@/hooks/use-face-attendance-scanner";
 import type { FaceScanMode } from "@/hooks/use-face-recognition";
-import { SHOW_FACE_DIAGNOSTICS } from "@/lib/face-recognition/config";
+import { faceDiagnosticsEnabled } from "@/lib/face-recognition/config";
 import type { ScannerState } from "@/lib/face-recognition/scanner-machine";
 
 import { formatAttendanceTime } from "@/components/attendance-integration/attendance-time";
@@ -36,7 +36,8 @@ function tone(state: ScannerState) {
 }
 
 export function FaceScanner({ mode, onClose }: { mode: FaceScanMode; onClose: () => void }) {
-  const { pause, retry, start, state, videoRef } = useFaceAttendanceScanner(mode);
+  const { diagnostics, lowLight, pause, retry, start, state, videoRef } = useFaceAttendanceScanner(mode);
+  const [showDiagnostics] = useState(faceDiagnosticsEnabled);
   const live = state.status !== "initializing" && !(state.status === "error" && state.fatal);
   const busy = state.status === "verifying" || state.status === "recording";
   const running = state.status !== "initializing" && state.status !== "ready" && !(state.status === "error" && state.fatal);
@@ -49,6 +50,7 @@ export function FaceScanner({ mode, onClose }: { mode: FaceScanMode; onClose: ()
           {state.status === "liveness" ? <Eye aria-hidden="true" className="size-4" /> : null}
           {promptFor(state)}
         </span>
+        {lowLight ? <span className="mt-1 block text-xs font-normal text-muted-foreground">Your face looks dark. Turn on a light or face a window so your eyes are easy to see.</span> : null}
       </CameraViewport>
 
       {state.status === "success" ? (
@@ -57,7 +59,7 @@ export function FaceScanner({ mode, onClose }: { mode: FaceScanMode; onClose: ()
           <div>
             <p className="font-semibold">{state.result.employee?.firstName} {state.result.employee?.lastName}</p>
             <p className="text-sm">{state.result.employee?.employeeNumber} · {state.result.outcome === "time_in" ? "Time in" : "Time out"} at {formatAttendanceTime(state.result.outcome === "time_in" ? state.result.log?.timeIn : state.result.log?.timeOut)}</p>
-            {SHOW_FACE_DIAGNOSTICS && state.result.distance !== null ? <p className="mt-1 text-xs opacity-80">Dev: match distance {state.result.distance.toFixed(3)}</p> : null}
+            {showDiagnostics && state.result.distance !== null ? <p className="mt-1 text-xs opacity-80">Dev: match distance {state.result.distance.toFixed(3)}</p> : null}
           </div>
         </div>
       ) : null}
@@ -68,13 +70,16 @@ export function FaceScanner({ mode, onClose }: { mode: FaceScanMode; onClose: ()
           <div className="space-y-1">
             <p className="font-semibold">{state.fatal ? "Scanner unavailable" : state.kind === "not_recognized" ? "Face not recognized" : state.kind === "liveness_timeout" ? "Blink not detected" : state.kind === "network" ? "Connection problem" : state.kind === "service" ? "Attendance service rejected the scan" : "Attendance not recorded"}</p>
             <p className="text-sm">{state.message}</p>
-            {SHOW_FACE_DIAGNOSTICS && !state.fatal && state.distance != null ? <p className="text-xs opacity-80">Dev: closest distance {state.distance.toFixed(3)}</p> : null}
+            {showDiagnostics && !state.fatal && state.distance != null ? <p className="text-xs opacity-80">Dev: closest distance {state.distance.toFixed(3)}</p> : null}
           </div>
         </div>
       ) : null}
 
-      {SHOW_FACE_DIAGNOSTICS && state.status === "liveness" ? (
-        <p className="text-center text-xs text-muted-foreground">Dev: EAR {state.blink.lastEar?.toFixed(3) ?? "—"} · baseline {state.blink.baseline?.toFixed(3) ?? "—"} · phase {state.blink.phase}</p>
+      {showDiagnostics && live ? (
+        <p className="text-center text-xs text-muted-foreground" data-testid="face-diagnostics">
+          Diagnostics: backend {diagnostics.backend ?? "—"} · detection {diagnostics.detectionMs ?? "—"} ms · brightness {diagnostics.brightness ?? "—"}
+          {state.status === "liveness" ? ` · EAR ${state.blink.lastEar?.toFixed(3) ?? "—"} · baseline ${state.blink.baseline?.toFixed(3) ?? "—"} · phase ${state.blink.phase}` : ""}
+        </p>
       ) : null}
 
       <div className="flex flex-wrap justify-center gap-2">

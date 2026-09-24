@@ -9,19 +9,33 @@ let loading: Promise<FaceApi> | null = null;
 
 export const MODELS_FAILED_MESSAGE = "The face recognition models could not be loaded. Check the connection and try again.";
 
-// The bundle exposes setBackend at runtime but its type declarations omit it.
-type TfBackendControl = { setBackend(name: string): Promise<boolean> };
+// The bundle exposes these at runtime but its type declarations omit them.
+type TfBackendControl = { setBackend(name: string): Promise<boolean>; setWasmPaths(prefix: string): void; getBackend(): string };
 
-// Without an explicit choice, TensorFlow.js falls back from WebGL to its WASM backend, whose
-// .wasm binaries are not served, and model loading throws. Browsers without WebGL (GPU
-// blocklisted, hardware acceleration off, remote desktops) therefore use the CPU backend.
-const BACKENDS = ["webgl", "cpu"] as const;
+export type FaceBackend = "webgl" | "wasm" | "cpu";
 
-async function selectBackend(faceapi: FaceApi): Promise<void> {
+// WebGL is fastest where the GPU is available. Browsers without WebGL (GPU blocklisted,
+// hardware acceleration off, remote desktops) use WebAssembly: measured at ~40-55 ms per
+// face analysis versus ~0.8-1.9 s on the CPU backend. At CPU speed the camera samples about
+// once a second, so a 100-400 ms blink is almost never seen and the blink check cannot pass.
+const BACKENDS: readonly FaceBackend[] = ["webgl", "wasm", "cpu"];
+
+let activeBackend: FaceBackend | null = null;
+
+/** The TensorFlow.js backend the face models run on, once loaded. */
+export function getFaceBackend() {
+  return activeBackend;
+}
+
+async function selectBackend(faceapi: FaceApi, baseUrl: string): Promise<void> {
   const tf = faceapi.tf as unknown as TfBackendControl;
+  tf.setWasmPaths(`${baseUrl}/wasm/`);
   for (const backend of BACKENDS) {
     try {
-      if (await tf.setBackend(backend)) return;
+      if (await tf.setBackend(backend)) {
+        activeBackend = backend;
+        return;
+      }
     } catch {
       // Try the next backend.
     }
@@ -36,7 +50,7 @@ async function selectBackend(faceapi: FaceApi): Promise<void> {
 export function loadFaceModels(baseUrl: string = FACE_RECOGNITION_CONFIG.modelBaseUrl): Promise<FaceApi> {
   loading ??= (async () => {
     const faceapi = await import("@vladmandic/face-api/dist/face-api.esm.js");
-    await selectBackend(faceapi);
+    await selectBackend(faceapi, baseUrl);
     await Promise.all([
       faceapi.nets.tinyFaceDetector.loadFromUri(baseUrl),
       faceapi.nets.faceLandmark68Net.loadFromUri(baseUrl),
@@ -60,6 +74,27 @@ function detectorOptions(faceapi: FaceApi) {
 function toDetectedFace(result: { detection: { box: Box }; landmarks: { getLeftEye(): Point[]; getRightEye(): Point[] } }): DetectedFace {
   const { x, y, width, height } = result.detection.box;
   return { box: { x, y, width, height }, leftEye: result.landmarks.getLeftEye(), rightEye: result.landmarks.getRightEye() };
+}
+
+let brightnessCanvas: HTMLCanvasElement | null = null;
+
+/** Mean brightness (0-255) of the face box in the current video frame, or null if unavailable. */
+export function faceBrightness(video: HTMLVideoElement, box: Box): number | null {
+  brightnessCanvas ??= document.createElement("canvas");
+  const size = 24;
+  brightnessCanvas.width = size;
+  brightnessCanvas.height = size;
+  const context = brightnessCanvas.getContext("2d", { willReadFrequently: true });
+  if (!context || box.width <= 0 || box.height <= 0) return null;
+  try {
+    context.drawImage(video, box.x, box.y, box.width, box.height, 0, 0, size, size);
+    const pixels = context.getImageData(0, 0, size, size).data;
+    let total = 0;
+    for (let index = 0; index < pixels.length; index += 4) total += 0.299 * pixels[index] + 0.587 * pixels[index + 1] + 0.114 * pixels[index + 2];
+    return total / (pixels.length / 4);
+  } catch {
+    return null;
+  }
 }
 
 /** Face boxes plus eye landmarks. Cheap enough for the blink challenge; computes no descriptor. */

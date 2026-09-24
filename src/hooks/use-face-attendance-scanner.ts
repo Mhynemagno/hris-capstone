@@ -1,11 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 
 import { CAMERA_ERROR_MESSAGES, useCamera } from "@/hooks/use-camera";
 import { useRecordFaceAttendance, type FaceScanMode } from "@/hooks/use-face-recognition";
-import { FACE_RECOGNITION_CONFIG } from "@/lib/face-recognition/config";
-import { detectFacesWithDescriptors, detectFacesWithLandmarks, loadFaceModels, MODELS_FAILED_MESSAGE, type FaceApi } from "@/lib/face-recognition/face-api";
+import { FACE_RECOGNITION_CONFIG, LOW_LIGHT_BRIGHTNESS } from "@/lib/face-recognition/config";
+import { detectFacesWithDescriptors, detectFacesWithLandmarks, faceBrightness, getFaceBackend, loadFaceModels, MODELS_FAILED_MESSAGE, type FaceApi } from "@/lib/face-recognition/face-api";
 import { assessFraming, averageEyeAspectRatio, FRAMING_MESSAGES } from "@/lib/face-recognition/geometry";
 import { createScannerReducer, initialScannerState } from "@/lib/face-recognition/scanner-machine";
 import { FaceRecognitionRequestError } from "@/queries/face-recognition";
@@ -28,6 +28,7 @@ export function useFaceAttendanceScanner(mode: FaceScanMode = "kiosk") {
   const { start: startCamera, stop: stopCamera, status: cameraStatus, videoRef } = camera;
   const recordAttendance = record.mutateAsync;
   const faceapiRef = useRef<FaceApi | null>(null);
+  const [diagnostics, setDiagnostics] = useState<{ detectionMs: number | null; brightness: number | null }>({ detectionMs: null, brightness: null });
 
   // INITIALIZING: start the camera and load the models (cached after the first load) together.
   useEffect(() => {
@@ -65,8 +66,11 @@ export function useFaceAttendanceScanner(mode: FaceScanMode = "kiosk") {
       const video = videoRef.current;
       if (video && video.readyState >= 2 && video.videoWidth > 0) {
         try {
+          const started = performance.now();
           const faces = await detectFacesWithLandmarks(faceapi, video);
           if (cancelled) return;
+          const brightness = faces.length === 1 ? faceBrightness(video, faces[0].box) : null;
+          setDiagnostics({ detectionMs: Math.round(performance.now() - started), brightness: brightness === null ? null : Math.round(brightness) });
           if (status === "searching") {
             const framing = assessFraming(faces.map((face) => face.box), { width: video.videoWidth, height: video.videoHeight }, config.framing);
             dispatch(framing.ok ? { type: "FRAME_ACCEPTED", now: performance.now() } : { type: "FRAME_REJECTED", guidance: FRAMING_MESSAGES[framing.issue] });
@@ -159,5 +163,7 @@ export function useFaceAttendanceScanner(mode: FaceScanMode = "kiosk") {
   const pause = useCallback(() => dispatch({ type: "STOP" }), []);
   const retry = useCallback(() => dispatch({ type: "RETRY" }), []);
 
-  return { state, videoRef, start, pause, retry };
+  const lowLight = diagnostics.brightness !== null && diagnostics.brightness < LOW_LIGHT_BRIGHTNESS && (state.status === "searching" || state.status === "liveness");
+
+  return { state, videoRef, start, pause, retry, lowLight, diagnostics: { ...diagnostics, backend: getFaceBackend() } };
 }
