@@ -12,6 +12,7 @@
     "npm:@supabase/supabase-js@^2.112.3": "2.112.3",
     "npm:@tailwindcss/postcss@4": "4.3.3",
     "npm:@tanstack/react-query@^5.101.4": "5.102.0_react@19.2.8",
+    "npm:@tensorflow/tfjs-backend-wasm@4.22.0": "4.22.0_@tensorflow+tfjs-core@4.22.0",
     "npm:@testing-library/dom@^10.4.1": "10.4.1",
     "npm:@testing-library/jest-dom@^7.0.1": "7.0.1_@testing-library+dom@10.4.1_vitest@4.1.11_@types+node@20.19.43_jsdom@30.0.1_vite@8.2.2",
     "npm:@testing-library/react@^16.3.2": "16.3.2_@testing-library+dom@10.4.1_@types+react@19.2.18_@types+react-dom@19.2.4_react@19.2.8_react-dom@19.2.8",
@@ -1114,6 +1115,34 @@
         "react"
       ]
     },
+    "@tensorflow/tfjs-backend-cpu@4.22.0_@tensorflow+tfjs-core@4.22.0": {
+      "integrity": "sha512-1u0FmuLGuRAi8D2c3cocHTASGXOmHc/4OvoVDENJayjYkS119fcTcQf4iHrtLthWyDIPy3JiPhRrZQC9EwnhLw==",
+      "dependencies": [
+        "@tensorflow/tfjs-core",
+        "@types/seedrandom",
+        "seedrandom"
+      ]
+    },
+    "@tensorflow/tfjs-backend-wasm@4.22.0_@tensorflow+tfjs-core@4.22.0": {
+      "integrity": "sha512-/IYhReRIp4jg/wYW0OwbbJZG8ON87mbz0PgkiP3CdcACRSvUN0h8rvC0O3YcDtkTQtFWF/tcXq/KlVDyV49wmA==",
+      "dependencies": [
+        "@tensorflow/tfjs-backend-cpu",
+        "@tensorflow/tfjs-core",
+        "@types/emscripten"
+      ]
+    },
+    "@tensorflow/tfjs-core@4.22.0": {
+      "integrity": "sha512-LEkOyzbknKFoWUwfkr59vSB68DMJ4cjwwHgicXN0DUi3a0Vh1Er3JQqCI1Hl86GGZQvY8ezVrtDIvqR1ZFW55A==",
+      "dependencies": [
+        "@types/long",
+        "@types/offscreencanvas",
+        "@types/seedrandom",
+        "@webgpu/types",
+        "long",
+        "node-fetch",
+        "seedrandom"
+      ]
+    },
     "@testing-library/dom@10.4.1": {
       "integrity": "sha512-o4PXJQidqJl82ckFaXUeoAW+XysPLauYI43Abki5hABd853iMhitooc6znOnczgbTYmEP6U6/y1ZyKAIsvMKGg==",
       "dependencies": [
@@ -1191,6 +1220,9 @@
     "@types/deep-eql@4.0.2": {
       "integrity": "sha512-c9h9dVVMigMPc4bwTvC5dxqtqJZwQPePsWjPlpSOnojbor6pGqdk541lfA7AqFQr5pB1BRdq0juY9db81BwyFw=="
     },
+    "@types/emscripten@0.0.34": {
+      "integrity": "sha512-QSb9ojDincskc+uKMI0KXp8e1NALFINCrMlp8VGKGcTSxeEyRTTKyjWw75NYrCZHUsVEEEpr1tYHpbtaC++/sQ=="
+    },
     "@types/estree@1.0.9": {
       "integrity": "sha512-GhdPgy1el4/ImP05X05Uw4cw2/M93BCUmnEvWZNStlCzEKME4Fkk+YpoA5OiHNQmoS7Cafb8Xa3Pya8m1Qrzeg=="
     },
@@ -1200,11 +1232,17 @@
     "@types/json5@0.0.29": {
       "integrity": "sha512-dRLjCWHYg4oaA77cxO64oO+7JwCwnIzkZPdrrC71jQmQtlhM556pwKo5bUzqvZndkVbeFLIIi+9TC40JNF5hNQ=="
     },
+    "@types/long@4.0.2": {
+      "integrity": "sha512-MqTGEo5bj5t157U6fA/BiDynNkn0YknVdh48CMPkTSpFTVmvao5UQmm7uEF6xBEo7qIMAlY/JSleYaE6VOdpaA=="
+    },
     "@types/node@20.19.43": {
       "integrity": "sha512-6oYBAi5ikg4Pl+kGsoYtawUMBT2zZMCvPNF7pVLnHZfd1zf38DRiWn/gT01RYCdUqkv7Fhr+C9ot4/tb+2sVvA==",
       "dependencies": [
         "undici-types"
       ]
+    },
+    "@types/offscreencanvas@2019.7.3": {
+      "integrity": "sha512-ieXiYmgSRXUDeOntE1InxjWyvEelZGP63M+cGuquuRLuIKKT1osnkXjxev9B7d1nXSug5vpunx+gNlbVxMlC9A=="
     },
     "@types/react-dom@19.2.4_@types+react@19.2.18": {
       "integrity": "sha512-Bsc+QHgp+P/F02XDzNCY9jnZNCUuLki36KT7VKrTXXLdHf+vHMNZnW1rVu5DNW/rCK+fya3DATySbLM4yhtKUw==",
@@ -1217,6 +1255,9 @@
       "dependencies": [
         "csstype"
       ]
+    },
+    "@types/seedrandom@2.4.34": {
+      "integrity": "sha512-ytDiArvrn/3Xk6/vtylys5tlY6eo7Ane0hvcx++TKo6RxQXuVfW0AF/oeWqAj9dN29SyhtawuXstgmPlwNcv/A=="
     },
     "@types/validate-npm-package-name@4.0.2": {
       "integrity": "sha512-lrpDziQipxCEeK5kWxvljWYhUvOiB2A9izZd9B2AFarYAkqZshb4lPbRs7zKEic6eGtH8V/2qJW+dPp9OtF6bw=="
@@ -1491,6 +1532,9 @@
     },
     "@vladmandic/face-api@1.7.15": {
       "integrity": "sha512-WDMmK3CfNLo8jylWqMoQgf4nIst3M0fzx1dnac96wv/dvMTN4DxC/Pq1DGtduDk1lktCamQ3MIDXFnvrdHTXDw=="
+    },
+    "@webgpu/types@0.1.38": {
+      "integrity": "sha512-7LrhVKz2PRh+DD7+S+PVaFd5HxaWQvoMqBbsV9fNJO1pjUs1P8bM2vQVNfk+3URTqbuTI7gkXi0rfsN0IadoBA=="
     },
     "accepts@2.0.0": {
       "integrity": "sha512-5cvg6CtKwfgdmVqY1WIiXKc3Q1bkRqGLi+2W/6ao+6Y7gu/RCwRuAhGEzh5B4KlszSuTLgZYuqFqo5bImjNKng==",
@@ -3204,7 +3248,7 @@
         "tough-cookie",
         "undici@8.10.0",
         "w3c-xmlserializer",
-        "webidl-conversions",
+        "webidl-conversions@8.0.1",
         "whatwg-mimetype",
         "whatwg-url@17.1.0",
         "xml-name-validator"
@@ -3466,6 +3510,9 @@
         "is-unicode-supported@1.3.0"
       ]
     },
+    "long@4.0.0": {
+      "integrity": "sha512-XsP+KhQif4bjX1kbuSiySJFNAehNxgLb6hPRGJ9QsUr8ajHkuXGdrHmFUTUUXhDwVX2R5bY4JNZEwbUiMhV+MA=="
+    },
     "loose-envify@1.4.0": {
       "integrity": "sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==",
       "dependencies": [
@@ -3615,6 +3662,12 @@
         "es-errors",
         "object.entries",
         "semver@6.3.1"
+      ]
+    },
+    "node-fetch@2.6.13": {
+      "integrity": "sha512-StxNAxh15zr77QvvkmveSQ8uCQ4+v5FkvNTj0OESmiHu+VRi/gXArXtkWMElOsOUNLtUEvI4yS+rdtOHZTwlQA==",
+      "dependencies": [
+        "whatwg-url@5.0.0"
       ]
     },
     "node-releases@2.0.57": {
@@ -4152,6 +4205,9 @@
     "scheduler@0.27.0": {
       "integrity": "sha512-eNv+WrVbKu1f3vbYJT/xtiF5syA5HPIMtf9IgY/nKg0sWqzAUEvqY/xm7OcZc/qafLx/iO9FgOmeSAp4v5ti/Q=="
     },
+    "seedrandom@3.0.5": {
+      "integrity": "sha512-8OwmbklUNzwezjGInmZ+2clQmExQPvomqjL7LFqOYqtmuxRgQYqOD3mHaU+MvZn5FLUeVxVfQjwLZW/n/JFuqg=="
+    },
     "semver@6.3.1": {
       "integrity": "sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA==",
       "bin": true
@@ -4577,6 +4633,9 @@
         "tldts"
       ]
     },
+    "tr46@0.0.3": {
+      "integrity": "sha512-N3WMsuqV66lT30CrXNbEjx4GEwlow3v6rr4mCcv6prnfwhS01rkgyFdjPNBYd9br7LpXV1+Emh01fHnq2Gdgrw=="
+    },
     "tr46@6.0.0": {
       "integrity": "sha512-bLVMLPtstlZ4iMQHpFHTR7GAGj2jxi8Dg0s2h2MafAE4uSWF98FC/3MomU51iQAMf8/qDUbKWf5GxuvvVcXEhw==",
       "dependencies": [
@@ -4832,6 +4891,9 @@
         "xml-name-validator"
       ]
     },
+    "webidl-conversions@3.0.1": {
+      "integrity": "sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ=="
+    },
     "webidl-conversions@8.0.1": {
       "integrity": "sha512-BMhLD/Sw+GbJC21C/UgyaZX41nPt8bUTg+jWyDeg7e7YN4xOM05YPSIXceACnXVtqyEw/LMClUQMtMZ+PGGpqQ=="
     },
@@ -4842,16 +4904,23 @@
       "integrity": "sha512-1to4zXBxmXHV3IiSSEInrreIlu02vUOvrhxJJH5vcxYTBDAx51cqZiKdyTxlecdKNSjj8EcxGBxNf6Vg+945gw==",
       "dependencies": [
         "@exodus/bytes",
-        "tr46",
-        "webidl-conversions"
+        "tr46@6.0.0",
+        "webidl-conversions@8.0.1"
       ]
     },
     "whatwg-url@17.1.0": {
       "integrity": "sha512-3GeworPmc2ZfEEHP7lEbUfBX/L75wdEsi0rLNhXcXxnoN5jyq0SL5gCy06SGW2cyTIZdTvWIDQNQoza++vKeaw==",
       "dependencies": [
         "@exodus/bytes",
-        "tr46",
-        "webidl-conversions"
+        "tr46@6.0.0",
+        "webidl-conversions@8.0.1"
+      ]
+    },
+    "whatwg-url@5.0.0": {
+      "integrity": "sha512-saE57nupxk6v3HY35+jzBwYa0rKSy0XR8JSxZPwgLr7ys0IBzhGviA1/TUGJLmSVqs8pb9AnvICXEuOHLprYTw==",
+      "dependencies": [
+        "tr46@0.0.3",
+        "webidl-conversions@3.0.1"
       ]
     },
     "which-boxed-primitive@1.1.1": {
@@ -5008,6 +5077,7 @@
         "npm:@supabase/supabase-js@^2.112.3",
         "npm:@tailwindcss/postcss@4",
         "npm:@tanstack/react-query@^5.101.4",
+        "npm:@tensorflow/tfjs-backend-wasm@4.22.0",
         "npm:@testing-library/dom@^10.4.1",
         "npm:@testing-library/jest-dom@^7.0.1",
         "npm:@testing-library/react@^16.3.2",

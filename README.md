@@ -126,6 +126,8 @@ HR Personnel register a consenting employee's face at `/hr/attendance/face-enrol
 - **Models:** `npm run dev` and `npm run build` copy the pinned `@vladmandic/face-api` model weights into `public/models/face-api/` (git-ignored). No paid recognition API is used.
 - **Tuning:** browser values (framing, blink EAR thresholds, intervals, display times) are in `src/lib/face-recognition/config.ts`. The match threshold (0.5), ambiguity margin, and minimum time-in→time-out interval are in `private.face_recognition_settings`.
 - **Camera:** browsers only allow the camera on HTTPS or `localhost`. The front camera is preferred on phones and tablets.
+- **Speed:** face analysis uses WebGL, then WebAssembly (binaries from `@tensorflow/tfjs-backend-wasm`, copied with the models), then the CPU. WebAssembly runs about 40 ms per frame versus about 1 s on the CPU. At CPU speed the camera samples too rarely to see a blink.
+- **Troubleshooting a device:** add `?diagnostics=1` to the kiosk or scan URL to show the backend, detection time, face brightness, and eye readings. In dim rooms the scanner suggests more light.
 - **Safety:** use only test subjects or people who have consented. Blink detection is a basic liveness cue for a supervised kiosk, not production-grade anti-spoofing.
 
 The face e2e journey uses Chromium's fake camera. Headless Edge ends fake camera tracks, so run it headed: `npx playwright test e2e/face-attendance.spec.ts --headed`.

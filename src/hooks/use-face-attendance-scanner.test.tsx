@@ -11,7 +11,8 @@ const faceApi = vi.hoisted(() => ({
   detectFacesWithLandmarks: vi.fn(),
   detectFacesWithDescriptors: vi.fn(),
 }));
-vi.mock("@/lib/face-recognition/face-api", () => ({ ...faceApi, MODELS_FAILED_MESSAGE: "The face recognition models could not be loaded." }));
+const brightness = vi.hoisted(() => ({ value: 140 }));
+vi.mock("@/lib/face-recognition/face-api", () => ({ ...faceApi, faceBrightness: () => brightness.value, getFaceBackend: () => "wasm", MODELS_FAILED_MESSAGE: "The face recognition models could not be loaded." }));
 
 const record = vi.hoisted(() => vi.fn());
 const recordMine = vi.hoisted(() => vi.fn());
@@ -58,6 +59,7 @@ let track: ReturnType<typeof fakeStream>["track"];
 
 beforeEach(() => {
   vi.clearAllMocks();
+  brightness.value = 140;
   installLiveVideoElement();
   const camera = fakeStream();
   track = camera.track;
@@ -101,6 +103,16 @@ describe("useFaceAttendanceScanner", () => {
 
     await waitFor(() => expect(latest.state).toMatchObject({ status: "error", kind: "not_recognized", message: "Face not recognized." }), { timeout: 5000 });
     expect(record).toHaveBeenCalledTimes(1);
+  });
+
+  it("suggests more light when the face is dark, and reports detection diagnostics", async () => {
+    brightness.value = 70;
+    renderScanner();
+    await startScanning();
+
+    await waitFor(() => expect(latest.lowLight).toBe(true));
+    expect(latest.diagnostics).toMatchObject({ backend: "wasm", brightness: 70 });
+    expect(latest.diagnostics.detectionMs).not.toBeNull();
   });
 
   it("keeps searching while more than one face is visible", async () => {
