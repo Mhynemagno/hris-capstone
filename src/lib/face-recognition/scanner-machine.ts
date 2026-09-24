@@ -16,7 +16,7 @@ export type ScannerState =
   | { status: "initializing" }
   | { status: "ready" }
   | { status: "searching"; stableFrames: number; guidance: string | null }
-  | { status: "liveness"; blink: BlinkState }
+  | { status: "liveness"; blink: BlinkState; missedFrames: number }
   | { status: "verifying" }
   | { status: "recording"; scanId: string }
   | { status: "success"; result: FaceAttendanceResult }
@@ -37,6 +37,8 @@ export type ScannerEvent =
   /** Fired by a timer, so the challenge ends even if no frame arrives (stalled video, failing detection). */
   | { type: "LIVENESS_EXPIRED" }
   | { type: "FACE_LOST"; guidance: string }
+  /** No face in one liveness frame. Tolerated briefly: the detector often drops the face mid-blink. */
+  | { type: "FACE_MISSED"; guidance: string }
   | { type: "DESCRIPTOR_READY"; scanId: string }
   | { type: "DESCRIPTOR_FAILED"; guidance: string }
   | { type: "RECORD_SUCCEEDED"; result: FaceAttendanceResult }
@@ -69,17 +71,21 @@ export function createScannerReducer(config: Pick<FaceRecognitionConfig, "blink"
         if (event.type === "FRAME_REJECTED") return { status: "searching", stableFrames: 0, guidance: event.guidance };
         if (event.type === "FRAME_ACCEPTED") {
           const stableFrames = state.stableFrames + 1;
-          return stableFrames >= config.stableFramesBeforeLiveness ? { status: "liveness", blink: createBlinkState(event.now) } : { status: "searching", stableFrames, guidance: null };
+          return stableFrames >= config.stableFramesBeforeLiveness ? { status: "liveness", blink: createBlinkState(event.now), missedFrames: 0 } :{ status: "searching", stableFrames, guidance: null };
         }
         return state;
       case "liveness":
         if (event.type === "FACE_LOST") return searching(event.guidance);
+        if (event.type === "FACE_MISSED") {
+          const missedFrames = state.missedFrames + 1;
+          return missedFrames > config.blink.maxMissedFrames ? searching(event.guidance) : { ...state, missedFrames };
+        }
         if (event.type === "LIVENESS_EXPIRED") return livenessTimeout;
         if (event.type === "LIVENESS_FRAME") {
           const blink = advanceBlink(state.blink, event.ear, event.now, config.blink);
           if (blink.phase === "passed") return { status: "verifying" };
           if (blink.phase === "timed_out") return livenessTimeout;
-          return { status: "liveness", blink };
+          return { status: "liveness", blink, missedFrames: 0 };
         }
         return state;
       case "verifying":

@@ -33,21 +33,25 @@ export const FACE_RECOGNITION_CONFIG = {
 
   blink: {
     /** Milliseconds between landmark-only detections during the blink challenge. */
-    intervalMs: 60,
-    /** Eye aspect ratio at or above which an eye counts as open. */
-    earOpenThreshold: 0.24,
-    /** Eye aspect ratio at or below which an eye counts as closed. */
-    earClosedThreshold: 0.19,
-    /** Also count as closed when EAR drops below this fraction of the person's open-eye baseline. */
-    closedBaselineRatio: 0.72,
-    /** Consecutive open frames needed before a blink can start (eyes closed at the start never pass). */
+    intervalMs: 30,
+    /** Sanity floor for an open-eye frame; only rejects degenerate landmarks, so narrow eyes still qualify. */
+    minEar: 0.1,
+    /** Eyes count as closed when EAR drops to this fraction of the person's open-eye baseline. */
+    closedBaselineRatio: 0.82,
+    /** Eyes count as open again when EAR recovers to this fraction of the baseline. */
+    reopenBaselineRatio: 0.92,
+    /** How quickly the baseline follows open-eye EAR (0-1), absorbing leaning in or small head turns. */
+    baselineSmoothing: 0.2,
+    /** Consecutive frames needed before a blink can start; their mean is the initial baseline. */
     minOpenFramesBefore: 3,
     /** Consecutive closed frames needed for a blink. Detection runs at roughly 6-10 fps, so a normal 100-150 ms blink is often a single frame. */
     minClosedFrames: 1,
     /** Consecutive open frames needed after the eyes close. */
-    minOpenFramesAfter: 2,
+    minOpenFramesAfter: 1,
+    /** Consecutive no-face frames tolerated during the challenge; the detector often loses the face mid-blink. */
+    maxMissedFrames: 5,
     /** The challenge fails if no blink is completed in this time. */
-    timeoutMs: 8000,
+    timeoutMs: 12000,
   },
 
   enrollment: {

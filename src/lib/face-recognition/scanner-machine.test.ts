@@ -51,6 +51,18 @@ describe("scanner state machine", () => {
     expect(state).toMatchObject({ status: "searching", guidance: "More than one face is visible." });
   });
 
+  it("keeps the blink challenge through a few frames where the face is missed", () => {
+    const missed: ScannerEvent = { type: "FACE_MISSED", guidance: "No face detected. Look at the camera." };
+    const blinkWithDropouts = [blink[0], blink[1], blink[2], missed, blink[3], missed, missed, blink[5]];
+    expect(play([{ type: "INIT_SUCCEEDED" }, { type: "START" }, ...stable, ...blinkWithDropouts]).status).toBe("verifying");
+  });
+
+  it("returns to searching once the face stays missing", () => {
+    const missed = Array.from({ length: FACE_RECOGNITION_CONFIG.blink.maxMissedFrames + 1 }, (): ScannerEvent => ({ type: "FACE_MISSED", guidance: "No face detected. Look at the camera." }));
+    const state = play([{ type: "INIT_SUCCEEDED" }, { type: "START" }, ...stable, ...missed]);
+    expect(state).toMatchObject({ status: "searching", guidance: "No face detected. Look at the camera." });
+  });
+
   it("fails the blink challenge on timeout", () => {
     const state = play([{ type: "INIT_SUCCEEDED" }, { type: "START" }, ...stable, { type: "LIVENESS_FRAME", ear: 0.3, now: FACE_RECOGNITION_CONFIG.blink.timeoutMs + 10 }]);
     expect(state).toMatchObject({ status: "error", kind: "liveness_timeout", fatal: false });
