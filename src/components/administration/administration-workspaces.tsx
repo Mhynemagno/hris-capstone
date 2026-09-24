@@ -2,24 +2,28 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useEffect, useMemo, useState, type ComponentProps, type ReactNode } from "react";
+import { Controller, useForm } from "react-hook-form";
 import type { z } from "zod";
 
 import { AdministrationFormPanel } from "@/components/administration/administration-form-panel";
 import { PaginatedTableControls } from "@/components/administration/paginated-table-controls";
+import { DeleteRecordDialog } from "@/components/deletion/delete-record-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Combobox } from "@/components/ui/combobox";
 import { EmptyTableState } from "@/components/ui/empty-table-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { LoadingState } from "@/components/ui/loading-state";
+import { nativeSelectClassName } from "@/components/ui/native-select";
+import { Textarea } from "@/components/ui/textarea";
 import {
-  useInviteInternalUser,
-  useDeleteManagedUser,
   useAuditLogs,
+  useDepartmentOptions,
   useDepartments,
+  useInviteInternalUser,
   useManagedUsers,
   useOrganizationSettings,
   usePositions,
@@ -28,9 +32,10 @@ import {
   useSavePosition,
   useUpdateManagedUser,
 } from "@/hooks/use-administration";
-import type { Department, ManagedUser, Position } from "@/lib/types/database";
 import type { AuditLogDisplay } from "@/lib/administration/audit-presentation";
+import type { Department, ManagedUser, Position } from "@/lib/types/database";
 import { APP_ROLES, type AppRole } from "@/lib/types/roles";
+import { cn } from "@/lib/utils";
 import {
   departmentSchema,
   internalInvitationSchema,
@@ -52,19 +57,98 @@ const roleLabels: Record<AppRole, string> = {
   management: "Management",
 };
 
-function ErrorWithRetry({ error, onRetry }: { error: Error; onRetry: () => void }) {
-  return <div className="space-y-3"><ErrorState message={error.message} /><Button onClick={onRetry} type="button" variant="outline">Retry</Button></div>;
+type StatusFilter = "active" | "inactive" | "";
+
+function errorMessage(cause: unknown, fallback: string) {
+  return cause instanceof Error ? cause.message : fallback;
 }
+
+function ErrorWithRetry({ error, onRetry }: { error: Error; onRetry: () => void }) {
+  return (
+    <div className="space-y-3">
+      <ErrorState message={error.message} />
+      <Button onClick={onRetry} type="button" variant="outline">Retry</Button>
+    </div>
+  );
+}
+
+function SuccessMessage({ message }: { message: string | null }) {
+  return (
+    <p aria-live="polite" className={cn("text-sm font-medium text-emerald-700 dark:text-emerald-400", !message && "sr-only")} role="status">
+      {message ?? ""}
+    </p>
+  );
+}
+
+function StatusBadge({ active }: { active: boolean }) {
+  return <Badge variant={active ? "secondary" : "outline"}>{active ? "Active" : "Inactive"}</Badge>;
+}
+
+function DataTable({ caption, children, columns, minWidth = "min-w-[640px]" }: { caption: string; children: ReactNode; columns: string[]; minWidth?: string }) {
+  return (
+    <div className="relative overflow-x-auto rounded-xl border bg-card">
+      <table className={cn("w-full text-left text-sm", minWidth)}>
+        <caption className="sr-only">{caption}</caption>
+        <thead className="bg-muted/60">
+          <tr>
+            {columns.map((column) => (
+              <th className="px-4 py-3 font-semibold text-muted-foreground" key={column} scope="col">
+                {column === "Actions" ? <span className="sr-only">Actions</span> : column}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>{children}</tbody>
+      </table>
+    </div>
+  );
+}
+
+function RowActions({ children }: { children: ReactNode }) {
+  return <td className="px-4 py-3"><div className="flex flex-wrap justify-end gap-2">{children}</div></td>;
+}
+
+function StatusSelect({ label, onChange, value }: { label: string; onChange: (value: StatusFilter) => void; value: StatusFilter }) {
+  return (
+    <select aria-label={label} className={cn(nativeSelectClassName, "sm:w-48")} onChange={(event) => onChange(event.target.value as StatusFilter)} value={value}>
+      <option value="">All statuses</option>
+      <option value="active">Active</option>
+      <option value="inactive">Inactive</option>
+    </select>
+  );
+}
+
+function CheckboxField({ children, ...props }: ComponentProps<"input"> & { children: ReactNode }) {
+  return (
+    <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm font-medium">
+      <input className="size-5 accent-primary" type="checkbox" {...props} />
+      {children}
+    </label>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Accounts
+// ---------------------------------------------------------------------------
 
 function UserFilters({ onRoleChange, onSearchChange, onStatusChange, role, search, status }: {
   onRoleChange: (value: AppRole | "") => void;
   onSearchChange: (value: string) => void;
-  onStatusChange: (value: "active" | "inactive" | "") => void;
+  onStatusChange: (value: StatusFilter) => void;
   role: AppRole | "";
   search: string;
-  status: "active" | "inactive" | "";
+  status: StatusFilter;
 }) {
-  return <div className="grid gap-3 sm:grid-cols-3"><Input aria-label="Search accounts" onChange={(event) => onSearchChange(event.target.value)} placeholder="Search name or email" value={search} /><select aria-label="Filter users by role" className="h-11 rounded-lg border border-input bg-background px-2.5 text-sm" onChange={(event) => onRoleChange(event.target.value as AppRole | "")} value={role}><option value="">All roles</option>{APP_ROLES.map((item) => <option key={item} value={item}>{roleLabels[item]}</option>)}</select><select aria-label="Filter users by status" className="h-11 rounded-lg border border-input bg-background px-2.5 text-sm" onChange={(event) => onStatusChange(event.target.value as "active" | "inactive" | "")} value={status}><option value="">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select></div>;
+  return (
+    <div className="grid flex-1 gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
+      <Input aria-label="Search accounts" onChange={(event) => onSearchChange(event.target.value)} placeholder="Search name or email" type="search" value={search} />
+      <select aria-label="Filter users by role" className={cn(nativeSelectClassName, "sm:w-52")} onChange={(event) => onRoleChange(event.target.value as AppRole | "")} value={role}>
+        <option value="">All roles</option>
+        {APP_ROLES.map((item) => <option key={item} value={item}>{roleLabels[item]}</option>)}
+      </select>
+      <StatusSelect label="Filter users by status" onChange={onStatusChange} value={status} />
+    </div>
+  );
 }
 
 function InvitationForm({ onSaved, pending }: { onSaved: (input: InternalInvitationInput) => Promise<void>; pending: boolean }) {
@@ -73,13 +157,40 @@ function InvitationForm({ onSaved, pending }: { onSaved: (input: InternalInvitat
     defaultValues: { email: "", firstName: "", lastName: "", role: "employee" },
   });
   const [error, setError] = useState<string | null>(null);
+  const errors = form.formState.errors;
 
   async function submit(values: InternalInvitationInput) {
     setError(null);
-    try { await onSaved(values); form.reset(); } catch (cause) { setError(cause instanceof Error ? cause.message : "We could not send the invitation."); }
+    try {
+      await onSaved(values);
+      form.reset();
+    } catch (cause) {
+      setError(errorMessage(cause, "We could not send the invitation."));
+    }
   }
 
-  return <form className="space-y-4" noValidate onSubmit={form.handleSubmit(submit)}><div className="grid gap-4 sm:grid-cols-2"><FormField error={form.formState.errors.firstName?.message} htmlFor="invite-first-name" label="First name"><Input aria-invalid={Boolean(form.formState.errors.firstName)} autoComplete="given-name" id="invite-first-name" {...form.register("firstName")} /></FormField><FormField error={form.formState.errors.lastName?.message} htmlFor="invite-last-name" label="Last name"><Input aria-invalid={Boolean(form.formState.errors.lastName)} autoComplete="family-name" id="invite-last-name" {...form.register("lastName")} /></FormField></div><FormField error={form.formState.errors.email?.message} htmlFor="invite-email" label="Email"><Input aria-invalid={Boolean(form.formState.errors.email)} autoComplete="email" id="invite-email" type="email" {...form.register("email")} /></FormField><FormField error={form.formState.errors.role?.message} htmlFor="invite-role" label="Role"><select className="h-11 w-full rounded-lg border border-input bg-background px-2.5 text-sm" id="invite-role" {...form.register("role")}>{APP_ROLES.filter((role) => role !== "applicant").map((role) => <option key={role} value={role}>{roleLabels[role]}</option>)}</select></FormField>{error ? <ErrorState message={error} /> : null}<Button className="h-11 w-full" disabled={pending} type="submit">{pending ? "Sending…" : "Send invitation"}</Button></form>;
+  return (
+    <form className="space-y-4" noValidate onSubmit={form.handleSubmit(submit)}>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <FormField error={errors.firstName?.message} htmlFor="invite-first-name" label="First name" required>
+          <Input autoComplete="given-name" id="invite-first-name" {...form.register("firstName")} />
+        </FormField>
+        <FormField error={errors.lastName?.message} htmlFor="invite-last-name" label="Last name" required>
+          <Input autoComplete="family-name" id="invite-last-name" {...form.register("lastName")} />
+        </FormField>
+      </div>
+      <FormField error={errors.email?.message} htmlFor="invite-email" label="Email" required>
+        <Input autoComplete="email" id="invite-email" type="email" {...form.register("email")} />
+      </FormField>
+      <FormField description="Applicants register themselves from the public careers page." error={errors.role?.message} htmlFor="invite-role" label="Role" required>
+        <select className={nativeSelectClassName} id="invite-role" {...form.register("role")}>
+          {APP_ROLES.filter((role) => role !== "applicant").map((role) => <option key={role} value={role}>{roleLabels[role]}</option>)}
+        </select>
+      </FormField>
+      {error ? <ErrorState message={error} /> : null}
+      <Button className="w-full" disabled={pending} type="submit">{pending ? "Sending…" : "Send invitation"}</Button>
+    </form>
+  );
 }
 
 function ManagedUserForm({ onSaved, pending, user }: { onSaved: (input: ManagedUserUpdateInput) => Promise<void>; pending: boolean; user: ManagedUser }) {
@@ -91,112 +202,611 @@ function ManagedUserForm({ onSaved, pending, user }: { onSaved: (input: ManagedU
 
   async function submit(values: ManagedUserUpdateInput) {
     setError(null);
-    try { await onSaved(values); } catch (cause) { setError(cause instanceof Error ? cause.message : "We could not update this account."); }
+    try {
+      await onSaved(values);
+    } catch (cause) {
+      setError(errorMessage(cause, "We could not update this account."));
+    }
   }
 
-  return <form className="space-y-4" noValidate onSubmit={form.handleSubmit(submit)}><p className="rounded-lg bg-muted px-3 py-2 text-sm"><span className="font-medium">{user.full_name || user.email || "Unnamed account"}</span><br />{user.email}</p><FormField error={form.formState.errors.role?.message} htmlFor="managed-role" label="Role"><select className="h-11 w-full rounded-lg border border-input bg-background px-2.5 text-sm" id="managed-role" {...form.register("role")}>{APP_ROLES.map((role) => <option key={role} value={role}>{roleLabels[role]}</option>)}</select></FormField><label className="flex min-h-11 items-center gap-2 text-sm font-medium"><input className="size-4" type="checkbox" {...form.register("isActive")} />Account is active</label>{error ? <ErrorState message={error} /> : null}<Button className="h-11 w-full" disabled={pending} type="submit">{pending ? "Saving…" : "Save account"}</Button></form>;
+  return (
+    <form className="space-y-4" noValidate onSubmit={form.handleSubmit(submit)}>
+      <div className="rounded-lg bg-muted px-4 py-3">
+        <p className="font-semibold">{user.full_name || user.email || "Unnamed account"}</p>
+        <p className="text-sm text-muted-foreground">{user.email}</p>
+      </div>
+      <FormField error={form.formState.errors.role?.message} htmlFor="managed-role" label="Role" required>
+        <select className={nativeSelectClassName} id="managed-role" {...form.register("role")}>
+          {APP_ROLES.map((role) => <option key={role} value={role}>{roleLabels[role]}</option>)}
+        </select>
+      </FormField>
+      <CheckboxField {...form.register("isActive")}>Account is active (can sign in)</CheckboxField>
+      {error ? <ErrorState message={error} /> : null}
+      <Button className="w-full" disabled={pending} type="submit">{pending ? "Saving…" : "Save account"}</Button>
+    </form>
+  );
 }
 
-function ManagedUsersTable({ onDelete, onEdit, rows, showProfiles }: { onDelete: (user: ManagedUser) => void; onEdit: (user: ManagedUser) => void; rows: ManagedUser[]; showProfiles: boolean }) {
-  return <div className="overflow-x-auto rounded-xl border"><table className="w-full min-w-[680px] text-left text-sm"><thead className="bg-muted text-muted-foreground"><tr><th className="px-4 py-3">Account</th><th className="px-4 py-3">Role</th><th className="px-4 py-3">Status</th><th className="px-4 py-3"><span className="sr-only">Actions</span></th></tr></thead><tbody>{rows.length ? rows.map((user) => <tr className="border-t" key={user.id}><td className="px-4 py-3"><p className="font-medium">{user.full_name || "Unnamed account"}</p><p className="text-muted-foreground">{user.email}</p>{user.pending_activation ? <Badge className="mt-2" variant="outline">Pending employee activation</Badge> : null}</td><td className="px-4 py-3">{roleLabels[user.role]}</td><td className="px-4 py-3"><Badge variant={user.is_active ? "secondary" : "outline"}>{user.is_active ? "Active" : "Inactive"}</Badge></td><td className="space-x-2 px-4 py-3 text-right">{showProfiles && user.employee_id ? <Link aria-label={`View profile for ${user.full_name || user.email || "account"}`} className="inline-flex min-h-11 items-center rounded-lg border px-3 text-sm font-medium hover:bg-muted" href={`/admin/users/${user.id}/profile`}>View profile</Link> : null}<Button onClick={() => onEdit(user)} type="button" variant="outline">Edit</Button><Button aria-label={`Delete ${user.full_name || user.email || "account"}`} onClick={() => onDelete(user)} type="button" variant="destructive">Delete account</Button></td></tr>) : <tr><EmptyTableState colSpan={4} message="No accounts match these filters." /></tr>}</tbody></table></div>;
+function accountName(user: ManagedUser) {
+  return user.full_name || user.email || "account";
+}
+
+function ManagedUsersTable({ onDeactivate, onDelete, onEdit, pendingId, rows, showProfiles }: {
+  onDeactivate: (user: ManagedUser) => void;
+  onDelete: (user: ManagedUser) => void;
+  onEdit: (user: ManagedUser) => void;
+  pendingId: string | null;
+  rows: ManagedUser[];
+  showProfiles: boolean;
+}) {
+  return (
+    <DataTable caption="Managed accounts" columns={["Account", "Role", "Status", "Actions"]} minWidth="min-w-[760px]">
+      {rows.length ? rows.map((user) => (
+        <tr className="border-t" key={user.id}>
+          <td className="px-4 py-3 align-top">
+            <p className="font-semibold">{user.full_name || "Unnamed account"}</p>
+            <p className="break-all text-muted-foreground">{user.email}</p>
+            {user.pending_activation ? <Badge className="mt-2" variant="outline">Pending employee activation</Badge> : null}
+          </td>
+          <td className="px-4 py-3 align-top">{roleLabels[user.role]}</td>
+          <td className="px-4 py-3 align-top"><StatusBadge active={user.is_active} /></td>
+          <RowActions>
+            {showProfiles && user.employee_id ? (
+              <Link aria-label={`View profile for ${accountName(user)}`} className="inline-flex min-h-10 items-center rounded-lg border px-3 text-sm font-semibold hover:bg-muted" href={`/admin/users/${user.id}/profile`}>
+                View profile
+              </Link>
+            ) : null}
+            <Button onClick={() => onEdit(user)} size="sm" type="button" variant="outline">Edit</Button>
+            {user.is_active ? (
+              <Button aria-label={`Deactivate ${accountName(user)}`} disabled={pendingId === user.id} onClick={() => onDeactivate(user)} size="sm" type="button" variant="outline">
+                {pendingId === user.id ? "Deactivating…" : "Deactivate"}
+              </Button>
+            ) : null}
+            <Button aria-label={`Delete ${accountName(user)}`} onClick={() => onDelete(user)} size="sm" type="button" variant="destructive">Delete</Button>
+          </RowActions>
+        </tr>
+      )) : <tr><EmptyTableState colSpan={4} message="No accounts match these filters. Clear the search or filters to see all accounts." /></tr>}
+    </DataTable>
+  );
 }
 
 function ManagedAccountsWorkspace({ invite }: { invite: boolean }) {
   const [search, setSearch] = useState("");
   const [role, setRole] = useState<AppRole | "">("");
-  const [status, setStatus] = useState<"active" | "inactive" | "">("");
+  const [status, setStatus] = useState<StatusFilter>("");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<ManagedUser | null>(null);
   const [deleting, setDeleting] = useState<ManagedUser | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [pendingId, setPendingId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const filters = { page, pageSize: 20 as const, ...(search ? { search } : {}), ...(role ? { role } : {}), ...(status ? { status } : {}) };
   const result = useManagedUsers(filters);
   const inviteMutation = useInviteInternalUser();
   const updateMutation = useUpdateManagedUser();
-  const deleteMutation = useDeleteManagedUser();
 
-  function resetPage(callback: () => void) { callback(); setPage(1); }
+  function resetPage(callback: () => void) {
+    callback();
+    setPage(1);
+  }
+
+  async function deactivate(user: ManagedUser) {
+    setActionError(null);
+    setNotice(null);
+    setPendingId(user.id);
+    try {
+      await updateMutation.mutateAsync({ input: { userId: user.id, role: user.role, isActive: false } });
+      setNotice(`${accountName(user)} was deactivated and can no longer sign in.`);
+    } catch (cause) {
+      setActionError(errorMessage(cause, "We could not deactivate this account."));
+      throw cause;
+    } finally {
+      setPendingId(null);
+    }
+  }
+
   if (result.isLoading) return <LoadingState label="Loading accounts…" />;
   if (result.error) return <ErrorWithRetry error={result.error} onRetry={() => void result.refetch()} />;
 
-  return <div className="space-y-5"><div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><UserFilters onRoleChange={(value) => resetPage(() => setRole(value))} onSearchChange={(value) => resetPage(() => setSearch(value))} onStatusChange={(value) => resetPage(() => setStatus(value))} role={role} search={search} status={status} />{invite ? <Button className="h-11 w-full sm:w-auto" onClick={() => setInviteOpen(true)} type="button">Invite account</Button> : null}</div><ManagedUsersTable onDelete={setDeleting} onEdit={setSelected} rows={result.data?.rows ?? []} showProfiles={invite} /><PaginatedTableControls onPageChange={setPage} page={page} pageSize={20} totalCount={result.data?.count ?? 0} />{invite ? <AdministrationFormPanel description="Invite an internal account without exposing administrative credentials." onOpenChange={setInviteOpen} open={inviteOpen} title="Invite account"><InvitationForm onSaved={async (input) => { await inviteMutation.mutateAsync(input); setInviteOpen(false); }} pending={inviteMutation.isPending} /></AdministrationFormPanel> : null}{selected ? <AdministrationFormPanel description="Role and status changes use the audited protected workflow." onOpenChange={(open) => { if (!open) setSelected(null); }} open title="Manage account"><ManagedUserForm key={selected.id} onSaved={async (input) => { await updateMutation.mutateAsync({ input }); setSelected(null); }} pending={updateMutation.isPending} user={selected} /></AdministrationFormPanel> : null}{deleting ? <AdministrationFormPanel description="This permanently removes the sign-in account. Employee records will be kept." onOpenChange={(open) => { if (!open) setDeleting(null); }} open title="Delete account"><div className="space-y-4"><p>Delete <strong>{deleting.full_name || deleting.email || "this account"}</strong>? This cannot be undone.</p><div className="flex flex-col gap-2 sm:flex-row sm:justify-end"><Button className="min-h-11" disabled={deleteMutation.isPending} onClick={() => setDeleting(null)} type="button" variant="outline">Cancel</Button><Button className="min-h-11" disabled={deleteMutation.isPending} onClick={() => void deleteMutation.mutateAsync({ userId: deleting.id }).then(() => setDeleting(null))} type="button" variant="destructive">{deleteMutation.isPending ? "Deleting…" : "Delete account"}</Button></div></div></AdministrationFormPanel> : null}</div>;
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <UserFilters
+          onRoleChange={(value) => resetPage(() => setRole(value))}
+          onSearchChange={(value) => resetPage(() => setSearch(value))}
+          onStatusChange={(value) => resetPage(() => setStatus(value))}
+          role={role}
+          search={search}
+          status={status}
+        />
+        {invite ? <Button className="w-full sm:w-auto" onClick={() => setInviteOpen(true)} type="button">Invite account</Button> : null}
+      </div>
+      <p className="text-sm text-muted-foreground">
+        <strong>Deactivate</strong> blocks sign-in but keeps the account and everything it created. <strong>Delete</strong> permanently removes an account that has no dependent records.
+      </p>
+      {actionError ? <ErrorState message={actionError} /> : null}
+      <SuccessMessage message={notice} />
+      <ManagedUsersTable
+        onDeactivate={(user) => void deactivate(user).catch(() => undefined)}
+        onDelete={setDeleting}
+        onEdit={setSelected}
+        pendingId={pendingId}
+        rows={result.data?.rows ?? []}
+        showProfiles={invite}
+      />
+      <PaginatedTableControls onPageChange={setPage} page={page} pageSize={20} totalCount={result.data?.count ?? 0} />
+      {invite ? (
+        <AdministrationFormPanel description="Invite an internal account without exposing administrative credentials." onOpenChange={setInviteOpen} open={inviteOpen} title="Invite account">
+          <InvitationForm
+            onSaved={async (input) => {
+              await inviteMutation.mutateAsync(input);
+              setInviteOpen(false);
+              setNotice(`Invitation sent to ${input.email}.`);
+            }}
+            pending={inviteMutation.isPending}
+          />
+        </AdministrationFormPanel>
+      ) : null}
+      {selected ? (
+        <AdministrationFormPanel description="Role and status changes use the audited protected workflow." onOpenChange={(open) => { if (!open) setSelected(null); }} open title="Manage account">
+          <ManagedUserForm
+            key={selected.id}
+            onSaved={async (input) => {
+              await updateMutation.mutateAsync({ input });
+              setSelected(null);
+              setNotice("Account changes saved.");
+            }}
+            pending={updateMutation.isPending}
+            user={selected}
+          />
+        </AdministrationFormPanel>
+      ) : null}
+      <DeleteRecordDialog
+        alternative={deleting?.is_active ? { label: "Deactivate instead", onSelect: () => deactivate(deleting) } : undefined}
+        entityId={deleting?.id ?? null}
+        entityType="managed_user"
+        noun="account"
+        onClose={() => setDeleting(null)}
+        onDeleted={() => setNotice("The account was permanently deleted.")}
+      />
+    </div>
+  );
 }
 
-export function UsersWorkspace() { return <ManagedAccountsWorkspace invite />; }
+export function UsersWorkspace() {
+  return <ManagedAccountsWorkspace invite />;
+}
 
-function ReferenceFilters({ label, onSearchChange, onStatusChange, search, status }: { label: string; onSearchChange: (value: string) => void; onStatusChange: (value: "active" | "inactive" | "") => void; search: string; status: "active" | "inactive" | "" }) {
-  return <div className="grid gap-3 sm:grid-cols-2"><Input aria-label={`Search ${label}`} onChange={(event) => onSearchChange(event.target.value)} placeholder={`Search ${label}`} value={search} /><select aria-label={`Filter ${label} by status`} className="h-11 rounded-lg border border-input bg-background px-2.5 text-sm" onChange={(event) => onStatusChange(event.target.value as "active" | "inactive" | "")} value={status}><option value="">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select></div>;
+// ---------------------------------------------------------------------------
+// Departments
+// ---------------------------------------------------------------------------
+
+function ReferenceFilters({ label, onSearchChange, onStatusChange, search, status }: { label: string; onSearchChange: (value: string) => void; onStatusChange: (value: StatusFilter) => void; search: string; status: StatusFilter }) {
+  return (
+    <div className="grid flex-1 gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+      <Input aria-label={`Search ${label}`} onChange={(event) => onSearchChange(event.target.value)} placeholder={`Search ${label}`} type="search" value={search} />
+      <StatusSelect label={`Filter ${label} by status`} onChange={onStatusChange} value={status} />
+    </div>
+  );
 }
 
 function DepartmentForm({ department, onSaved, pending }: { department?: Department; onSaved: (input: DepartmentInput) => Promise<void>; pending: boolean }) {
-  const form = useForm<z.input<typeof departmentSchema>, unknown, DepartmentInput>({ resolver: zodResolver(departmentSchema), defaultValues: { name: department?.name ?? "", isActive: department?.is_active ?? true } });
+  const form = useForm<z.input<typeof departmentSchema>, unknown, DepartmentInput>({
+    resolver: zodResolver(departmentSchema),
+    defaultValues: { name: department?.name ?? "", isActive: department?.is_active ?? true },
+  });
   const [error, setError] = useState<string | null>(null);
-  async function submit(values: DepartmentInput) { setError(null); try { await onSaved(values); } catch (cause) { setError(cause instanceof Error ? cause.message : "We could not save the department."); } }
-  return <form className="space-y-4" noValidate onSubmit={form.handleSubmit(submit)}><FormField error={form.formState.errors.name?.message} htmlFor="department-name" label="Name"><Input aria-invalid={Boolean(form.formState.errors.name)} id="department-name" {...form.register("name")} /></FormField><label className="flex min-h-11 items-center gap-2 text-sm font-medium"><input className="size-4" type="checkbox" {...form.register("isActive")} />Department is active</label>{error ? <ErrorState message={error} /> : null}<Button className="h-11 w-full" disabled={pending} type="submit">{pending ? "Saving…" : "Save department"}</Button></form>;
+
+  async function submit(values: DepartmentInput) {
+    setError(null);
+    try {
+      await onSaved(values);
+    } catch (cause) {
+      setError(errorMessage(cause, "We could not save the department."));
+    }
+  }
+
+  return (
+    <form className="space-y-4" noValidate onSubmit={form.handleSubmit(submit)}>
+      <FormField error={form.formState.errors.name?.message} htmlFor="department-name" label="Name" required>
+        <Input id="department-name" {...form.register("name")} />
+      </FormField>
+      <CheckboxField {...form.register("isActive")}>Department is active</CheckboxField>
+      {error ? <ErrorState message={error} /> : null}
+      <Button className="w-full" disabled={pending} type="submit">{pending ? "Saving…" : "Save department"}</Button>
+    </form>
+  );
 }
 
 export function DepartmentsWorkspace() {
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<"active" | "inactive" | "">("");
+  const [status, setStatus] = useState<StatusFilter>("");
   const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<Department | null>(null);
   const [creating, setCreating] = useState(false);
+  const [deleting, setDeleting] = useState<Department | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const result = useDepartments({ page, pageSize: 20, ...(search ? { search } : {}), ...(status ? { status } : {}) });
   const save = useSaveDepartment();
-  const resetPage = (callback: () => void) => { callback(); setPage(1); };
-  async function deactivate(department: Department) {
+  const resetPage = (callback: () => void) => {
+    callback();
+    setPage(1);
+  };
+
+  async function setActive(department: Department, isActive: boolean) {
     setActionError(null);
-    try { await save.mutateAsync({ departmentId: department.id, input: { name: department.name, isActive: false } }); }
-    catch (cause) { setActionError(cause instanceof Error ? cause.message : "We could not deactivate the department."); }
+    setNotice(null);
+    try {
+      await save.mutateAsync({ departmentId: department.id, input: { name: department.name, isActive } });
+      setNotice(`${department.name} was ${isActive ? "reactivated" : "deactivated"}.`);
+    } catch (cause) {
+      setActionError(errorMessage(cause, "We could not update the department."));
+      throw cause;
+    }
   }
+
   if (result.isLoading) return <LoadingState label="Loading departments…" />;
   if (result.error) return <ErrorWithRetry error={result.error} onRetry={() => void result.refetch()} />;
   const rows = result.data?.rows ?? [];
-  return <div className="space-y-5">
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-      <ReferenceFilters label="departments" onSearchChange={(value) => resetPage(() => setSearch(value))} onStatusChange={(value) => resetPage(() => setStatus(value))} search={search} status={status} />
-      <Button className="h-11 w-full sm:w-auto" onClick={() => setCreating(true)} type="button">Add department</Button>
+
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <ReferenceFilters label="departments" onSearchChange={(value) => resetPage(() => setSearch(value))} onStatusChange={(value) => resetPage(() => setStatus(value))} search={search} status={status} />
+        <Button className="w-full sm:w-auto" onClick={() => setCreating(true)} type="button">Add department</Button>
+      </div>
+      <p className="text-sm text-muted-foreground">
+        Deactivated departments are hidden from new records but stay on historic ones. Only a department nothing refers to can be deleted.
+      </p>
+      {actionError ? <ErrorState message={actionError} /> : null}
+      <SuccessMessage message={notice} />
+      <DataTable caption="Departments" columns={["Department", "Status", "Actions"]} minWidth="min-w-[560px]">
+        {rows.length ? rows.map((department) => (
+          <tr className="border-t" key={department.id}>
+            <td className="px-4 py-3 font-semibold">{department.name}</td>
+            <td className="px-4 py-3"><StatusBadge active={department.is_active} /></td>
+            <RowActions>
+              <Button onClick={() => setEditing(department)} size="sm" type="button" variant="outline">Edit</Button>
+              <Button
+                aria-label={`${department.is_active ? "Deactivate" : "Activate"} ${department.name}`}
+                disabled={save.isPending}
+                onClick={() => void setActive(department, !department.is_active).catch(() => undefined)}
+                size="sm"
+                type="button"
+                variant="outline"
+              >
+                {department.is_active ? "Deactivate" : "Activate"}
+              </Button>
+              <Button aria-label={`Delete ${department.name}`} onClick={() => setDeleting(department)} size="sm" type="button" variant="destructive">Delete</Button>
+            </RowActions>
+          </tr>
+        )) : <tr><EmptyTableState colSpan={3} message="No departments match these filters." /></tr>}
+      </DataTable>
+      <PaginatedTableControls onPageChange={setPage} page={page} pageSize={20} totalCount={result.data?.count ?? 0} />
+      <AdministrationFormPanel description="Create a department for positions, personnel, and job openings." onOpenChange={setCreating} open={creating} title="Add department">
+        <DepartmentForm onSaved={async (input) => { await save.mutateAsync({ input }); setCreating(false); setNotice(`${input.name} was added.`); }} pending={save.isPending} />
+      </AdministrationFormPanel>
+      {editing ? (
+        <AdministrationFormPanel description="Changes are audited and historical references are preserved." onOpenChange={(open) => { if (!open) setEditing(null); }} open title="Edit department">
+          <DepartmentForm department={editing} key={editing.id} onSaved={async (input) => { await save.mutateAsync({ input, departmentId: editing.id }); setEditing(null); setNotice("Department saved."); }} pending={save.isPending} />
+        </AdministrationFormPanel>
+      ) : null}
+      <DeleteRecordDialog
+        alternative={deleting?.is_active ? { label: "Deactivate instead", onSelect: () => setActive(deleting, false) } : undefined}
+        entityId={deleting?.id ?? null}
+        entityType="department"
+        noun="department"
+        onClose={() => setDeleting(null)}
+        onDeleted={() => setNotice("The department was permanently deleted.")}
+      />
     </div>
-    {actionError ? <ErrorState message={actionError} /> : null}
-    <div className="overflow-x-auto rounded-xl border"><table className="w-full min-w-[540px] text-left text-sm"><thead className="bg-muted text-muted-foreground"><tr><th className="px-4 py-3">Department</th><th className="px-4 py-3">Status</th><th className="px-4 py-3"><span className="sr-only">Actions</span></th></tr></thead><tbody>{rows.length ? rows.map((department) => <tr className="border-t" key={department.id}><td className="px-4 py-3 font-medium">{department.name}</td><td className="px-4 py-3"><Badge variant={department.is_active ? "secondary" : "outline"}>{department.is_active ? "Active" : "Inactive"}</Badge></td><td className="space-x-2 px-4 py-3 text-right"><Button onClick={() => setEditing(department)} type="button" variant="outline">Edit</Button>{department.is_active ? <Button aria-label={`Deactivate ${department.name}`} onClick={() => void deactivate(department)} type="button" variant="destructive">Deactivate</Button> : null}</td></tr>) : <tr><EmptyTableState colSpan={3} message="No departments match these filters." /></tr>}</tbody></table></div>
-    <PaginatedTableControls onPageChange={setPage} page={page} pageSize={20} totalCount={result.data?.count ?? 0} />
-    <AdministrationFormPanel description="Create or update a department without deleting historic references." onOpenChange={setCreating} open={creating} title="Add department"><DepartmentForm onSaved={async (input) => { await save.mutateAsync({ input }); setCreating(false); }} pending={save.isPending} /></AdministrationFormPanel>
-    {editing ? <AdministrationFormPanel description="Changes are audited and historical references are preserved." onOpenChange={(open) => { if (!open) setEditing(null); }} open title="Edit department"><DepartmentForm department={editing} key={editing.id} onSaved={async (input) => { await save.mutateAsync({ input, departmentId: editing.id }); setEditing(null); }} pending={save.isPending} /></AdministrationFormPanel> : null}
-  </div>;
+  );
 }
 
+// ---------------------------------------------------------------------------
+// Positions
+// ---------------------------------------------------------------------------
+
 function PositionForm({ departments, onSaved, pending, position }: { departments: Department[]; onSaved: (input: PositionInput) => Promise<void>; pending: boolean; position?: Position }) {
-  const form = useForm<z.input<typeof positionSchema>, unknown, PositionInput>({ resolver: zodResolver(positionSchema), defaultValues: { departmentId: position?.department_id ?? null, title: position?.title ?? "", code: position?.code ?? "", description: position?.description ?? "", isActive: position?.is_active ?? true } });
+  const form = useForm<z.input<typeof positionSchema>, unknown, PositionInput>({
+    resolver: zodResolver(positionSchema),
+    defaultValues: {
+      departmentId: position?.department_id ?? null,
+      title: position?.title ?? "",
+      code: position?.code ?? "",
+      description: position?.description ?? "",
+      isActive: position?.is_active ?? true,
+    },
+  });
   const [error, setError] = useState<string | null>(null);
-  async function submit(values: PositionInput) { setError(null); try { await onSaved(values); } catch (cause) { setError(cause instanceof Error ? cause.message : "We could not save the position."); } }
-  return <form className="space-y-4" noValidate onSubmit={form.handleSubmit(submit)}><FormField error={form.formState.errors.title?.message} htmlFor="position-title" label="Title"><Input aria-invalid={Boolean(form.formState.errors.title)} id="position-title" {...form.register("title")} /></FormField><FormField htmlFor="position-department" label="Department"><select className="h-11 w-full rounded-lg border border-input bg-background px-2.5 text-sm" id="position-department" {...form.register("departmentId", { setValueAs: (value) => value ? Number(value) : null })}><option value="">None</option>{departments.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}</select></FormField><FormField error={form.formState.errors.code?.message} htmlFor="position-code" label="Code"><Input id="position-code" {...form.register("code")} /></FormField><FormField error={form.formState.errors.description?.message} htmlFor="position-description" label="Description"><textarea className="min-h-24 w-full rounded-lg border border-input bg-background px-2.5 py-2 text-sm" id="position-description" {...form.register("description")} /></FormField><label className="flex min-h-11 items-center gap-2 text-sm font-medium"><input className="size-4" type="checkbox" {...form.register("isActive")} />Position is active</label>{error ? <ErrorState message={error} /> : null}<Button className="h-11 w-full" disabled={pending} type="submit">{pending ? "Saving…" : "Save position"}</Button></form>;
+  const errors = form.formState.errors;
+  // Active departments, plus the position's current department even if it was deactivated.
+  const choices = departments.filter((department) => department.is_active || department.id === position?.department_id);
+
+  async function submit(values: PositionInput) {
+    setError(null);
+    try {
+      await onSaved(values);
+    } catch (cause) {
+      setError(errorMessage(cause, "We could not save the position."));
+    }
+  }
+
+  return (
+    <form className="space-y-4" noValidate onSubmit={form.handleSubmit(submit)}>
+      <FormField error={errors.title?.message} htmlFor="position-title" label="Title" required>
+        <Input id="position-title" {...form.register("title")} />
+      </FormField>
+      <FormField description="Job openings and personnel records only offer positions from their department." error={errors.departmentId?.message} htmlFor="position-department" label="Department">
+        <select className={nativeSelectClassName} id="position-department" {...form.register("departmentId", { setValueAs: (value) => (value ? Number(value) : null) })}>
+          <option value="">No department</option>
+          {choices.map((department) => (
+            <option key={department.id} value={department.id}>{department.name}{department.is_active ? "" : " (inactive)"}</option>
+          ))}
+        </select>
+      </FormField>
+      <FormField description="Optional short code, for example PAT." error={errors.code?.message} htmlFor="position-code" label="Code">
+        <Input id="position-code" {...form.register("code")} />
+      </FormField>
+      <FormField error={errors.description?.message} htmlFor="position-description" label="Description">
+        <Textarea id="position-description" {...form.register("description")} />
+      </FormField>
+      <CheckboxField {...form.register("isActive")}>Position is active</CheckboxField>
+      {error ? <ErrorState message={error} /> : null}
+      <Button className="w-full" disabled={pending} type="submit">{pending ? "Saving…" : "Save position"}</Button>
+    </form>
+  );
 }
 
 export function PositionsWorkspace() {
-  const [search, setSearch] = useState(""); const [status, setStatus] = useState<"active" | "inactive" | "">(""); const [page, setPage] = useState(1); const [editing, setEditing] = useState<Position | null>(null); const [creating, setCreating] = useState(false);
-  const result = usePositions({ page, pageSize: 20, ...(search ? { search } : {}), ...(status ? { status } : {}) }); const departmentResult = useDepartments({ page: 1, pageSize: 20, status: "active" }); const save = useSavePosition(); const departments = departmentResult.data?.rows ?? [];
-  const resetPage = (callback: () => void) => { callback(); setPage(1); };
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<StatusFilter>("");
+  const [page, setPage] = useState(1);
+  const [editing, setEditing] = useState<Position | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [deleting, setDeleting] = useState<Position | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const result = usePositions({ page, pageSize: 20, ...(search ? { search } : {}), ...(status ? { status } : {}) });
+  const departmentResult = useDepartmentOptions();
+  const save = useSavePosition();
+  const departments = useMemo(() => departmentResult.data ?? [], [departmentResult.data]);
+  const departmentNames = useMemo(() => new Map(departments.map((department) => [department.id, department.name])), [departments]);
+  const resetPage = (callback: () => void) => {
+    callback();
+    setPage(1);
+  };
+
+  async function setActive(position: Position, isActive: boolean) {
+    setActionError(null);
+    setNotice(null);
+    try {
+      await save.mutateAsync({
+        positionId: position.id,
+        input: { departmentId: position.department_id, title: position.title, code: position.code ?? undefined, description: position.description ?? undefined, isActive },
+      });
+      setNotice(`${position.title} was ${isActive ? "reactivated" : "deactivated"}.`);
+    } catch (cause) {
+      setActionError(errorMessage(cause, "We could not update the position."));
+      throw cause;
+    }
+  }
+
   if (result.isLoading) return <LoadingState label="Loading positions…" />;
   if (result.error) return <ErrorWithRetry error={result.error} onRetry={() => void result.refetch()} />;
   const rows = result.data?.rows ?? [];
-  return <div className="space-y-5"><div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><ReferenceFilters label="positions" onSearchChange={(value) => resetPage(() => setSearch(value))} onStatusChange={(value) => resetPage(() => setStatus(value))} search={search} status={status} /><Button className="h-11 w-full sm:w-auto" onClick={() => setCreating(true)} type="button">Add position</Button></div><div className="overflow-x-auto rounded-xl border"><table className="w-full min-w-[620px] text-left text-sm"><thead className="bg-muted text-muted-foreground"><tr><th className="px-4 py-3">Position</th><th className="px-4 py-3">Code</th><th className="px-4 py-3">Status</th><th className="px-4 py-3"><span className="sr-only">Actions</span></th></tr></thead><tbody>{rows.length ? rows.map((position) => <tr className="border-t" key={position.id}><td className="px-4 py-3 font-medium">{position.title}</td><td className="px-4 py-3 text-muted-foreground">{position.code || "—"}</td><td className="px-4 py-3"><Badge variant={position.is_active ? "secondary" : "outline"}>{position.is_active ? "Active" : "Inactive"}</Badge></td><td className="space-x-2 px-4 py-3 text-right"><Button onClick={() => setEditing(position)} type="button" variant="outline">Edit</Button>{position.is_active ? <Button aria-label={`Deactivate ${position.title}`} onClick={() => void save.mutateAsync({ positionId: position.id, input: { departmentId: position.department_id, title: position.title, code: position.code ?? undefined, description: position.description ?? undefined, isActive: false } })} type="button" variant="destructive">Deactivate</Button> : null}</td></tr>) : <tr><EmptyTableState colSpan={4} message="No positions match these filters." /></tr>}</tbody></table></div><PaginatedTableControls onPageChange={setPage} page={page} pageSize={20} totalCount={result.data?.count ?? 0} /><AdministrationFormPanel description="Create or update a position and its optional department assignment." onOpenChange={setCreating} open={creating} title="Add position"><PositionForm departments={departments} onSaved={async (input) => { await save.mutateAsync({ input }); setCreating(false); }} pending={save.isPending} /></AdministrationFormPanel>{editing ? <AdministrationFormPanel description="Changes preserve position history and department references." onOpenChange={(open) => { if (!open) setEditing(null); }} open title="Edit position"><PositionForm departments={departments} key={editing.id} onSaved={async (input) => { await save.mutateAsync({ input, positionId: editing.id }); setEditing(null); }} pending={save.isPending} position={editing} /></AdministrationFormPanel> : null}</div>;
+
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <ReferenceFilters label="positions" onSearchChange={(value) => resetPage(() => setSearch(value))} onStatusChange={(value) => resetPage(() => setStatus(value))} search={search} status={status} />
+        <Button className="w-full sm:w-auto" onClick={() => setCreating(true)} type="button">Add position</Button>
+      </div>
+      <p className="text-sm text-muted-foreground">
+        Deactivate positions that are no longer used. Only a position with no personnel, openings, service history, or promotion criteria can be deleted.
+      </p>
+      {actionError ? <ErrorState message={actionError} /> : null}
+      <SuccessMessage message={notice} />
+      <DataTable caption="Positions" columns={["Position", "Department", "Code", "Status", "Actions"]} minWidth="min-w-[760px]">
+        {rows.length ? rows.map((position) => (
+          <tr className="border-t" key={position.id}>
+            <td className="px-4 py-3 font-semibold">{position.title}</td>
+            <td className="px-4 py-3">{position.department_id ? departmentNames.get(position.department_id) ?? "—" : "No department"}</td>
+            <td className="px-4 py-3 text-muted-foreground">{position.code || "—"}</td>
+            <td className="px-4 py-3"><StatusBadge active={position.is_active} /></td>
+            <RowActions>
+              <Button onClick={() => setEditing(position)} size="sm" type="button" variant="outline">Edit</Button>
+              <Button
+                aria-label={`${position.is_active ? "Deactivate" : "Activate"} ${position.title}`}
+                disabled={save.isPending}
+                onClick={() => void setActive(position, !position.is_active).catch(() => undefined)}
+                size="sm"
+                type="button"
+                variant="outline"
+              >
+                {position.is_active ? "Deactivate" : "Activate"}
+              </Button>
+              <Button aria-label={`Delete ${position.title}`} onClick={() => setDeleting(position)} size="sm" type="button" variant="destructive">Delete</Button>
+            </RowActions>
+          </tr>
+        )) : <tr><EmptyTableState colSpan={5} message="No positions match these filters." /></tr>}
+      </DataTable>
+      <PaginatedTableControls onPageChange={setPage} page={page} pageSize={20} totalCount={result.data?.count ?? 0} />
+      <AdministrationFormPanel description="Create a position and choose the department it belongs to." onOpenChange={setCreating} open={creating} title="Add position">
+        <PositionForm departments={departments} onSaved={async (input) => { await save.mutateAsync({ input }); setCreating(false); setNotice(`${input.title} was added.`); }} pending={save.isPending} />
+      </AdministrationFormPanel>
+      {editing ? (
+        <AdministrationFormPanel description="Changes preserve position history and department references." onOpenChange={(open) => { if (!open) setEditing(null); }} open title="Edit position">
+          <PositionForm departments={departments} key={editing.id} onSaved={async (input) => { await save.mutateAsync({ input, positionId: editing.id }); setEditing(null); setNotice("Position saved."); }} pending={save.isPending} position={editing} />
+        </AdministrationFormPanel>
+      ) : null}
+      <DeleteRecordDialog
+        alternative={deleting?.is_active ? { label: "Deactivate instead", onSelect: () => setActive(deleting, false) } : undefined}
+        entityId={deleting?.id ?? null}
+        entityType="position"
+        noun="position"
+        onClose={() => setDeleting(null)}
+        onDeleted={() => setNotice("The position was permanently deleted.")}
+      />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Settings
+// ---------------------------------------------------------------------------
+
+function timeZoneOptions(current: string | undefined) {
+  const zones = typeof Intl.supportedValuesOf === "function" ? Intl.supportedValuesOf("timeZone") : ["Asia/Manila", "UTC"];
+  const all = current && !zones.includes(current) ? [current, ...zones] : zones;
+  return all.map((zone) => ({ value: zone, label: zone.replaceAll("_", " ") }));
 }
 
 export function SettingsWorkspace() {
-  const result = useOrganizationSettings(); const save = useSaveOrganizationSettings(); const form = useForm<OrganizationSettingsInput>({ resolver: zodResolver(organizationSettingsSchema), defaultValues: { organizationName: "", supportEmail: "", defaultTimezone: "" } }); const [error, setError] = useState<string | null>(null); const [open, setOpen] = useState(false);
-  useEffect(() => { if (result.data) form.reset({ organizationName: result.data.organization_name, supportEmail: result.data.support_email, defaultTimezone: result.data.default_timezone }); }, [form, result.data]);
+  const result = useOrganizationSettings();
+  const save = useSaveOrganizationSettings();
+  const form = useForm<OrganizationSettingsInput>({
+    resolver: zodResolver(organizationSettingsSchema),
+    defaultValues: { organizationName: "", supportEmail: "", defaultTimezone: "" },
+  });
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
+  const zones = useMemo(() => timeZoneOptions(result.data?.default_timezone), [result.data?.default_timezone]);
+
+  useEffect(() => {
+    if (result.data) form.reset({ organizationName: result.data.organization_name, supportEmail: result.data.support_email, defaultTimezone: result.data.default_timezone });
+  }, [form, result.data]);
+
   if (result.isLoading) return <LoadingState label="Loading organization settings…" />;
   if (result.error) return <ErrorWithRetry error={result.error} onRetry={() => void result.refetch()} />;
-  async function submit(values: OrganizationSettingsInput) { setError(null); try { await save.mutateAsync(values); setOpen(false); } catch (cause) { setError(cause instanceof Error ? cause.message : "We could not save the settings."); } }
+
+  async function submit(values: OrganizationSettingsInput) {
+    setError(null);
+    try {
+      await save.mutateAsync(values);
+      setOpen(false);
+      setNotice("Organization settings saved.");
+    } catch (cause) {
+      setError(errorMessage(cause, "We could not save the settings."));
+    }
+  }
+
   const settings = result.data;
-  return <div className="max-w-xl space-y-5"><dl className="divide-y rounded-xl border bg-card"><div className="space-y-1 px-4 py-3"><dt className="text-sm font-medium text-muted-foreground">Organization name</dt><dd>{settings?.organization_name || "Not configured"}</dd></div><div className="space-y-1 px-4 py-3"><dt className="text-sm font-medium text-muted-foreground">Support email</dt><dd>{settings?.support_email || "Not configured"}</dd></div><div className="space-y-1 px-4 py-3"><dt className="text-sm font-medium text-muted-foreground">Default time zone</dt><dd>{settings?.default_timezone || "Not configured"}</dd></div></dl><Button onClick={() => setOpen(true)} type="button">Edit organization settings</Button><AdministrationFormPanel description="Update the organization identity, support contact, and default time zone. Application secrets are never shown here." onOpenChange={setOpen} open={open} title="Organization settings"><form className="space-y-4" noValidate onSubmit={form.handleSubmit(submit)}><FormField error={form.formState.errors.organizationName?.message} htmlFor="organization-name" label="Organization name"><Input id="organization-name" {...form.register("organizationName")} /></FormField><FormField error={form.formState.errors.supportEmail?.message} htmlFor="support-email" label="Support email"><Input id="support-email" type="email" {...form.register("supportEmail")} /></FormField><FormField error={form.formState.errors.defaultTimezone?.message} htmlFor="default-timezone" label="Default time zone"><Input id="default-timezone" placeholder="Asia/Manila" {...form.register("defaultTimezone")} /></FormField>{error ? <ErrorState message={error} /> : null}<Button disabled={save.isPending} type="submit">{save.isPending ? "Saving…" : "Save settings"}</Button></form></AdministrationFormPanel></div>;
+  const errors = form.formState.errors;
+  return (
+    <div className="max-w-2xl space-y-5">
+      <SuccessMessage message={notice} />
+      <dl className="divide-y rounded-xl border bg-card">
+        <div className="space-y-1 px-5 py-4"><dt className="text-sm font-semibold text-muted-foreground">Organization name</dt><dd>{settings?.organization_name || "Not configured"}</dd></div>
+        <div className="space-y-1 px-5 py-4"><dt className="text-sm font-semibold text-muted-foreground">Support email</dt><dd>{settings?.support_email || "Not configured"}</dd></div>
+        <div className="space-y-1 px-5 py-4"><dt className="text-sm font-semibold text-muted-foreground">Default time zone</dt><dd>{settings?.default_timezone || "Not configured"}</dd></div>
+      </dl>
+      <Button onClick={() => setOpen(true)} type="button">Edit organization settings</Button>
+      <AdministrationFormPanel description="Update the organization identity, support contact, and default time zone. Application secrets are never shown here." onOpenChange={setOpen} open={open} title="Organization settings">
+        <form className="space-y-4" noValidate onSubmit={form.handleSubmit(submit)}>
+          <FormField error={errors.organizationName?.message} htmlFor="organization-name" label="Organization name" required>
+            <Input id="organization-name" {...form.register("organizationName")} />
+          </FormField>
+          <FormField error={errors.supportEmail?.message} htmlFor="support-email" label="Support email" required>
+            <Input autoComplete="email" id="support-email" type="email" {...form.register("supportEmail")} />
+          </FormField>
+          <FormField description="Type a city or region to search, for example Manila." error={errors.defaultTimezone?.message} htmlFor="default-timezone" label="Default time zone" required>
+            <Controller
+              control={form.control}
+              name="defaultTimezone"
+              render={({ field }) => (
+                <Combobox
+                  emptyMessage="No time zone matches that search."
+                  id="default-timezone"
+                  onValueChange={(value) => field.onChange(value ?? "")}
+                  options={zones}
+                  placeholder="Search time zones"
+                  value={field.value || null}
+                />
+              )}
+            />
+          </FormField>
+          {error ? <ErrorState message={error} /> : null}
+          <Button disabled={save.isPending} type="submit">{save.isPending ? "Saving…" : "Save settings"}</Button>
+        </form>
+      </AdministrationFormPanel>
+    </div>
+  );
 }
 
+// ---------------------------------------------------------------------------
+// Audit logs
+// ---------------------------------------------------------------------------
+
+const AUDIT_ENTITY_SUGGESTIONS = [
+  "applications", "attendance_imports", "attendance_integration_settings", "attendance_unmatched_events", "deployments",
+  "departments", "employees", "job_openings", "leave_requests", "leave_types", "organization_settings", "performance_ratings",
+  "positions", "profile_change_requests", "profiles", "promotion_criteria", "promotion_evaluations", "user_roles",
+];
+const AUDIT_ACTION_SUGGESTIONS = ["insert", "update", "delete", "created", "updated", "hired", "imported", "resolved", "queued"];
+
 export function AuditLogsWorkspace() {
-  const [search, setSearch] = useState(""); const [entityType, setEntityType] = useState(""); const [action, setAction] = useState(""); const [page, setPage] = useState(1); const [selected, setSelected] = useState<AuditLogDisplay | null>(null); const result = useAuditLogs({ page, pageSize: 20, ...(search ? { search } : {}), ...(entityType ? { entityType } : {}), ...(action ? { action } : {}) }); const resetPage = (callback: () => void) => { callback(); setPage(1); };
+  const [search, setSearch] = useState("");
+  const [entityType, setEntityType] = useState("");
+  const [action, setAction] = useState("");
+  const [page, setPage] = useState(1);
+  const [selected, setSelected] = useState<AuditLogDisplay | null>(null);
+  const result = useAuditLogs({ page, pageSize: 20, ...(search ? { search } : {}), ...(entityType ? { entityType } : {}), ...(action ? { action } : {}) });
+  const resetPage = (callback: () => void) => {
+    callback();
+    setPage(1);
+  };
+  const filtered = Boolean(search || entityType || action);
+
   if (result.isLoading) return <LoadingState label="Loading audit history…" />;
   if (result.error) return <ErrorWithRetry error={result.error} onRetry={() => void result.refetch()} />;
   const rows = result.data?.rows ?? [];
-  return <div className="space-y-5"><div className="grid gap-3 sm:grid-cols-3"><Input aria-label="Search audit history" onChange={(event) => resetPage(() => setSearch(event.target.value))} placeholder="Search audit history" value={search} /><Input aria-label="Filter audit history by entity type" onChange={(event) => resetPage(() => setEntityType(event.target.value))} placeholder="Entity type" value={entityType} /><Input aria-label="Filter audit history by action" onChange={(event) => resetPage(() => setAction(event.target.value))} placeholder="Action" value={action} /></div><div className="overflow-x-auto rounded-xl border"><table className="w-full min-w-[760px] text-left text-sm"><thead className="bg-muted text-muted-foreground"><tr><th className="px-4 py-3">When</th><th className="px-4 py-3">Actor</th><th className="px-4 py-3">Record</th><th className="px-4 py-3">Action</th><th className="px-4 py-3">Details</th></tr></thead><tbody>{rows.length ? rows.map((entry) => <tr className="border-t" key={entry.id}><td className="px-4 py-3 whitespace-nowrap">{new Date(entry.created_at).toLocaleString()}</td><td className="px-4 py-3">{entry.actorLabel}</td><td className="px-4 py-3">{entry.recordLabel}</td><td className="px-4 py-3">{entry.actionLabel}</td><td className="px-4 py-3"><Button aria-label={`View details for audit record ${entry.id}`} onClick={() => setSelected(entry)} type="button" variant="outline">Details</Button></td></tr>) : <tr><EmptyTableState colSpan={5} message="No audit entries match these filters." /></tr>}</tbody></table></div><PaginatedTableControls onPageChange={setPage} page={page} pageSize={20} totalCount={result.data?.count ?? 0} />{selected ? <AdministrationFormPanel description="Original audit values are available for traceability and cannot be changed." onOpenChange={(open) => { if (!open) setSelected(null); }} open title="Audit record details"><div className="space-y-4"><p className="rounded-lg bg-muted px-3 py-2 text-sm">{selected.summary}</p><dl className="grid gap-2 text-sm"><div><dt className="font-medium">Actor</dt><dd>{selected.actorLabel}</dd></div><div><dt className="font-medium">When</dt><dd>{new Date(selected.created_at).toLocaleString()}</dd></div></dl><pre className="max-h-72 overflow-auto rounded-lg bg-muted p-3 text-xs">{JSON.stringify(selected.details, null, 2)}</pre></div></AdministrationFormPanel> : null}</div>;
+
+  return (
+    <div className="space-y-5">
+      <div className="grid gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
+        <FormField htmlFor="audit-search" label="Search">
+          <Input id="audit-search" onChange={(event) => resetPage(() => setSearch(event.target.value))} placeholder="Record, ID, or action" type="search" value={search} />
+        </FormField>
+        <FormField htmlFor="audit-entity" label="Record type">
+          <Input id="audit-entity" list="audit-entity-options" onChange={(event) => resetPage(() => setEntityType(event.target.value.trim()))} placeholder="Any" value={entityType} />
+        </FormField>
+        <FormField htmlFor="audit-action" label="Action">
+          <Input id="audit-action" list="audit-action-options" onChange={(event) => resetPage(() => setAction(event.target.value.trim()))} placeholder="Any" value={action} />
+        </FormField>
+        <Button disabled={!filtered} onClick={() => resetPage(() => { setSearch(""); setEntityType(""); setAction(""); })} type="button" variant="outline">Clear filters</Button>
+        <datalist id="audit-entity-options">{AUDIT_ENTITY_SUGGESTIONS.map((value) => <option key={value} value={value} />)}</datalist>
+        <datalist id="audit-action-options">{AUDIT_ACTION_SUGGESTIONS.map((value) => <option key={value} value={value} />)}</datalist>
+      </div>
+      <DataTable caption="Audit history" columns={["When", "Actor", "Record", "Action", "Details"]} minWidth="min-w-[820px]">
+        {rows.length ? rows.map((entry) => (
+          <tr className="border-t" key={entry.id}>
+            <td className="px-4 py-3 whitespace-nowrap"><time dateTime={entry.created_at}>{new Date(entry.created_at).toLocaleString()}</time></td>
+            <td className="px-4 py-3">{entry.actorLabel}</td>
+            <td className="px-4 py-3">{entry.recordLabel}</td>
+            <td className="px-4 py-3">{entry.actionLabel}</td>
+            <td className="px-4 py-3">
+              <Button aria-label={`View details for audit record ${entry.id}`} onClick={() => setSelected(entry)} size="sm" type="button" variant="outline">Details</Button>
+            </td>
+          </tr>
+        )) : <tr><EmptyTableState colSpan={5} message={filtered ? "No audit entries match these filters." : "No audit entries have been recorded yet."} /></tr>}
+      </DataTable>
+      <PaginatedTableControls onPageChange={setPage} page={page} pageSize={20} totalCount={result.data?.count ?? 0} />
+      {selected ? (
+        <AdministrationFormPanel description="Original audit values are available for traceability and cannot be changed." onOpenChange={(open) => { if (!open) setSelected(null); }} open title="Audit record details">
+          <div className="space-y-4">
+            <p className="rounded-lg bg-muted px-4 py-3">{selected.summary}</p>
+            <dl className="grid gap-3">
+              <div><dt className="text-sm font-semibold text-muted-foreground">Actor</dt><dd>{selected.actorLabel}</dd></div>
+              <div><dt className="text-sm font-semibold text-muted-foreground">When</dt><dd>{new Date(selected.created_at).toLocaleString()}</dd></div>
+            </dl>
+            <pre className="max-h-72 overflow-auto rounded-lg bg-muted p-3 text-xs">{JSON.stringify(selected.details, null, 2)}</pre>
+          </div>
+        </AdministrationFormPanel>
+      ) : null}
+    </div>
+  );
 }

@@ -6,6 +6,7 @@ const hooks = vi.hoisted(() => ({
   useDeleteManagedUser: vi.fn().mockReturnValue({ isPending: false, mutateAsync: vi.fn() }),
   useInviteInternalUser: vi.fn(),
   useAuditLogs: vi.fn(),
+  useDepartmentOptions: vi.fn().mockReturnValue({ data: [], isLoading: false }),
   useDepartments: vi.fn(),
   useManagedRoles: vi.fn(),
   useManagedUsers: vi.fn(),
@@ -20,6 +21,7 @@ const hooks = vi.hoisted(() => ({
 vi.mock("@/hooks/use-administration", () => ({
   useDeleteManagedUser: hooks.useDeleteManagedUser,
   useAuditLogs: hooks.useAuditLogs,
+  useDepartmentOptions: hooks.useDepartmentOptions,
   useDepartments: hooks.useDepartments,
   useInviteInternalUser: hooks.useInviteInternalUser,
   useManagedRoles: hooks.useManagedRoles,
@@ -31,6 +33,13 @@ vi.mock("@/hooks/use-administration", () => ({
   useSavePosition: hooks.useSavePosition,
   useUpdateManagedUser: hooks.useUpdateManagedUser,
 }));
+
+const deletion = vi.hoisted(() => ({
+  useDeletionImpact: vi.fn().mockReturnValue({ data: undefined, error: null, isLoading: false, refetch: vi.fn() }),
+  useDeleteRecord: vi.fn().mockReturnValue({ error: null, isPending: false, mutateAsync: vi.fn(), reset: vi.fn() }),
+}));
+
+vi.mock("@/hooks/use-deletion", () => deletion);
 
 import { AdministrationFormPanel } from "./administration-form-panel";
 import { AuditLogsWorkspace, DepartmentsWorkspace, SettingsWorkspace, UsersWorkspace } from "./administration-workspaces";
@@ -168,7 +177,7 @@ describe("administration shared controls", () => {
 
     render(<AuditLogsWorkspace />);
 
-    expect(screen.getByText(/no audit entries match/i)).toBeInTheDocument();
+    expect(screen.getByText(/no audit entries have been recorded/i)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /add|edit|delete/i })).not.toBeInTheDocument();
   });
 
@@ -205,5 +214,60 @@ describe("administration shared controls", () => {
 
     await user.click(screen.getByRole("button", { name: /view details for audit record 1/i }));
     expect(screen.getByRole("dialog", { name: /audit record details/i })).toHaveTextContent("system_administrator");
+  });
+
+  it("separates deactivation from deletion and explains a blocked delete with dependent counts", async () => {
+    const user = userEvent.setup();
+    const saveDepartment = vi.fn().mockResolvedValue(undefined);
+    const deleteMutation = { isPending: false, error: null, mutateAsync: vi.fn(), reset: vi.fn() };
+    hooks.useDepartments.mockReturnValue({ data: { rows: [{ id: 7, name: "Operations", is_active: true }], count: 1 }, error: null, isLoading: false, refetch: vi.fn() });
+    hooks.useSaveDepartment.mockReturnValue({ isPending: false, mutateAsync: saveDepartment });
+    deletion.useDeleteRecord.mockReturnValue(deleteMutation);
+    deletion.useDeletionImpact.mockImplementation((_type: string, id: number | null) => ({
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+      data: id === null ? undefined : {
+        entityType: "department", entityId: "7", label: "Operations", canDelete: false,
+        blockers: [{ label: "personnel records", count: 12 }, { label: "positions", count: 3 }],
+        reasons: [], removes: [],
+        alternative: "Deactivate the department to hide it from new records while keeping history intact.",
+      },
+    }));
+
+    render(<DepartmentsWorkspace />);
+    expect(screen.getByRole("button", { name: /deactivate operations/i })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /delete operations/i }));
+
+    const dialog = await screen.findByRole("alertdialog");
+    expect(dialog).toHaveTextContent("This department can't be deleted");
+    expect(dialog).toHaveTextContent("12 personnel records");
+    expect(dialog).toHaveTextContent("3 positions");
+    expect(screen.getByRole("button", { name: "Delete department" })).toBeDisabled();
+    expect(deleteMutation.mutateAsync).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Deactivate instead" }));
+    expect(saveDepartment).toHaveBeenCalledWith({ departmentId: 7, input: { name: "Operations", isActive: false } });
+  });
+
+  it("deletes an unreferenced department only after confirmation", async () => {
+    const user = userEvent.setup();
+    const deleteMutation = { isPending: false, error: null, mutateAsync: vi.fn().mockResolvedValue(undefined), reset: vi.fn() };
+    hooks.useDepartments.mockReturnValue({ data: { rows: [{ id: 8, name: "Legacy", is_active: false }], count: 1 }, error: null, isLoading: false, refetch: vi.fn() });
+    hooks.useSaveDepartment.mockReturnValue({ isPending: false, mutateAsync: vi.fn() });
+    deletion.useDeleteRecord.mockReturnValue(deleteMutation);
+    deletion.useDeletionImpact.mockImplementation((_type: string, id: number | null) => ({
+      isLoading: false, error: null, refetch: vi.fn(),
+      data: id === null ? undefined : { entityType: "department", entityId: "8", label: "Legacy", canDelete: true, blockers: [], reasons: [], removes: [], alternative: null },
+    }));
+
+    render(<DepartmentsWorkspace />);
+    await user.click(screen.getByRole("button", { name: /delete legacy/i }));
+    expect(await screen.findByRole("alertdialog")).toHaveTextContent("permanently removes");
+    expect(deleteMutation.mutateAsync).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Delete department" }));
+
+    expect(deleteMutation.mutateAsync).toHaveBeenCalledWith(8);
+    expect(await screen.findByRole("status")).toHaveTextContent("permanently deleted");
   });
 });
