@@ -43,3 +43,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# face-api model weights (copied from node_modules by scripts/copy-face-models.mjs)
+/public/models/face-api/

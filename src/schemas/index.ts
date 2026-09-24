@@ -178,3 +178,15 @@ export type {
   AttendanceSettingsInput,
   AttendanceStatus,
 } from "./attendance-integration";
+export {
+  faceAttendanceResultSchema,
+  faceAttendanceScanSchema,
+  faceDescriptorSchema,
+  faceEnrollmentSchema,
+} from "./face-recognition";
+export type {
+  FaceAttendanceResult,
+  FaceAttendanceScanInput,
+  FaceEnrollmentInput,
+  FaceEnrollmentSummary,
+} from "./face-recognition";

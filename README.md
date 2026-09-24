@@ -115,6 +115,19 @@ Deploy the authenticated function after applying migrations:
 npx supabase@latest functions deploy import-attendance --no-verify-jwt=false
 ```
 
-The function uses the caller’s JWT and the project URL plus publishable/anon key supplied by the Supabase runtime. Do not configure a service-role key or any biometric vendor credential in browser variables. Never upload or persist fingerprint templates, face images, raw biometric payloads, or vendor credentials.
+The function uses the caller’s JWT and the project URL plus publishable/anon key supplied by the Supabase runtime. Do not configure a service-role key or any biometric vendor credential in browser variables. Never upload or persist fingerprint templates, face images, raw vendor biometric payloads, or vendor credentials. The only biometric data the HRIS stores is the face descriptor described below.
+
+## Face-recognition attendance (capstone demonstration)
+
+HR Personnel register a consenting employee's face at `/hr/attendance/face-enrollment`. Employees then record attendance themselves at `/employee/attendance/scan`: they sign in with their own account, look at the camera, and blink once. The face is verified against only their own registration, and no HR login is needed. HR can also run a shared supervised kiosk at `/hr/attendance/kiosk` that identifies the person among all registrations. The first scan of the day records time-in and a later scan records time-out, using the same status rules as imports. Details, thresholds, and security model: [`docs/superpowers/specs/2026-09-25-face-recognition-attendance-design.md`](docs/superpowers/specs/2026-09-25-face-recognition-attendance-design.md).
+
+- **What is stored:** one 128-value face descriptor per registered employee in the non-exposed `private` schema. No photos or video are stored, and scan-time descriptors are discarded. Descriptors never return to the browser because matching runs inside the database.
+- **Retention:** HR can delete a registration at any time; deactivating the employee's account deletes it automatically; re-registration replaces it.
+- **Models:** `npm run dev` and `npm run build` copy the pinned `@vladmandic/face-api` model weights into `public/models/face-api/` (git-ignored). No paid recognition API is used.
+- **Tuning:** browser values (framing, blink EAR thresholds, intervals, display times) are in `src/lib/face-recognition/config.ts`. The match threshold (0.5), ambiguity margin, and minimum time-in→time-out interval are in `private.face_recognition_settings`.
+- **Camera:** browsers only allow the camera on HTTPS or `localhost`. The front camera is preferred on phones and tablets.
+- **Safety:** use only test subjects or people who have consented. Blink detection is a basic liveness cue for a supervised kiosk, not production-grade anti-spoofing.
+
+The face e2e journey uses Chromium's fake camera. Headless Edge ends fake camera tracks, so run it headed: `npx playwright test e2e/face-attendance.spec.ts --headed`.
 
 When a biometric vendor is selected later, replace or extend the CSV/XLSX adapter only after receiving its API/webhook documentation, test credentials, stable employee identifier, and idempotent event-ID semantics. Preserve the normalized-event contract and its tests before enabling production sync.

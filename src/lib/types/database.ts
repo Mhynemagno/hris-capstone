@@ -527,7 +527,9 @@ export type AttendanceLog = {
   time_in: string | null;
   time_out: string | null;
   status: AttendanceStatus;
-  import_id: string;
+  /** Null for face-recognition scans, which have no import run. */
+  import_id: string | null;
+  capture_method: "import" | "face_recognition";
   sync_metadata: Record<string, unknown>;
   created_at: string;
 };
