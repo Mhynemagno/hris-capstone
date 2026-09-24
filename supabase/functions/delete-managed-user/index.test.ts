@@ -20,7 +20,11 @@ function deleteRequest(userId: string, method = "DELETE") {
 }
 
 function createHandler(
-  options: { administrator?: boolean; deleteError?: Error | null } = {},
+  options: {
+    administrator?: boolean;
+    blockedMessage?: string;
+    deleteError?: Error | null;
+  } = {},
 ) {
   let deleteUserCalls = 0;
   let auditInsert: Record<string, unknown> | null = null;
@@ -28,20 +32,26 @@ function createHandler(
     auth: {
       getUser: async () => ({ data: { user: { id: actorId } }, error: null }),
     },
-    from: () => ({
-      select: () => ({
-        eq: () => ({
-          maybeSingle: async () => ({
-            data: {
-              role: options.administrator === false
-                ? "employee"
-                : "system_administrator",
-            },
-            error: null,
-          }),
-        }),
-      }),
-    }),
+    rpc: async (name: string, args: Record<string, unknown>) => {
+      assertEquals(name, "assert_managed_user_deletable");
+      assertEquals(args, { target_user_id: targetId });
+      if (options.administrator === false) {
+        return {
+          data: null,
+          error: { code: "42501", message: "Administrator access is required." },
+        };
+      }
+      if (options.blockedMessage) {
+        return {
+          data: null,
+          error: { code: "P0001", message: options.blockedMessage },
+        };
+      }
+      return {
+        data: { canDelete: true, removes: [{ label: "notifications", count: 2 }] },
+        error: null,
+      };
+    },
   };
   const adminClient = {
     auth: {
@@ -130,6 +140,36 @@ Deno.test("deletes a selected account and writes a readable audit row", async ()
     entity_type: "profiles",
     entity_id: targetId,
     action: "delete",
-    metadata: { full_name: "Officer Ada Lovelace", email: "ada@example.com" },
+    metadata: {
+      full_name: "Officer Ada Lovelace",
+      email: "ada@example.com",
+      removed: [{ label: "notifications", count: 2 }],
+    },
   });
+});
+
+Deno.test("explains why an account with dependent records cannot be deleted", async () => {
+  const message =
+    "Ada cannot be deleted. It is still used by 3 leave decisions. Deactivate the account to block sign-in while keeping everything the person created or decided.";
+  const { handler, getDeleteUserCalls, getAuditInsert } = createHandler({
+    blockedMessage: message,
+  });
+
+  const response = await handler(deleteRequest(targetId));
+
+  assertEquals(response.status, 409);
+  assertEquals(await response.json(), { error: message });
+  assertEquals(getDeleteUserCalls(), 0);
+  assertEquals(getAuditInsert(), null);
+});
+
+Deno.test("reports a conflict when the auth deletion is blocked by a new dependency", async () => {
+  const { handler, getAuditInsert } = createHandler({
+    deleteError: new Error("violates foreign key constraint"),
+  });
+
+  const response = await handler(deleteRequest(targetId));
+
+  assertEquals(response.status, 409);
+  assertEquals(getAuditInsert(), null);
 });
