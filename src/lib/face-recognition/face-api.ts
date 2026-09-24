@@ -1,5 +1,5 @@
 import { FACE_RECOGNITION_CONFIG } from "./config";
-import type { Box, Point } from "./geometry";
+import type { Box } from "./geometry";
 
 // The bundled ESM build includes its own TensorFlow.js; the package "main" entry is the Node
 // build and must not reach the browser bundle.
@@ -17,7 +17,7 @@ export type FaceBackend = "webgl" | "wasm" | "cpu";
 // WebGL is fastest where the GPU is available. Browsers without WebGL (GPU blocklisted,
 // hardware acceleration off, remote desktops) use WebAssembly: measured at ~40-55 ms per
 // face analysis versus ~0.8-1.9 s on the CPU backend. At CPU speed the camera samples about
-// once a second, so a 100-400 ms blink is almost never seen and the blink check cannot pass.
+// once a second, which makes the scanner feel unresponsive.
 const BACKENDS: readonly FaceBackend[] = ["webgl", "wasm", "cpu"];
 
 let activeBackend: FaceBackend | null = null;
@@ -64,16 +64,15 @@ export function loadFaceModels(baseUrl: string = FACE_RECOGNITION_CONFIG.modelBa
   return loading;
 }
 
-export type DetectedFace = { box: Box; leftEye: Point[]; rightEye: Point[] };
+export type DetectedFace = { box: Box };
 export type DescribedFace = DetectedFace & { descriptor: Float32Array };
 
 function detectorOptions(faceapi: FaceApi) {
   return new faceapi.TinyFaceDetectorOptions({ inputSize: FACE_RECOGNITION_CONFIG.detector.inputSize, scoreThreshold: FACE_RECOGNITION_CONFIG.detector.scoreThreshold });
 }
 
-function toDetectedFace(result: { detection: { box: Box }; landmarks: { getLeftEye(): Point[]; getRightEye(): Point[] } }): DetectedFace {
-  const { x, y, width, height } = result.detection.box;
-  return { box: { x, y, width, height }, leftEye: result.landmarks.getLeftEye(), rightEye: result.landmarks.getRightEye() };
+function toBox({ x, y, width, height }: Box): Box {
+  return { x, y, width, height };
 }
 
 let brightnessCanvas: HTMLCanvasElement | null = null;
@@ -97,16 +96,16 @@ export function faceBrightness(video: HTMLVideoElement, box: Box): number | null
   }
 }
 
-/** Face boxes plus eye landmarks. Cheap enough for the blink challenge; computes no descriptor. */
-export async function detectFacesWithLandmarks(faceapi: FaceApi, video: HTMLVideoElement): Promise<DetectedFace[]> {
-  const results = await faceapi.detectAllFaces(video, detectorOptions(faceapi)).withFaceLandmarks();
-  return results.map(toDetectedFace);
+/** Face boxes only, for framing while searching; computes no landmarks or descriptor. */
+export async function detectFaces(faceapi: FaceApi, video: HTMLVideoElement): Promise<DetectedFace[]> {
+  const results = await faceapi.detectAllFaces(video, detectorOptions(faceapi));
+  return results.map((result) => ({ box: toBox(result.box) }));
 }
 
 /** Every visible face with its 128-value descriptor. Callers require exactly one. */
 export async function detectFacesWithDescriptors(faceapi: FaceApi, video: HTMLVideoElement): Promise<DescribedFace[]> {
   const results = await faceapi.detectAllFaces(video, detectorOptions(faceapi)).withFaceLandmarks().withFaceDescriptors();
-  return results.map((result) => ({ ...toDetectedFace(result), descriptor: result.descriptor }));
+  return results.map((result) => ({ box: toBox(result.detection.box), descriptor: result.descriptor }));
 }
 
 export type { FaceApi };

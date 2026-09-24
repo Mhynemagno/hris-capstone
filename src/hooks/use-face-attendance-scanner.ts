@@ -5,8 +5,8 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "r
 import { CAMERA_ERROR_MESSAGES, useCamera } from "@/hooks/use-camera";
 import { useRecordFaceAttendance, type FaceScanMode } from "@/hooks/use-face-recognition";
 import { FACE_RECOGNITION_CONFIG, LOW_LIGHT_BRIGHTNESS } from "@/lib/face-recognition/config";
-import { detectFacesWithDescriptors, detectFacesWithLandmarks, faceBrightness, getFaceBackend, loadFaceModels, MODELS_FAILED_MESSAGE, type FaceApi } from "@/lib/face-recognition/face-api";
-import { assessFraming, averageEyeAspectRatio, FRAMING_MESSAGES } from "@/lib/face-recognition/geometry";
+import { detectFaces, detectFacesWithDescriptors, faceBrightness, getFaceBackend, loadFaceModels, MODELS_FAILED_MESSAGE, type FaceApi } from "@/lib/face-recognition/face-api";
+import { assessFraming, FRAMING_MESSAGES } from "@/lib/face-recognition/geometry";
 import { createScannerReducer, initialScannerState } from "@/lib/face-recognition/scanner-machine";
 import { FaceRecognitionRequestError } from "@/queries/face-recognition";
 
@@ -14,7 +14,7 @@ const config = FACE_RECOGNITION_CONFIG;
 const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 /**
- * Runs the kiosk: camera + models → face search → blink challenge → one descriptor → one
+ * Runs the kiosk: camera + models → face search → one descriptor → one
  * idempotent attendance request → result → cooldown. Only one async step runs at a time;
  * every effect cancels its timers and ignores late results when the state changes or the
  * component unmounts.
@@ -53,47 +53,36 @@ export function useFaceAttendanceScanner(mode: FaceScanMode = "kiosk") {
     if (running && cameraStatus === "idle") dispatch({ type: "CAMERA_LOST", message: "The camera was turned off. Restart the scanner to continue." });
   }, [state, cameraStatus]);
 
-  // SEARCHING and LIVENESS: throttled detection with no overlapping calls.
+  // SEARCHING: throttled detection with no overlapping calls.
   const status = state.status;
   useEffect(() => {
     const faceapi = faceapiRef.current;
-    if ((status !== "searching" && status !== "liveness") || !faceapi) return;
+    if (status !== "searching" || !faceapi) return;
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
-    const interval = status === "liveness" ? config.blink.intervalMs : config.searchIntervalMs;
 
     const tick = async () => {
       const video = videoRef.current;
       if (video && video.readyState >= 2 && video.videoWidth > 0) {
         try {
           const started = performance.now();
-          const faces = await detectFacesWithLandmarks(faceapi, video);
+          const faces = await detectFaces(faceapi, video);
           if (cancelled) return;
           const brightness = faces.length === 1 ? faceBrightness(video, faces[0].box) : null;
           setDiagnostics({ detectionMs: Math.round(performance.now() - started), brightness: brightness === null ? null : Math.round(brightness) });
-          if (status === "searching") {
-            const framing = assessFraming(faces.map((face) => face.box), { width: video.videoWidth, height: video.videoHeight }, config.framing);
-            dispatch(framing.ok ? { type: "FRAME_ACCEPTED", now: performance.now() } : { type: "FRAME_REJECTED", guidance: FRAMING_MESSAGES[framing.issue] });
-          } else if (faces.length === 0) {
-            dispatch({ type: "FACE_MISSED", guidance: FRAMING_MESSAGES.no_face });
-          } else if (faces.length > 1) {
-            dispatch({ type: "FACE_LOST", guidance: FRAMING_MESSAGES.multiple_faces });
-          } else {
-            dispatch({ type: "LIVENESS_FRAME", ear: averageEyeAspectRatio(faces[0].leftEye, faces[0].rightEye), now: performance.now() });
-          }
+          const framing = assessFraming(faces.map((face) => face.box), { width: video.videoWidth, height: video.videoHeight }, config.framing);
+          dispatch(framing.ok ? { type: "FRAME_ACCEPTED", now: performance.now() } : { type: "FRAME_REJECTED", guidance: FRAMING_MESSAGES[framing.issue] });
         } catch {
           if (cancelled) return;
         }
       }
-      if (!cancelled) timer = setTimeout(() => void tick(), interval);
+      if (!cancelled) timer = setTimeout(() => void tick(), config.searchIntervalMs);
     };
-    timer = setTimeout(() => void tick(), interval);
-    // Watchdog: the blink challenge ends on time even if no frame can be analysed.
-    const watchdog = status === "liveness" ? setTimeout(() => dispatch({ type: "LIVENESS_EXPIRED" }), config.blink.timeoutMs) : undefined;
-    return () => { cancelled = true; clearTimeout(timer); clearTimeout(watchdog); };
+    timer = setTimeout(() => void tick(), config.searchIntervalMs);
+    return () => { cancelled = true; clearTimeout(timer); };
   }, [status, videoRef]);
 
-  // VERIFYING: one descriptor, only after the blink passed, from exactly one face.
+  // VERIFYING: one descriptor, from exactly one face.
   useEffect(() => {
     const faceapi = faceapiRef.current;
     if (status !== "verifying" || !faceapi) return;
@@ -163,7 +152,7 @@ export function useFaceAttendanceScanner(mode: FaceScanMode = "kiosk") {
   const pause = useCallback(() => dispatch({ type: "STOP" }), []);
   const retry = useCallback(() => dispatch({ type: "RETRY" }), []);
 
-  const lowLight = diagnostics.brightness !== null && diagnostics.brightness < LOW_LIGHT_BRIGHTNESS && (state.status === "searching" || state.status === "liveness");
+  const lowLight = diagnostics.brightness !== null && diagnostics.brightness < LOW_LIGHT_BRIGHTNESS && state.status === "searching";
 
   return { state, videoRef, start, pause, retry, lowLight, diagnostics: { ...diagnostics, backend: getFaceBackend() } };
 }

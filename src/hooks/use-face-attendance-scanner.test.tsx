@@ -3,12 +3,12 @@ import { act, render, waitFor } from "@testing-library/react";
 import { useEffect, type ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { eyeWithEar, syntheticDescriptor } from "@/test/face-fixtures";
+import { syntheticDescriptor } from "@/test/face-fixtures";
 import { fakeStream, installGetUserMedia, installLiveVideoElement } from "@/test/media-mocks";
 
 const faceApi = vi.hoisted(() => ({
   loadFaceModels: vi.fn(),
-  detectFacesWithLandmarks: vi.fn(),
+  detectFaces: vi.fn(),
   detectFacesWithDescriptors: vi.fn(),
 }));
 const brightness = vi.hoisted(() => ({ value: 140 }));
@@ -23,9 +23,7 @@ import { FaceRecognitionRequestError } from "@/queries/face-recognition";
 import { useFaceAttendanceScanner } from "./use-face-attendance-scanner";
 
 const box = { x: 220, y: 140, width: 200, height: 200 };
-const face = (ear: number) => ({ box, leftEye: eyeWithEar(ear), rightEye: eyeWithEar(ear, 3) });
-/** Search frames, then open → closed → open, then open forever. */
-const blinkTimeline = (call: number) => face(call >= 6 && call <= 7 ? 0.1 : 0.3);
+const face = () => ({ box });
 
 let latest: ReturnType<typeof useFaceAttendanceScanner>;
 function Harness({ mode = "kiosk" }: { mode?: "kiosk" | "self" }) {
@@ -65,13 +63,12 @@ beforeEach(() => {
   track = camera.track;
   installGetUserMedia(() => Promise.resolve(camera.stream));
   faceApi.loadFaceModels.mockResolvedValue({});
-  let call = 0;
-  faceApi.detectFacesWithLandmarks.mockImplementation(async () => [blinkTimeline(call++)]);
-  faceApi.detectFacesWithDescriptors.mockResolvedValue([{ ...face(0.3), descriptor: syntheticDescriptor(0.1) }]);
+  faceApi.detectFaces.mockResolvedValue([face()]);
+  faceApi.detectFacesWithDescriptors.mockResolvedValue([{ ...face(), descriptor: syntheticDescriptor(0.1) }]);
 });
 
 describe("useFaceAttendanceScanner", () => {
-  it("runs search → blink → one descriptor → attendance, retrying a network failure with the same scan ID", async () => {
+  it("runs search → one descriptor → attendance with no blink challenge, retrying a network failure with the same scan ID", async () => {
     record.mockRejectedValueOnce(new FaceRecognitionRequestError("offline", true)).mockImplementation(async ({ scanId }: { scanId: string }) => recognized(scanId));
     renderScanner();
     await startScanning();
@@ -116,7 +113,7 @@ describe("useFaceAttendanceScanner", () => {
   });
 
   it("keeps searching while more than one face is visible", async () => {
-    faceApi.detectFacesWithLandmarks.mockResolvedValue([face(0.3), { ...face(0.3), box: { ...box, x: 10 } }]);
+    faceApi.detectFaces.mockResolvedValue([face(), { ...face(), box: { ...box, x: 10 } }]);
     renderScanner();
     await startScanning();
 
@@ -126,25 +123,12 @@ describe("useFaceAttendanceScanner", () => {
     expect(faceApi.detectFacesWithDescriptors).not.toHaveBeenCalled();
   });
 
-  it("never computes a descriptor when the eyes stay closed", async () => {
-    let call = 0;
-    faceApi.detectFacesWithLandmarks.mockImplementation(async () => [face(call++ < 3 ? 0.3 : 0.1)]);
-    renderScanner();
-    await startScanning();
-
-    await waitFor(() => expect(latest.state.status).toBe("liveness"));
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    expect(latest.state.status).toBe("liveness");
-    expect(faceApi.detectFacesWithDescriptors).not.toHaveBeenCalled();
-    expect(record).not.toHaveBeenCalled();
-  });
-
   it("reports a denied camera and never runs detection", async () => {
     installGetUserMedia(() => Promise.reject(new DOMException("denied", "NotAllowedError")));
     renderScanner();
 
     await waitFor(() => expect(latest.state).toMatchObject({ status: "error", kind: "camera_denied", fatal: true }));
-    expect(faceApi.detectFacesWithLandmarks).not.toHaveBeenCalled();
+    expect(faceApi.detectFaces).not.toHaveBeenCalled();
   });
 
   it("reports a model-loading failure and turns the camera off", async () => {
@@ -168,13 +152,13 @@ describe("useFaceAttendanceScanner", () => {
   it("stops the camera and the detection loop on unmount", async () => {
     const view = renderScanner();
     await startScanning();
-    await waitFor(() => expect(faceApi.detectFacesWithLandmarks).toHaveBeenCalled());
+    await waitFor(() => expect(faceApi.detectFaces).toHaveBeenCalled());
 
     view.unmount();
-    const calls = faceApi.detectFacesWithLandmarks.mock.calls.length;
+    const calls = faceApi.detectFaces.mock.calls.length;
     await new Promise((resolve) => setTimeout(resolve, 600));
 
     expect(track.stop).toHaveBeenCalled();
-    expect(faceApi.detectFacesWithLandmarks.mock.calls.length).toBeLessThanOrEqual(calls + 1);
+    expect(faceApi.detectFaces.mock.calls.length).toBeLessThanOrEqual(calls + 1);
   });
 });

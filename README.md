@@ -119,16 +119,16 @@ The function uses the caller’s JWT and the project URL plus publishable/anon k
 
 ## Face-recognition attendance (capstone demonstration)
 
-HR Personnel register a consenting employee's face at `/hr/attendance/face-enrollment`. Employees then record attendance themselves at `/employee/attendance/scan`: they sign in with their own account, look at the camera, and blink once. The face is verified against only their own registration, and no HR login is needed. HR can also run a shared supervised kiosk at `/hr/attendance/kiosk` that identifies the person among all registrations. The first scan of the day records time-in and a later scan records time-out, using the same status rules as imports. Details, thresholds, and security model: [`docs/superpowers/specs/2026-09-25-face-recognition-attendance-design.md`](docs/superpowers/specs/2026-09-25-face-recognition-attendance-design.md).
+HR Personnel register a consenting employee's face at `/hr/attendance/face-enrollment`. Employees then record attendance themselves at `/employee/attendance/scan`: they sign in with their own account and look at the camera. The face is verified against only their own registration, and no HR login is needed. HR can also run a shared supervised kiosk at `/hr/attendance/kiosk` that identifies the person among all registrations. The first scan of the day records time-in and a later scan records time-out, using the same status rules as imports. Details, thresholds, and security model: [`docs/superpowers/specs/2026-09-25-face-recognition-attendance-design.md`](docs/superpowers/specs/2026-09-25-face-recognition-attendance-design.md).
 
 - **What is stored:** one 128-value face descriptor per registered employee in the non-exposed `private` schema. No photos or video are stored, and scan-time descriptors are discarded. Descriptors never return to the browser because matching runs inside the database.
 - **Retention:** HR can delete a registration at any time; deactivating the employee's account deletes it automatically; re-registration replaces it.
 - **Models:** `npm run dev` and `npm run build` copy the pinned `@vladmandic/face-api` model weights into `public/models/face-api/` (git-ignored). No paid recognition API is used.
-- **Tuning:** browser values (framing, blink EAR thresholds, intervals, display times) are in `src/lib/face-recognition/config.ts`. The match threshold (0.5), ambiguity margin, and minimum time-in→time-out interval are in `private.face_recognition_settings`.
+- **Tuning:** browser values (framing, intervals, display times) are in `src/lib/face-recognition/config.ts`. The match threshold (0.5), ambiguity margin, and minimum time-in→time-out interval are in `private.face_recognition_settings`.
 - **Camera:** browsers only allow the camera on HTTPS or `localhost`. The front camera is preferred on phones and tablets.
-- **Speed:** face analysis uses WebGL, then WebAssembly (binaries from `@tensorflow/tfjs-backend-wasm`, copied with the models), then the CPU. WebAssembly runs about 40 ms per frame versus about 1 s on the CPU. At CPU speed the camera samples too rarely to see a blink.
-- **Troubleshooting a device:** add `?diagnostics=1` to the kiosk or scan URL to show the backend, detection time, face brightness, and eye readings. In dim rooms the scanner suggests more light.
-- **Safety:** use only test subjects or people who have consented. Blink detection is a basic liveness cue for a supervised kiosk, not production-grade anti-spoofing.
+- **Speed:** face analysis uses WebGL, then WebAssembly (binaries from `@tensorflow/tfjs-backend-wasm`, copied with the models), then the CPU. WebAssembly runs about 40 ms per frame versus about 1 s on the CPU. At CPU speed the scanner responds noticeably slowly.
+- **Troubleshooting a device:** add `?diagnostics=1` to the kiosk or scan URL to show the backend, detection time, and face brightness. In dim rooms the scanner suggests more light.
+- **Safety:** use only test subjects or people who have consented. There is no liveness check, so a photo or screen showing a registered face is not rejected; supervise the kiosk.
 
 The face e2e journey uses Chromium's fake camera. Headless Edge ends fake camera tracks, so run it headed: `npx playwright test e2e/face-attendance.spec.ts --headed`.
 

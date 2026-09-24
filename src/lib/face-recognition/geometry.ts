@@ -1,6 +1,5 @@
 import type { FramingConfig } from "./config";
 
-export type Point = { x: number; y: number };
 export type Box = { x: number; y: number; width: number; height: number };
 
 export const DESCRIPTOR_LENGTH = 128;
@@ -13,24 +12,6 @@ export function euclideanDistance(left: ArrayLike<number>, right: ArrayLike<numb
     sum += difference * difference;
   }
   return Math.sqrt(sum);
-}
-
-function pointDistance(a: Point, b: Point) {
-  return Math.hypot(a.x - b.x, a.y - b.y);
-}
-
-/** Eye aspect ratio (Soukupová & Čech 2016) for the six 68-point eye landmarks p1..p6. */
-export function eyeAspectRatio(eye: readonly Point[]) {
-  if (eye.length !== 6) throw new Error("An eye needs six landmarks.");
-  const [p1, p2, p3, p4, p5, p6] = eye;
-  const horizontal = pointDistance(p1, p4);
-  if (horizontal === 0) return 0;
-  return (pointDistance(p2, p6) + pointDistance(p3, p5)) / (2 * horizontal);
-}
-
-/** Mean EAR of both eyes. */
-export function averageEyeAspectRatio(leftEye: readonly Point[], rightEye: readonly Point[]) {
-  return (eyeAspectRatio(leftEye) + eyeAspectRatio(rightEye)) / 2;
 }
 
 export type FramingIssue = "no_face" | "multiple_faces" | "too_far" | "too_close" | "off_center";

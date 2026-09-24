@@ -101,8 +101,8 @@ Profile-change request statuses: `Pending`, `Approved`, `Rejected`, and optional
 - Synchronize login/logout time logs into the HRIS.
 - Show attendance status, time-in, time-out, late arrivals, absences, and attendance history.
 - Generate attendance reports.
-- Face-recognition kiosk (capstone demonstration): HR registers consenting employees' faces; at a supervised kiosk an employee looks at the camera and blinks, and the database matches the face and records time-in/time-out without the employee choosing a name.
-- Biometric data policy (updated 2026-09-25): the HRIS stores only a numeric face descriptor per consenting employee, isolated in a non-exposed schema, matched inside the database, deleted on request or account deactivation, and audited. It does not store face images, fingerprint data, or raw vendor biometric payloads. Blink detection is a basic liveness cue, not production-grade anti-spoofing. See `docs/superpowers/specs/2026-09-25-face-recognition-attendance-design.md`.
+- Face-recognition kiosk (capstone demonstration): HR registers consenting employees' faces; at a supervised kiosk (or on their own login) an employee looks at the camera, and the database matches the face and records time-in/time-out without the employee choosing a name.
+- Biometric data policy (updated 2026-09-25): the HRIS stores only a numeric face descriptor per consenting employee, isolated in a non-exposed schema, matched inside the database, deleted on request or account deactivation, and audited. It does not store face images, fingerprint data, or raw vendor biometric payloads. There is no liveness (anti-spoofing) check, so kiosks must be supervised. See `docs/superpowers/specs/2026-09-25-face-recognition-attendance-design.md`.
 
 ### 4.11 Analytics Dashboard and Reports
 

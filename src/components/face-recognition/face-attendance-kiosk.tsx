@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleAlert, CircleCheck, Eye, LoaderCircle, ScanFace } from "lucide-react";
+import { CircleAlert, CircleCheck, LoaderCircle, ScanFace } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,6 @@ function promptFor(state: ScannerState) {
     case "initializing": return "Loading face models and starting the camera…";
     case "ready": return "Scanner ready.";
     case "searching": return state.guidance ?? "Look at the camera and hold still.";
-    case "liveness": return "Blink slowly once.";
     case "verifying": return "Verifying identity…";
     case "recording": return "Recording attendance…";
     case "success": return state.result.outcome === "time_in" ? "Time in recorded." : "Time out recorded.";
@@ -31,7 +30,7 @@ function promptFor(state: ScannerState) {
 function tone(state: ScannerState) {
   if (state.status === "success") return "success" as const;
   if (state.status === "error") return "error" as const;
-  if (state.status === "liveness" || state.status === "verifying" || state.status === "recording") return "active" as const;
+  if (state.status === "verifying" || state.status === "recording") return "active" as const;
   return "neutral" as const;
 }
 
@@ -47,7 +46,6 @@ export function FaceScanner({ mode, onClose }: { mode: FaceScanMode; onClose: ()
       <CameraViewport label="Camera preview" live={live} tone={tone(state)} videoRef={videoRef}>
         <span aria-live="polite" className="inline-flex items-center gap-2" role="status">
           {state.status === "initializing" || busy ? <LoaderCircle aria-hidden="true" className="size-4 motion-safe:animate-spin" /> : null}
-          {state.status === "liveness" ? <Eye aria-hidden="true" className="size-4" /> : null}
           {promptFor(state)}
         </span>
         {lowLight ? <span className="mt-1 block text-xs font-normal text-muted-foreground">Your face looks dark. Turn on a light or face a window so your eyes are easy to see.</span> : null}
@@ -68,7 +66,7 @@ export function FaceScanner({ mode, onClose }: { mode: FaceScanMode; onClose: ()
         <div className="mx-auto flex max-w-xl items-start gap-3 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-destructive" role="alert">
           <CircleAlert aria-hidden="true" className="mt-0.5 size-5 shrink-0" />
           <div className="space-y-1">
-            <p className="font-semibold">{state.fatal ? "Scanner unavailable" : state.kind === "not_recognized" ? "Face not recognized" : state.kind === "liveness_timeout" ? "Blink not detected" : state.kind === "network" ? "Connection problem" : state.kind === "service" ? "Attendance service rejected the scan" : "Attendance not recorded"}</p>
+            <p className="font-semibold">{state.fatal ? "Scanner unavailable" : state.kind === "not_recognized" ? "Face not recognized" : state.kind === "network" ? "Connection problem" : state.kind === "service" ? "Attendance service rejected the scan" : "Attendance not recorded"}</p>
             <p className="text-sm">{state.message}</p>
             {showDiagnostics && !state.fatal && state.distance != null ? <p className="text-xs opacity-80">Dev: closest distance {state.distance.toFixed(3)}</p> : null}
           </div>
@@ -78,7 +76,6 @@ export function FaceScanner({ mode, onClose }: { mode: FaceScanMode; onClose: ()
       {showDiagnostics && live ? (
         <p className="text-center text-xs text-muted-foreground" data-testid="face-diagnostics">
           Diagnostics: backend {diagnostics.backend ?? "—"} · detection {diagnostics.detectionMs ?? "—"} ms · brightness {diagnostics.brightness ?? "—"}
-          {state.status === "liveness" ? ` · EAR ${state.blink.lastEar?.toFixed(3) ?? "—"} · baseline ${state.blink.baseline?.toFixed(3) ?? "—"} · phase ${state.blink.phase}` : ""}
         </p>
       ) : null}
 
@@ -94,7 +91,7 @@ export function FaceScanner({ mode, onClose }: { mode: FaceScanMode; onClose: ()
 
 /**
  * Attendance kiosk for a supervised device signed in as HR Personnel. Employees do not choose
- * their name: the face is matched in the database after a blink challenge.
+ * their name: the face is matched in the database.
  */
 export function FaceAttendanceKiosk() {
   const [open, setOpen] = useState(false);
@@ -102,7 +99,7 @@ export function FaceAttendanceKiosk() {
   return (
     <StatusPanel
       action={<Button onClick={() => setOpen(true)} type="button"><ScanFace aria-hidden="true" />Open scanner</Button>}
-      description="Opens the camera on this device. Each person looks at the camera and blinks once; attendance is recorded only for a registered, recognized face. No images are stored."
+      description="Opens the camera on this device. Each person looks at the camera; attendance is recorded only for a registered, recognized face. No images are stored."
       kind="empty"
       title="Face attendance kiosk"
     />
