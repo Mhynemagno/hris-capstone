@@ -186,3 +186,30 @@ export function ColumnTrendChart({ data, formatLabel = identity, unit = "records
     </div>
   );
 }
+
+/** Half-circle gauge for a single share, e.g. personnel present today out of active personnel. */
+export function GaugeChart({ value, whole, label }: { value: number; whole: number; label: string }) {
+  const share = whole > 0 ? Math.min(value / whole, 1) : 0;
+  const shown = Math.round(share * 100);
+  const radius = 80;
+  const arc = Math.PI * radius;
+  return (
+    <figure aria-label={`${label}: ${shown}% (${formatCount(value)} of ${formatCount(whole)})`} className="flex flex-col items-center" role="img">
+      <svg aria-hidden="true" className="w-full max-w-60" viewBox="0 0 200 116">
+        <path className="stroke-muted" d="M 20 100 A 80 80 0 0 1 180 100" fill="none" strokeLinecap="round" strokeWidth="18" />
+        <path
+          className="stroke-status-serious motion-safe:transition-[stroke-dashoffset] motion-safe:duration-700"
+          d="M 20 100 A 80 80 0 0 1 180 100"
+          fill="none"
+          strokeDasharray={arc}
+          strokeDashoffset={arc * (1 - share)}
+          strokeLinecap="round"
+          strokeWidth="18"
+        />
+        <text className="fill-muted-foreground text-[11px]" textAnchor="middle" x="100" y="68">{label}</text>
+        <text className="fill-foreground text-[30px] font-bold" textAnchor="middle" x="100" y="100">{shown}%</text>
+      </svg>
+      <figcaption className="mt-1 text-sm text-muted-foreground tabular-nums">{formatCount(value)} of {formatCount(whole)} active personnel</figcaption>
+    </figure>
+  );
+}

@@ -33,6 +33,8 @@ export type RoleConfig = {
   landingTitle: string;
   landingDescription: string;
   navigation: readonly RoleNavigationItem[];
+  /** The role's most common task, offered as a button under the sidebar user card. */
+  quickAction?: { label: string; href: `/${string}` };
 };
 
 export const ROLE_CONFIG: Record<AppRole, RoleConfig> = {
@@ -40,6 +42,7 @@ export const ROLE_CONFIG: Record<AppRole, RoleConfig> = {
     role: "system_administrator",
     label: "System Administrator",
     homeHref: "/admin",
+    quickAction: { label: "New account", href: "/admin/users" },
     landingTitle: "Administration workspace",
     landingDescription:
       "Manage secure system settings, accounts, and organization data.",
@@ -59,6 +62,7 @@ export const ROLE_CONFIG: Record<AppRole, RoleConfig> = {
     role: "hr_personnel",
     label: "HR Personnel",
     homeHref: "/hr",
+    quickAction: { label: "New Employee", href: "/hr/employees/new" },
     landingTitle: "HR workspace",
     landingDescription:
       "Coordinate recruitment, personnel records, and HR operations.",
@@ -78,6 +82,7 @@ export const ROLE_CONFIG: Record<AppRole, RoleConfig> = {
     role: "applicant",
     label: "Applicant",
     homeHref: "/applicant",
+    quickAction: { label: "Browse openings", href: "/jobs" },
     landingTitle: "Applicant portal",
     landingDescription:
       "Explore opportunities and follow the progress of your applications.",
@@ -96,6 +101,7 @@ export const ROLE_CONFIG: Record<AppRole, RoleConfig> = {
     role: "employee",
     label: "Employee",
     homeHref: "/employee",
+    quickAction: { label: "Request leave", href: "/employee/leave/new" },
     landingTitle: "Employee workspace",
     landingDescription:
       "Access your HR information, requests, and work-related updates.",
@@ -117,6 +123,7 @@ export const ROLE_CONFIG: Record<AppRole, RoleConfig> = {
     role: "management",
     label: "Management",
     homeHref: "/management",
+    quickAction: { label: "View reports", href: "/reports" },
     landingTitle: "Management workspace",
     landingDescription:
       "Review personnel information and organizational insights.",

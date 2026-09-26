@@ -11,6 +11,8 @@ import {
   Briefcase,
   CalendarClock,
   CalendarOff,
+  Circle,
+  CircleCheck,
   ClipboardList,
   FileText,
   MapPin,
@@ -20,14 +22,15 @@ import {
   Users,
 } from "lucide-react";
 
+import { buttonVariants } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
-import { PageHeader } from "@/components/ui/page-header";
 import { StatusPanel } from "@/components/ui/status-panel";
 import { useHrDashboard, useManagementDashboard } from "@/hooks/use-reporting";
+import { cn } from "@/lib/utils";
 import { REPORT_KEYS, type DashboardSummary } from "@/schemas/reporting";
 
-import { ChartCard, ColumnTrendChart, DonutChart, HorizontalBarChart, KpiTile, type ChartDatum } from "./charts";
+import { ChartCard, ColumnTrendChart, DonutChart, GaugeChart, HorizontalBarChart, KpiTile, type ChartDatum } from "./charts";
 import { REPORT_TITLES } from "./report-detail";
 
 type DashboardRole = "hr_personnel" | "management";
@@ -48,6 +51,14 @@ const KPIS: { key: string; label: string; hint: string; icon: ReactNode; tone?: 
   { key: "hiredApplicants", label: "Applicants hired", hint: "In this period", icon: <UserPlus className={iconClass} /> },
   { key: "promotionReady", label: "Promotion ready", hint: "Evaluated as ready", icon: <Award className={iconClass} /> },
   { key: "trainingNeeds", label: "Training needs", hint: "Missing a requirement", icon: <BookOpenCheck className={iconClass} />, tone: "attention" },
+];
+
+/** Work that is waiting on someone; each item is "clear" when its count is zero. */
+const ATTENTION_ITEMS: { key: string; label: (count: number) => string; href: Record<DashboardRole, `/${string}`> }[] = [
+  { key: "pendingLeave", label: (count) => `${count} leave ${count === 1 ? "request" : "requests"} awaiting a decision`, href: { hr_personnel: "/hr/leave-requests", management: "/reports/attendance-leave" } },
+  { key: "attendanceExceptions", label: (count) => `${count} attendance ${count === 1 ? "exception" : "exceptions"} to review`, href: { hr_personnel: "/hr/attendance", management: "/reports/attendance-leave" } },
+  { key: "recruitmentApplications", label: (count) => `${count} ${count === 1 ? "application" : "applications"} received this period`, href: { hr_personnel: "/hr/applications", management: "/reports" } },
+  { key: "trainingNeeds", label: (count) => `${count} personnel missing a promotion requirement`, href: { hr_personnel: "/hr/promotions", management: "/reports" } },
 ];
 
 /** Display names for metric keys whose generated label reads poorly. */
@@ -174,12 +185,28 @@ function DashboardContent({ role, query }: { role: DashboardRole; query: { isLoa
   ];
 
   return <section aria-labelledby="page-title" className="space-y-8">
-    <PageHeader
-      eyebrow={role === "management" ? "Management" : "HR Personnel"}
-      id="page-title"
-      meta={<p className="text-sm text-muted-foreground">Reporting period: {data.range.startsOn} to {data.range.endsOn}.</p>}
-      title={role === "management" ? "Personnel analytics" : "HR operations dashboard"}
-    />
+    <header className="relative overflow-hidden rounded-2xl border bg-card p-6 shadow-sm sm:p-8">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,var(--color-cta)_0%,transparent_55%)] opacity-25" />
+      <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold tracking-wide text-primary uppercase">Welcome back · {role === "management" ? "Management" : "HR Personnel"}</p>
+          <h1 className="mt-1 font-heading text-3xl font-bold tracking-tight" id="page-title">{role === "management" ? "Personnel analytics" : "HR operations dashboard"}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">SJCPS HRIS control room · Reporting period {data.range.startsOn} to {data.range.endsOn}</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Link className={buttonVariants({ className: "min-h-11 rounded-full", variant: "outline" })} href="/reports">
+            <FileText aria-hidden="true" /> Reports
+          </Link>
+          {role === "hr_personnel" ? (
+            <Link className={buttonVariants({ className: "min-h-11 rounded-full border-transparent bg-cta text-cta-foreground shadow-sm hover:bg-cta/90" })} href="/hr/employees/new">
+              <UserPlus aria-hidden="true" /> New Employee
+            </Link>
+          ) : null}
+        </div>
+      </div>
+    </header>
+
+    <AttentionRow data={data} role={role} />
 
     <section aria-label="Key figures" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
       {kpis.map((kpi) => <KpiTile hint={kpi.hint || undefined} icon={kpi.icon} key={kpi.key} label={kpi.label} tone={kpi.tone} value={data.metrics[kpi.key] ?? 0} />)}
@@ -226,4 +253,50 @@ function DashboardContent({ role, query }: { role: DashboardRole; query: { isLoa
       </ul>
     </section>
   </section>;
+}
+
+function AttentionRow({ data, role }: { data: DashboardSummary; role: DashboardRole }) {
+  const items = ATTENTION_ITEMS.filter((item) => item.key in data.metrics);
+  const clear = items.filter((item) => (data.metrics[item.key] ?? 0) === 0).length;
+  const showGauge = "attendanceToday" in data.metrics && (data.metrics.activeWorkforce ?? 0) > 0;
+  if (!items.length && !showGauge) return null;
+  return (
+    <div className="grid gap-4 lg:grid-cols-3">
+      {items.length ? (
+        <section aria-labelledby="needs-attention" className={cn("rounded-2xl border bg-card p-5 shadow-sm", showGauge ? "lg:col-span-2" : "lg:col-span-3")}>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="font-heading text-xl font-semibold" id="needs-attention">Needs attention</h2>
+            <p className="text-sm font-semibold text-primary tabular-nums">{clear} of {items.length} clear</p>
+          </div>
+          <ul className="mt-4 space-y-1">
+            {items.map((item) => {
+              const count = data.metrics[item.key] ?? 0;
+              const done = count === 0;
+              return (
+                <li key={item.key}>
+                  <Link className="flex min-h-11 items-center gap-3 rounded-lg px-2 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" href={item.href[role]}>
+                    {done ? <CircleCheck aria-hidden="true" className="size-5 shrink-0 text-primary" /> : <Circle aria-hidden="true" className="size-5 shrink-0 text-muted-foreground" />}
+                    <span className={cn("flex-1", done && "text-muted-foreground")}>{item.label(count)}</span>
+                    <span className="sr-only">{done ? "(clear)" : "(open)"}</span>
+                    <ArrowUpRight aria-hidden="true" className="size-4 text-muted-foreground" />
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+          <div aria-hidden="true" className="mt-4 h-1.5 overflow-hidden rounded-full bg-muted">
+            <div className="h-full rounded-full bg-primary" style={{ width: `${items.length ? (clear / items.length) * 100 : 0}%` }} />
+          </div>
+        </section>
+      ) : null}
+      {showGauge ? (
+        <section aria-labelledby="attendance-pulse" className={cn("rounded-2xl border bg-card p-5 shadow-sm", !items.length && "lg:col-span-3")}>
+          <h2 className="font-heading text-xl font-semibold" id="attendance-pulse">Attendance pulse</h2>
+          <div className="mt-3">
+            <GaugeChart label="Present today" value={data.metrics.attendanceToday ?? 0} whole={data.metrics.activeWorkforce ?? 0} />
+          </div>
+        </section>
+      ) : null}
+    </div>
+  );
 }

@@ -68,3 +68,26 @@ it("charts every breakdown with accessible summaries and links to the detailed r
 
   expect(screen.getByRole("link", { name: /Attendance and leave/ })).toHaveAttribute("href", "/reports/attendance-leave");
 });
+
+it("welcomes HR with shortcuts, open work, and an attendance gauge", () => {
+  useHrDashboard.mockReturnValue({
+    data: {
+      breakdowns: {},
+      generatedAt: "2026-08-24T00:00:00+00:00",
+      metrics: { activeWorkforce: 50, attendanceToday: 47, pendingLeave: 3, attendanceExceptions: 0 },
+      range: { endsOn: "2026-08-24", startsOn: "2026-07-26" },
+    },
+    error: null,
+    isLoading: false,
+  });
+
+  render(<ReportingDashboard role="hr_personnel" />);
+
+  expect(screen.getByText(/Welcome back/)).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "New Employee" })).toHaveAttribute("href", "/hr/employees/new");
+  const attention = screen.getByRole("region", { name: "Needs attention" });
+  expect(within(attention).getByText("1 of 2 clear")).toBeInTheDocument();
+  expect(within(attention).getByRole("link", { name: /^3 leave requests awaiting a decision\s*\(open\)$/ })).toHaveAttribute("href", "/hr/leave-requests");
+  expect(within(attention).getByRole("link", { name: /^0 attendance exceptions to review\s*\(clear\)$/ })).toHaveAttribute("href", "/hr/attendance");
+  expect(screen.getByRole("img", { name: "Present today: 94% (47 of 50)" })).toBeInTheDocument();
+});

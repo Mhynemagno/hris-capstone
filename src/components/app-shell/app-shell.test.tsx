@@ -59,7 +59,9 @@ describe("AppShell", () => {
     expect(screen.getAllByRole("main")).toHaveLength(1);
     expect(screen.getByRole("main")).toHaveAttribute("id", "main-content");
     expect(screen.getByRole("navigation", { name: /main navigation/i })).toBeInTheDocument();
-    expect(screen.getByText("San Juan City Police")).toBeInTheDocument();
+    expect(screen.getByText("San Juan City Police Station")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "San Juan City Police Station logo" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "View reports" })).toHaveAttribute("href", "/reports");
     expect(screen.getByTestId("brand-command-accent")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Sign out" })).toBeInTheDocument();
   });
