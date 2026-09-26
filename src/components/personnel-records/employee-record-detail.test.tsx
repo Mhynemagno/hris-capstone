@@ -19,6 +19,9 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/hooks/use-personnel-records", () => ({
   useDeletePersonnelEntry: () => ({ isPending: false, mutateAsync: mocks.deleteTraining }),
   useEmployee: mocks.useEmployee,
+  useEmployeeProfilePhotoUrl: () => ({ data: null }),
+  useRemoveMyEmployeeProfilePhoto: () => ({ isPending: false, mutateAsync: vi.fn() }),
+  useReplaceMyEmployeeProfilePhoto: () => ({ isPending: false, mutateAsync: vi.fn() }),
   usePersonnelEntries: mocks.useEntries,
   useSavePersonnelEntry: () => ({ isPending: false, mutateAsync: vi.fn() }),
 }));
@@ -79,6 +82,26 @@ describe("EmployeeRecordDetail", () => {
 
     await user.click(screen.getByRole("tab", { name: "Training" }));
     expect(mocks.replace).toHaveBeenCalledWith("/hr/employees/00000000-0000-4000-8000-000000000010?tab=training", { scroll: false });
+  });
+
+  it("shows a profile header, section counts, and a recent activity timeline", () => {
+    render(<EmployeeRecordDetail employeeId={employeeId} />);
+
+    expect(screen.getByRole("heading", { level: 1, name: "Ada Dela Cruz" })).toBeInTheDocument();
+    expect(screen.getByText("PAT-001")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Promotion review" })).toHaveAttribute("href", `/hr/promotions/${employeeId}`);
+    expect(screen.getByRole("tab", { name: "Training" })).toHaveTextContent("Training1");
+    const activity = screen.getByRole("region", { name: "Recent activity" });
+    expect(activity).toHaveTextContent("Leadership Development");
+    expect(activity).toHaveTextContent("Police Academy · 16 hours");
+  });
+
+  it("opens the official record when Edit details is chosen", async () => {
+    const user = userEvent.setup();
+    render(<EmployeeRecordDetail employeeId={employeeId} />);
+
+    await user.click(screen.getByRole("button", { name: "Edit details" }));
+    expect(mocks.replace).toHaveBeenCalledWith("/hr/employees/00000000-0000-4000-8000-000000000010?tab=official", { scroll: false });
   });
 
   it("opens the official record by default and for an unknown tab", () => {

@@ -7,6 +7,7 @@ export const DELETABLE_ENTITY_TYPES = [
   "job_opening",
   "managed_user",
   "notification",
+  "employee",
 ] as const;
 
 export type DeletableEntityType = (typeof DELETABLE_ENTITY_TYPES)[number];
@@ -30,6 +31,7 @@ const deleteRpc: Record<Exclude<DeletableEntityType, "managed_user">, { name: st
   promotion_criterion: { name: "delete_promotion_criterion", arg: "target_criterion_id", numeric: false },
   job_opening: { name: "delete_draft_job_opening", arg: "target_job_id", numeric: true },
   notification: { name: "delete_notification", arg: "target_notification_id", numeric: false },
+  employee: { name: "delete_employee", arg: "target_employee_id", numeric: false },
 };
 
 export async function getDeletionImpact(entityType: DeletableEntityType, entityId: string | number): Promise<DeletionImpact> {

@@ -1,6 +1,7 @@
 "use client";
 
 import { Building2, BriefcaseBusiness, CalendarDays, ChartColumn, Clock, ContactRound, FileText, Fingerprint, LayoutDashboard, MapPin, PanelLeft, ScrollText, Settings, ShieldCheck, TrendingUp, UserPen, Users } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -101,9 +102,14 @@ export function AppShell({ children, config, email }: AppShellProps) {
           <SidebarHeader className="p-4">
             <div className="relative flex items-center gap-3 overflow-hidden rounded-xl bg-sidebar-accent px-3 py-3">
               <span aria-hidden="true" className="absolute inset-y-0 left-0 w-1 bg-brand-command-red" data-testid="brand-command-accent" />
-              <div className="flex size-9 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground shadow-sm">
-                <LayoutDashboard aria-hidden="true" className="size-4" />
-              </div>
+              <Image
+                alt="San Juan City Police Station logo"
+                className="size-12 shrink-0 object-contain drop-shadow-sm"
+                height={48}
+                priority
+                src="/san-juan-police-logo.png"
+                width={48}
+              />
               <div className="min-w-0 group-data-[collapsible=icon]:hidden">
                 <p className="truncate text-base font-semibold">San Juan City Police</p>
                 <p className="truncate text-xs text-sidebar-foreground/80">

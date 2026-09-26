@@ -45,4 +45,17 @@ describe("RecordTabs", () => {
     await user.keyboard("{End}");
     expect(onChange).toHaveBeenLastCalledWith("training");
   });
+
+  it("supports vertical arrow keys and shows record counts without changing tab names", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(<RecordTabs active="official" counts={{ training: 3 }} idPrefix="rec" onChange={onChange} orientation="responsive" />);
+
+    expect(screen.getByRole("tab", { name: "Training" })).toHaveTextContent("Training3");
+    screen.getByRole("tab", { name: "Official record" }).focus();
+    await user.keyboard("{ArrowDown}");
+    expect(onChange).toHaveBeenLastCalledWith("service-history");
+    await user.keyboard("{ArrowUp}");
+    expect(onChange).toHaveBeenLastCalledWith("official");
+  });
 });

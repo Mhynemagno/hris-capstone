@@ -1,5 +1,17 @@
 import Link from "next/link";
+import { FilePen, History, KeyRound } from "lucide-react";
 
 import { EmployeeRecordSummary } from "@/components/personnel-records/employee-record-summary";
+import { buttonVariants } from "@/components/ui/button";
 
-export default function EmployeeProfilePage() { return <section className="space-y-5"><EmployeeRecordSummary /><div className="flex flex-wrap gap-x-4 gap-y-2"><Link className="text-sm underline" href="/employee/profile/change-request">Request profile change</Link><Link className="text-sm underline" href="/employee/profile/change-requests">Request history</Link><Link className="text-sm underline" href="/employee/profile/security">Change password</Link></div></section>; }
+export default function EmployeeProfilePage() {
+  return (
+    <EmployeeRecordSummary
+      actions={<>
+        <Link className={buttonVariants({ size: "sm" })} href="/employee/profile/change-request"><FilePen aria-hidden />Request profile change</Link>
+        <Link className={buttonVariants({ size: "sm", variant: "outline" })} href="/employee/profile/change-requests"><History aria-hidden />Request history</Link>
+        <Link className={buttonVariants({ size: "sm", variant: "outline" })} href="/employee/profile/security"><KeyRound aria-hidden />Change password</Link>
+      </>}
+    />
+  );
+}
