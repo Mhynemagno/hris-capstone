@@ -10,6 +10,7 @@ import { nativeSelectClassName } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { useEmployeeForCurrentUser, usePersonnelEntries } from "@/hooks/use-personnel-records";
 import { useSubmitProfileChangeRequest } from "@/hooks/use-profile-change-requests";
+import { PNP_FIELDS_OF_STUDY, PNP_INSTITUTIONS, PNP_QUALIFICATIONS, withSavedValue } from "@/lib/pnp-catalogue";
 import type { Qualification } from "@/lib/types/database";
 import { QUALIFICATION_LEVELS } from "@/schemas/personnel-records";
 import {
@@ -53,9 +54,9 @@ function qualificationFieldErrors(fields: QualificationFields): QualificationErr
     if (!key || errors[key]) continue;
     errors[key] =
       key === "name"
-        ? "Enter the qualification name (at least 2 characters)."
+        ? "Select a qualification."
         : key === "institution"
-          ? "Enter the institution (at least 2 characters)."
+          ? "Select an institution."
           : key === "awardedOn"
             ? "Enter the date the qualification was awarded."
             : issue.message;
@@ -236,10 +237,16 @@ export function ProfileChangeRequestForm() {
         {operation !== "remove" ? (
           <div className="grid gap-4 sm:grid-cols-2">
             <FormField error={qualificationErrors.name} htmlFor="qualification-name" label="Qualification name" required>
-              <Input id="qualification-name" onChange={(event) => changeQualificationField("name", event.target.value)} value={qualification.name} />
+              <select className={nativeSelectClassName} id="qualification-name" onChange={(event) => changeQualificationField("name", event.target.value)} value={qualification.name}>
+                <option value="">Select a qualification</option>
+                {withSavedValue(PNP_QUALIFICATIONS, qualification.name).map((choice) => <option key={choice} value={choice}>{choice}</option>)}
+              </select>
             </FormField>
             <FormField error={qualificationErrors.institution} htmlFor="qualification-institution" label="Institution" required>
-              <Input id="qualification-institution" onChange={(event) => changeQualificationField("institution", event.target.value)} value={qualification.institution} />
+              <select className={nativeSelectClassName} id="qualification-institution" onChange={(event) => changeQualificationField("institution", event.target.value)} value={qualification.institution}>
+                <option value="">Select an institution</option>
+                {withSavedValue(PNP_INSTITUTIONS, qualification.institution).map((choice) => <option key={choice} value={choice}>{choice}</option>)}
+              </select>
             </FormField>
             <FormField error={qualificationErrors.qualificationLevel} htmlFor="qualification-level" label="Qualification level">
               <select
@@ -257,7 +264,10 @@ export function ProfileChangeRequestForm() {
               </select>
             </FormField>
             <FormField error={qualificationErrors.fieldOfStudy} htmlFor="field-of-study" label="Field of study">
-              <Input id="field-of-study" onChange={(event) => changeQualificationField("fieldOfStudy", event.target.value)} value={qualification.fieldOfStudy} />
+              <select className={nativeSelectClassName} id="field-of-study" onChange={(event) => changeQualificationField("fieldOfStudy", event.target.value)} value={qualification.fieldOfStudy}>
+                <option value="">Not specified</option>
+                {withSavedValue(PNP_FIELDS_OF_STUDY, qualification.fieldOfStudy).map((choice) => <option key={choice} value={choice}>{choice}</option>)}
+              </select>
             </FormField>
             <FormField error={qualificationErrors.awardedOn} htmlFor="awarded-on" label="Awarded on" required>
               <Input id="awarded-on" onChange={(event) => changeQualificationField("awardedOn", event.target.value)} type="date" value={qualification.awardedOn} />

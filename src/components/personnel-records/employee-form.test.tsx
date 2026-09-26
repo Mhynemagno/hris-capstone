@@ -33,7 +33,7 @@ vi.mock("@/hooks/use-administration", () => ({
 const existingEmployee = {
   id: "00000000-0000-4000-8000-000000000010",
   profile_id: "00000000-0000-4000-8000-000000001604",
-  employee_number: "PAT-0001",
+  employee_number: "1-00001",
   first_name: "Ana",
   middle_name: null,
   last_name: "Reyes",
@@ -99,7 +99,8 @@ describe("EmployeeForm", () => {
     expect(screen.getByLabelText(/personal email/i)).toHaveValue("candidate.employee@example.test");
     expect(container.querySelector('input[name="profileId"]')).toHaveValue("00000000-0000-4000-8000-000000001604");
 
-    await user.type(screen.getByLabelText(/badge number/i), "EMP-0099");
+    await user.type(screen.getByLabelText(/badge number/i), "a1b23456789");
+    expect(screen.getByLabelText(/badge number/i)).toHaveValue("1-23456");
     await user.type(screen.getByLabelText(/employment start date/i), "2024-01-01");
     await user.click(screen.getByRole("button", { name: /save employee/i }));
 
@@ -108,6 +109,7 @@ describe("EmployeeForm", () => {
       firstName: "Ariun",
       lastName: "Bold",
       personalEmail: "candidate.employee@example.test",
+      employeeNumber: "1-23456",
     }));
   });
 
@@ -117,7 +119,11 @@ describe("EmployeeForm", () => {
 
     await user.click(screen.getByRole("button", { name: /save employee/i }));
 
-    expect(screen.getByLabelText(/badge number/i).parentElement).toHaveTextContent("Badge number must be at least 3 characters.");
+    expect(screen.getByLabelText(/badge number/i).parentElement).toHaveTextContent("Enter the badge number.");
+
+    await user.type(screen.getByLabelText(/badge number/i), "123");
+    await user.click(screen.getByRole("button", { name: /save employee/i }));
+    expect(screen.getByLabelText(/badge number/i).parentElement).toHaveTextContent("Badge number must be 6 digits in the format 0-00000.");
   });
 
   it("keeps the linked account, department, and rank when an existing employee is edited", async () => {

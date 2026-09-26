@@ -22,7 +22,7 @@ export function NotificationBell() {
       {count > 0 ? (
         <span
           aria-hidden="true"
-          className="absolute -top-1 -right-1 flex min-w-5 items-center justify-center rounded-full bg-brand-command-red px-1 text-xs font-semibold leading-5 text-white"
+          className="absolute -top-1 -right-1 flex min-w-5 items-center justify-center rounded-full bg-[oklch(0.52_0.17_24)] px-1 text-xs font-semibold leading-5 text-white"
         >
           {count > 99 ? "99+" : count}
         </span>

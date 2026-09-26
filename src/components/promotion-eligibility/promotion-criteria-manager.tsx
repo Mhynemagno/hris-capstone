@@ -8,10 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
 import { ErrorState } from "@/components/ui/error-state";
 import { FormField } from "@/components/ui/form-field";
-import { Input } from "@/components/ui/input";
 import { LoadingState } from "@/components/ui/loading-state";
 import { nativeSelectClassName } from "@/components/ui/native-select";
 import { useRankOptions } from "@/hooks/use-administration";
+import { PNP_CREDENTIALS_BY_KIND, SERVICE_YEAR_CHOICES } from "@/lib/pnp-catalogue";
 import { rankLabel } from "@/lib/ranks";
 import { useCreatePromotionCriterion, usePromotionCriteria, useSetPromotionCriterionActive } from "@/hooks/use-promotion-eligibility";
 import type { PromotionCriterionRequirement } from "@/lib/types/database";
@@ -32,6 +32,7 @@ type FieldErrors = Partial<Record<"targetRankId" | "minimumYearsOfService" | "mi
 function CriterionForm({ rankOptions, takenRankIds }: { rankOptions: { value: string; label: string; description?: string }[]; takenRankIds: Set<number> }) {
   const create = useCreatePromotionCriterion();
   const [rankId, setRankId] = useState<string | null>(null);
+  const [recordKind, setRecordKind] = useState<keyof typeof PNP_CREDENTIALS_BY_KIND>("training");
   const [errors, setErrors] = useState<FieldErrors>({});
   const [notice, setNotice] = useState<string | null>(null);
   const available = rankOptions.filter((option) => !takenRankIds.has(Number(option.value)));
@@ -48,7 +49,7 @@ function CriterionForm({ rankOptions, takenRankIds }: { rankOptions: { value: st
       minimumYearsOfService: form.minimumYearsOfService,
       minimumPerformanceRating: form.minimumPerformanceRating,
       requirements: requiredName
-        ? [{ recordKind: form.recordKind, requiredName, label: String(form.label ?? "").trim() || requiredName, isMandatory: true }]
+        ? [{ recordKind, requiredName, label: requiredName, isMandatory: true }]
         : [],
     });
     if (!parsed.success) {
@@ -65,6 +66,7 @@ function CriterionForm({ rankOptions, takenRankIds }: { rankOptions: { value: st
       await create.mutateAsync(parsed.data);
       formElement.reset();
       setRankId(null);
+      setRecordKind("training");
       setNotice("Promotion criteria saved.");
     } catch (cause) {
       setErrors({ form: cause instanceof Error ? cause.message : "Unable to save criteria." });
@@ -85,7 +87,9 @@ function CriterionForm({ rankOptions, takenRankIds }: { rankOptions: { value: st
         />
       </FormField>
       <FormField error={errors.minimumYearsOfService} htmlFor="minimum-years" label="Minimum years of service" required>
-        <Input defaultValue="0" id="minimum-years" inputMode="numeric" max="100" min="0" name="minimumYearsOfService" required type="number" />
+        <select className={nativeSelectClassName} defaultValue="0" id="minimum-years" name="minimumYearsOfService" required>
+          {SERVICE_YEAR_CHOICES.map((years) => <option key={years} value={years}>{years === 0 ? "No minimum" : `${years} ${years === 1 ? "year" : "years"}`}</option>)}
+        </select>
       </FormField>
       <FormField description="Leave as “No minimum” if ratings are not required." error={errors.minimumPerformanceRating} htmlFor="minimum-rating" label="Minimum performance rating">
         <select className={nativeSelectClassName} defaultValue="" id="minimum-rating" name="minimumPerformanceRating">
@@ -93,20 +97,26 @@ function CriterionForm({ rankOptions, takenRankIds }: { rankOptions: { value: st
           {PERFORMANCE_RATING_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
         </select>
       </FormField>
-      <fieldset className="grid gap-4 rounded-lg border p-4 sm:col-span-2 sm:grid-cols-3">
+      <fieldset className="grid gap-4 rounded-lg border p-4 sm:col-span-2 sm:grid-cols-2">
         <legend className="px-1 text-sm font-semibold">Required credential (optional)</legend>
         <FormField htmlFor="record-kind" label="Record type">
-          <select className={nativeSelectClassName} id="record-kind" name="recordKind">
+          <select
+            className={nativeSelectClassName}
+            id="record-kind"
+            name="recordKind"
+            onChange={(event) => setRecordKind(event.target.value as keyof typeof PNP_CREDENTIALS_BY_KIND)}
+            value={recordKind}
+          >
             <option value="certification">Certification</option>
             <option value="qualification">Qualification</option>
             <option value="training">Training</option>
           </select>
         </FormField>
-        <FormField description="Must match the record name on the employee's file." error={errors.requiredName} htmlFor="required-name" label="Required record name">
-          <Input id="required-name" name="requiredName" />
-        </FormField>
-        <FormField description="Shown to employees; defaults to the record name." htmlFor="label" label="Employee-facing label">
-          <Input id="label" name="label" />
+        <FormField description="Employees meet this when the same record is on their file." error={errors.requiredName} htmlFor="required-name" label="Required record name">
+          <select className={nativeSelectClassName} defaultValue="" id="required-name" key={recordKind} name="requiredName">
+            <option value="">No required credential</option>
+            {PNP_CREDENTIALS_BY_KIND[recordKind].map((name) => <option key={name} value={name}>{name}</option>)}
+          </select>
         </FormField>
       </fieldset>
       {errors.form ? <div className="sm:col-span-2"><ErrorState message={errors.form} /></div> : null}

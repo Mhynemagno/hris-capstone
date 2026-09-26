@@ -11,6 +11,7 @@ const invalidationKeys: Record<DeletableEntityType, readonly (readonly string[])
   job_opening: [["recruitment"], ["reporting"], ["administration", "audit-logs"]],
   managed_user: [["administration", "users"], ["administration", "roles"], ["administration", "audit-logs"], ["personnel-records"]],
   notification: [["notifications"]],
+  employee: [["personnel-records"], ["reporting"], ["administration", "audit-logs"]],
 };
 
 export function useDeletionImpact(entityType: DeletableEntityType, entityId: string | number | null) {

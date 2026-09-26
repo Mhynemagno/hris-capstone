@@ -18,7 +18,7 @@ async function fillValidJobOpening(user: ReturnType<typeof userEvent.setup>) {
   await user.selectOptions(screen.getByLabelText(/^Rank/), "2");
   await user.type(screen.getByLabelText(/Title/), "Community Safety Officer");
   await user.type(screen.getByLabelText(/Description/), "Support community safety and coordinate public outreach programs.");
-  await user.type(screen.getByLabelText(/Qualification 1/), "Relevant professional experience");
+  await user.selectOptions(screen.getByLabelText(/Qualification 1/), "At least 2 years of police service");
 }
 
 describe("HrJobForm", () => {

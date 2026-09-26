@@ -1,6 +1,7 @@
 "use client";
 
-import { Building2, BriefcaseBusiness, CalendarDays, ChartColumn, Clock, ContactRound, FileText, Fingerprint, LayoutDashboard, MapPin, PanelLeft, ScrollText, Settings, ShieldCheck, TrendingUp, UserPen, Users } from "lucide-react";
+import { Building2, BriefcaseBusiness, CalendarDays, ChartColumn, Clock, ContactRound, FileText, Fingerprint, LayoutDashboard, MapPin, PanelLeft, Plus, ScrollText, Settings, ShieldCheck, TrendingUp, UserPen, Users } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -12,7 +13,6 @@ import {
   Avatar,
   AvatarFallback,
 } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -20,7 +20,6 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Separator } from "@/components/ui/separator";
 import {
   Sidebar,
   SidebarContent,
@@ -89,107 +88,125 @@ export function AppShell({ children, config, email }: AppShellProps) {
 
   return (
     <TooltipProvider>
-      {/* The inset panel is the scroll container, so dragging or overscrolling never shifts the frame around it. */}
-      <SidebarProvider className="h-svh overflow-hidden">
+      {/* Classic HRIS frame: a full-width navy top bar over a navy sidebar and a light work area. */}
+      <SidebarProvider className="h-svh flex-col overflow-hidden">
         <a
           href="#main-content"
           className="sr-only fixed top-4 left-4 z-50 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground focus:not-sr-only focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
         >
           Skip to main content
         </a>
-        <Sidebar collapsible="offcanvas" variant="inset">
-          <SidebarHeader className="p-4">
-            <div className="relative flex items-center gap-3 overflow-hidden rounded-xl bg-sidebar-accent px-3 py-3">
-              <span aria-hidden="true" className="absolute inset-y-0 left-0 w-1 bg-brand-command-red" data-testid="brand-command-accent" />
-              <div className="flex size-9 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground shadow-sm">
-                <LayoutDashboard aria-hidden="true" className="size-4" />
-              </div>
-              <div className="min-w-0 group-data-[collapsible=icon]:hidden">
-                <p className="truncate text-base font-semibold">San Juan City Police</p>
-                <p className="truncate text-xs text-sidebar-foreground/80">
-                  HR information system
-                </p>
-              </div>
-            </div>
-          </SidebarHeader>
-          <SidebarContent>
-            <nav aria-label="Main navigation">
-              {groupNavigation(config.navigation).map((group) => (
-                <SidebarGroup key={group.label}>
-                  <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
-                  <SidebarGroupContent>
-                    <SidebarMenu>
-                      {group.items.map((item) => {
-                        const isActive = activeNavigationItem?.href === item.href;
-                        const Icon = navigationIcons[item.icon];
-
-                        return (
-                          <SidebarMenuItem key={item.href}>
-                            <SidebarMenuButton
-                              isActive={isActive}
-                              tooltip={item.label}
-                              render={
-                                <Link
-                                  href={item.href}
-                                  aria-current={isActive ? "page" : undefined}
-                                />
-                              }
-                            >
-                              <Icon aria-hidden="true" />
-                              <span>{item.label}</span>
-                            </SidebarMenuButton>
-                          </SidebarMenuItem>
-                        );
-                      })}
-                    </SidebarMenu>
-                  </SidebarGroupContent>
-                </SidebarGroup>
-              ))}
-            </nav>
-          </SidebarContent>
-          <SidebarFooter className="p-3">
-            <div className="space-y-2 rounded-xl border border-sidebar-border bg-sidebar-accent/60 p-2.5 group-data-[collapsible=icon]:hidden">
-              <div className="flex items-center gap-3">
-                <Avatar className="size-9">
-                  <AvatarFallback>{getInitials(email)}</AvatarFallback>
-                </Avatar>
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium" title={email ?? undefined}>{email ?? "Signed in"}</p>
-                  <Badge className="mt-1" variant="secondary">
-                    {config.label}
-                  </Badge>
-                </div>
-              </div>
-              <SignOutButton />
-            </div>
-          </SidebarFooter>
-        </Sidebar>
-        <SidebarInset className="min-w-0 overflow-y-auto overscroll-contain" id="main-content">
-          <header className="sticky top-0 z-10 flex h-16 items-center gap-3 border-b bg-background/90 px-4 backdrop-blur sm:px-6">
-            <SidebarTrigger aria-label="Toggle sidebar" className="min-h-11 min-w-11">
-              <PanelLeft aria-hidden="true" />
-            </SidebarTrigger>
-            <Separator className="h-5" orientation="vertical" />
-            <Breadcrumb aria-label="Breadcrumb">
-              <BreadcrumbList>
-                <BreadcrumbItem className="hidden sm:block">
-                  <span className="text-muted-foreground">{config.label}</span>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator className="hidden sm:block" />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>{currentPageLabel}</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-            <div className="ml-auto flex items-center gap-2">
-              <NotificationBell />
-              <AccountMenu email={email} roleLabel={config.label} />
-            </div>
-          </header>
-          <div className="flex min-w-0 flex-1 flex-col px-4 py-8 sm:px-6 lg:px-10">
-            <div className="mx-auto w-full max-w-6xl min-w-0">{children}</div>
+        <header className="dark relative z-20 flex h-16 shrink-0 items-center gap-3 border-b border-white/10 bg-topbar px-3 text-foreground sm:px-4">
+          <span aria-hidden="true" className="absolute inset-x-0 bottom-0 h-0.5 bg-brand-command-red" data-testid="brand-command-accent" />
+          <SidebarTrigger aria-label="Toggle sidebar" className="min-h-11 min-w-11 text-white/80 hover:bg-white/10 hover:text-white">
+            <PanelLeft aria-hidden="true" />
+          </SidebarTrigger>
+          <Link className="flex min-w-0 items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" href={config.homeHref}>
+            <Image
+              alt="San Juan City Police Station logo"
+              className="size-10 shrink-0 object-contain"
+              height={40}
+              priority
+              src="/san-juan-police-logo.png"
+              width={40}
+            />
+            <span className="min-w-0 leading-tight">
+              <span className="block truncate font-heading text-lg font-bold tracking-wide text-white">SJCPS <span className="text-sidebar-ring">HRIS</span></span>
+              <span className="hidden truncate text-xs text-white/60 sm:block">San Juan City Police Station</span>
+            </span>
+          </Link>
+          <div className="ml-auto flex items-center gap-2">
+            <NotificationBell />
+            <AccountMenu email={email} roleLabel={config.label} />
           </div>
-        </SidebarInset>
+        </header>
+        <div className="flex min-h-0 flex-1">
+          <Sidebar className="top-16 h-[calc(100svh-4rem)] border-r-0" collapsible="offcanvas">
+            <SidebarHeader className="p-3">
+              <div className="rounded-xl border border-sidebar-border bg-sidebar-accent/60 p-3 group-data-[collapsible=icon]:hidden">
+                <div className="flex items-center gap-3">
+                  <Avatar className="size-11 ring-2 ring-sidebar-primary/60">
+                    <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground font-semibold">{getInitials(email)}</AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-sidebar-accent-foreground" title={email ?? undefined}>{email ?? "Signed in"}</p>
+                    <p className="flex items-center gap-1.5 text-xs text-sidebar-foreground/75">
+                      {config.label}
+                      <span aria-hidden="true" className="size-2 rounded-full bg-emerald-400" />
+                      <span className="sr-only">(online)</span>
+                    </p>
+                  </div>
+                </div>
+                {config.quickAction ? (
+                  <Link
+                    className="mt-3 flex min-h-10 items-center justify-center gap-1.5 rounded-lg bg-white px-3 text-sm font-semibold text-slate-900 shadow-sm transition-colors hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+                    href={config.quickAction.href}
+                  >
+                    <Plus aria-hidden="true" className="size-4" />
+                    {config.quickAction.label}
+                  </Link>
+                ) : null}
+              </div>
+            </SidebarHeader>
+            <SidebarContent>
+              <nav aria-label="Main navigation">
+                {groupNavigation(config.navigation).map((group) => (
+                  <SidebarGroup className="pl-0" key={group.label}>
+                    <SidebarGroupLabel className="pl-5 text-xs font-semibold tracking-wider text-sidebar-foreground/75 uppercase">{group.label}</SidebarGroupLabel>
+                    <SidebarGroupContent>
+                      <SidebarMenu>
+                        {group.items.map((item) => {
+                          const isActive = activeNavigationItem?.href === item.href;
+                          const Icon = navigationIcons[item.icon];
+
+                          return (
+                            <SidebarMenuItem key={item.href}>
+                              <SidebarMenuButton
+                                className="rounded-l-none rounded-r-full pl-5 text-sidebar-foreground/85 data-active:bg-sidebar-primary data-active:text-sidebar-primary-foreground data-active:shadow-md data-active:shadow-black/20"
+                                isActive={isActive}
+                                tooltip={item.label}
+                                render={
+                                  <Link
+                                    href={item.href}
+                                    aria-current={isActive ? "page" : undefined}
+                                  />
+                                }
+                              >
+                                <Icon aria-hidden="true" />
+                                <span>{item.label}</span>
+                              </SidebarMenuButton>
+                            </SidebarMenuItem>
+                          );
+                        })}
+                      </SidebarMenu>
+                    </SidebarGroupContent>
+                  </SidebarGroup>
+                ))}
+              </nav>
+            </SidebarContent>
+            <SidebarFooter className="border-t border-sidebar-border p-3 group-data-[collapsible=icon]:hidden">
+              <SignOutButton className="w-full justify-center border-sidebar-border bg-transparent text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" />
+            </SidebarFooter>
+          </Sidebar>
+          <SidebarInset className="min-w-0 overflow-y-auto overscroll-contain bg-background" id="main-content">
+            <div className="border-b bg-card/80 px-4 py-3 sm:px-6 lg:px-10">
+              <Breadcrumb aria-label="Breadcrumb">
+                <BreadcrumbList>
+                  <BreadcrumbItem className="hidden sm:block">
+                    <span className="text-muted-foreground">{config.label}</span>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator className="hidden sm:block" />
+                  <BreadcrumbItem>
+                    <BreadcrumbPage>{currentPageLabel}</BreadcrumbPage>
+                  </BreadcrumbItem>
+                </BreadcrumbList>
+              </Breadcrumb>
+            </div>
+            <div className="flex min-w-0 flex-1 flex-col px-4 py-8 sm:px-6 lg:px-10">
+              <div className="mx-auto w-full max-w-6xl min-w-0">{children}</div>
+            </div>
+          </SidebarInset>
+        </div>
       </SidebarProvider>
     </TooltipProvider>
   );

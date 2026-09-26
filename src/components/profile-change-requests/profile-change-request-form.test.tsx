@@ -18,13 +18,13 @@ describe("ProfileChangeRequestForm", () => {
   it("adds a qualification proposal and submits it for approval", async () => {
     const user = userEvent.setup();
     render(<ProfileChangeRequestForm />);
-    await user.type(screen.getByLabelText(/Qualification name/), "Bachelor of Science");
-    await user.type(screen.getByLabelText(/Institution/), "Mongolian University");
+    await user.selectOptions(screen.getByLabelText(/Qualification name/), "Baccalaureate Degree");
+    await user.selectOptions(screen.getByLabelText(/Institution/), "State University or College");
     await user.type(screen.getByLabelText(/Awarded on/), "2024-06-01");
     await user.click(screen.getByRole("button", { name: "Add proposal to request" }));
-    expect(screen.getByRole("list", { name: "Qualification proposals" })).toHaveTextContent("Bachelor of Science");
+    expect(screen.getByRole("list", { name: "Qualification proposals" })).toHaveTextContent("Baccalaureate Degree");
     await user.click(screen.getByRole("button", { name: "Submit request" }));
-    await waitFor(() => expect(mocks.mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ draft: expect.objectContaining({ changes: [expect.objectContaining({ kind: "qualification", operation: "add", requestedValue: expect.objectContaining({ name: "Bachelor of Science", institution: "Mongolian University" }) })] }) }))); 
+    await waitFor(() => expect(mocks.mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ draft: expect.objectContaining({ changes: [expect.objectContaining({ kind: "qualification", operation: "add", requestedValue: expect.objectContaining({ name: "Baccalaureate Degree", institution: "State University or College" }) })] }) }))); 
   }, 10_000);
 
   it("requires at least one proposed change", async () => {
@@ -53,7 +53,7 @@ describe("ProfileChangeRequestForm", () => {
     render(<ProfileChangeRequestForm />);
     await user.click(screen.getByRole("button", { name: "Add proposal to request" }));
 
-    expect(screen.getByText("Enter the qualification name (at least 2 characters).")).toBeVisible();
+    expect(screen.getByText("Select a qualification.")).toBeVisible();
     expect(screen.getByLabelText(/Qualification name/)).toHaveAttribute("aria-invalid", "true");
     expect(screen.getByText("Enter the date the qualification was awarded.")).toBeVisible();
   });

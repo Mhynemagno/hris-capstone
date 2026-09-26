@@ -10,6 +10,7 @@ vi.mock("@/hooks/use-personnel-records", () => ({
 }));
 
 vi.mock("@/hooks/use-administration", () => ({
+  useDepartmentOptions: () => ({ data: [{ id: 3, name: "Intelligence Section", is_active: true }] }),
   useRankOptions: () => ({ data: [{ id: 9, name: "Police Captain", code: "PCapt", sort_order: 9, is_active: true, created_at: "", updated_at: "" }] }),
 }));
 
@@ -53,6 +54,17 @@ describe("EmployeeProfile", () => {
     expect(screen.getByText("Badge number")).toBeInTheDocument();
     expect(screen.getByText("PCapt — Police Captain")).toBeInTheDocument();
     expect(screen.getAllByText("Not provided")).toHaveLength(9);
+    expect(screen.getByText("Not assigned")).toBeInTheDocument();
+  });
+
+  it("groups contact details into cards and shows header actions", () => {
+    render(<EmployeeProfile actions={<a href="/employee/profile/change-request">Request profile change</a>} employee={{ ...employee, department_id: 3, phone: "09171234567" }} trainings={[]} />);
+
+    expect(screen.getByRole("region", { name: "Contact information" })).toHaveTextContent("09171234567");
+    expect(screen.getByRole("region", { name: "Emergency contact" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Address information" })).toBeInTheDocument();
+    expect(screen.getByText("Intelligence Section")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Request profile change" })).toBeInTheDocument();
   });
 
   it("keeps trainings visible as promotion evidence", () => {

@@ -69,7 +69,7 @@ describe("personnel-record queries", () => {
   describe("saveEmployee", () => {
     const employeeId = "00000000-0000-4000-8000-000000000010";
     const baseInput = {
-      employeeNumber: "PAT-0001",
+      employeeNumber: "1-00001",
       firstName: "Ana",
       lastName: "Reyes",
       personalEmail: "ana@example.test",

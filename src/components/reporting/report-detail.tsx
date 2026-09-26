@@ -18,7 +18,7 @@ import { reportFiltersSchema, type ReportFilters } from "@/schemas/reporting";
 type ReportKey = ReportFilters["reportKey"];
 type StatusOption = { value: string; label: string; group?: string };
 
-const REPORT_TITLES: Record<ReportKey, string> = {
+export const REPORT_TITLES: Record<ReportKey, string> = {
   "applicant-tracking": "Applicant tracking",
   "hiring-decisions": "Hiring decisions",
   "employee-performance": "Employee performance",

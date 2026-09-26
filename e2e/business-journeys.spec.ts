@@ -136,7 +136,7 @@ test.describe("personnel records and profile changes", () => {
     const phone = `0917${String(Math.floor(Math.random() * 1e7)).padStart(7, "0")}`;
     await signIn(page, "demo.hr@example.test", "/hr");
     await page.goto("/hr/employees");
-    await page.getByRole("link", { name: /DEMO-001|Demo/ }).first().click();
+    await page.getByRole("link", { name: /0-00001|Demo/ }).first().click();
     await expect(page).toHaveURL(/\/hr\/employees\/[0-9a-f-]{36}$/, { timeout: 30_000 });
     const recordUrl = page.url();
 
@@ -208,7 +208,8 @@ test.describe("read-only and public journeys", () => {
     await page.getByLabel(/^Rank/).selectOption({ label: "Pat — Patrolman / Patrolwoman" });
     await page.getByLabel(/^Title/).fill(title);
     await page.getByLabel(/^Description/).fill("An opening published by the end-to-end journey tests.");
-    await page.getByLabel("Qualification 1").fill("Physically and mentally fit");
+    await page.getByLabel("Criterion 1 type").selectOption("skill");
+    await page.getByLabel("Qualification 1").selectOption("Physically fit (passed the Physical Fitness Test)");
     await page.getByRole("button", { name: "Publish opening" }).click();
     await expect(page).toHaveURL(/\/hr\/jobs$/);
     await signOut(page, "demo.hr@example.test");

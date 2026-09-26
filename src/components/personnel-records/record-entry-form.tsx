@@ -8,6 +8,16 @@ import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  PNP_CERTIFICATIONS,
+  PNP_FIELDS_OF_STUDY,
+  PNP_INSTITUTIONS,
+  PNP_ISSUERS,
+  PNP_QUALIFICATIONS,
+  PNP_TRAINING_PROVIDERS,
+  PNP_TRAININGS,
+  withSavedValue,
+} from "@/lib/pnp-catalogue";
 import type { Qualification, TrainingRecord } from "@/lib/types/database";
 import type { PersonnelKind } from "@/queries/personnel-records";
 import { certificationSchema, QUALIFICATION_LEVELS, qualificationSchema, serviceHistorySchema, trainingRecordSchema } from "@/schemas/personnel-records";
@@ -19,6 +29,13 @@ const fields: Record<PersonnelKind, { title: string; primary: string; secondary:
   qualification: { title: "Qualification", primary: "Qualification name", secondary: "Institution", date: "Awarded date" },
   certification: { title: "Certification", primary: "Certificate name", secondary: "Issuer", date: "Issued date", expiry: "Expiry date" },
   training: { title: "Training", primary: "Course name", secondary: "Provider", date: "Completed date", expiry: "Expiry date" },
+};
+
+/** Dropdown choices for the name and awarding-body fields of each credential record. */
+const choices: Partial<Record<PersonnelKind, { primary: readonly string[]; secondary: readonly string[] }>> = {
+  qualification: { primary: PNP_QUALIFICATIONS, secondary: PNP_INSTITUTIONS },
+  certification: { primary: PNP_CERTIFICATIONS, secondary: PNP_ISSUERS },
+  training: { primary: PNP_TRAININGS, secondary: PNP_TRAINING_PROVIDERS },
 };
 
 /** Maps schema field names back to the generic form controls they came from. */
@@ -53,6 +70,9 @@ export function RecordEntryForm({ employeeId, kind, onSaved, pending = false, tr
   const [rankId, setRankId] = useState("");
   const [startDate, setStartDate] = useState(training?.completed_on ?? qualification?.awarded_on ?? "");
   const config = fields[kind];
+  const kindChoices = choices[kind];
+  const savedPrimary = training?.course_name ?? qualification?.name;
+  const savedSecondary = training?.provider ?? qualification?.institution;
   const isTrainingEdit = kind === "training" && Boolean(training);
   const isQualificationEdit = kind === "qualification" && Boolean(qualification);
   const editId = isTrainingEdit ? training?.id : isQualificationEdit ? qualification?.id : undefined;
@@ -82,6 +102,11 @@ export function RecordEntryForm({ employeeId, kind, onSaved, pending = false, tr
       for (const issue of parsed.error.issues) {
         const key = errorFieldFor[String(issue.path[0])] ?? "form";
         errors[key] ??= issue.message;
+      }
+      // Dropdowns fail only when nothing was chosen, so say that instead of a length rule.
+      if (kindChoices) {
+        if (errors.primary && !text(form.primary)) errors.primary = `Select a ${config.primary.toLowerCase()}.`;
+        if (errors.secondary && !text(form.secondary)) errors.secondary = `Select a ${config.secondary.toLowerCase()}.`;
       }
       setFieldErrors(errors);
       if (errors.form) setError(errors.form);
@@ -126,11 +151,21 @@ export function RecordEntryForm({ employeeId, kind, onSaved, pending = false, tr
         label={config.primary}
         required={!isServiceHistory}
       >
-        <Input className="h-11" defaultValue={training?.course_name ?? qualification?.name} id={`${kind}-primary`} name="primary" required={!isServiceHistory} />
+        {kindChoices ? (
+          <NativeSelect defaultValue={savedPrimary ?? ""} id={`${kind}-primary`} name="primary" required>
+            <option value="">Select a {config.primary.toLowerCase()}</option>
+            {withSavedValue(kindChoices.primary, savedPrimary).map((choice) => <option key={choice} value={choice}>{choice}</option>)}
+          </NativeSelect>
+        ) : (
+          <Input className="h-11" id={`${kind}-primary`} name="primary" />
+        )}
       </FormField>
       {!isServiceHistory ? (
         <FormField error={e.secondary} htmlFor={`${kind}-secondary`} label={config.secondary} required>
-          <Input className="h-11" defaultValue={training?.provider ?? qualification?.institution} id={`${kind}-secondary`} name="secondary" required />
+          <NativeSelect defaultValue={savedSecondary ?? ""} id={`${kind}-secondary`} name="secondary" required>
+            <option value="">Select a {config.secondary.toLowerCase()}</option>
+            {withSavedValue(kindChoices?.secondary ?? [], savedSecondary).map((choice) => <option key={choice} value={choice}>{choice}</option>)}
+          </NativeSelect>
         </FormField>
       ) : null}
       {kind === "qualification" ? (
@@ -142,7 +177,10 @@ export function RecordEntryForm({ employeeId, kind, onSaved, pending = false, tr
             </NativeSelect>
           </FormField>
           <FormField error={e.fieldOfStudy} htmlFor="qualification-field-of-study" label="Field of study">
-            <Input className="h-11" defaultValue={qualification?.field_of_study ?? ""} id="qualification-field-of-study" name="fieldOfStudy" />
+            <NativeSelect defaultValue={qualification?.field_of_study ?? ""} id="qualification-field-of-study" name="fieldOfStudy">
+              <option value="">Not specified</option>
+              {withSavedValue(PNP_FIELDS_OF_STUDY, qualification?.field_of_study).map((field) => <option key={field} value={field}>{field}</option>)}
+            </NativeSelect>
           </FormField>
         </>
       ) : null}

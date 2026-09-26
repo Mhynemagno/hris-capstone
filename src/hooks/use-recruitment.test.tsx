@@ -42,7 +42,7 @@ describe("recruitment hooks", () => {
     const { result } = renderHook(() => recruitment.useHireApplication(), { wrapper });
     await result.current.mutateAsync({
       applicationId,
-      badgeNumber: "EMP-2026-001",
+      badgeNumber: "2-02601",
     });
 
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ["recruitment"] });

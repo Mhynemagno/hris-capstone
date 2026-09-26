@@ -23,8 +23,10 @@ describe("shared foundation schemas", () => {
       page: 2,
       pageSize: 25,
     });
-    expect(employeeNumberSchema.parse("EMP-2026-001")).toBe("EMP-2026-001");
-    expect(employeeNumberSchema.parse(" pat-0001 ")).toBe("PAT-0001");
-    expect(() => employeeNumberSchema.parse("P1")).toThrow();
+    expect(employeeNumberSchema.parse("1-23456")).toBe("1-23456");
+    expect(employeeNumberSchema.parse(" 0-00001 ")).toBe("0-00001");
+    for (const invalid of ["123456", "12-3456", "1-2345", "1-234567", "A-23456", "PAT-0001"]) {
+      expect(() => employeeNumberSchema.parse(invalid)).toThrow();
+    }
   });
 });

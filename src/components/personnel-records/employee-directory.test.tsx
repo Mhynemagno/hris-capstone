@@ -7,6 +7,12 @@ const mocks = vi.hoisted(() => ({ useEmployeeDirectory: vi.fn() }));
 vi.mock("@/hooks/use-personnel-records", () => ({
   useEmployeeDirectory: mocks.useEmployeeDirectory,
   useUnlinkedEmployeeAccounts: () => ({ data: undefined, isLoading: false, error: null }),
+  useEmployeeProfilePhotoUrl: () => ({ data: undefined }),
+}));
+
+vi.mock("@/hooks/use-deletion", () => ({
+  useDeletionImpact: () => ({ data: undefined, isLoading: false, error: null }),
+  useDeleteRecord: () => ({ isPending: false, mutateAsync: vi.fn(), reset: vi.fn(), error: null }),
 }));
 
 vi.mock("@/hooks/use-administration", () => ({
@@ -34,7 +40,10 @@ const employee = {
   id: "00000000-0000-4000-8000-000000000010",
   first_name: "Ana",
   last_name: "Reyes",
-  employee_number: "PAT-0001",
+  middle_name: "Santos",
+  qualifier: "Jr.",
+  profile_image_path: null,
+  employee_number: "1-00001",
   department_id: 3,
   rank_id: 7,
   employment_status: "on_leave",
@@ -46,21 +55,30 @@ describe("EmployeeDirectory", () => {
     mocks.useEmployeeDirectory.mockReturnValue({ data: { rows: [employee], count: 1 }, error: null, isLoading: false });
   });
 
-  it("lists records in an accessible table with department, rank, and a visible action", () => {
+  it("lists records with rank, names, qualifier, status, and view, edit, and delete actions", async () => {
+    const user = userEvent.setup();
     render(<EmployeeDirectory />);
 
     const table = screen.getByRole("table", { name: "Personnel records" });
-    expect(within(table).getByRole("cell", { name: "Operations" })).toBeInTheDocument();
+    expect(within(table).getAllByRole("columnheader").map((header) => header.textContent)).toEqual(["Photo", "Rank", "Last Name", "First Name", "Middle Name", "Qualifier", "Status", "Action"]);
     expect(within(table).getByRole("cell", { name: "Pat" })).toBeInTheDocument();
+    expect(within(table).getByRole("cell", { name: "Santos" })).toBeInTheDocument();
+    expect(within(table).getByRole("cell", { name: "Jr." })).toBeInTheDocument();
     expect(within(table).getByRole("cell", { name: "On leave" })).toBeInTheDocument();
     expect(within(table).getByRole("link", { name: /view record for ana reyes/i })).toHaveAttribute("href", `/hr/employees/${employee.id}`);
+    expect(within(table).getByRole("link", { name: /edit record for ana reyes/i })).toHaveAttribute("href", `/hr/employees/${employee.id}?tab=official`);
+    expect(screen.getByRole("link", { name: "Add New Employee" })).toHaveAttribute("href", "/hr/employees/new");
     expect(screen.getByText("1 record")).toBeInTheDocument();
+
+    await user.click(within(table).getByRole("button", { name: /delete record for ana reyes/i }));
+    expect(await screen.findByRole("alertdialog")).toBeInTheDocument();
   });
 
   it("filters by department, rank, and employment status, then clears", async () => {
     const user = userEvent.setup();
     render(<EmployeeDirectory />);
 
+    await user.click(screen.getByRole("button", { name: "Filter" }));
     expect(screen.getByRole("button", { name: "Clear filters" })).toBeDisabled();
     await user.selectOptions(screen.getByLabelText("Department"), "3");
     expect(within(screen.getByLabelText("Rank")).getByRole("option", { name: "PCpl — Police Corporal" })).toBeInTheDocument();
