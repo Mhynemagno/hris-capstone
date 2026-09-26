@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(32);
+select extensions.plan(40);
 
 -- Fixture accounts: two administrators, HR, an unused applicant, and an applicant with an application.
 insert into auth.users (id, aud, role, email, created_at, updated_at)
@@ -56,7 +56,7 @@ select extensions.throws_ok(
   '42501', 'HR access is required.', 'Administrators cannot delete HR-owned leave types');
 select extensions.throws_ok(
   $$select public.get_deletion_impact('employee', '00000000-0000-4000-8000-000000009501')$$,
-  '22023', 'Deletion is not supported for this record type.', 'History-bearing records such as employees are never deletable');
+  '42501', 'HR access is required.', 'Administrators cannot assess personnel record deletion');
 select extensions.throws_ok(
   $$select public.get_deletion_impact('managed_user', 'not-a-uuid')$$,
   '22023', 'The record identifier is not valid.', 'Malformed identifiers are rejected cleanly');
@@ -231,6 +231,58 @@ select extensions.results_eq(
   $$select file_name from public.applicant_documents where application_id = '00000000-0000-4000-8000-000000009561'$$,
   $$values ('new-cv.pdf'::text)$$,
   'Resubmission replaces the old documents and keeps the newly uploaded ones');
+
+-- ---------------------------------------------------------------------------
+-- Personnel records: HR can delete one only while no official record uses it
+-- ---------------------------------------------------------------------------
+set local role postgres;
+insert into public.employees (id, employee_number, first_name, last_name, personal_email, employment_started_on)
+values
+  ('00000000-0000-4000-8000-000000009591', '9-00001', 'Mistaken', 'Entry', 'mistaken.entry@example.test', '2024-01-01'),
+  ('00000000-0000-4000-8000-000000009592', '9-00002', 'Rated', 'Officer', 'rated.officer@example.test', '2020-01-01');
+insert into public.qualifications (employee_id, name, institution, awarded_on)
+values ('00000000-0000-4000-8000-000000009591', 'Baccalaureate Degree', 'State University or College', '2019-06-01');
+insert into public.performance_ratings (employee_id, rating, review_period_starts_on, review_period_ends_on, created_by_user_id, updated_by_user_id)
+values ('00000000-0000-4000-8000-000000009592', 4, '2025-01-01', '2025-12-31', '00000000-0000-4000-8000-000000009503', '00000000-0000-4000-8000-000000009503');
+
+set local role authenticated;
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000009505';
+select extensions.throws_ok(
+  $$select public.delete_employee('00000000-0000-4000-8000-000000009591')$$,
+  '42501', 'HR access is required.', 'Only HR can delete a personnel record');
+
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000009503';
+select extensions.is(
+  (public.get_deletion_impact('employee', '00000000-0000-4000-8000-000000009591') ->> 'canDelete')::boolean, true,
+  'A personnel record with only personnel entries can be deleted');
+select extensions.is(
+  public.get_deletion_impact('employee', '00000000-0000-4000-8000-000000009591') -> 'removes',
+  '[{"label": "qualifications", "count": 1}]'::jsonb,
+  'The impact preview lists the personnel entries removed with the record');
+select extensions.is(
+  (public.get_deletion_impact('employee', '00000000-0000-4000-8000-000000009592') ->> 'canDelete')::boolean, false,
+  'Official records such as performance ratings block deleting a personnel record');
+select extensions.throws_ok(
+  $$select public.delete_employee('00000000-0000-4000-8000-000000009592')$$,
+  'P0001', null, 'Deleting a personnel record that official records use is refused');
+select extensions.lives_ok(
+  $$select public.delete_employee('00000000-0000-4000-8000-000000009591')$$,
+  'HR can delete an unused personnel record');
+
+set local role postgres;
+select extensions.is(
+  (select count(*) from public.employees where id = '00000000-0000-4000-8000-000000009591')
+    + (select count(*) from public.qualifications where employee_id = '00000000-0000-4000-8000-000000009591')
+    + (select count(*) from public.employee_record_history where employee_id = '00000000-0000-4000-8000-000000009591'),
+  0::bigint,
+  'The record, its entries, and its record history are removed');
+select extensions.ok(
+  exists (
+    select 1 from public.audit_logs
+    where entity_type = 'employees' and entity_id = '00000000-0000-4000-8000-000000009591' and action = 'delete'
+      and metadata -> 'entries' -> 'qualifications' -> 0 ->> 'name' = 'Baccalaureate Degree'
+  ),
+  'The audit log keeps a full snapshot of the deleted personnel record');
 
 select * from extensions.finish();
 
