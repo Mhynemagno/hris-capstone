@@ -208,7 +208,8 @@ test.describe("read-only and public journeys", () => {
     await page.getByLabel(/^Rank/).selectOption({ label: "Pat — Patrolman / Patrolwoman" });
     await page.getByLabel(/^Title/).fill(title);
     await page.getByLabel(/^Description/).fill("An opening published by the end-to-end journey tests.");
-    await page.getByLabel("Qualification 1").fill("Physically and mentally fit");
+    await page.getByLabel("Criterion 1 type").selectOption("skill");
+    await page.getByLabel("Qualification 1").selectOption("Physically fit (passed the Physical Fitness Test)");
     await page.getByRole("button", { name: "Publish opening" }).click();
     await expect(page).toHaveURL(/\/hr\/jobs$/);
     await signOut(page, "demo.hr@example.test");

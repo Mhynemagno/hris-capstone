@@ -83,12 +83,11 @@ describe("HR recruitment workspace", () => {
     await user.paste("Senior Recruiter");
     await user.click(screen.getByLabelText(/^description/i));
     await user.paste("Lead recruitment operations across the organization.");
-    await user.click(screen.getByLabelText("Qualification 1"));
-    await user.paste("Five years of experience");
+    await user.selectOptions(screen.getByLabelText("Qualification 1"), "At least 5 years of police service");
     await user.click(screen.getByRole("button", { name: "Save draft" }));
 
     await waitFor(() => expect(mocks.saveJob).toHaveBeenCalledWith(expect.objectContaining({
-      input: expect.objectContaining({ status: "draft", departmentId: 1, rankId: 2, criteria: [expect.objectContaining({ requirement: "Five years of experience" })] }),
+      input: expect.objectContaining({ status: "draft", departmentId: 1, rankId: 2, criteria: [expect.objectContaining({ requirement: "At least 5 years of police service" })] }),
     })));
     expect(await screen.findByRole("status")).toHaveTextContent("Draft saved.");
   });

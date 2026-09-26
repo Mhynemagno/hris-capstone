@@ -24,7 +24,7 @@ describe("plain-language validation messages", () => {
   });
 
   it("keeps messages written on a schema", () => {
-    expect(firstMessage(employeeNumberSchema, "P1")).toBe("Badge number must be at least 3 characters.");
+    expect(firstMessage(employeeNumberSchema, "P1")).toBe("Badge number must be 6 digits in the format 0-00000.");
   });
 
   it("applies to the record forms that showed library wording", () => {

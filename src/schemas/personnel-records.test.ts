@@ -13,7 +13,7 @@ describe("personnel record schemas", () => {
   it("normalizes an official employee record before it reaches the database", () => {
     expect(
       employeeSchema.parse({
-        employeeNumber: " emp-0001 ",
+        employeeNumber: " 1-00001 ",
         firstName: " Erdene ",
         lastName: " Bat ",
         personalEmail: "EMPLOYEE@EXAMPLE.COM ",
@@ -21,7 +21,7 @@ describe("personnel record schemas", () => {
         employmentStartedOn: "2024-01-01",
       }),
     ).toMatchObject({
-      employeeNumber: "EMP-0001",
+      employeeNumber: "1-00001",
       firstName: "Erdene",
       personalEmail: "employee@example.com",
     });
@@ -29,7 +29,7 @@ describe("personnel record schemas", () => {
 
   it("records the rank by its catalogue id and allows only Active or On leave", () => {
     const base = {
-      employeeNumber: "PAT-0001",
+      employeeNumber: "1-00002",
       firstName: "Ana",
       lastName: "Dela Cruz",
       personalEmail: "ana@example.com",

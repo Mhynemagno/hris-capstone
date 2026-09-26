@@ -15,6 +15,7 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { useDepartmentOptions, useRankOptions } from "@/hooks/use-administration";
 import { useSaveJobOpening } from "@/hooks/use-recruitment";
+import { PNP_JOB_CRITERIA, withSavedValue, type PnpJobCriterionKind } from "@/lib/pnp-catalogue";
 import { jobOpeningSchema, type JobOpeningInput } from "@/schemas/recruitment";
 import type { JobOpening, JobQualificationCriterion } from "@/lib/types/database";
 
@@ -63,6 +64,7 @@ export function HrJobForm({ job }: HrJobFormProps) {
     defaultValues: defaults(job),
   });
   const criteria = useFieldArray({ control: form.control, name: "criteria" });
+  const criteriaValues = useWatch({ control: form.control, name: "criteria" });
   const hasApplications = (job?.applications?.[0]?.count ?? 0) > 0;
   const optionsLoading = departments.isLoading || ranks.isLoading;
   const departmentValue = toSelectValue(useWatch({ control: form.control, name: "departmentId" }));
@@ -146,31 +148,45 @@ export function HrJobForm({ job }: HrJobFormProps) {
           <Button onClick={() => criteria.append({ ordinal: criteria.fields.length + 1, kind: "other", requirement: "", isRequired: true })} size="sm" type="button" variant="outline">Add criterion</Button>
         </div>
         {typeof errors.criteria?.message === "string" ? <p className="text-sm font-medium text-destructive" role="alert">{errors.criteria.message}</p> : null}
-        {criteria.fields.map((field, index) => (
-          <div className="grid gap-3 rounded-lg bg-muted/50 p-3 sm:grid-cols-[12rem_1fr_auto]" key={field.id}>
-            <FormField htmlFor={`criterion-kind-${field.id}`} label={`Criterion ${index + 1} type`}>
-              <NativeSelect id={`criterion-kind-${field.id}`} {...form.register(`criteria.${index}.kind`)}>
-                <option value="education">Education</option>
-                <option value="eligibility">Eligibility</option>
-                <option value="experience">Experience</option>
-                <option value="skill">Skill</option>
-                <option value="certification">Certification</option>
-                <option value="other">Other</option>
-              </NativeSelect>
-            </FormField>
-            <FormField error={errors.criteria?.[index]?.requirement?.message} htmlFor={`criterion-${field.id}`} label={`Qualification ${index + 1}`}>
-              <Input id={`criterion-${field.id}`} {...form.register(`criteria.${index}.requirement`)} />
-            </FormField>
-            <div className="flex flex-wrap items-end gap-2">
-              <label className="flex min-h-11 items-center gap-2 text-sm">
-                <input className="size-4" type="checkbox" {...form.register(`criteria.${index}.isRequired`)} /> Required
-              </label>
-              {criteria.fields.length > 1 ? (
-                <Button aria-label={`Remove qualification ${index + 1}`} onClick={() => criteria.remove(index)} size="sm" type="button" variant="ghost">Remove</Button>
-              ) : null}
+        {criteria.fields.map((field, index) => {
+          const kind = (criteriaValues?.[index]?.kind ?? field.kind) as PnpJobCriterionKind;
+          // Keeps a saved requirement that is no longer in the catalogue selectable.
+          const choices = withSavedValue(PNP_JOB_CRITERIA[kind] ?? [], criteriaValues?.[index]?.requirement);
+          return (
+            <div className="grid gap-3 rounded-lg bg-muted/50 p-3 sm:grid-cols-[12rem_1fr_auto]" key={field.id}>
+              <FormField htmlFor={`criterion-kind-${field.id}`} label={`Criterion ${index + 1} type`}>
+                <NativeSelect
+                  id={`criterion-kind-${field.id}`}
+                  {...form.register(`criteria.${index}.kind`, {
+                    // A requirement belongs to its type, so changing the type clears it.
+                    onChange: () => form.setValue(`criteria.${index}.requirement`, "", { shouldValidate: form.formState.isSubmitted }),
+                  })}
+                >
+                  <option value="education">Education</option>
+                  <option value="eligibility">Eligibility</option>
+                  <option value="experience">Experience</option>
+                  <option value="skill">Skill</option>
+                  <option value="certification">Certification / Training</option>
+                  <option value="other">Other</option>
+                </NativeSelect>
+              </FormField>
+              <FormField error={errors.criteria?.[index]?.requirement ? "Choose a qualification." : undefined} htmlFor={`criterion-${field.id}`} label={`Qualification ${index + 1}`}>
+                <NativeSelect id={`criterion-${field.id}`} {...form.register(`criteria.${index}.requirement`)}>
+                  <option value="">Select a qualification</option>
+                  {choices.map((choice) => <option key={choice} value={choice}>{choice}</option>)}
+                </NativeSelect>
+              </FormField>
+              <div className="flex flex-wrap items-end gap-2">
+                <label className="flex min-h-11 items-center gap-2 text-sm">
+                  <input className="size-4" type="checkbox" {...form.register(`criteria.${index}.isRequired`)} /> Required
+                </label>
+                {criteria.fields.length > 1 ? (
+                  <Button aria-label={`Remove qualification ${index + 1}`} onClick={() => criteria.remove(index)} size="sm" type="button" variant="ghost">Remove</Button>
+                ) : null}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </section>
       {error ? <ErrorState message={error} /> : null}
       {hasApplications ? <p className="rounded-lg border border-amber-400/40 bg-amber-50 p-3 text-sm text-amber-950 dark:bg-amber-950/30 dark:text-amber-100">This opening has applications. Its status can only be changed by withdrawing it from the job list.</p> : null}

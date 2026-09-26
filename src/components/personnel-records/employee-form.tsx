@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 
+import { BadgeNumberInput } from "@/components/ui/badge-number-input";
 import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
 import { FormField } from "@/components/ui/form-field";
@@ -64,8 +65,8 @@ export function EmployeeForm({ employee, account, onSaved, pending = false }: Em
   return (
     <form className="grid gap-4 sm:grid-cols-2" noValidate onSubmit={submit}>
       {linkedProfileId ? <input name="profileId" type="hidden" value={linkedProfileId} /> : null}
-      <FormField error={e.employeeNumber} htmlFor="employee-number" label="Badge number" required>
-        <Input className="h-11" defaultValue={employee?.employee_number} id="employee-number" name="employeeNumber" placeholder="PAT-0001" required />
+      <FormField description="6 digits, e.g. 1-23456." error={e.employeeNumber} htmlFor="employee-number" label="Badge number" required>
+        <BadgeNumberInput defaultValue={employee?.employee_number} id="employee-number" name="employeeNumber" required />
       </FormField>
       <FormField error={e.personalEmail} htmlFor="personal-email" label="Personal email" required>
         <Input className="h-11" defaultValue={employee?.personal_email ?? account?.email ?? ""} id="personal-email" name="personalEmail" type="email" autoComplete="email" required />

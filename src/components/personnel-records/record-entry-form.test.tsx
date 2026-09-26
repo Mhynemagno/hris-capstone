@@ -78,8 +78,8 @@ describe("RecordEntryForm", () => {
     const user = userEvent.setup();
     render(<RecordEntryForm employeeId={employeeId} kind="certification" onSaved={vi.fn()} />);
 
-    await user.type(screen.getByLabelText(/certificate name/i), "First Aid");
-    await user.type(screen.getByLabelText(/issuer/i), "Red Cross");
+    await user.selectOptions(screen.getByLabelText(/certificate name/i), "Basic Life Support and First Aid Certification");
+    await user.selectOptions(screen.getByLabelText(/issuer/i), "Philippine Red Cross");
     await user.type(screen.getByLabelText(/issued date/i), "2025-05-01");
     await user.type(screen.getByLabelText(/expiry date/i), "2025-01-01");
     await user.click(screen.getByRole("button", { name: "Add certification" }));
@@ -93,5 +93,20 @@ describe("RecordEntryForm", () => {
 
     expect(screen.getByLabelText("Qualification level")).toHaveRole("combobox");
     expect(screen.getByRole("option", { name: "Bachelor's Degree" })).toBeInTheDocument();
+  });
+
+  it("offers PNP credentials as dropdowns and asks for a choice when none is made", async () => {
+    const user = userEvent.setup();
+    const onSaved = vi.fn();
+    render(<RecordEntryForm employeeId={employeeId} kind="training" onSaved={onSaved} />);
+
+    expect(screen.getByLabelText(/^course name/i)).toHaveRole("combobox");
+    expect(screen.getByRole("option", { name: "Public Safety Basic Recruit Course (PSBRC)" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "National Police Training Institute (NPTI)" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Add training" }));
+
+    expect(screen.getByText("Select a course name.")).toBeInTheDocument();
+    expect(screen.getByText("Select a provider.")).toBeInTheDocument();
+    expect(onSaved).not.toHaveBeenCalled();
   });
 });

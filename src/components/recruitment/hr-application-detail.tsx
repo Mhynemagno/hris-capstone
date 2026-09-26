@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { BadgeNumberInput } from "@/components/ui/badge-number-input";
 import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
 import { FormField } from "@/components/ui/form-field";
@@ -144,8 +145,8 @@ export function HrApplicationDetail({ applicationId }: { applicationId: string }
             <FormField htmlFor="hire-applicant-number" label="Applicant number">
               <Input id="hire-applicant-number" readOnly value={formatApplicantNumber(applicantNumber)} />
             </FormField>
-            <FormField htmlFor="hire-badge-number" label="Badge number" required>
-              <Input id="hire-badge-number" name="badgeNumber" required />
+            <FormField description="6 digits, e.g. 1-23456." htmlFor="hire-badge-number" label="Badge number" required>
+              <BadgeNumberInput id="hire-badge-number" name="badgeNumber" required />
             </FormField>
           </div>
           <FormField htmlFor="hire-note" label="Notes">
