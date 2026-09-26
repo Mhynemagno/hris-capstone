@@ -208,7 +208,7 @@ exception
   when invalid_text_representation then
     raise exception 'The record identifier is not valid.' using errcode = '22023';
 end;
-$function$
+$function$;
 
 revoke all on function private.deletion_impact(text, text) from public, anon, authenticated;
 
