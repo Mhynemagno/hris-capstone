@@ -310,8 +310,35 @@ export async function listHrApplications(input: Partial<ApplicationAiFilters> = 
     .rpc("list_hr_application_shortlist", { target_application_status: filters.status ?? null, target_ai_status: filters.aiStatus ?? null, minimum_score: filters.minimumScore ?? null })
     .range(from, to);
   throwIfError(error);
-  const rows = (data ?? []).map((row: { application_id: string; applicant_id: string; job_opening_id: number; application_status: Application["status"]; submitted_at: string; ai_score_id: string | null; ai_score_status: HrShortlistApplication["ai_score_status"] | null; ai_score: number | null; ai_explanation: string | null; ai_model: string | null }) => ({ id: row.application_id, applicant_id: row.applicant_id, job_opening_id: row.job_opening_id, status: row.application_status, submitted_at: row.submitted_at, ai_score_id: row.ai_score_id, ai_score_status: row.ai_score_status ?? "unscored", ai_score: row.ai_score, ai_explanation: row.ai_explanation, ai_model: row.ai_model })) as HrShortlistApplication[];
+  const shortlist = (data ?? []) as { application_id: string; applicant_id: string; job_opening_id: number; application_status: Application["status"]; submitted_at: string; ai_score_id: string | null; ai_score_status: HrShortlistApplication["ai_score_status"] | null; ai_score: number | null; ai_explanation: string | null; ai_model: string | null }[];
+  // The shortlist RPC returns ids only; HR can read applicants and openings, so name them in two batched reads.
+  const { applicants, jobs } = await shortlistNames(shortlist.map((row) => row.applicant_id), shortlist.map((row) => row.job_opening_id));
+  const rows = shortlist.map((row) => {
+    const applicant = applicants.get(row.applicant_id);
+    return {
+      id: row.application_id, applicant_id: row.applicant_id, job_opening_id: row.job_opening_id, status: row.application_status, submitted_at: row.submitted_at,
+      ai_score_id: row.ai_score_id, ai_score_status: row.ai_score_status ?? "unscored", ai_score: row.ai_score, ai_explanation: row.ai_explanation, ai_model: row.ai_model,
+      applicant_name: applicant ? [applicant.first_name, applicant.last_name].filter(Boolean).join(" ") || null : null,
+      applicant_number: applicant?.applicant_number ?? null,
+      job_title: jobs.get(row.job_opening_id) ?? null,
+    };
+  }) as HrShortlistApplication[];
   return { rows, count: rows.length, filters } satisfies PaginatedResult<HrShortlistApplication, ApplicationAiFilters>;
+}
+
+async function shortlistNames(applicantIds: string[], jobIds: number[]) {
+  const client = createBrowserSupabaseClient();
+  const uniqueApplicants = [...new Set(applicantIds)];
+  const uniqueJobs = [...new Set(jobIds)];
+  const [applicantResult, jobResult] = await Promise.all([
+    uniqueApplicants.length ? client.from("applicants").select("id, first_name, last_name, applicant_number").in("id", uniqueApplicants) : Promise.resolve({ data: [], error: null }),
+    uniqueJobs.length ? client.from("job_openings").select("id, title").in("id", uniqueJobs) : Promise.resolve({ data: [], error: null }),
+  ]);
+  throwIfError(applicantResult.error); throwIfError(jobResult.error);
+  return {
+    applicants: new Map(((applicantResult.data ?? []) as { id: string; first_name: string | null; last_name: string | null; applicant_number: number | null }[]).map((row) => [row.id, row])),
+    jobs: new Map(((jobResult.data ?? []) as { id: number; title: string }[]).map((row) => [row.id, row.title])),
+  };
 }
 
 export async function transitionApplicationStatus(input: ApplicationStatusTransitionInput) {
