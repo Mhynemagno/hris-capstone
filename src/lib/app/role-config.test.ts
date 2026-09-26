@@ -17,21 +17,23 @@ describe("role configuration", () => {
       role: "hr_personnel",
       homeHref: "/hr",
       navigation: [
-        { href: "/hr", label: "HR workspace", group: "Overview" },
-        { href: "/hr/jobs", label: "Job openings", group: "Recruitment" },
+        { href: "/hr", label: "Dashboard", group: "Overview" },
+        { href: "/hr/jobs", label: "Job Opening", group: "Recruitment" },
         { href: "/hr/applications", label: "Applications", group: "Recruitment" },
-        { href: "/hr/employees", label: "Personnel records", group: "Personnel" },
-        { href: "/hr/deployments", label: "Deployments", group: "Personnel" },
-        { href: "/hr/promotions", label: "Promotions", group: "Personnel" },
-        { href: "/hr/leave-requests", label: "Leave requests", group: "Time and leave" },
-        { href: "/hr/attendance", label: "Attendance", group: "Time and leave" },
+        { href: "/hr/employees", label: "Employee Records", group: "Personnel Management" },
+        { href: "/hr/deployments", label: "Deployment Records", group: "Personnel Management" },
+        { href: "/hr/leave-requests", label: "Leave Management", group: "Personnel Management" },
+        { href: "/hr/promotions", label: "Promotion Records", group: "Personnel Management" },
+        { href: "/hr/attendance/kiosk", label: "Daily Attendance", group: "Attendance Management" },
+        { href: "/hr/attendance", label: "Attendance Records", group: "Attendance Management" },
+        { href: "/reports/attendance-leave", label: "Attendance Report", group: "Attendance Management" },
         { href: "/reports", label: "Reports", group: "Insights" },
       ],
     });
   });
 
   it("exposes attendance only to its intended operational roles", () => {
-    expect(getRoleConfig("hr_personnel").navigation).toContainEqual({ href: "/hr/attendance", label: "Attendance", icon: "Clock", group: "Time and leave" });
+    expect(getRoleConfig("hr_personnel").navigation).toContainEqual({ href: "/hr/attendance", label: "Attendance Records", icon: "Clock", group: "Attendance Management" });
     expect(getRoleConfig("employee").navigation).toContainEqual({ href: "/employee/attendance", label: "Attendance", icon: "Clock" });
     expect(getRoleConfig("system_administrator").navigation).toContainEqual({ href: "/admin/integrations/attendance", label: "Attendance integration", icon: "Fingerprint", group: "System" });
     expect(getRoleConfig("management").navigation.some((item) => item.href.includes("attendance"))).toBe(false);

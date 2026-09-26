@@ -32,7 +32,7 @@ describe("AppShell", () => {
       name: /main navigation/i,
     });
     const link = within(navigation).getByRole("link", {
-      name: /HR workspace/i,
+      name: "Dashboard",
     });
 
     expect(link).toHaveAttribute("href", "/hr");
@@ -61,9 +61,25 @@ describe("AppShell", () => {
     expect(screen.getByRole("navigation", { name: /main navigation/i })).toBeInTheDocument();
     expect(screen.getByText("San Juan City Police Station")).toBeInTheDocument();
     expect(screen.getByRole("img", { name: "San Juan City Police Station logo" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "View reports" })).toHaveAttribute("href", "/reports");
     expect(screen.getByTestId("brand-command-accent")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Sign out" })).toBeInTheDocument();
+    // Signing out lives in the account menu.
+    expect(screen.getByRole("button", { name: "Account menu for manager@example.com" })).toBeInTheDocument();
+  });
+
+  it("groups HR tasks under the station's section headings, most specific link active", () => {
+    usePathname.mockReturnValue("/hr/attendance/kiosk");
+    render(
+      <AppShell config={ROLE_CONFIG.hr_personnel} email="hr@example.com">
+        <p>Kiosk</p>
+      </AppShell>,
+    );
+
+    const navigation = screen.getByRole("navigation", { name: /main navigation/i });
+    for (const heading of ["Overview", "Recruitment", "Personnel Management", "Attendance Management", "Insights"]) {
+      expect(within(navigation).getByText(heading)).toBeInTheDocument();
+    }
+    expect(within(navigation).getByRole("link", { name: "Daily Attendance" })).toHaveAttribute("aria-current", "page");
+    expect(within(navigation).getByRole("link", { name: "Attendance Records" })).not.toHaveAttribute("aria-current");
   });
 
   it("gives every authenticated workspace a notifications entry point", () => {
@@ -92,6 +108,6 @@ describe("AppShell", () => {
     const navigation = screen.getByRole("navigation", { name: /main navigation/i });
     expect(within(navigation).getByRole("link", { name: "Applications" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByText("Applications", { selector: "[data-slot='breadcrumb-page']" })).toBeVisible();
-    expect(within(navigation).getByRole("link", { name: "HR workspace" })).not.toHaveAttribute("aria-current");
+    expect(within(navigation).getByRole("link", { name: "Dashboard" })).not.toHaveAttribute("aria-current");
   });
 });
