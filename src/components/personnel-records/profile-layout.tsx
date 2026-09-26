@@ -72,12 +72,12 @@ export function ProfileHeaderCard({ photo, name, subtitle, actions, meta, tags =
           </div>
           <dl className="grid grid-cols-1 gap-x-6 gap-y-4 min-[420px]:grid-cols-2 md:grid-cols-3 xl:max-w-2xl xl:shrink-0">
             {meta.map(({ label, value, icon: Icon }) => (
-              <div className="flex min-w-0 items-start gap-2.5" key={label}>
-                <Icon aria-hidden className="mt-0.5 size-4 shrink-0 text-primary" />
-                <div className="min-w-0">
-                  <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</dt>
-                  <dd className="font-semibold break-words">{value}</dd>
-                </div>
+              <div className="min-w-0" key={label}>
+                <dt className="flex items-center gap-2.5 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                  <Icon aria-hidden className="size-4 shrink-0 text-primary" />
+                  {label}
+                </dt>
+                <dd className="pl-6.5 font-semibold break-words">{value}</dd>
               </div>
             ))}
           </dl>
@@ -124,12 +124,12 @@ export function InfoList({ rows }: { rows: InfoRow[] }) {
   return (
     <dl className="divide-y">
       {rows.map(({ label, value, icon: Icon }) => (
-        <div className="flex items-start gap-3 py-3 first:pt-1 last:pb-0" key={label}>
-          <Icon aria-hidden className="mt-1 size-4 shrink-0 text-muted-foreground" />
-          <div className="min-w-0 flex-1">
-            <dt className="text-xs text-muted-foreground">{label}</dt>
-            <dd className="font-medium break-words">{value}</dd>
-          </div>
+        <div className="min-w-0 py-3 first:pt-1 last:pb-0" key={label}>
+          <dt className="flex items-center gap-3 text-xs text-muted-foreground">
+            <Icon aria-hidden className="size-4 shrink-0" />
+            {label}
+          </dt>
+          <dd className="pl-7 font-medium break-words">{value}</dd>
         </div>
       ))}
     </dl>

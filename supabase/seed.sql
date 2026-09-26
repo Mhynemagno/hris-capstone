@@ -56,7 +56,7 @@ on conflict (user_id) do update set role = excluded.role, assigned_at = now();
 -- Ranks and departments come from migrations (20260924111000_demo_data_reset.sql); the demo
 -- employee starts without a department or rank, matching the client's reset data.
 insert into public.employees (profile_id, employee_number, first_name, last_name, personal_email, employment_status, employment_started_on)
-values ('00000000-0000-4000-8000-000000008103', 'DEMO-001', 'Demo', 'Employee', 'demo.employee@example.test', 'active', '2024-01-01')
+values ('00000000-0000-4000-8000-000000008103', '0-00001', 'Demo', 'Employee', 'demo.employee@example.test', 'active', '2024-01-01')
 on conflict (profile_id) do update set first_name = excluded.first_name, last_name = excluded.last_name, personal_email = excluded.personal_email;
 
 insert into public.leave_types (name, description, requires_attachment, created_by_user_id, updated_by_user_id)

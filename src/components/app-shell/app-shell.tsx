@@ -152,7 +152,7 @@ export function AppShell({ children, config, email }: AppShellProps) {
               <nav aria-label="Main navigation">
                 {groupNavigation(config.navigation).map((group) => (
                   <SidebarGroup className="pl-0" key={group.label}>
-                    <SidebarGroupLabel className="pl-5 text-xs font-semibold tracking-wider text-sidebar-foreground/50 uppercase">{group.label}</SidebarGroupLabel>
+                    <SidebarGroupLabel className="pl-5 text-xs font-semibold tracking-wider text-sidebar-foreground/75 uppercase">{group.label}</SidebarGroupLabel>
                     <SidebarGroupContent>
                       <SidebarMenu>
                         {group.items.map((item) => {

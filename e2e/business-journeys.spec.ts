@@ -136,7 +136,7 @@ test.describe("personnel records and profile changes", () => {
     const phone = `0917${String(Math.floor(Math.random() * 1e7)).padStart(7, "0")}`;
     await signIn(page, "demo.hr@example.test", "/hr");
     await page.goto("/hr/employees");
-    await page.getByRole("link", { name: /DEMO-001|Demo/ }).first().click();
+    await page.getByRole("link", { name: /0-00001|Demo/ }).first().click();
     await expect(page).toHaveURL(/\/hr\/employees\/[0-9a-f-]{36}$/, { timeout: 30_000 });
     const recordUrl = page.url();
 

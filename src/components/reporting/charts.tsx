@@ -80,7 +80,8 @@ export function ChartCard({ id, title, subtitle, children, className, data, form
 export function HorizontalBarChart({ data, formatLabel = identity, colorFor }: { data: ChartDatum[]; formatLabel?: (label: string) => string; colorFor?: (label: string) => string }) {
   const max = Math.max(1, ...data.map((item) => item.count));
   return (
-    <ul aria-label={summarize(data, formatLabel)} className="space-y-3" role="img">
+    <div aria-label={summarize(data, formatLabel)} role="img">
+    <ul className="space-y-3">
       {data.map((item) => {
         const label = formatLabel(item.label);
         return (
@@ -97,6 +98,7 @@ export function HorizontalBarChart({ data, formatLabel = identity, colorFor }: {
         );
       })}
     </ul>
+    </div>
   );
 }
 
@@ -191,25 +193,28 @@ export function ColumnTrendChart({ data, formatLabel = identity, unit = "records
 export function GaugeChart({ value, whole, label }: { value: number; whole: number; label: string }) {
   const share = whole > 0 ? Math.min(value / whole, 1) : 0;
   const shown = Math.round(share * 100);
-  const radius = 80;
-  const arc = Math.PI * radius;
+  const arc = Math.PI * 80;
   return (
     <figure aria-label={`${label}: ${shown}% (${formatCount(value)} of ${formatCount(whole)})`} className="flex flex-col items-center" role="img">
-      <svg aria-hidden="true" className="w-full max-w-60" viewBox="0 0 200 116">
-        <path className="stroke-muted" d="M 20 100 A 80 80 0 0 1 180 100" fill="none" strokeLinecap="round" strokeWidth="18" />
-        <path
-          className="stroke-status-serious motion-safe:transition-[stroke-dashoffset] motion-safe:duration-700"
-          d="M 20 100 A 80 80 0 0 1 180 100"
-          fill="none"
-          strokeDasharray={arc}
-          strokeDashoffset={arc * (1 - share)}
-          strokeLinecap="round"
-          strokeWidth="18"
-        />
-        <text className="fill-muted-foreground text-[11px]" textAnchor="middle" x="100" y="68">{label}</text>
-        <text className="fill-foreground text-[30px] font-bold" textAnchor="middle" x="100" y="100">{shown}%</text>
-      </svg>
-      <figcaption className="mt-1 text-sm text-muted-foreground tabular-nums">{formatCount(value)} of {formatCount(whole)} active personnel</figcaption>
+      <div className="relative w-full max-w-60">
+        <svg aria-hidden="true" className="w-full" viewBox="0 0 200 110">
+          <path className="stroke-muted" d="M 20 100 A 80 80 0 0 1 180 100" fill="none" strokeLinecap="round" strokeWidth="18" />
+          <path
+            className="stroke-status-serious motion-safe:transition-[stroke-dashoffset] motion-safe:duration-700"
+            d="M 20 100 A 80 80 0 0 1 180 100"
+            fill="none"
+            strokeDasharray={arc}
+            strokeDashoffset={arc * (1 - share)}
+            strokeLinecap="round"
+            strokeWidth="18"
+          />
+        </svg>
+        <div aria-hidden="true" className="absolute inset-x-0 bottom-0 flex flex-col items-center">
+          <span className="text-sm text-muted-foreground">{label}</span>
+          <span className="font-heading text-3xl font-bold tabular-nums">{shown}%</span>
+        </div>
+      </div>
+      <figcaption className="mt-2 text-sm text-muted-foreground tabular-nums">{formatCount(value)} of {formatCount(whole)} active personnel</figcaption>
     </figure>
   );
 }

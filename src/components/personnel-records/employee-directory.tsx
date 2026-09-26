@@ -49,7 +49,7 @@ function Cell({ children, className }: { children: React.ReactNode; className?: 
 }
 
 function Blank() {
-  return <span aria-label="Not provided" className="text-muted-foreground">—</span>;
+  return <><span aria-hidden="true" className="text-muted-foreground">—</span><span className="sr-only">Not provided</span></>;
 }
 
 export function EmployeeDirectory() {

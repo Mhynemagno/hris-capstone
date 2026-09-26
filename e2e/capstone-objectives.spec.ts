@@ -7,9 +7,9 @@ import { expect, test, type Page } from "@playwright/test";
 const demoPassword = process.env.HRIS_E2E_PASSWORD ?? "DemoPass!2026";
 const runId = `${Date.now().toString(36)}${Math.floor(Math.random() * 1000)}`.toUpperCase();
 
-/** A random badge number in the PNP 0-00000 format, so runs do not collide. */
+/** A random badge number in the PNP 0-00000 format, so runs do not collide (never the seeded 0-00001). */
 function uniqueBadge() {
-  const digits = String(Math.floor(Math.random() * 1_000_000)).padStart(6, "0");
+  const digits = String(100_000 + Math.floor(Math.random() * 900_000));
   return `${digits[0]}-${digits.slice(1)}`;
 }
 
@@ -70,7 +70,7 @@ async function chooseComboboxOption(page: Page, name: RegExp | string, search: s
 /** HR creates a deployment for the demo employee through the UI; returns its assignment role. */
 async function createDeployment(page: Page, role: string) {
   await page.goto("/hr/deployments/new");
-  await chooseComboboxOption(page, /^Employee/, "DEMO-001", /Demo Employee/);
+  await chooseComboboxOption(page, /^Employee/, "0-00001", /Demo Employee/);
   await page.getByLabel(/^Assignment role/).fill(role);
   await page.getByLabel(/^Location/).fill("San Juan City Police Station");
   await page.getByLabel(/^Start date/).fill(isoDate(0));
@@ -126,7 +126,8 @@ test.describe("Objective 1: centralized personnel records", () => {
     // Everything persists and the record is findable in the directory.
     await page.reload();
     await sections.getByRole("tab", { name: "Qualifications" }).click();
-    await expect(page.getByRole("tabpanel", { name: "Qualifications" }).getByText("Baccalaureate Degree", { exact: true })).toBeVisible();
+    // The saved entry, not the matching choice in the add-qualification dropdown.
+    await expect(page.getByRole("tabpanel", { name: "Qualifications" }).locator("p", { hasText: /^Baccalaureate Degree$/ })).toBeVisible();
     await sections.getByRole("tab", { name: "Service history" }).click();
     await expect(page.getByRole("tabpanel", { name: "Service history" }).getByText("2015-06-01 – present")).toBeVisible();
 
@@ -233,7 +234,7 @@ test.describe("Objective 3: deployment tracking", () => {
 
     // Validation: a deployment needs a location, unit, or project.
     await page.goto("/hr/deployments/new");
-    await chooseComboboxOption(page, /^Employee/, "DEMO-001", /Demo Employee/);
+    await chooseComboboxOption(page, /^Employee/, "0-00001", /Demo Employee/);
     await page.getByLabel(/^Assignment role/).fill(role);
     await page.getByLabel(/^Start date/).fill(isoDate(0));
     await page.getByRole("button", { name: "Save deployment" }).click();
@@ -327,7 +328,7 @@ test.describe("Objective 5: personnel self-service portal", () => {
     await expect(page).toHaveURL(/\/login\?/);
 
     await signIn(page, EMPLOYEE.email, EMPLOYEE.home);
-    await expect(page.getByText("DEMO-001").first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText("0-00001").first()).toBeVisible({ timeout: 15_000 });
     await page.goto("/employee/profile");
     await expect(page.getByText("Demo Employee").first()).toBeVisible();
 
@@ -424,7 +425,7 @@ test.describe("Objective 7: analytics dashboard", () => {
 
     await signIn(page, MANAGEMENT.email, MANAGEMENT.home);
     await expect(page.getByRole("heading", { name: "Personnel analytics" })).toBeVisible({ timeout: 30_000 });
-    for (const heading of ["Personnel by department", "Recruitment pipeline", "Deployment status", "Attendance leave exceptions"]) {
+    for (const heading of ["Personnel by department", "Recruitment pipeline", "Deployment status", "Attendance and leave exceptions"]) {
       await expect(page.getByRole("heading", { name: heading })).toBeVisible();
     }
     await expect(page.getByRole("article", { name: "Promotion ready" })).toContainText(/\d+/);
