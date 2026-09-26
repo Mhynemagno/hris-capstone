@@ -158,6 +158,17 @@ describe("HR recruitment workspace", () => {
     expect(screen.getByText(/You can retry when the service is available/)).toBeInTheDocument();
   });
 
+  it("names each application by applicant and position with a readable score", () => {
+    mocks.applications = [{ id: "00000000-0000-0000-0000-000000000009", status: "Shortlisted", submitted_at: "2026-09-25T00:00:00Z", ai_score_status: "completed", ai_score: 82, applicant_name: "Juan Dela Cruz", applicant_number: 12, job_title: "Patrol Officer" }];
+
+    render(<HrApplicationList />);
+    expect(screen.getByText("Juan Dela Cruz")).toBeInTheDocument();
+    expect(screen.getByText("Applicant no. 0-00012")).toBeInTheDocument();
+    expect(screen.getByRole("cell", { name: "Patrol Officer" })).toBeInTheDocument();
+    expect(screen.getByRole("cell", { name: "82/100" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /review application juan dela cruz/i })).toHaveAttribute("href", "/hr/applications/00000000-0000-0000-0000-000000000009");
+  });
+
   it("tells HR when an analysis timed out and still offers a retry", () => {
     mocks.scores = [{ id: "00000000-0000-0000-0000-000000000003", status: "failed", score: null, explanation: null, failure_code: "timed_out" }];
 

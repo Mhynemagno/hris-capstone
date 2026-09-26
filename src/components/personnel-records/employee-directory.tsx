@@ -16,6 +16,7 @@ import { useRankOptions } from "@/hooks/use-administration";
 import { useEmployeeDirectory, useEmployeeProfilePhotoUrl, useUnlinkedEmployeeAccounts } from "@/hooks/use-personnel-records";
 import type { Employee } from "@/lib/types/database";
 import { cn } from "@/lib/utils";
+import { BADGE_NUMBER_PATTERN } from "@/schemas/common";
 
 import { DepartmentRankFields } from "./department-rank-fields";
 import { EmployeeAccountPicker } from "./employee-account-picker";
@@ -163,7 +164,14 @@ export function EmployeeDirectory() {
                       <Cell className="font-semibold">{employee.rank_id ? rankCodes.get(employee.rank_id) ?? <Blank /> : <Blank />}</Cell>
                       <Cell className="font-medium">
                         {employee.last_name}
-                        <span className="block text-xs font-normal text-muted-foreground tabular-nums">{employee.employee_number}</span>
+                        <span className="flex flex-wrap items-center gap-1.5 text-xs font-normal text-muted-foreground tabular-nums">
+                          {employee.employee_number}
+                          {BADGE_NUMBER_PATTERN.test(employee.employee_number) ? null : (
+                            <Link className="rounded-full bg-amber-100 px-2 font-medium text-amber-900 underline-offset-2 hover:underline dark:bg-amber-950/60 dark:text-amber-200" href={`/hr/employees/${employee.id}?tab=official`}>
+                              Update to 0-00000{" "}<span className="sr-only">for {name}</span>
+                            </Link>
+                          )}
+                        </span>
                       </Cell>
                       <Cell>{employee.first_name}</Cell>
                       <Cell>{employee.middle_name || <Blank />}</Cell>
