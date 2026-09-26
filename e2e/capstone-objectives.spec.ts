@@ -187,7 +187,10 @@ test.describe("Objective 2: recruitment management", () => {
     // HR tracks the application through its statuses and records the hiring decision.
     await signIn(page, HR.email, HR.home);
     await page.goto("/hr/applications");
-    await expect(page.getByRole("link", { name: `Review application ${applicationId.slice(0, 8)}` })).toBeVisible({ timeout: 15_000 });
+    // The queue names each application by its applicant.
+    const review = page.getByRole("link", { name: `Review application Aplica Candidate ${runId}` });
+    await expect(review).toBeVisible({ timeout: 15_000 });
+    await expect(review).toHaveAttribute("href", `/hr/applications/${applicationId}`);
     await page.goto(`/hr/applications/${applicationId}`);
     for (const status of ["Under Review", "Shortlisted"]) {
       await page.getByLabel("Next status").selectOption({ label: status });
