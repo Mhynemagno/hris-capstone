@@ -35,7 +35,7 @@ async function signInAsHr(page: Page, destination: string) {
   await page.goto(destination);
   await page.getByLabel("Email").fill("demo.hr@example.test");
   await page.getByRole("textbox", { name: "Password" }).fill(demoPassword);
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("button", { name: "Login" }).click();
   await expect(page).toHaveURL(new RegExp(`${destination}$`));
 }
 
@@ -79,7 +79,7 @@ test("an employee reaches face attendance with their own login, without HR", asy
   await page.goto("/employee/attendance/scan");
   await page.getByLabel("Email").fill("demo.employee@example.test");
   await page.getByRole("textbox", { name: "Password" }).fill(demoPassword);
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("button", { name: "Login" }).click();
   await expect(page).toHaveURL(/\/employee\/attendance\/scan$/);
   // The demo employee has no face registration, so the page explains how to get one.
   await expect(page.getByText(/Face registration needed|Record attendance with your face/)).toBeVisible();

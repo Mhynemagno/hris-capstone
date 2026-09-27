@@ -79,6 +79,18 @@ export const applicantProfilePhotoFileSchema = z.custom<File>(
   }
 });
 
+export const jobPostingImageFileSchema = z.custom<File>(
+  (value) => typeof File !== "undefined" && value instanceof File,
+  "Choose an image file.",
+).superRefine((file, context) => {
+  if (!applicantProfilePhotoMimeTypes.includes(file.type as typeof applicantProfilePhotoMimeTypes[number])) {
+    context.addIssue({ code: "custom", message: "Use a PNG, JPEG, or WebP image." });
+  }
+  if (file.size < 1 || file.size > 5 * 1024 * 1024) {
+    context.addIssue({ code: "custom", message: "Use an image up to 5 MB." });
+  }
+});
+
 export const applicantProfileDocumentFileSchema = z.custom<File>(
   (value) => typeof File !== "undefined" && value instanceof File,
   "Choose a document file.",

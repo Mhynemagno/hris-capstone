@@ -39,7 +39,7 @@ import type {
   JobFilters,
   JobOpeningInput,
 } from "@/schemas/recruitment";
-import type { ResubmitApplicationInput } from "@/queries/recruitment";
+import type { JobPostingImageChange, ResubmitApplicationInput } from "@/queries/recruitment";
 
 export function usePublishedJobs(filters: Partial<JobFilters> = {}) {
   return useQuery({ queryKey: queryKeys.recruitment.publicJobs(filters), queryFn: () => listPublishedJobs(filters) });
@@ -143,7 +143,7 @@ export function useHrJobs(filters: Partial<JobFilters> = {}) {
 export function useSaveJobOpening() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ input, jobId }: { input: JobOpeningInput; jobId?: number }) => saveJobOpening(input, jobId),
+    mutationFn: ({ input, jobId, image }: { input: JobOpeningInput; jobId?: number; image?: JobPostingImageChange }) => saveJobOpening(input, jobId, image),
     onSuccess: (job) => {
       void queryClient.invalidateQueries({ queryKey: ["recruitment", "hr-jobs"] });
       void queryClient.invalidateQueries({ queryKey: ["reporting"] });

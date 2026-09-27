@@ -28,7 +28,7 @@ describe("Home", () => {
 
     expect(
       screen
-        .getAllByRole("link", { name: /sign in/i })
+        .getAllByRole("link", { name: /^login$/i })
         .some((link) => link.getAttribute("href") === "/login"),
     ).toBe(true);
     expect(

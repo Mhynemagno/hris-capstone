@@ -1,9 +1,10 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { z } from "zod";
 
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,8 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { useSaveJobOpening } from "@/hooks/use-recruitment";
 import { PNP_JOB_CRITERIA, withSavedValue, type PnpJobCriterionKind } from "@/lib/pnp-catalogue";
-import { jobOpeningSchema, type JobOpeningInput } from "@/schemas/recruitment";
+import { jobPostingImageUrl } from "@/lib/recruitment/job-posting-image";
+import { jobOpeningSchema, jobPostingImageFileSchema, type JobOpeningInput } from "@/schemas/recruitment";
 import type { JobOpening, JobQualificationCriterion } from "@/lib/types/database";
 
 type HrJobFormProps = {
@@ -48,6 +50,12 @@ export function HrJobForm({ job }: HrJobFormProps) {
   const save = useSaveJobOpening();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [savedImagePath, setSavedImagePath] = useState(job?.image_path ?? null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [removeImage, setRemoveImage] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const imageInput = useRef<HTMLInputElement>(null);
   const form = useForm<JobFormValues, unknown, JobOpeningInput>({
     resolver: zodResolver(jobOpeningSchema),
     defaultValues: defaults(job),
@@ -56,6 +64,35 @@ export function HrJobForm({ job }: HrJobFormProps) {
   const criteriaValues = useWatch({ control: form.control, name: "criteria" });
   const hasApplications = (job?.applications?.[0]?.count ?? 0) > 0;
   const errors = form.formState.errors;
+  const shownImage = previewUrl ?? (removeImage ? null : jobPostingImageUrl(savedImagePath));
+
+  // Revoke the local preview's object URL when it is replaced and when the form unmounts.
+  useEffect(() => () => { if (previewUrl) URL.revokeObjectURL(previewUrl); }, [previewUrl]);
+
+  function selectImage(file: File | null) {
+    setImageFile(file);
+    setPreviewUrl(file ? URL.createObjectURL(file) : null);
+    if (!file && imageInput.current) imageInput.current.value = "";
+  }
+
+  function chooseImage(file: File | undefined) {
+    setImageError(null);
+    if (!file) return;
+    const validated = jobPostingImageFileSchema.safeParse(file);
+    if (!validated.success) {
+      setImageError(validated.error.issues[0]?.message ?? "Choose a valid image.");
+      if (imageInput.current) imageInput.current.value = "";
+      return;
+    }
+    selectImage(validated.data);
+    setRemoveImage(false);
+  }
+
+  function clearImage() {
+    selectImage(null);
+    setRemoveImage(Boolean(savedImagePath));
+    setImageError(null);
+  }
 
   async function saveAs(status: JobOpeningInput["status"]) {
     setError(null);
@@ -64,7 +101,13 @@ export function HrJobForm({ job }: HrJobFormProps) {
     if (!valid) return;
     try {
       const input = jobOpeningSchema.parse({ ...form.getValues(), status, criteria: form.getValues("criteria").map((criterion, index) => ({ ...criterion, ordinal: index + 1 })) });
-      await save.mutateAsync({ input, jobId: job?.id });
+      const image = imageFile ? { file: imageFile } : removeImage && savedImagePath ? { remove: true as const } : undefined;
+      const saved = await save.mutateAsync({ input, jobId: job?.id, image });
+      if (image) {
+        setSavedImagePath(saved?.image_path ?? null);
+        selectImage(null);
+        setRemoveImage(false);
+      }
       if (status === "published") {
         router.replace("/hr/jobs");
         return;
@@ -92,6 +135,15 @@ export function HrJobForm({ job }: HrJobFormProps) {
       </div>
       <FormField description="At least 20 characters." error={errors.description?.message} htmlFor="job-description" label="Description" required>
         <Textarea className="min-h-40" id="job-description" required rows={8} {...form.register("description")} />
+      </FormField>
+      <FormField description="Optional. PNG, JPEG, or WebP up to 5 MB." error={imageError ?? undefined} htmlFor="job-image" label="Image">
+        <div className="space-y-3">
+          {shownImage ? <Image alt="Job posting image preview" className="max-h-72 w-full rounded-lg border object-contain" height={450} src={shownImage} unoptimized width={800} /> : null}
+          <div className="flex flex-wrap items-center gap-2">
+            <Input accept="image/png,image/jpeg,image/webp" className="max-w-sm" id="job-image" onChange={(event) => chooseImage(event.target.files?.[0])} ref={imageInput} type="file" />
+            {shownImage ? <Button onClick={clearImage} size="sm" type="button" variant="outline">Remove image</Button> : null}
+          </div>
+        </div>
       </FormField>
       <section aria-labelledby="job-criteria-heading" className="space-y-3 rounded-xl border p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">

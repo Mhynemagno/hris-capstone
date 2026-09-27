@@ -35,7 +35,7 @@ export function PublicSiteHeader() {
           >
             Careers
           </Link>
-          <Link className="inline-flex min-h-11 items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/85 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50" href={isSignedIn ? "/applicant/applications" : "/login"}>{isSignedIn ? "My applications" : "Sign in"}</Link>
+          <Link className="inline-flex min-h-11 items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/85 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50" href={isSignedIn ? "/applicant/applications" : "/login"}>{isSignedIn ? "Application Status" : "Login"}</Link>
         </div>
       </nav>
     </header>

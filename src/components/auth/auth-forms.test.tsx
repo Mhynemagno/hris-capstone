@@ -24,7 +24,7 @@ describe("authentication forms", () => {
     const user = userEvent.setup();
     render(<LoginForm nextPath="/hr" />);
 
-    const form = screen.getByRole("button", { name: /sign in/i }).closest("form");
+    const form = screen.getByRole("button", { name: "Login" }).closest("form");
     expect(form).toHaveAttribute("action", "/auth/login");
     expect(form).toHaveAttribute("method", "post");
     expect(screen.getByDisplayValue("/hr")).toHaveAttribute("name", "next");

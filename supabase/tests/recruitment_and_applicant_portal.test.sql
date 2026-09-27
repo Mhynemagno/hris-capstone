@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(69);
+select extensions.plan(80);
 
 delete from public.applications;
 delete from public.job_openings;
@@ -501,5 +501,52 @@ select extensions.throws_ok(
     where department.name = 'Recruitment test department'$$,
   '42501', null, 'Applicants cannot create job openings'
 );
+-- Job posting images: optional public image per posting, managed only by HR.
+set local role postgres;
+select extensions.has_column('public', 'job_openings', 'image_path', 'Job openings can carry an optional image path');
+select extensions.ok(
+  exists (select 1 from storage.buckets where id = 'job-posting-images' and public and file_size_limit = 5242880 and allowed_mime_types @> array['image/png', 'image/jpeg', 'image/webp']),
+  'Job posting images use a public-read bucket limited to 5 MiB PNG, JPEG, or WebP images'
+);
+select extensions.has_function('public', 'set_job_opening_image', array['bigint', 'text'], 'HR job posting image workflow exists');
+select extensions.ok(has_column_privilege('anon', 'public.job_openings', 'image_path', 'select'), 'Public visitors can read a posting image path');
+insert into storage.objects (bucket_id, name)
+select 'job-posting-images', 'job-openings/' || id || '/0b8f2c1e-1111-4222-8333-944455556666.png' from public.job_openings where title = 'Transactional opening updated';
+
+set local role authenticated;
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000009102';
+select extensions.throws_ok(
+  $$select public.set_job_opening_image(id, 'job-openings/' || id || '/0b8f2c1e-1111-4222-8333-944455556666.png') from public.job_openings where status = 'published' limit 1$$,
+  '42501', 'Human Resources access is required.', 'Applicants cannot set a job posting image'
+);
+select extensions.throws_ok(
+  $$insert into storage.objects (bucket_id, name) values ('job-posting-images', 'job-openings/1/1b8f2c1e-1111-4222-8333-944455556666.png')$$,
+  '42501', null, 'Applicants cannot upload job posting images'
+);
+
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000009101';
+select extensions.throws_ok(
+  $$select public.set_job_opening_image(id, 'job-openings/0/0b8f2c1e-1111-4222-8333-944455556666.png') from public.job_openings where title = 'Transactional opening updated'$$,
+  '22023', 'Job posting image is invalid.', 'An image path must belong to its job opening'
+);
+select extensions.throws_ok(
+  $$select public.set_job_opening_image(id, 'job-openings/' || id || '/2b8f2c1e-1111-4222-8333-944455556666.png') from public.job_openings where title = 'Transactional opening updated'$$,
+  '22023', 'Upload the job posting image before saving it.', 'An image path must point to an uploaded object'
+);
+select extensions.lives_ok(
+  $$select public.set_job_opening_image(id, 'job-openings/' || id || '/0b8f2c1e-1111-4222-8333-944455556666.png') from public.job_openings where title = 'Transactional opening updated'$$,
+  'HR sets a job posting image'
+);
+select extensions.is(
+  (select image_path from public.job_openings where title = 'Transactional opening updated'),
+  (select 'job-openings/' || id || '/0b8f2c1e-1111-4222-8333-944455556666.png' from public.job_openings where title = 'Transactional opening updated'),
+  'The job opening stores its image path'
+);
+select extensions.is(
+  (select public.set_job_opening_image(id, null) from public.job_openings where title = 'Transactional opening updated'),
+  (select 'job-openings/' || id || '/0b8f2c1e-1111-4222-8333-944455556666.png' from public.job_openings where title = 'Transactional opening updated'),
+  'Removing a job posting image returns the previous path for cleanup'
+);
+
 select * from extensions.finish();
 rollback;

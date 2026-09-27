@@ -16,7 +16,7 @@ for (const role of roles) {
 
     await page.getByLabel("Email").fill(role.email);
     await page.getByRole("textbox", { name: "Password" }).fill(demoPassword);
-    await page.getByRole("button", { name: "Sign in" }).click();
+    await page.getByRole("button", { name: "Login" }).click();
     await expect(page).toHaveURL(new RegExp(`${role.home}$`));
     await expect(page.getByRole("button", { name: new RegExp(`Account menu for ${role.email}`) })).toBeVisible();
 
@@ -41,7 +41,7 @@ test("invalid credentials show a safe error and do not create a session", async 
   await page.goto("/login");
   await page.getByLabel("Email").fill("demo.applicant@example.test");
   await page.getByRole("textbox", { name: "Password" }).fill("incorrect-local-test-password");
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("button", { name: "Login" }).click();
 
   await expect(page).toHaveURL(/\/login\?error=invalid_credentials/);
   await expect(page.getByText(/We could not sign you in\./)).toBeVisible();

@@ -62,8 +62,8 @@ describe("ApplicantApplicationForm", () => {
   it("links applicants with missing eligibility or diploma documents to the required documents section", async () => {
     const user = userEvent.setup({ applyAccept: false });
     submit.mockRejectedValue(new ApplicantProfileRequiredError(
-      "Upload your Eligibility and Diploma documents under My profile > Required documents before applying.",
-      "/applicant/profile#applicant-documents",
+      "Upload your Eligibility and Diploma documents on the Documents page before applying.",
+      "/applicant/documents",
       "Update required documents",
     ));
     render(<ApplicantApplicationForm jobId={7} />);
@@ -82,8 +82,8 @@ describe("ApplicantApplicationForm", () => {
     });
     await user.click(screen.getByRole("button", { name: "Submit application" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("My profile > Required documents");
-    expect(await screen.findByRole("link", { name: "Update required documents" })).toHaveAttribute("href", "/applicant/profile#applicant-documents");
+    expect(await screen.findByRole("alert")).toHaveTextContent("on the Documents page");
+    expect(await screen.findByRole("link", { name: "Update required documents" })).toHaveAttribute("href", "/applicant/documents");
   });
 
   it("keeps the PDF CV distinct from optional credentials and shows a tracking link", async () => {

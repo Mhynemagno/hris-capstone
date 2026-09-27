@@ -13,7 +13,7 @@ async function signIn(page: Page, email: string, home: string) {
   await page.goto("/login");
   await page.getByLabel("Email").fill(email);
   await page.getByRole("textbox", { name: "Password" }).fill(demoPassword);
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("button", { name: "Login" }).click();
   await expect(page).toHaveURL(new RegExp(`${home}$`));
 }
 

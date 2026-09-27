@@ -7,12 +7,12 @@ const usePublishedJobs = vi.hoisted(() => vi.fn());
 
 vi.mock("@/hooks/use-recruitment", () => ({ usePublishedJobs }));
 
-it("labels each job-opening link with its role", () => {
+it("shows each opening's title, long-format deadline and a details link", () => {
   usePublishedJobs.mockReturnValue({
     data: {
       rows: [
         {
-          closes_on: null,
+          closes_on: "2026-09-29",
           description: "Coordinate community safety programmes.",
           id: 12,
           location: "San Juan City",
@@ -26,11 +26,12 @@ it("labels each job-opening link with its role", () => {
 
   render(<PublicJobList pageSize={3} />);
 
-  expect(
-    screen.getByRole("link", {
-      name: "View Community Liaison Officer opening",
-    }),
-  ).toHaveAttribute("href", "/jobs/12");
+  expect(screen.getByRole("heading", { name: "Community Liaison Officer" })).toBeVisible();
+  expect(screen.getByText("Deadline of Application: September 29, 2026")).toBeVisible();
+  expect(screen.queryByText("Coordinate community safety programmes.")).not.toBeInTheDocument();
+  const link = screen.getByRole("link", { name: "View details for Community Liaison Officer" });
+  expect(link).toHaveAttribute("href", "/jobs/12");
+  expect(link).toHaveTextContent("View details");
   expect(usePublishedJobs).toHaveBeenCalledWith({ page: 1, pageSize: 3 });
 });
 

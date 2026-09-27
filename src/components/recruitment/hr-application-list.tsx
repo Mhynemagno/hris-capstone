@@ -17,7 +17,7 @@ import { applicationStatusSchema, type ApplicationStatus } from "@/schemas/recru
 
 type AiStatusFilter = "" | "queued" | "processing" | "completed" | "failed" | "unscored";
 
-const statusStyles: Record<ApplicationStatus, string> = {
+export const statusStyles: Record<ApplicationStatus, string> = {
   Submitted: "bg-sky-50 text-sky-800 ring-sky-600/20 dark:bg-sky-950/40 dark:text-sky-200 dark:ring-sky-400/30",
   "Under Review": "bg-indigo-50 text-indigo-800 ring-indigo-600/20 dark:bg-indigo-950/40 dark:text-indigo-200 dark:ring-indigo-400/30",
   Shortlisted: "bg-teal-50 text-teal-800 ring-teal-600/20 dark:bg-teal-950/40 dark:text-teal-200 dark:ring-teal-400/30",

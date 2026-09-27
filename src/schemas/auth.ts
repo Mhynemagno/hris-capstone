@@ -13,9 +13,37 @@ export const loginSchema = z.object({
   password: passwordSchema,
 });
 
-export const applicantRegistrationSchema = loginSchema.extend({
-  ...namePartsSchema.shape,
-}).transform(withFullName);
+/** Name qualifiers offered at registration; "None" is stored as no qualifier. */
+export const APPLICANT_QUALIFIERS = ["Jr.", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"] as const;
+
+/** Philippine mobile number: accepts +639XXXXXXXXX or 09XXXXXXXXX and normalizes to +639XXXXXXXXX. */
+export const philippineMobileSchema = z
+  .string()
+  .trim()
+  .transform((value) => value.replace(/[\s-]/g, ""))
+  .refine((value) => value !== "", "Mobile number is required.")
+  .refine((value) => value === "" || /^(\+639|09)\d{9}$/.test(value), "Enter a valid mobile number, e.g. +639171234567.")
+  .transform((value) => (value.startsWith("09") ? `+63${value.slice(1)}` : value));
+
+function localToday() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+}
+
+export const applicantRegistrationSchema = z
+  .object({
+    email: z.email(),
+    mobileNumber: philippineMobileSchema,
+    ...namePartsSchema.shape,
+    middleName: z.string().trim().min(1, "Middle name is required.").max(60),
+    qualifier: z.enum([...APPLICANT_QUALIFIERS, "None"], { error: "Choose a qualifier, or None." }),
+    birthdate: z.iso.date({ error: (issue) => (issue.input === "" ? "Birthdate is required." : "Enter a valid birthdate.") }).refine((value) => value < localToday(), "Birthdate must be in the past."),
+    password: passwordSchema,
+    confirmPassword: z.string().min(1, "Confirm your password."),
+  })
+  .refine(({ password, confirmPassword }) => password === confirmPassword, { path: ["confirmPassword"], message: "Passwords do not match." })
+  .transform(({ email, mobileNumber, firstName, lastName, middleName, qualifier, birthdate, password }) =>
+    withFullName({ email, mobileNumber, firstName, lastName, middleName, qualifier: qualifier === "None" ? null : qualifier, birthdate, password }));
 
 export const forgotPasswordSchema = z.object({
   email: z.email(),

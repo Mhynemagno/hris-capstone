@@ -73,9 +73,6 @@ export function PublicCareersLanding() {
           <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
             <div className="flex flex-col gap-4 border-b border-border/80 pb-6 sm:flex-row sm:items-end sm:justify-between">
               <div className="max-w-2xl space-y-2">
-                <p className="text-sm font-semibold tracking-[0.16em] text-primary uppercase">
-                  Job openings
-                </p>
                 <h2 className="text-3xl font-semibold tracking-tight">
                   Find your next role in public service.
                 </h2>
@@ -101,9 +98,6 @@ export function PublicCareersLanding() {
         <section className="border-y border-border bg-muted/50">
           <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
             <div className="max-w-2xl space-y-2">
-              <p className="text-sm font-semibold tracking-[0.16em] text-primary uppercase">
-                How to apply
-              </p>
               <h2 className="text-3xl font-semibold tracking-tight">
                 A clear path from opportunity to application.
               </h2>
@@ -139,7 +133,7 @@ export function PublicCareersLanding() {
               Careers
             </Link>
             <Link className="font-medium text-foreground hover:text-primary" href="/login">
-              Sign in
+              Login
             </Link>
           </div>
         </div>

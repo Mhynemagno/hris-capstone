@@ -110,7 +110,7 @@ describe("submitApplication", () => {
       documents: [{ kind: "cv", file: new File(["CV"], "cv.pdf", { type: "application/pdf" }) }],
     })).rejects.toMatchObject({
       code: "APPLICANT_PROFILE_REQUIRED",
-      message: expect.stringContaining("My profile"),
+      message: expect.stringContaining("Documents page"),
     });
   });
 
@@ -181,6 +181,48 @@ describe("saveJobOpening", () => {
       requested_criteria: [{ ordinal: 1, kind: "skill", requirement: "Clear written communication", isRequired: true }],
     }));
     expect(mocks.from).not.toHaveBeenCalled();
+  });
+});
+
+describe("saveJobOpening with an image", () => {
+  const values = {
+    title: "Public Safety Analyst",
+    description: "Analyze public safety data and support evidence-based operational decisions.",
+    location: "San Juan City Police Station",
+    closesOn: "2026-10-31",
+    status: "draft" as const,
+    criteria: [{ ordinal: 1, kind: "skill" as const, requirement: "Clear written communication", isRequired: true }],
+  };
+
+  beforeEach(() => {
+    vi.resetAllMocks();
+    mocks.getUser.mockResolvedValue({ data: { user: { id: userId } }, error: null });
+    mocks.upload.mockResolvedValue({ error: null });
+    mocks.remove.mockResolvedValue({ error: null });
+  });
+
+  it("uploads the image under the job, saves its path, and deletes the replaced image", async () => {
+    const previous = "job-openings/42/0b8f2c1e-1111-4222-8333-944455556666.png";
+    mocks.rpc.mockResolvedValueOnce({ data: { id: 42, image_path: previous }, error: null }).mockResolvedValueOnce({ data: previous, error: null });
+    const file = new File(["image"], "poster.webp", { type: "image/webp" });
+
+    const job = await saveJobOpening(values, 42, { file });
+
+    const [objectPath] = mocks.upload.mock.calls[0];
+    expect(objectPath).toMatch(/^job-openings\/42\/[0-9a-f-]{36}\.webp$/);
+    expect(mocks.rpc).toHaveBeenLastCalledWith("set_job_opening_image", { target_job_id: 42, target_image_path: objectPath });
+    expect(mocks.remove).toHaveBeenCalledWith([previous]);
+    expect(job.image_path).toBe(objectPath);
+  });
+
+  it("clears the saved image without uploading", async () => {
+    mocks.rpc.mockResolvedValueOnce({ data: { id: 42 }, error: null }).mockResolvedValueOnce({ data: "job-openings/42/old.png", error: null });
+
+    await saveJobOpening(values, 42, { remove: true });
+
+    expect(mocks.upload).not.toHaveBeenCalled();
+    expect(mocks.rpc).toHaveBeenLastCalledWith("set_job_opening_image", { target_job_id: 42, target_image_path: null });
+    expect(mocks.remove).toHaveBeenCalledWith(["job-openings/42/old.png"]);
   });
 });
 
