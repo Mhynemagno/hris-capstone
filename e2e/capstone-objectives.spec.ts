@@ -63,7 +63,7 @@ async function createEmployee(page: Page, suffix: string, startedOn = "2015-06-0
   await page.getByLabel(/^Religion/).fill("Roman Catholic");
   await page.getByLabel(/^Phone/).first().fill("+639171234567");
   await page.getByLabel(/^Home address/).fill("1 Test St., San Juan City");
-  await page.getByLabel(/^Emergency contact$/).fill("Test Contact");
+  await page.locator("#emergency-contact-name").fill("Test Contact");
   await page.getByLabel(/^Emergency contact phone/).fill("+639181234567");
   await page.getByLabel(/^Employment start date/).fill(startedOn);
   await page.getByRole("button", { name: "Save employee" }).click();
@@ -147,7 +147,7 @@ test.describe("Objective 1: centralized personnel records", () => {
     // The saved entry, not the matching choice in the add-qualification dropdown.
     await expect(page.getByRole("tabpanel", { name: "Qualifications" }).locator("p", { hasText: /^Baccalaureate Degree$/ })).toBeVisible();
     await sections.getByRole("tab", { name: "Service history" }).click();
-    await expect(page.getByRole("tabpanel", { name: "Service history" }).getByText("2015-06-01 – present")).toBeVisible();
+    await expect(page.getByRole("tabpanel", { name: "Service history" }).getByText("June 1, 2015 to present")).toBeVisible();
 
     await page.goto("/hr/employees");
     await page.getByLabel("Search").fill(employee.badge);
@@ -311,6 +311,8 @@ test.describe("Objective 4: promotion eligibility tracker", () => {
     const credential = "Public Safety Junior Leadership Course (PSJLC)";
     await signIn(page, HR.email, HR.home);
     const employee = await createEmployee(page, "PROMO", "2014-01-06");
+    // Records are added in edit mode; viewing a record is read-only.
+    await page.goto(`/hr/employees/${employee.id}?tab=training&mode=edit`);
 
     // The training credential the criteria require.
     await page.getByRole("tablist", { name: "Personnel record sections" }).getByRole("tab", { name: "Training" }).click();
