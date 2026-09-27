@@ -11,6 +11,7 @@ import { FormField } from "@/components/ui/form-field";
 import { LoadingState } from "@/components/ui/loading-state";
 import { nativeSelectClassName } from "@/components/ui/native-select";
 import { useAdminProfileChangeRequests } from "@/hooks/use-profile-change-requests";
+import { formatDateTime } from "@/lib/format-date";
 import type { ProfileChangeStatus } from "@/schemas/profile-change-requests";
 
 // "All statuses" is the default and includes pending requests, so they can still be actioned.
@@ -64,7 +65,7 @@ export function AdminProfileChangeRequestQueue() {
               <tbody>
                 {rows.length ? (
                   rows.map((request) => {
-                    const submitted = new Date(request.created_at).toLocaleString();
+                    const submitted = formatDateTime(request.created_at);
                     return (
                       <tr className="border-t" key={request.id}>
                         <td className="px-4 py-3 align-top">

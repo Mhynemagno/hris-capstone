@@ -30,7 +30,6 @@ import {
   withdrawJobOpening,
 } from "@/queries/recruitment";
 import type {
-  ApplicantProfileDocumentFile,
   ApplicantProfileInput,
   ApplicationAiFilters,
   ApplicationFilters,
@@ -94,7 +93,7 @@ export function useApplicantProfileDocuments() {
 export function useSaveApplicantProfileDocuments() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (documents: Array<{ kind: "eligibility" | "diploma"; file: ApplicantProfileDocumentFile }>) => saveApplicantProfileDocuments(documents),
+    mutationFn: (documents: Parameters<typeof saveApplicantProfileDocuments>[0]) => saveApplicantProfileDocuments(documents),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.profileDocuments() }),
   });
 }

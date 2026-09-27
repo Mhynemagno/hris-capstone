@@ -26,6 +26,7 @@ vi.mock("@/hooks/use-leave-management", () => ({
       status: "pending",
       decision_note: null,
       created_at: "2026-09-20T00:00:00Z",
+      employees: { first_name: "Juan", middle_name: "Santos", last_name: "Dela Cruz", employee_number: "PNP-0001" },
       leave_request_attachments: [],
     },
   }),
@@ -49,6 +50,18 @@ describe("HrLeaveDetail", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Only pending requests can be decided.");
   });
 
+  it("shows who submitted the leave and its dates in words", () => {
+    render(<HrLeaveDetail requestId="123e4567-e89b-42d3-a456-426614174000" />);
+
+    expect(screen.getByText("Juan Santos Dela Cruz")).toBeVisible();
+    expect(screen.getByText(/Badge no\. PNP-0001/)).toBeVisible();
+    expect(screen.getByText("October 1, 2026 to October 2, 2026")).toBeVisible();
+    expect(screen.getByText("September 20, 2026")).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Notes" })).toBeVisible();
+    expect(screen.queryByText("Decision note")).not.toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Notes" })).toHaveAccessibleDescription(/required when rejecting/);
+  });
+
   it("requires a note before rejecting", async () => {
     const user = userEvent.setup();
     render(<HrLeaveDetail requestId="123e4567-e89b-42d3-a456-426614174000" />);
@@ -57,10 +70,33 @@ describe("HrLeaveDetail", () => {
 
     expect(await screen.findByText("Provide a reason when rejecting a leave request.")).toBeVisible();
     expect(mocks.decide).not.toHaveBeenCalled();
+    expect(screen.getByRole("textbox", { name: "Notes" })).toBeInvalid();
   });
 });
 
 describe("HrLeaveQueue", () => {
+  it("shows the submitting employee and dates in words", () => {
+    mocks.rows = [
+      {
+        id: "123e4567-e89b-42d3-a456-426614174000",
+        leave_type_name: "Mandatory leave",
+        starts_on: "2026-09-23",
+        ends_on: "2026-09-25",
+        status: "pending",
+        created_at: "2026-09-20T03:00:00Z",
+        employees: { first_name: "Maria", middle_name: null, last_name: "Reyes", employee_number: "PNP-0002" },
+      },
+    ];
+    render(<HrLeaveQueue />);
+
+    expect(screen.getByRole("columnheader", { name: "Employee" })).toBeVisible();
+    expect(screen.getByText("Maria Reyes")).toBeVisible();
+    expect(screen.getByText("Badge no. PNP-0002")).toBeVisible();
+    expect(screen.getByText("September 23, 2026 to September 25, 2026")).toBeVisible();
+    expect(screen.getByText("September 20, 2026")).toBeVisible();
+    expect(screen.getByRole("link", { name: "Review Maria Reyes's Mandatory leave request, September 23, 2026 to September 25, 2026" })).toBeVisible();
+  });
+
   it("filters the queue by status and shows a helpful empty state", async () => {
     mocks.rows = [];
     const user = userEvent.setup();

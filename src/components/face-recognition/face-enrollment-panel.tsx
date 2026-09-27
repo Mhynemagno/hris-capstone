@@ -11,10 +11,10 @@ import { useAttendanceEmployees } from "@/hooks/use-attendance-integration";
 import { useFaceEnrollmentCapture } from "@/hooks/use-face-enrollment-capture";
 import { useDeleteFaceEnrollment, useFaceEnrollments } from "@/hooks/use-face-recognition";
 import { FACE_RECOGNITION_CONFIG } from "@/lib/face-recognition/config";
+import { formatDateTime } from "@/lib/format-date";
 
 import { CameraViewport } from "./camera-viewport";
 
-const dateFormatter = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" });
 
 export function FaceEnrollmentPanel() {
   const employees = useAttendanceEmployees();
@@ -94,7 +94,7 @@ export function FaceEnrollmentPanel() {
 
         {selected ? (
           <p className="text-sm text-muted-foreground" role="status">
-            {existing ? `Registered ${dateFormatter.format(new Date(existing.updated_at))} from ${existing.sample_count} samples.` : "No face registered yet."}
+            {existing ? `Registered ${formatDateTime(existing.updated_at)} from ${existing.sample_count} samples.` : "No face registered yet."}
           </p>
         ) : null}
 

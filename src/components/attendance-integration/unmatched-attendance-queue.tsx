@@ -8,6 +8,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { FormField } from "@/components/ui/form-field";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useAttendanceEmployees, useResolveUnmatchedAttendanceEvent, useUnmatchedAttendanceEvents } from "@/hooks/use-attendance-integration";
+import { formatDate } from "@/lib/format-date";
 
 export function UnmatchedAttendanceQueue() {
   const events = useUnmatchedAttendanceEvents({ page: 1, pageSize: 25 });
@@ -51,7 +52,7 @@ export function UnmatchedAttendanceQueue() {
         return (
           <article className="rounded-xl border p-4" key={event.id}>
             <p className="font-medium">{event.external_employee_id}</p>
-            <p className="mt-1 text-sm text-muted-foreground">{event.attendance_date} · {event.source_event_id}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{formatDate(event.attendance_date)} · {event.source_event_id}</p>
             <div className="mt-3 grid gap-3 sm:grid-cols-[minmax(0,24rem)_auto] sm:items-start">
               <FormField error={rowErrors[event.id] || undefined} htmlFor={`employee-${event.id}`} label={`Employee for ${event.external_employee_id}`}>
                 <Combobox

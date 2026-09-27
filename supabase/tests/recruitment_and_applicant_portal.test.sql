@@ -115,6 +115,21 @@ values
   ((select id from public.applicants where profile_id = '00000000-0000-4000-8000-000000009100'::uuid), 'eligibility', 'applicant-profiles/00000000-0000-4000-8000-000000009100/00000000-0000-4000-8000-000000009313.pdf', 'eligibility.pdf', 'application/pdf', 1024, '00000000-0000-4000-8000-000000009100'),
   ((select id from public.applicants where profile_id = '00000000-0000-4000-8000-000000009100'::uuid), 'diploma', 'applicant-profiles/00000000-0000-4000-8000-000000009100/00000000-0000-4000-8000-000000009314.pdf', 'diploma.pdf', 'application/pdf', 1024, '00000000-0000-4000-8000-000000009100');
 
+-- The CV / Resume, PSA birth certificate, and 2x2 picture are also required before applying.
+insert into public.applicant_profile_documents (applicant_id, kind, object_path, file_name, mime_type, size_bytes, uploaded_by_user_id)
+select applicant.id, document.kind,
+  'applicant-profiles/' || applicant.profile_id || '/' || document.object_id || document.extension,
+  document.kind || document.extension, document.mime_type, 1024, applicant.profile_id
+from public.applicants applicant
+join (values
+  ('00000000-0000-4000-8000-000000009102'::uuid, 'resume', '00000000-0000-4000-8000-000000009315', '.pdf', 'application/pdf'),
+  ('00000000-0000-4000-8000-000000009102'::uuid, 'psa', '00000000-0000-4000-8000-000000009316', '.pdf', 'application/pdf'),
+  ('00000000-0000-4000-8000-000000009102'::uuid, 'photo', '00000000-0000-4000-8000-000000009317', '.png', 'image/png'),
+  ('00000000-0000-4000-8000-000000009100'::uuid, 'resume', '00000000-0000-4000-8000-000000009318', '.pdf', 'application/pdf'),
+  ('00000000-0000-4000-8000-000000009100'::uuid, 'psa', '00000000-0000-4000-8000-000000009319', '.pdf', 'application/pdf'),
+  ('00000000-0000-4000-8000-000000009100'::uuid, 'photo', '00000000-0000-4000-8000-000000009320', '.jpg', 'image/jpeg')
+) as document(profile_id, kind, object_id, extension, mime_type) on document.profile_id = applicant.profile_id;
+
 insert into storage.buckets (id, name, public, file_size_limit)
 values ('applicant-documents', 'applicant-documents', false, 10485760)
 on conflict (id) do nothing;

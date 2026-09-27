@@ -7,6 +7,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useEmployeeOptions, useHrDeployments } from "@/hooks/use-deployment-tracking";
+import { formatDate } from "@/lib/format-date";
 
 import { DeploymentStatusBadge, effectiveDeploymentStatus, manilaToday } from "./deployment-status-badge";
 
@@ -34,8 +35,8 @@ export function HrDeploymentDirectory() {
           <thead className="bg-muted/60">
             <tr>
               <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Employee</th>
-              <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Role</th>
-              <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Destination</th>
+              <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Location</th>
+              <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Unit / Assignment</th>
               <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Dates</th>
               <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Status</th>
               <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col"><span className="sr-only">Actions</span></th>
@@ -49,13 +50,13 @@ export function HrDeploymentDirectory() {
                   <td className="px-4 py-3 align-top">
                     {employee ? <><span className="block font-medium">{employee.fullName}</span><span className="block text-muted-foreground tabular-nums">{employee.employeeNumber}</span></> : <span className="text-muted-foreground">{employees.isLoading ? "Loading…" : "Unknown employee"}</span>}
                   </td>
-                  <td className="px-4 py-3 align-top">{row.assignment_role}</td>
-                  <td className="px-4 py-3 align-top">{[row.location, row.unit, row.project].filter(Boolean).join(" · ") || "—"}</td>
-                  <td className="px-4 py-3 align-top whitespace-nowrap">{row.starts_on} – {row.ends_on ?? (effectiveDeploymentStatus(row, today) === "upcoming" ? "no end date" : "ongoing")}</td>
+                  <td className="px-4 py-3 align-top">{row.location || "—"}</td>
+                  <td className="px-4 py-3 align-top">{[row.unit, row.project].filter(Boolean).join(" · ") || "—"}</td>
+                  <td className="px-4 py-3 align-top whitespace-nowrap">{formatDate(row.starts_on)} – {formatDate(row.ends_on) ?? (effectiveDeploymentStatus(row, today) === "upcoming" ? "no end date" : "ongoing")}</td>
                   <td className="px-4 py-3 align-top"><DeploymentStatusBadge deployment={row} today={today} /></td>
                   <td className="px-4 py-3 align-top text-right">
                     <Link className={buttonVariants({ size: "sm", variant: "outline" })} href={`/hr/deployments/${row.id}`}>
-                      View details{" "}<span className="sr-only">for {row.assignment_role}{employee ? `, ${employee.fullName}` : ""}</span>
+                      View details{" "}<span className="sr-only">for {row.location || row.unit || "deployment"}{employee ? `, ${employee.fullName}` : ""}</span>
                     </Link>
                   </td>
                 </tr>

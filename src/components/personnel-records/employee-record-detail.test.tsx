@@ -1,5 +1,5 @@
 import userEvent from "@testing-library/user-event";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -40,7 +40,7 @@ describe("EmployeeRecordDetail", () => {
     vi.resetAllMocks();
     mocks.search = "tab=training";
     mocks.deleteTraining.mockResolvedValue(undefined);
-    mocks.useEmployee.mockReturnValue({ data: { id: employeeId, first_name: "Ada", last_name: "Dela Cruz", employee_number: "PAT-001", employment_status: "active" }, isLoading: false });
+    mocks.useEmployee.mockReturnValue({ data: { id: employeeId, first_name: "Ada", last_name: "Dela Cruz", employee_number: "PAT-001", employment_status: "active", date_of_birth: "1990-09-23", gender: "female", place_of_birth: "Quezon City", phone: "+639171234567", employment_started_on: "2024-01-01" }, isLoading: false });
     mocks.useEntries.mockImplementation((kind: string) => ({
       data: kind === "training" ? [{
         id: "00000000-0000-4000-8000-000000000020",
@@ -58,6 +58,7 @@ describe("EmployeeRecordDetail", () => {
 
   it("requires confirmation before deleting a training record", async () => {
     const user = userEvent.setup();
+    mocks.search = "tab=training&mode=edit";
     render(<EmployeeRecordDetail employeeId={employeeId} />);
 
     await user.click(screen.getByRole("button", { name: "Delete" }));
@@ -75,8 +76,8 @@ describe("EmployeeRecordDetail", () => {
     expect(screen.getByRole("tab", { name: "Qualifications" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("heading", { name: "Qualifications" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Service history" })).not.toBeInTheDocument();
-    // Other panels stay mounted but hidden, so unsaved official-record edits survive a tab switch.
-    expect(screen.getByText("Employee editor")).not.toBeVisible();
+    // Other panels stay mounted but hidden.
+    expect(screen.getByRole("heading", { name: "Official record", hidden: true })).not.toBeVisible();
     expect(screen.getByRole("tab", { name: "Official record" })).toHaveAttribute("aria-controls", "rec-panel-official");
     expect(document.getElementById("rec-panel-official")).toHaveAttribute("hidden");
 
@@ -88,7 +89,7 @@ describe("EmployeeRecordDetail", () => {
     render(<EmployeeRecordDetail employeeId={employeeId} />);
 
     expect(screen.getByRole("heading", { level: 1, name: "Ada Dela Cruz" })).toBeInTheDocument();
-    expect(screen.getByText("PAT-001")).toBeInTheDocument();
+    expect(within(screen.getByRole("region", { name: "Employee summary" })).getByText("PAT-001")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Promotion review" })).toHaveAttribute("href", `/hr/promotions/${employeeId}`);
     expect(screen.getByRole("tab", { name: "Training" })).toHaveTextContent("Training1");
     const activity = screen.getByRole("region", { name: "Recent activity" });
@@ -101,6 +102,72 @@ describe("EmployeeRecordDetail", () => {
     render(<EmployeeRecordDetail employeeId={employeeId} />);
 
     await user.click(screen.getByRole("button", { name: "Edit details" }));
+    expect(mocks.replace).toHaveBeenCalledWith("/hr/employees/00000000-0000-4000-8000-000000000010?tab=official&mode=edit", { scroll: false });
+  });
+
+  it("shows the official record as a read-only list in view mode", () => {
+    mocks.search = "";
+    render(<EmployeeRecordDetail employeeId={employeeId} />);
+
+    const official = screen.getByRole("region", { name: "Official record" });
+    expect(screen.queryByText("Employee editor")).not.toBeInTheDocument();
+    expect(official.querySelectorAll("input, select, textarea")).toHaveLength(0);
+    expect(official).toHaveTextContent("Place of birthQuezon City");
+    expect(official).toHaveTextContent("Date of birthSeptember 23, 1990");
+    expect(official).toHaveTextContent("Employment start dateJanuary 1, 2024");
+    expect(official).toHaveTextContent("Religion" + "Not provided");
+    expect(screen.getByText("Born").nextElementSibling).toHaveTextContent("September 23, 1990");
+  });
+
+  it("hides add, edit, and delete controls on every section in view mode", () => {
+    mocks.search = "tab=training";
+    render(<EmployeeRecordDetail employeeId={employeeId} />);
+
+    const training = screen.getByRole("region", { name: "Training" });
+    expect(training).toHaveTextContent("Police Academy · January 1, 2026 · 16 hours");
+    expect(screen.queryByRole("button", { name: "Edit" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Delete" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /add training/i, hidden: true })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /add qualification/i, hidden: true })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /add service history/i, hidden: true })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /add certification/i, hidden: true })).not.toBeInTheDocument();
+  });
+
+  it("makes every section editable in edit mode and returns to view mode", async () => {
+    const user = userEvent.setup();
+    mocks.search = "tab=official&mode=edit";
+    render(<EmployeeRecordDetail employeeId={employeeId} />);
+
+    expect(screen.getByText("Employee editor")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Edit", hidden: true })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /add training/i, hidden: true })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /add qualification/i, hidden: true })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(mocks.replace).toHaveBeenLastCalledWith("/hr/employees/00000000-0000-4000-8000-000000000010?tab=official", { scroll: false });
+    await user.click(screen.getByRole("button", { name: "Done editing" }));
+    expect(mocks.replace).toHaveBeenLastCalledWith("/hr/employees/00000000-0000-4000-8000-000000000010?tab=official", { scroll: false });
+  });
+
+  it("keeps edit mode when switching tabs", async () => {
+    const user = userEvent.setup();
+    mocks.search = "tab=official&mode=edit";
+    render(<EmployeeRecordDetail employeeId={employeeId} />);
+
+    await user.click(screen.getByRole("tab", { name: "Qualifications" }));
+    expect(mocks.replace).toHaveBeenCalledWith("/hr/employees/00000000-0000-4000-8000-000000000010?tab=qualifications&mode=edit", { scroll: false });
+  });
+
+  it.each([
+    ["created", "Employee account has been saved."],
+    ["edited", "Employee account has been edited successfully."],
+  ])("confirms a %s employee with a success message", async (saved, message) => {
+    const user = userEvent.setup();
+    mocks.search = `tab=official&saved=${saved}`;
+    render(<EmployeeRecordDetail employeeId={employeeId} />);
+
+    expect(screen.getByRole("status")).toHaveTextContent(message);
+    await user.click(screen.getByRole("button", { name: "Dismiss message" }));
     expect(mocks.replace).toHaveBeenCalledWith("/hr/employees/00000000-0000-4000-8000-000000000010?tab=official", { scroll: false });
   });
 
@@ -109,7 +176,7 @@ describe("EmployeeRecordDetail", () => {
     render(<EmployeeRecordDetail employeeId={employeeId} />);
 
     expect(screen.getByRole("tab", { name: "Official record" })).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByText("Employee editor")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Official record" })).toBeVisible();
     expect(screen.queryByRole("heading", { name: "Training" })).not.toBeInTheDocument();
   });
 });

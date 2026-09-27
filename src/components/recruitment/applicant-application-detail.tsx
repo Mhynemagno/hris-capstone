@@ -7,6 +7,7 @@ import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useMyApplication, useResubmitApplication } from "@/hooks/use-recruitment";
+import { formatDate, formatDateTime } from "@/lib/format-date";
 import { getApplicantDocumentUrl } from "@/queries/recruitment";
 
 import { AppliedJobSummary } from "./applied-job-summary";
@@ -56,7 +57,7 @@ export function ApplicantApplicationDetail({ applicationId }: { applicationId: s
   }
 
   return <section className="max-w-3xl space-y-5">
-    <div className="rounded-xl border p-5"><h1 className="text-2xl font-semibold">Application status: {application.status}</h1><p className="mt-2 text-sm text-muted-foreground">Submitted {new Date(application.submitted_at).toLocaleString()}</p></div>
+    <div className="rounded-xl border p-5"><h1 className="text-3xl font-semibold tracking-tight">Application status: {application.status}</h1><p className="mt-2 text-sm text-muted-foreground">Submitted {formatDateTime(application.submitted_at)}</p></div>
     <AppliedJobSummary job={application.job_openings} status={application.status} submittedAt={application.submitted_at} />
     {canResubmit ? <form className="space-y-4 rounded-xl border border-primary/30 bg-primary/5 p-5" noValidate onSubmit={(event) => { event.preventDefault(); void submitRevision(event.currentTarget); }}>
       <div><h2 className="font-semibold">Update and resubmit</h2><p className="mt-1 text-sm text-muted-foreground">HR requested revisions. Upload a replacement CV and any supporting credentials.</p></div>
@@ -66,7 +67,7 @@ export function ApplicantApplicationDetail({ applicationId }: { applicationId: s
       {revisionNotice ? <p className="text-sm text-emerald-700" role="status">{revisionNotice}</p> : null}
       <button className="min-h-11 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60" disabled={resubmit.isPending} type="submit">{resubmit.isPending ? "Resubmitting…" : "Resubmit application"}</button>
     </form> : null}
-    <div className="rounded-xl border p-5"><h2 className="font-semibold" id="application-history-heading">Status history</h2><ol aria-labelledby="application-history-heading" className="mt-3 space-y-2 text-sm">{history.map((entry) => <li key={entry.id}><span className="text-muted-foreground">{new Date(entry.created_at).toLocaleDateString()}</span> · <span className="font-medium">{entry.next_status}</span>{entry.note ? ` — ${entry.note}` : ""}</li>)}</ol></div>
+    <div className="rounded-xl border p-5"><h2 className="font-semibold" id="application-history-heading">Status history</h2><ol aria-labelledby="application-history-heading" className="mt-3 space-y-2 text-sm">{history.map((entry) => <li key={entry.id}><span className="text-muted-foreground">{formatDate(entry.created_at)}</span> · <span className="font-medium">{entry.next_status}</span>{entry.note ? ` — ${entry.note}` : ""}</li>)}</ol></div>
     <div className="rounded-xl border p-5"><h2 className="font-semibold" id="application-documents-heading">Documents</h2><ul aria-labelledby="application-documents-heading" className="mt-3 space-y-2 text-sm">{documents.map((document) => <li key={document.id}><span className="text-muted-foreground">{document.kind === "cv" ? "CV" : "Credential"}</span> · {urls[document.id] ? <a className="text-primary underline" href={urls[document.id]} rel="noreferrer" target="_blank">{document.file_name}</a> : document.file_name}</li>)}</ul></div>
   </section>;
 }

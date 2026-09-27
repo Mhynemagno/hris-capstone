@@ -96,26 +96,20 @@ export function DeploymentForm({ deployment, onSaved, pending = false }: Deploym
           </FormField>
         </div>
       ) : null}
-      <FormField error={e.assignmentRole} htmlFor="assignment-role" label="Assignment role" required>
-        <Input defaultValue={deployment?.assignment_role} id="assignment-role" name="assignmentRole" required />
-      </FormField>
-      <FormField description="Provide a location, unit, or project." error={e.location} htmlFor="location" label="Location">
-        <Input defaultValue={deployment?.location ?? ""} id="location" name="location" />
+      <FormField error={e.location} htmlFor="location" label="Location" required>
+        <Input defaultValue={deployment?.location ?? ""} id="location" maxLength={200} name="location" required />
       </FormField>
       <FormField
         description={unitStations.error ? "Unit stations could not be loaded. Refresh the page to try again." : undefined}
         error={e.unit}
         htmlFor="unit"
-        label="Unit assignment"
+        label="Unit / Assignment"
       >
         <NativeSelect key={unitStations.data ? "catalogue" : "loading"} defaultValue={deployment?.unit ?? ""} id="unit" name="unit">
           <option value="">Select a unit/station</option>
           {deployment?.unit && !unitStations.data?.some((unit) => unit.name === deployment.unit) ? <option value={deployment.unit}>{deployment.unit}</option> : null}
           {unitStations.data?.map((unit) => <option key={unit.id} value={unit.name}>{unit.name}</option>)}
         </NativeSelect>
-      </FormField>
-      <FormField error={e.project} htmlFor="project" label="Project">
-        <Input defaultValue={deployment?.project ?? ""} id="project" name="project" />
       </FormField>
       <FormField error={e.status} htmlFor="status" label="Status" required>
         <NativeSelect defaultValue={deployment?.status ?? "active"} id="status" name="status">
@@ -126,8 +120,8 @@ export function DeploymentForm({ deployment, onSaved, pending = false }: Deploym
         <Input defaultValue={deployment?.starts_on} id="starts-on" name="startsOn" required type="date" />
       </FormField>
       <div className="sm:col-span-2">
-        <FormField error={e.notes} htmlFor="notes" label="Notes">
-          <Textarea defaultValue={deployment?.notes ?? ""} id="notes" maxLength={2000} name="notes" />
+        <FormField error={e.notes} htmlFor="notes" label="Remarks" required>
+          <Textarea defaultValue={deployment?.notes ?? ""} id="notes" maxLength={2000} name="notes" required />
         </FormField>
       </div>
       {error ? <div className="sm:col-span-2"><ErrorState message={error} /></div> : null}

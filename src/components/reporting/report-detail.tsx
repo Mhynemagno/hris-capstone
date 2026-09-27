@@ -12,6 +12,7 @@ import { nativeSelectClassName } from "@/components/ui/native-select";
 import { PageHeader } from "@/components/ui/page-header";
 import { useDepartmentOptions } from "@/hooks/use-administration";
 import { useReport } from "@/hooks/use-reporting";
+import { formatDate, formatDateTime } from "@/lib/format-date";
 import { toReportCsv } from "@/lib/reporting/csv";
 import { reportFiltersSchema, type ReportFilters } from "@/schemas/reporting";
 
@@ -85,9 +86,15 @@ export const REPORT_STATUS_FILTERS: Record<ReportKey, { label: string; options: 
 export type DraftFilters = { startsOn: string; endsOn: string; departmentId: string; status: string };
 const emptyDraft: DraftFilters = { startsOn: "", endsOn: "", departmentId: "", status: "" };
 
-function formatCell(value: unknown) {
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+const TIMESTAMP = /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/;
+
+/** Table cell text; dates read in words ("September 23, 2026"). The CSV export keeps raw values. */
+export function formatCell(value: unknown) {
   if (value === null || value === undefined || value === "") return "—";
   if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (typeof value === "string" && DATE_ONLY.test(value)) return formatDate(value) ?? value;
+  if (typeof value === "string" && TIMESTAMP.test(value)) return formatDateTime(value) ?? value;
   if (typeof value === "number" && !Number.isInteger(value)) return value.toFixed(2);
   return String(value);
 }

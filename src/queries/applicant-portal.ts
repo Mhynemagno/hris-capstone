@@ -1,5 +1,5 @@
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
-import type { ApplicantEducation, ApplicantEducationLevel, HrRegisteredApplicant } from "@/lib/types/database";
+import type { ApplicantEducation, ApplicantEducationLevel, ApplicantProfileDocumentKind, HrRegisteredApplicant } from "@/lib/types/database";
 import { APPLICANT_EDUCATION_LEVELS, applicantEducationSchema, type ApplicantEducationInput } from "@/schemas/applicant-portal";
 
 const applicantProfileDocumentBucket = "applicant-profile-documents";
@@ -29,9 +29,9 @@ export async function saveMyApplicantEducation(applicantId: string, input: Appli
   const existingByLevel = new Map(((existing ?? []) as Pick<ApplicantEducation, "id" | "level">[]).map((row) => [row.level, row.id]));
   for (const { level } of APPLICANT_EDUCATION_LEVELS) {
     const entry = values[level];
-    const row = { school_name: entry.schoolName ?? null, degree_course: entry.degreeCourse ?? null, year_graduated: entry.yearGraduated ?? null };
+    const row = { school_name: entry.schoolName ?? null, degree_course: entry.degreeCourse ?? null, year_graduated: entry.yearGraduated ?? null, location: entry.location ?? null };
     const existingId = existingByLevel.get(level as ApplicantEducationLevel);
-    const blank = !row.school_name && !row.degree_course && row.year_graduated === null;
+    const blank = !row.school_name && !row.degree_course && row.year_graduated === null && !row.location;
     if (blank) {
       if (existingId) throwIfError((await client.from("applicant_education").delete().eq("id", existingId)).error);
     } else if (existingId) {
@@ -42,8 +42,8 @@ export async function saveMyApplicantEducation(applicantId: string, input: Appli
   }
 }
 
-/** Removes an Eligibility or Diploma document; the database refuses while an application is being decided. */
-export async function removeMyApplicantProfileDocument(kind: "eligibility" | "diploma") {
+/** Removes one required profile document; the database refuses while an application is being decided. */
+export async function removeMyApplicantProfileDocument(kind: ApplicantProfileDocumentKind) {
   const client = createBrowserSupabaseClient();
   const { data, error } = await client.rpc("remove_my_applicant_profile_document", { target_kind: kind });
   throwIfError(error);

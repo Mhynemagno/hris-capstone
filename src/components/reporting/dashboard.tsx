@@ -37,7 +37,7 @@ const KPIS: { key: string; label: string; hint: string; icon: ReactNode; tone?: 
   { key: "departments", label: "Departments", hint: "Active departments", icon: <Building2 className={iconClass} /> },
   { key: "activeDeployments", label: "Deployments", hint: "Personnel deployed now", icon: <MapPin className={iconClass} /> },
   { key: "applicants", label: "Applicants", hint: "Applicant accounts", icon: <UserRoundSearch className={iconClass} />, href: { hr_personnel: "/hr/applications?view=applicants" } },
-  { key: "onLeave", label: "On-Leave", hint: "Employment status on leave", icon: <CalendarOff className={iconClass} /> },
+  { key: "onLeave", label: "On-Leave", hint: "On approved leave today", icon: <CalendarOff className={iconClass} /> },
 ];
 
 /** Work that is waiting on someone; each item is "clear" when its count is zero. */
@@ -77,6 +77,7 @@ const STATUS_COLORS: Record<string, string> = {
   ready: "var(--status-good)",
   late: "var(--status-warning)",
   pending: "var(--status-warning)",
+  upcoming: "var(--chart-1)",
   planned: "var(--status-warning)",
   incomplete: "var(--status-serious)",
   "not ready": "var(--status-serious)",
@@ -115,7 +116,7 @@ const CHARTS: ChartSpec[] = [
   { key: "attendanceStatus", title: "Attendance status", subtitle: "All attendance logs in the period", format: titleCase, labelHeading: "Status", render: (rows) => <DonutChart centerLabel="Logs" colorFor={statusColor} data={rows} formatLabel={titleCase} /> },
   { key: "workforceByDepartment", title: "Personnel by department", subtitle: "Active personnel", labelHeading: "Department", render: (rows) => <HorizontalBarChart data={rows} /> },
   { key: "workforceByRank", title: "Personnel by rank", subtitle: "All personnel, lowest to highest rank", labelHeading: "Rank", render: (rows) => <HorizontalBarChart data={rows} /> },
-  { key: "leaveStatus", title: "Leave status", subtitle: "By status, starting in the period", format: titleCase, labelHeading: "Status", render: (rows) => <DonutChart centerLabel="Requests" colorFor={statusColor} data={rows} formatLabel={titleCase} /> },
+  { key: "leaveStatus", title: "Leave status", subtitle: "Leave in the period, plus upcoming leave", format: titleCase, labelHeading: "Status", render: (rows) => <DonutChart centerLabel="Requests" colorFor={statusColor} data={rows} formatLabel={titleCase} /> },
   { key: "recruitmentPipeline", title: "Recruitment pipeline", subtitle: "Applications submitted in the period, by stage", labelHeading: "Stage", render: (rows) => <HorizontalBarChart data={byPipeline(rows)} /> },
   { key: "deploymentStatus", title: "Deployment status", subtitle: "All deployments by status", format: titleCase, labelHeading: "Status", render: (rows) => <DonutChart centerLabel="Deployments" colorFor={statusColor} data={rows} formatLabel={titleCase} /> },
   { key: "promotionReadiness", title: "Promotion Status", subtitle: "Evaluations in the period", labelHeading: "Result", render: (rows) => <DonutChart centerLabel="Evaluated" colorFor={statusColor} data={rows} /> },
@@ -173,7 +174,7 @@ function DashboardContent({ role, query }: { role: DashboardRole; query: { isLoa
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,var(--color-cta)_0%,transparent_55%)] opacity-25" />
       <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="font-heading text-3xl font-bold tracking-tight" id="page-title">Dashboard</h1>
+          <h1 className="text-3xl font-semibold tracking-tight" id="page-title">Dashboard</h1>
         </div>
         <div className="flex flex-wrap gap-2">
           <Link className={buttonVariants({ className: "min-h-11 rounded-full", variant: "outline" })} href="/reports">

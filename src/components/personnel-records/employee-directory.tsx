@@ -167,7 +167,7 @@ export function EmployeeDirectory() {
                         <span className="flex flex-wrap items-center gap-1.5 text-xs font-normal text-muted-foreground tabular-nums">
                           {employee.employee_number}
                           {BADGE_NUMBER_PATTERN.test(employee.employee_number) ? null : (
-                            <Link className="rounded-full bg-amber-100 px-2 font-medium text-amber-900 underline-offset-2 hover:underline dark:bg-amber-950/60 dark:text-amber-200" href={`/hr/employees/${employee.id}?tab=official`}>
+                            <Link className="rounded-full bg-amber-100 px-2 font-medium text-amber-900 underline-offset-2 hover:underline dark:bg-amber-950/60 dark:text-amber-200" href={`/hr/employees/${employee.id}?tab=official&mode=edit`}>
                               Update to 0-00000{" "}<span className="sr-only">for {name}</span>
                             </Link>
                           )}
@@ -186,7 +186,7 @@ export function EmployeeDirectory() {
                           <Link aria-label={`View record for ${name}`} className={cn(iconAction, "text-foreground hover:bg-muted")} href={`/hr/employees/${employee.id}`} title="View">
                             <Eye aria-hidden="true" className="size-5" />
                           </Link>
-                          <Link aria-label={`Edit record for ${name}`} className={cn(iconAction, "text-foreground hover:bg-muted")} href={`/hr/employees/${employee.id}?tab=official`} title="Edit">
+                          <Link aria-label={`Edit record for ${name}`} className={cn(iconAction, "text-foreground hover:bg-muted")} href={`/hr/employees/${employee.id}?tab=official&mode=edit`} title="Edit">
                             <Pencil aria-hidden="true" className="size-[18px]" />
                           </Link>
                           <button

@@ -11,6 +11,9 @@ import { Input } from "@/components/ui/input";
 import { LoadingState } from "@/components/ui/loading-state";
 import { NativeSelect } from "@/components/ui/native-select";
 import { useHrApplications } from "@/hooks/use-recruitment";
+import { formatDate } from "@/lib/format-date";
+import { RECRUITMENT_RANK } from "@/lib/pnp-catalogue";
+import { rankLabel } from "@/lib/ranks";
 import type { HrShortlistApplication } from "@/lib/types/database";
 import { cn } from "@/lib/utils";
 import { applicationStatusSchema, type ApplicationStatus } from "@/schemas/recruitment";
@@ -27,7 +30,8 @@ export const statusStyles: Record<ApplicationStatus, string> = {
   "Not Selected": "bg-muted text-muted-foreground ring-border",
 };
 
-const dateFormat = new Intl.DateTimeFormat("en-PH", { month: "short", day: "numeric", year: "numeric" });
+/** Every opening recruits for the same entry rank, so the queue names the rank rather than the posting's title. */
+const positionLabel = rankLabel(RECRUITMENT_RANK);
 
 function formatApplicantNumber(value: number | null | undefined) {
   if (value === null || value === undefined) return null;
@@ -141,13 +145,13 @@ export function HrApplicationList() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 align-middle">{application.job_title ?? <span className="text-muted-foreground">—</span>}</td>
+                    <td className="px-4 py-3 align-middle whitespace-nowrap">{positionLabel}</td>
                     <td className="px-4 py-3 align-middle">
                       <span className={cn("inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset", statusStyles[application.status] ?? statusStyles["Not Selected"])}>
                         {application.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 align-middle whitespace-nowrap tabular-nums">{dateFormat.format(new Date(application.submitted_at))}</td>
+                    <td className="px-4 py-3 align-middle whitespace-nowrap tabular-nums">{formatDate(application.submitted_at)}</td>
                     <td className="px-4 py-3 align-middle"><AiScore application={application} /></td>
                     <td className="px-4 py-3 text-right align-middle">
                       <Link className={buttonVariants({ className: "min-h-10", size: "sm", variant: "outline" })} href={`/hr/applications/${application.id}`}>

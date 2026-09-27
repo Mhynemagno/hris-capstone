@@ -24,7 +24,7 @@ export default async function UnauthorizedPage() {
             <ShieldAlert aria-hidden="true" className="size-7" />
           </div>
           <div className="space-y-2">
-            <h1 className="font-heading text-2xl font-medium">Access denied</h1>
+            <h1 className="text-3xl font-semibold tracking-tight">Access denied</h1>
             <CardDescription>
               Your account does not have permission to view that workspace.
             </CardDescription>

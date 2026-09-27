@@ -59,10 +59,10 @@ describe("ApplicantApplicationForm", () => {
     expect(await screen.findByRole("link", { name: "Complete profile" })).toHaveAttribute("href", "/applicant/profile");
   });
 
-  it("links applicants with missing eligibility or diploma documents to the required documents section", async () => {
+  it("links applicants with missing required documents to the required documents section", async () => {
     const user = userEvent.setup({ applyAccept: false });
     submit.mockRejectedValue(new ApplicantProfileRequiredError(
-      "Upload your Eligibility and Diploma documents on the Documents page before applying.",
+      "Upload all required documents (Eligibility, Diploma, CV / Resume, PSA birth certificate, and 2x2 picture) on the Documents page before applying.",
       "/applicant/documents",
       "Update required documents",
     ));

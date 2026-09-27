@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useFieldArray, useForm, useWatch } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { useEffect, useRef, useState } from "react";
 import type { z } from "zod";
 
@@ -14,34 +14,27 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { useSaveJobOpening } from "@/hooks/use-recruitment";
-import { PNP_JOB_CRITERIA, withSavedValue, type PnpJobCriterionKind } from "@/lib/pnp-catalogue";
+import { OTHERS_CHOICE, PNP_GENERAL_REQUIREMENTS, RECRUITMENT_RANK, withSavedValue } from "@/lib/pnp-catalogue";
+import { rankLabel } from "@/lib/ranks";
+import { criteriaFromGeneralRequirements, generalRequirementsFromCriteria } from "@/lib/recruitment/general-requirements";
 import { jobPostingImageUrl } from "@/lib/recruitment/job-posting-image";
-import { jobOpeningSchema, jobPostingImageFileSchema, type JobOpeningInput } from "@/schemas/recruitment";
+import { jobOpeningFormSchema, jobOpeningSchema, jobPostingImageFileSchema, type JobOpeningFormInput, type JobOpeningInput } from "@/schemas/recruitment";
 import type { JobOpening, JobQualificationCriterion } from "@/lib/types/database";
 
 type HrJobFormProps = {
   job?: JobOpening & { job_qualification_criteria?: JobQualificationCriterion[]; applications?: Array<{ count: number }> };
 };
 
-type JobFormValues = z.input<typeof jobOpeningSchema>;
+type JobFormValues = z.input<typeof jobOpeningFormSchema>;
 
 function defaults(job?: HrJobFormProps["job"]): JobFormValues {
-  const criteria = (job?.job_qualification_criteria ?? [])
-    .map((criterion) => ({
-      id: criterion.id,
-      ordinal: criterion.ordinal,
-      kind: criterion.kind,
-      requirement: criterion.requirement,
-      isRequired: criterion.is_required,
-    }))
-    .sort((left, right) => left.ordinal - right.ordinal);
   return {
     title: job?.title ?? "",
     description: job?.description ?? "",
     location: job?.location ?? "",
     closesOn: job?.closes_on ?? "",
     status: job?.status ?? "draft",
-    criteria: criteria.length ? criteria : [{ ordinal: 1, kind: "experience", requirement: "", isRequired: true }],
+    requirements: generalRequirementsFromCriteria(job?.job_qualification_criteria),
   };
 }
 
@@ -56,12 +49,11 @@ export function HrJobForm({ job }: HrJobFormProps) {
   const [imageError, setImageError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const imageInput = useRef<HTMLInputElement>(null);
-  const form = useForm<JobFormValues, unknown, JobOpeningInput>({
-    resolver: zodResolver(jobOpeningSchema),
+  const form = useForm<JobFormValues, unknown, JobOpeningFormInput>({
+    resolver: zodResolver(jobOpeningFormSchema),
     defaultValues: defaults(job),
   });
-  const criteria = useFieldArray({ control: form.control, name: "criteria" });
-  const criteriaValues = useWatch({ control: form.control, name: "criteria" });
+  const requirements = useWatch({ control: form.control, name: "requirements" });
   const hasApplications = (job?.applications?.[0]?.count ?? 0) > 0;
   const errors = form.formState.errors;
   const shownImage = previewUrl ?? (removeImage ? null : jobPostingImageUrl(savedImagePath));
@@ -100,7 +92,8 @@ export function HrJobForm({ job }: HrJobFormProps) {
     const valid = await form.trigger();
     if (!valid) return;
     try {
-      const input = jobOpeningSchema.parse({ ...form.getValues(), status, criteria: form.getValues("criteria").map((criterion, index) => ({ ...criterion, ordinal: index + 1 })) });
+      const { requirements: values, ...details } = jobOpeningFormSchema.parse({ ...form.getValues(), status });
+      const input = jobOpeningSchema.parse({ ...details, criteria: criteriaFromGeneralRequirements(values) });
       const image = imageFile ? { file: imageFile } : removeImage && savedImagePath ? { remove: true as const } : undefined;
       const saved = await save.mutateAsync({ input, jobId: job?.id, image });
       if (image) {
@@ -132,6 +125,9 @@ export function HrJobForm({ job }: HrJobFormProps) {
         <FormField error={errors.closesOn?.message} htmlFor="job-closes-on" label="Deadline of Application" required>
           <Input id="job-closes-on" required type="date" {...form.register("closesOn")} />
         </FormField>
+        <FormField description="Every recruitment is for this rank." htmlFor="job-position" label="Position">
+          <Input id="job-position" readOnly value={rankLabel(RECRUITMENT_RANK)} />
+        </FormField>
       </div>
       <FormField description="At least 20 characters." error={errors.description?.message} htmlFor="job-description" label="Description" required>
         <Textarea className="min-h-40" id="job-description" required rows={8} {...form.register("description")} />
@@ -145,51 +141,44 @@ export function HrJobForm({ job }: HrJobFormProps) {
           </div>
         </div>
       </FormField>
-      <section aria-labelledby="job-criteria-heading" className="space-y-3 rounded-xl border p-4">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-semibold" id="job-criteria-heading">Qualification criteria</h2>
-          <Button onClick={() => criteria.append({ ordinal: criteria.fields.length + 1, kind: "other", requirement: "", isRequired: true })} size="sm" type="button" variant="outline">Add criterion</Button>
-        </div>
-        {typeof errors.criteria?.message === "string" ? <p className="text-sm font-medium text-destructive" role="alert">{errors.criteria.message}</p> : null}
-        {criteria.fields.map((field, index) => {
-          const kind = (criteriaValues?.[index]?.kind ?? field.kind) as PnpJobCriterionKind;
-          // Keeps a saved requirement that is no longer in the catalogue selectable.
-          const choices = withSavedValue(PNP_JOB_CRITERIA[kind] ?? [], criteriaValues?.[index]?.requirement);
-          return (
-            <div className="grid gap-3 rounded-lg bg-muted/50 p-3 sm:grid-cols-[12rem_1fr_auto]" key={field.id}>
-              <FormField htmlFor={`criterion-kind-${field.id}`} label={`Criterion ${index + 1} type`}>
-                <NativeSelect
-                  id={`criterion-kind-${field.id}`}
-                  {...form.register(`criteria.${index}.kind`, {
-                    // A requirement belongs to its type, so changing the type clears it.
-                    onChange: () => form.setValue(`criteria.${index}.requirement`, "", { shouldValidate: form.formState.isSubmitted }),
-                  })}
-                >
-                  <option value="education">Education</option>
-                  <option value="eligibility">Eligibility</option>
-                  <option value="experience">Experience</option>
-                  <option value="skill">Skill</option>
-                  <option value="certification">Certification / Training</option>
-                  <option value="other">Other</option>
-                </NativeSelect>
-              </FormField>
-              <FormField error={errors.criteria?.[index]?.requirement ? "Choose a qualification." : undefined} htmlFor={`criterion-${field.id}`} label={`Qualification ${index + 1}`}>
-                <NativeSelect id={`criterion-${field.id}`} {...form.register(`criteria.${index}.requirement`)}>
-                  <option value="">Select a qualification</option>
-                  {choices.map((choice) => <option key={choice} value={choice}>{choice}</option>)}
-                </NativeSelect>
-              </FormField>
-              <div className="flex flex-wrap items-end gap-2">
-                <label className="flex min-h-11 items-center gap-2 text-sm">
-                  <input className="size-4" type="checkbox" {...form.register(`criteria.${index}.isRequired`)} /> Required
-                </label>
-                {criteria.fields.length > 1 ? (
-                  <Button aria-label={`Remove qualification ${index + 1}`} onClick={() => criteria.remove(index)} size="sm" type="button" variant="ghost">Remove</Button>
+      <section aria-labelledby="job-requirements-heading" className="space-y-4 rounded-xl border p-4">
+        <h2 className="font-semibold" id="job-requirements-heading">General Requirements</h2>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {(["education", "eligibility"] as const).map((kind, index) => {
+            const label = kind === "education" ? "Education" : "Eligibility";
+            const fieldErrors = errors.requirements?.[kind];
+            // A saved requirement that is not listed (older openings) stays selectable as its own choice.
+            const choices = withSavedValue(PNP_GENERAL_REQUIREMENTS[kind], requirements?.[kind]?.choice);
+            return (
+              <div className="space-y-3 rounded-lg bg-muted/50 p-3" key={kind}>
+                <FormField error={fieldErrors?.choice?.message} htmlFor={`requirement-${kind}`} label={`Requirement ${index + 1}: ${label}`} required>
+                  <NativeSelect id={`requirement-${kind}`} required {...form.register(`requirements.${kind}.choice`)}>
+                    <option value="">Select {label.toLowerCase()}</option>
+                    {choices.map((choice) => <option key={choice} value={choice}>{choice}</option>)}
+                  </NativeSelect>
+                </FormField>
+                {requirements?.[kind]?.choice === OTHERS_CHOICE ? (
+                  <FormField error={fieldErrors?.other?.message} htmlFor={`requirement-${kind}-other`} label={`Specify ${label.toLowerCase()}`} required>
+                    <Input id={`requirement-${kind}-other`} maxLength={1000} required {...form.register(`requirements.${kind}.other`)} />
+                  </FormField>
                 ) : null}
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
+        <fieldset className="space-y-2">
+          <legend className="text-sm font-semibold">Other requirements</legend>
+          <p className="text-sm text-muted-foreground">Uncheck a requirement that does not apply to this opening.</p>
+          <ul className="space-y-1">
+            {(requirements?.otherRequirements ?? []).map((item, index) => (
+              <li key={`${item.kind}-${item.requirement}`}>
+                <label className="flex min-h-11 items-center gap-2 text-sm">
+                  <input className="size-4" type="checkbox" {...form.register(`requirements.otherRequirements.${index}.included`)} /> {item.requirement}
+                </label>
+              </li>
+            ))}
+          </ul>
+        </fieldset>
       </section>
       {error ? <ErrorState message={error} /> : null}
       {hasApplications ? <p className="rounded-lg border border-amber-400/40 bg-amber-50 p-3 text-sm text-amber-950 dark:bg-amber-950/30 dark:text-amber-100">This opening has applications. Its status can only be changed by withdrawing it from the job list.</p> : null}

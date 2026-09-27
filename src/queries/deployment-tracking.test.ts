@@ -9,13 +9,13 @@ vi.mock("@/lib/supabase/client", () => ({
 
 import { createDeployment, deploymentFilters, EMPLOYEE_OPTIONS_LIMIT, listEmployeeOptions, updateDeployment } from "./deployment-tracking";
 
-const deployment = { employeeId: "3f1e2d3c-4b5a-4968-8776-655443322110", location: "San Juan", unit: "", project: "", assignmentRole: "Patrol", startsOn: "2026-09-25", status: "active", notes: "" };
+const deployment = { employeeId: "3f1e2d3c-4b5a-4968-8776-655443322110", location: "San Juan", unit: "", startsOn: "2026-09-25", status: "active", notes: "Relief duty" };
 
 describe("deployment tracking queries", () => {
   it("creates with the employee and updates without it, matching the database functions", async () => {
     rpc.mockResolvedValue({ data: "d1", error: null });
     await createDeployment(deployment);
-    expect(rpc).toHaveBeenLastCalledWith("create_deployment", expect.objectContaining({ target_employee_id: deployment.employeeId, target_unit: null }));
+    expect(rpc).toHaveBeenLastCalledWith("create_deployment", expect.objectContaining({ target_employee_id: deployment.employeeId, target_unit: null, target_location: "San Juan", target_assignment_role: "San Juan", target_project: null, target_notes: "Relief duty" }));
 
     await updateDeployment({ ...deployment, id: "7c1e2d3c-4b5a-4968-8776-655443322110", expectedUpdatedAt: "2026-09-25T00:00:00Z" });
     const [name, args] = rpc.mock.lastCall as [string, Record<string, unknown>];

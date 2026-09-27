@@ -7,6 +7,7 @@ import { EmptyTableState } from "@/components/ui/empty-table-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useRankOptions } from "@/hooks/use-administration";
+import { formatDate } from "@/lib/format-date";
 import { rankLabel } from "@/lib/ranks";
 import { usePromotionEvaluations } from "@/hooks/use-promotion-eligibility";
 
@@ -54,7 +55,7 @@ export function HrPromotionDirectory() {
               rows.map((row) => (
                 <tr className="border-t" key={row.id}>
                   <td className="px-4 py-3 align-top font-medium">{rankTitle(row.target_rank_id)}</td>
-                  <td className="px-4 py-3 align-top">{row.evaluated_on}</td>
+                  <td className="px-4 py-3 align-top">{formatDate(row.evaluated_on)}</td>
                   <td className="px-4 py-3 align-top">
                     {row.is_ready
                       ? "Ready"
@@ -63,7 +64,7 @@ export function HrPromotionDirectory() {
                   <td className="px-4 py-3 align-top">{recommendationLabels[row.recommendation] ?? row.recommendation}</td>
                   <td className="px-4 py-3 align-top">
                     <Link
-                      aria-label={`Open review for ${rankTitle(row.target_rank_id)}, evaluated ${row.evaluated_on}`}
+                      aria-label={`Open review for ${rankTitle(row.target_rank_id)}, evaluated ${formatDate(row.evaluated_on)}`}
                       className="font-medium text-primary underline underline-offset-4"
                       href={`/hr/promotions/${row.employee_id}`}
                     >

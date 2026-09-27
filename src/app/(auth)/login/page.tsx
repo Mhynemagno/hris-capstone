@@ -25,7 +25,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   return (
     <main className="flex flex-1 items-center justify-center bg-muted px-4 py-10 text-foreground sm:px-6">
       <section className="w-full max-w-md rounded-2xl border bg-card p-6 shadow-xl shadow-sidebar/10 sm:p-8">
-        <h1 className="text-center text-2xl font-semibold tracking-tight">{isRecruitmentPath(nextPath) ? "PNP San Juan Recruitment" : "San Juan City Police HRIS"}</h1>
+        <h1 className="text-center text-3xl font-semibold tracking-tight">{isRecruitmentPath(nextPath) ? "PNP San Juan Recruitment" : "San Juan City Police HRIS"}</h1>
         <div className="mt-8"><LoginForm error={errorMessage} nextPath={nextPath} /></div>
         <p className="mt-6 text-center text-sm text-muted-foreground">Don&apos;t have an account?{" "}<Link className="inline-flex items-center gap-1 font-semibold text-primary underline-offset-4 hover:underline" href={registerHref}>Sign up<ArrowRight aria-hidden="true" className="size-4" /></Link></p>
       </section>

@@ -27,7 +27,8 @@ export function SignOutButton({
     setPending(true);
     setError(null);
     try {
-      const result = await createBrowserSupabaseClient().auth.signOut();
+      // Local scope: signing out here must not end the same account's sessions on other devices.
+      const result = await createBrowserSupabaseClient().auth.signOut({ scope: "local" });
       if (result.error) throw result.error;
       router.replace("/login");
       router.refresh();

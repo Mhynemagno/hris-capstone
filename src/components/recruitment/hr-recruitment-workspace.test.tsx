@@ -47,7 +47,7 @@ describe("HR recruitment workspace", () => {
     mocks.transition.mockReset();
   });
 
-  it("saves a draft job opening with its qualification criteria", async () => {
+  it("saves a draft job opening with its general requirements", async () => {
     mocks.saveJob.mockResolvedValue({ id: 3 });
     const user = userEvent.setup();
     render(<HrJobForm />);
@@ -59,11 +59,12 @@ describe("HR recruitment workspace", () => {
     await user.type(screen.getByLabelText(/^deadline of application/i), "2026-10-31");
     await user.click(screen.getByLabelText(/^description/i));
     await user.paste("Lead recruitment operations across the organization.");
-    await user.selectOptions(screen.getByLabelText("Qualification 1"), "At least 5 years of police service");
+    await user.selectOptions(screen.getByLabelText(/Requirement 1: Education/), "Baccalaureate Degree");
+    await user.selectOptions(screen.getByLabelText(/Requirement 2: Eligibility/), "Civil Service Professional Examination");
     await user.click(screen.getByRole("button", { name: "Save draft" }));
 
     await waitFor(() => expect(mocks.saveJob).toHaveBeenCalledWith(expect.objectContaining({
-      input: expect.objectContaining({ status: "draft", location: "San Juan City Police Station", closesOn: "2026-10-31", criteria: [expect.objectContaining({ requirement: "At least 5 years of police service" })] }),
+      input: expect.objectContaining({ status: "draft", location: "San Juan City Police Station", closesOn: "2026-10-31", criteria: expect.arrayContaining([expect.objectContaining({ kind: "education", requirement: "Baccalaureate Degree" }), expect.objectContaining({ kind: "eligibility", requirement: "Civil Service Professional Examination" })]) }),
     })));
     expect(await screen.findByRole("status")).toHaveTextContent("Draft saved.");
   });
@@ -118,7 +119,9 @@ describe("HR recruitment workspace", () => {
     render(<HrApplicationList />);
     expect(screen.getByText("Juan Dela Cruz")).toBeInTheDocument();
     expect(screen.getByText("Applicant no. 0-00012")).toBeInTheDocument();
-    expect(screen.getByRole("cell", { name: "Patrol Officer" })).toBeInTheDocument();
+    expect(screen.getByRole("cell", { name: "Pat — Patrolman / Patrolwoman" })).toBeInTheDocument();
+    expect(screen.queryByText("Patrol Officer")).not.toBeInTheDocument();
+    expect(screen.getByRole("cell", { name: "September 25, 2026" })).toBeInTheDocument();
     expect(screen.getByRole("cell", { name: "82/100" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /review application juan dela cruz/i })).toHaveAttribute("href", "/hr/applications/00000000-0000-0000-0000-000000000009");
   });
@@ -141,10 +144,10 @@ describe("HR recruitment workspace", () => {
 
   it.each([
     ["Submitted", ["Under Review"]],
-    ["Under Review", ["Shortlisted", "Interview", "Needs Revision", "Not Selected"]],
-    ["Shortlisted", ["Interview", "Needs Revision", "Not Selected"]],
-    ["Interview", ["Shortlisted", "Needs Revision", "Not Selected"]],
-  ])("offers only the database-allowed next statuses from %s", (status, expected) => {
+    ["Under Review", ["Shortlisted", "Interview", "Not Selected"]],
+    ["Shortlisted", ["Interview", "Not Selected"]],
+    ["Interview", ["Shortlisted", "Not Selected"]],
+  ])("offers only the allowed next statuses, never Needs Revision, from %s", (status, expected) => {
     mocks.applicationStatus = status;
     render(<HrApplicationDetail applicationId="00000000-0000-0000-0000-000000000001" />);
 

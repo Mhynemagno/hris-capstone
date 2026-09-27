@@ -79,7 +79,7 @@ export function AppShell({ children, config, email }: AppShellProps) {
                 width={96}
               />
             </Link>
-            <p className="text-base text-sidebar-foreground italic">San Juan City Police Station</p>
+            <p className="text-base text-sidebar-foreground">San Juan City Police Station</p>
           </SidebarHeader>
           <SidebarContent className="pb-6">
             <nav aria-label="Main navigation">

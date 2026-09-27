@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 const SECTIONS: { title: string; body: ReactNode }[] = [
   {
     title: "Information we collect",
-    body: <ul className="list-disc space-y-1 pl-5"><li>Your name, qualifier, birthdate, sex, civil status and address.</li><li>Your email address and mobile number.</li><li>Your educational background.</li><li>The documents you upload for your application.</li></ul>,
+    body: <ul className="list-disc space-y-1 pl-5"><li>Your name, qualifier, birthdate, citizenship, sex, civil status and address.</li><li>Your email address and mobile number.</li><li>Your educational background.</li><li>The documents you upload for your application.</li></ul>,
   },
   {
     title: "How we use your information",

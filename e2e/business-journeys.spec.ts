@@ -1,5 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
+import { formatDate } from "../src/lib/format-date";
+
 // These journeys create and remove their own uniquely named records in the
 // LOCAL Supabase stack only (playwright.config.ts refuses non-local URLs).
 
@@ -114,7 +116,7 @@ test.describe("leave journey", () => {
 
     await signIn(page, "demo.hr@example.test", "/hr");
     await page.goto("/hr/leave-requests");
-    await page.getByRole("link", { name: new RegExp(`Review Demo leave request, ${isoDate(offset + 3)}`) }).click();
+    await page.getByRole("link", { name: new RegExp(`Review .+'s Demo leave request, ${formatDate(isoDate(offset + 3))}`) }).click();
     await expect(page).toHaveURL(/\/hr\/leave-requests\/[0-9a-f-]{36}$/, { timeout: 30_000 });
     await expect(page.getByText(reason)).toBeVisible({ timeout: 15_000 });
     await page.getByRole("button", { name: "Approve request" }).click();
@@ -134,12 +136,13 @@ test.describe("leave journey", () => {
 
 test.describe("personnel records and profile changes", () => {
   test("editing a personnel record keeps its department, rank, and linked account", async ({ page }) => {
-    const phone = `0917${String(Math.floor(Math.random() * 1e7)).padStart(7, "0")}`;
+    const phone = `+63917${String(Math.floor(Math.random() * 1e7)).padStart(7, "0")}`;
     await signIn(page, "demo.hr@example.test", "/hr");
     await page.goto("/hr/employees");
     await page.getByRole("link", { name: /0-00001|Demo/ }).first().click();
     await expect(page).toHaveURL(/\/hr\/employees\/[0-9a-f-]{36}$/, { timeout: 30_000 });
     const recordUrl = page.url();
+    await page.goto(`${recordUrl}?tab=official&mode=edit`);
 
     await expect(page.getByRole("tab", { name: "Official record" })).toHaveAttribute("aria-selected", "true");
     const department = page.getByLabel(/^Department/).first();
@@ -153,8 +156,8 @@ test.describe("personnel records and profile changes", () => {
 
     await page.getByLabel(/^Phone/).first().fill(phone);
     await page.getByRole("button", { name: "Save employee" }).click();
-    await page.waitForURL(recordUrl);
-    await page.reload();
+    await page.waitForURL(`${recordUrl}?tab=official&saved=edited`);
+    await page.goto(`${recordUrl}?tab=official&mode=edit`);
 
     await expect(page.getByLabel(/^Phone/).first()).toHaveValue(phone);
     await expect(page.getByLabel(/^Department/).first()).toHaveValue(departmentBefore);
@@ -209,8 +212,8 @@ test.describe("read-only and public journeys", () => {
     await page.getByLabel(/^Location/).fill("San Juan City Police Station");
     await page.getByLabel(/^Deadline of Application/).fill("2099-12-31");
     await page.getByLabel(/^Description/).fill("An opening published by the end-to-end journey tests.");
-    await page.getByLabel("Criterion 1 type").selectOption("skill");
-    await page.getByLabel("Qualification 1").selectOption("Physically fit (passed the Physical Fitness Test)");
+    await page.getByLabel(/^Requirement 1: Education/).selectOption("Baccalaureate Degree");
+    await page.getByLabel(/^Requirement 2: Eligibility/).selectOption("NAPOLCOM PNP Entrance Examination");
     await page.getByRole("button", { name: "Publish opening" }).click();
     await expect(page).toHaveURL(/\/hr\/jobs$/);
     await signOut(page, "demo.hr@example.test");

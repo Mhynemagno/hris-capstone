@@ -6,7 +6,7 @@ vi.mock("@/hooks/use-applicant-portal", () => ({
 }));
 vi.mock("@/hooks/use-recruitment", () => ({
   useApplicantProfile: () => ({ data: { first_name: "Juan" }, error: null, isLoading: false }),
-  useApplicantProfileDocuments: () => ({ data: [{ kind: "eligibility" }], error: null, isLoading: false }),
+  useApplicantProfileDocuments: () => ({ data: [{ kind: "eligibility" }, { kind: "photo" }], error: null, isLoading: false }),
 }));
 
 import { ApplicantDashboard } from "./applicant-dashboard";
@@ -16,7 +16,8 @@ describe("ApplicantDashboard", () => {
     render(<ApplicantDashboard />);
     expect(screen.getByRole("heading", { level: 1, name: "Welcome, Juan" })).toBeVisible();
     expect(screen.getByText("Under Review")).toBeVisible();
-    expect(screen.getByText("1 of 2")).toBeVisible();
+    expect(screen.getByText("2 of 5")).toBeVisible();
+    expect(screen.getByText("Upload your CV / Resume, PSA birth certificate, 2x2 picture, Eligibility, and Diploma.")).toBeVisible();
     expect(screen.getByRole("link", { name: "View application status" })).toHaveAttribute("href", "/applicant/applications");
     expect(screen.getByRole("link", { name: "Manage documents" })).toHaveAttribute("href", "/applicant/documents");
     expect(screen.getByRole("link", { name: "Browse job openings" })).toHaveAttribute("href", "/jobs");

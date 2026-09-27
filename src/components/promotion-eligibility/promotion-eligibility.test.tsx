@@ -90,6 +90,15 @@ describe("HrPromotionReview", () => {
     expect(screen.getByRole("listitem")).toHaveTextContent("4 – Very satisfactory");
   });
 
+  it("shows dates in words and criteria options without a rating minimum", () => {
+    setup();
+    expect(screen.getByText("January 1, 2020")).toBeVisible();
+    expect(screen.getByRole("listitem")).toHaveTextContent("January 1, 2025 to December 31, 2025");
+    expect(screen.queryByText(/2025-01-01|2020-01-01/)).not.toBeInTheDocument();
+    const criterion = screen.getByRole("combobox", { name: /Target rank/ });
+    expect(within(criterion).getAllByRole("option")[1]?.textContent).not.toMatch(/rating/);
+  });
+
   it("binds the rating period end minimum to its start and blocks an earlier end", async () => {
     const { createRating } = setup();
     const user = userEvent.setup();

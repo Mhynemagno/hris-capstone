@@ -3,15 +3,16 @@
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Activity, ArrowLeft, Award, BadgeCheck, BookOpenCheck, Building2, Cake, Clock, GraduationCap, History, MapPin, Pencil, ShieldCheck, TrendingUp, UserRound, type LucideIcon } from "lucide-react";
+import { Activity, ArrowLeft, Award, BadgeCheck, BookOpenCheck, Building2, Cake, CheckCircle2, Clock, GraduationCap, History, MapPin, Pencil, ShieldCheck, TrendingUp, UserRound, X, type LucideIcon } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useDepartmentOptions, useRankOptions } from "@/hooks/use-administration";
 import { useDeletePersonnelEntry, useEmployee, usePersonnelEntries, useSavePersonnelEntry } from "@/hooks/use-personnel-records";
+import { formatDate, formatDateRange } from "@/lib/format-date";
 import { rankLabel } from "@/lib/ranks";
-import type { Certification, Qualification, ServiceHistory, TrainingRecord } from "@/lib/types/database";
+import type { Certification, Employee, Qualification, ServiceHistory, TrainingRecord } from "@/lib/types/database";
 import type { PersonnelKind } from "@/queries/personnel-records";
 
 import { EmployeeEditor } from "./employee-editor";
@@ -31,12 +32,16 @@ function entryTitle(entry: { id: string } & Record<string, unknown>) {
   return typeof entry.employment_title === "string" && entry.employment_title ? entry.employment_title : "Service entry";
 }
 
+function day(value: unknown) {
+  return typeof value === "string" ? formatDate(value) : null;
+}
+
 function entryDetail(kind: PersonnelKind, entry: Record<string, unknown>) {
   const parts = kind === "qualification"
-    ? [entry.qualification_level, entry.institution, entry.awarded_on]
+    ? [entry.qualification_level, entry.institution, day(entry.awarded_on)]
     : kind === "certification"
-      ? [entry.issuer, entry.issued_on && `Issued ${entry.issued_on}`, entry.expires_on && `Expires ${entry.expires_on}`]
-      : [entry.started_on && `${entry.started_on} – ${entry.ended_on ?? "present"}`];
+      ? [entry.issuer, entry.issued_on && `Issued ${day(entry.issued_on)}`, entry.expires_on && `Expires ${day(entry.expires_on)}`]
+      : [typeof entry.started_on === "string" && entry.started_on && formatDateRange(entry.started_on, typeof entry.ended_on === "string" ? entry.ended_on : null)];
   return parts.filter(Boolean).join(" · ");
 }
 
@@ -44,14 +49,15 @@ function titleCase(value: string | null | undefined) {
   return value ? value.replaceAll("_", " ").replace(/^\w/, (letter) => letter.toUpperCase()) : null;
 }
 
-function Records({ employeeId, kind }: { employeeId: string; kind: PersonnelKind }) {
+/** `editable` is false in view mode: the list is shown without add, edit, or delete controls. */
+function Records({ employeeId, kind, editable }: { employeeId: string; kind: PersonnelKind; editable: boolean }) {
   const entries = usePersonnelEntries(kind, employeeId);
   const save = useSavePersonnelEntry(kind, employeeId);
   const remove = useDeletePersonnelEntry(kind, employeeId);
   const [deleting, setDeleting] = useState<{ id: string; title: string } | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   // Service history is the official employment record: it is added to, never deleted.
-  const deletable = kind !== "serviceHistory";
+  const deletable = editable && kind !== "serviceHistory";
   const noun = kind === "qualification" ? "qualification" : "certification";
 
   async function confirmDelete() {
@@ -69,7 +75,7 @@ function Records({ employeeId, kind }: { employeeId: string; kind: PersonnelKind
   if (entries.error) return <ErrorState message={entries.error.message} />;
   return (
     <InfoCard icon={icons[kind]} id={`records-${kind}`} title={titles[kind]}>
-      {kind === "serviceHistory" ? <p className="text-sm text-muted-foreground">Service history is permanent. Add a new entry to record a change.</p> : null}
+      {kind === "serviceHistory" && editable ? <p className="text-sm text-muted-foreground">Service history is permanent. Add a new entry to record a change.</p> : null}
       <ul className="mt-3 space-y-2">
         {entries.data?.length ? entries.data.map((entry) => {
           const record = entry as unknown as { id: string } & Record<string, unknown>;
@@ -88,7 +94,7 @@ function Records({ employeeId, kind }: { employeeId: string; kind: PersonnelKind
           );
         }) : <li className={emptyItemClassName}>No {titles[kind].toLowerCase()} recorded.</li>}
       </ul>
-      {deleting ? (
+      {deleting && deletable ? (
         <div aria-labelledby={`delete-${kind}-title`} className="mt-4 rounded-xl border border-destructive/30 bg-destructive/5 p-4" role="alertdialog">
           <h3 className="font-semibold" id={`delete-${kind}-title`}>Delete this {noun}?</h3>
           <p className="mt-1 text-sm text-muted-foreground">This permanently removes “{deleting.title}” from the employee record. A copy is kept in the record history for auditing. Entries used as promotion evidence cannot be deleted.</p>
@@ -99,12 +105,12 @@ function Records({ employeeId, kind }: { employeeId: string; kind: PersonnelKind
           </div>
         </div>
       ) : null}
-      <RecordEntryForm employeeId={employeeId} kind={kind} onSaved={async (input) => { await save.mutateAsync({ input: input as never }); }} pending={save.isPending} />
+      {editable ? <RecordEntryForm employeeId={employeeId} kind={kind} onSaved={async (input) => { await save.mutateAsync({ input: input as never }); }} pending={save.isPending} /> : null}
     </InfoCard>
   );
 }
 
-function TrainingRecords({ employeeId }: { employeeId: string }) {
+function TrainingRecords({ employeeId, editable }: { employeeId: string; editable: boolean }) {
   const [editing, setEditing] = useState<TrainingRecord | null>(null);
   const [deleting, setDeleting] = useState<TrainingRecord | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -129,16 +135,16 @@ function TrainingRecords({ employeeId }: { employeeId: string }) {
   return <InfoCard icon={BookOpenCheck} id="records-training" title="Training">
     <ul className="space-y-2 text-sm">
       {trainings.length ? trainings.map((training) => <li className={listItemClassName} key={training.id}>
-        <div><p className="font-semibold">{training.course_name}</p><p className="text-muted-foreground">{training.provider} · {training.completed_on}{training.hours === null ? "" : ` · ${training.hours} hours`}</p></div>
-        <div className="flex gap-2"><Button onClick={() => setEditing(training)} size="sm" type="button" variant="outline">Edit</Button><Button onClick={() => { setDeleteError(null); setDeleting(training); }} size="sm" type="button" variant="destructive">Delete</Button></div>
+        <div><p className="font-semibold">{training.course_name}</p><p className="text-muted-foreground">{training.provider} · {formatDate(training.completed_on)}{training.hours === null ? "" : ` · ${training.hours} hours`}</p></div>
+        {editable ? <div className="flex gap-2"><Button onClick={() => setEditing(training)} size="sm" type="button" variant="outline">Edit</Button><Button onClick={() => { setDeleteError(null); setDeleting(training); }} size="sm" type="button" variant="destructive">Delete</Button></div> : null}
       </li>) : <li className={emptyItemClassName}>No training recorded.</li>}
     </ul>
-    {deleting ? <div aria-labelledby="delete-training-title" className="mt-4 rounded-xl border border-destructive/30 bg-destructive/5 p-4" role="dialog">
+    {!editable ? null : deleting ? <div aria-labelledby="delete-training-title" className="mt-4 rounded-xl border border-destructive/30 bg-destructive/5 p-4" role="dialog">
       <h3 className="font-medium" id="delete-training-title">Delete training record?</h3><p className="mt-1 text-sm text-muted-foreground">This permanently removes “{deleting.course_name}”.</p>
       {deleteError ? <p className="mt-2 text-sm text-destructive" role="alert">{deleteError}</p> : null}
       <div className="mt-3 flex gap-2"><Button disabled={remove.isPending} onClick={() => void deleteTraining()} size="sm" type="button" variant="destructive">{remove.isPending ? "Deleting…" : "Delete training"}</Button><Button disabled={remove.isPending} onClick={() => setDeleting(null)} size="sm" type="button" variant="outline">Cancel</Button></div>
     </div> : null}
-    {editing ? <div className="mt-4"><div className="flex items-center justify-between"><h3 className="font-medium">Edit training</h3><Button onClick={() => setEditing(null)} size="sm" type="button" variant="ghost">Cancel edit</Button></div><RecordEntryForm employeeId={employeeId} key={editing.id} kind="training" onSaved={async (input, id) => { await save.mutateAsync({ id, input: input as never }); setEditing(null); }} pending={save.isPending} training={editing} /></div> : <RecordEntryForm employeeId={employeeId} kind="training" onSaved={async (input) => { await save.mutateAsync({ input: input as never }); }} pending={save.isPending} />}
+    {!editable ? null : editing ? <div className="mt-4"><div className="flex items-center justify-between"><h3 className="font-medium">Edit training</h3><Button onClick={() => setEditing(null)} size="sm" type="button" variant="ghost">Cancel edit</Button></div><RecordEntryForm employeeId={employeeId} key={editing.id} kind="training" onSaved={async (input, id) => { await save.mutateAsync({ id, input: input as never }); setEditing(null); }} pending={save.isPending} training={editing} /></div> : <RecordEntryForm employeeId={employeeId} kind="training" onSaved={async (input) => { await save.mutateAsync({ input: input as never }); }} pending={save.isPending} />}
   </InfoCard>;
 }
 
@@ -153,7 +159,7 @@ function useRecordActivity(employeeId: string, rankTitles: Map<number, string>, 
     ...((service.data ?? []) as ServiceHistory[]).map((entry): TimelineItem => ({
       id: `service-${entry.id}`, icon: History, tone: "primary", category: "Service history",
       title: entry.employment_title || (entry.rank_id ? rankTitles.get(entry.rank_id) : undefined) || "Service entry",
-      detail: [entry.department_id ? departmentNames.get(entry.department_id) : null, `${formatDay(entry.started_on) ?? entry.started_on} – ${entry.ended_on ? formatDay(entry.ended_on) : "present"}`].filter(Boolean).join(" · "),
+      detail: [entry.department_id ? departmentNames.get(entry.department_id) : null, formatDateRange(entry.started_on, entry.ended_on)].filter(Boolean).join(" · "),
       date: entry.started_on,
     })),
     ...((qualifications.data ?? []) as Qualification[]).map((entry): TimelineItem => ({
@@ -183,6 +189,45 @@ function useRecordActivity(employeeId: string, rankTitles: Map<number, string>, 
   };
 }
 
+const genderLabels: Record<NonNullable<Employee["gender"]>, string> = { female: "Female", male: "Male", prefer_not_to_say: "Prefer not to say" };
+const savedMessages = { created: "Employee account has been saved.", edited: "Employee account has been edited successfully." } as const;
+
+/** The official record as a read-only list, shown in view mode instead of the form. */
+function OfficialDetails({ record, departmentName, rankName }: { record: Employee; departmentName?: string; rankName?: string }) {
+  const rows: { label: string; value: ReactNode }[] = [
+    { label: "Badge number", value: <span className="tabular-nums">{record.employee_number}</span> },
+    { label: "Personal email", value: record.personal_email },
+    { label: "First name", value: record.first_name },
+    { label: "Middle name", value: record.middle_name },
+    { label: "Last name", value: record.last_name },
+    { label: "Qualifier", value: record.qualifier },
+    { label: "Place of birth", value: record.place_of_birth },
+    { label: "Date of birth", value: formatDate(record.date_of_birth) },
+    { label: "Gender", value: record.gender ? genderLabels[record.gender] : null },
+    { label: "Civil status", value: titleCase(record.civil_status) },
+    { label: "Religion", value: record.religion },
+    { label: "Phone", value: record.phone },
+    { label: "Home address", value: record.address },
+    { label: "Emergency contact", value: record.emergency_contact_name },
+    { label: "Emergency contact phone", value: record.emergency_contact_phone },
+    { label: "Department", value: departmentName },
+    { label: "Rank", value: rankName },
+    { label: "Unit / Station", value: record.unit_station },
+    { label: "Employment status", value: record.employment_status === "on_leave" ? "On leave" : "Active" },
+    { label: "Employment start date", value: formatDate(record.employment_started_on) },
+  ];
+  return (
+    <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
+      {rows.map(({ label, value }) => (
+        <div className="min-w-0 border-b pb-3" key={label}>
+          <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</dt>
+          <dd className="mt-1 font-medium break-words">{value || <span className="font-normal text-muted-foreground">Not provided</span>}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
 export function EmployeeRecordDetail({ employeeId }: { employeeId: string }) {
   const employee = useEmployee(employeeId);
   const ranks = useRankOptions();
@@ -191,20 +236,37 @@ export function EmployeeRecordDetail({ employeeId }: { employeeId: string }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const active = parseRecordTab(searchParams.get("tab"));
+  // View mode is read-only; `?mode=edit` (the directory Edit link or "Edit details") unlocks every section.
+  const editing = searchParams.get("mode") === "edit";
+  const saved = searchParams.get("saved");
+  const savedMessage = saved === "created" || saved === "edited" ? savedMessages[saved] : null;
   const panelsRef = useRef<HTMLDivElement>(null);
   const rankTitles = useMemo(() => new Map((ranks.data ?? []).map((rank) => [rank.id, rankLabel(rank)])), [ranks.data]);
   const departmentNames = useMemo(() => new Map((departments.data ?? []).map((department) => [department.id, department.name])), [departments.data]);
   const activity = useRecordActivity(employeeId, rankTitles, departmentNames);
 
-  function showTab(key: RecordTabKey) {
+  /** Rewrites the URL query; any navigation also clears the one-time "saved" confirmation. */
+  function updateParams(change: (params: URLSearchParams) => void) {
     const params = new URLSearchParams(searchParams.toString());
-    params.set("tab", key);
+    params.delete("saved");
+    change(params);
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   }
 
+  function showTab(key: RecordTabKey) {
+    updateParams((params) => params.set("tab", key));
+  }
+
   function editDetails() {
-    showTab("official");
+    updateParams((params) => {
+      params.set("tab", "official");
+      params.set("mode", "edit");
+    });
     panelsRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+  }
+
+  function stopEditing() {
+    updateParams((params) => params.delete("mode"));
   }
 
   if (employee.isLoading) return <LoadingState label="Loading employee record…" />;
@@ -212,19 +274,38 @@ export function EmployeeRecordDetail({ employeeId }: { employeeId: string }) {
   const record = employee.data;
   const fullName = [record.first_name, record.middle_name, record.last_name].filter(Boolean).join(" ");
   const rank = record.rank_id ? ranks.data?.find((row) => row.id === record.rank_id) : undefined;
+  const departmentName = record.department_id ? departmentNames.get(record.department_id) : undefined;
   const panels: Record<RecordTabKey, ReactNode> = {
-    official: <InfoCard icon={UserRound} id="records-official" title="Official record"><EmployeeEditor employee={record} /></InfoCard>,
-    "service-history": <Records employeeId={employeeId} kind="serviceHistory" />,
-    qualifications: <Records employeeId={employeeId} kind="qualification" />,
-    certifications: <Records employeeId={employeeId} kind="certification" />,
-    training: <TrainingRecords employeeId={employeeId} />,
+    official: (
+      <InfoCard
+        action={editing ? <Button onClick={stopEditing} size="sm" type="button" variant="outline">Cancel</Button> : null}
+        icon={UserRound}
+        id="records-official"
+        title="Official record"
+      >
+        {editing ? <EmployeeEditor employee={record} /> : <OfficialDetails departmentName={departmentName} rankName={rank ? rankLabel(rank) : undefined} record={record} />}
+      </InfoCard>
+    ),
+    "service-history": <Records editable={editing} employeeId={employeeId} kind="serviceHistory" />,
+    qualifications: <Records editable={editing} employeeId={employeeId} kind="qualification" />,
+    certifications: <Records editable={editing} employeeId={employeeId} kind="certification" />,
+    training: <TrainingRecords editable={editing} employeeId={employeeId} />,
   };
 
   return <div className="space-y-6">
     <Link className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-primary underline-offset-4 hover:underline" href="/hr/employees"><ArrowLeft aria-hidden className="size-4" />Back to employees</Link>
+    {savedMessage ? (
+      <div className="flex items-start gap-3 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-100" role="status">
+        <CheckCircle2 aria-hidden className="mt-0.5 size-5 shrink-0" />
+        <p className="flex-1 font-medium">{savedMessage}</p>
+        <button aria-label="Dismiss message" className="grid size-8 shrink-0 cursor-pointer place-items-center rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900" onClick={() => updateParams(() => undefined)} type="button"><X aria-hidden className="size-4" /></button>
+      </div>
+    ) : null}
     <ProfileHeaderCard
       actions={<>
-        <Button onClick={editDetails} size="sm" type="button"><Pencil aria-hidden />Edit details</Button>
+        {editing
+          ? <Button onClick={stopEditing} size="sm" type="button" variant="outline">Done editing</Button>
+          : <Button onClick={editDetails} size="sm" type="button"><Pencil aria-hidden />Edit details</Button>}
         <Link className={buttonVariants({ size: "sm", variant: "outline" })} href={`/hr/promotions/${record.id}`}><TrendingUp aria-hidden />Promotion review</Link>
       </>}
       meta={[
@@ -233,7 +314,7 @@ export function EmployeeRecordDetail({ employeeId }: { employeeId: string }) {
         { label: "Born", value: formatDay(record.date_of_birth) ?? "Not provided", icon: Cake },
         { label: "Gender", value: titleCase(record.gender) ?? "Not provided", icon: UserRound },
         { label: "Years of service", value: serviceLength(record.employment_started_on, record.employment_ended_on) ?? "Not recorded", icon: Clock },
-        { label: "Department", value: (record.department_id ? departmentNames.get(record.department_id) : undefined) ?? "Not assigned", icon: Building2 },
+        { label: "Department", value: departmentName ?? "Not assigned", icon: Building2 },
         { label: "Unit / Station", value: record.unit_station || "Not assigned", icon: MapPin },
       ]}
       name={fullName}

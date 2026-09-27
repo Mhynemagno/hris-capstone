@@ -110,52 +110,29 @@ export const PNP_FIELDS_OF_STUDY = [
   "Business Administration",
 ] as const;
 
-/** Job-opening qualification criteria, grouped by criterion type. */
-export const PNP_JOB_CRITERIA = {
-  education: [
-    "Baccalaureate degree from a recognized institution",
-    "Baccalaureate degree in Criminology",
-    "Master's degree in Public Administration or related field",
-    "Completed at least 72 units of college education",
-  ],
-  eligibility: [
-    "NAPOLCOM Police Entrance Examination passer",
-    "CSC Professional Eligibility",
-    "RA 6506 (Licensed Criminologist) Eligibility",
-    "RA 1080 Board or Bar Eligibility",
-    "PD 907 (Honor Graduate) Eligibility",
-    "Filipino citizen of good moral character",
-    "21 to 30 years old at the time of appointment",
-    "Height of at least 1.57 m (male) or 1.52 m (female)",
-    "Passed the neuro-psychiatric, medical, and drug tests",
-    "No pending criminal or administrative case",
-  ],
-  experience: [
-    "No experience required",
-    "At least 1 year of police service",
-    "At least 2 years of police service",
-    "At least 3 years in investigation or detective work",
-    "At least 5 years of police service",
-    "Prior assignment in patrol or community policing",
-  ],
-  skill: [
-    "Firearms handling and marksmanship",
-    "Report and blotter writing",
-    "Basic computer and records management",
-    "Traffic direction and control",
-    "Crime scene preservation",
-    "Community relations and public communication",
-    "Physically fit (passed the Physical Fitness Test)",
-  ],
-  certification: [...PNP_CERTIFICATIONS, ...PNP_TRAININGS],
-  other: [
-    "Willing to be assigned anywhere in the region",
-    "Willing to render shift and holiday duty",
-    "Valid driver's license",
-  ],
-} as const satisfies Record<string, readonly string[]>;
+/** Choice that lets HR type a requirement that is not listed. */
+export const OTHERS_CHOICE = "Others";
 
-export type PnpJobCriterionKind = keyof typeof PNP_JOB_CRITERIA;
+/**
+ * A job opening's General Requirements: one Education and one Eligibility
+ * requirement chosen from these lists (or "Others", typed by HR), plus the
+ * "Other requirements" checklist, which new openings start with fully checked.
+ */
+export const PNP_GENERAL_REQUIREMENTS = {
+  education: ["Baccalaureate Degree", OTHERS_CHOICE],
+  eligibility: [
+    "NAPOLCOM PNP Entrance Examination",
+    "Licensed Criminologist",
+    "Bar or Board Examination / RA 1080",
+    "Civil Service Eligibility to College Honor Graduates (PD 907)",
+    "Civil Service Professional Examination",
+    OTHERS_CHOICE,
+  ],
+  other: ["Filipino Citizen", "No pending criminal case", "Minimum height requirement"],
+} as const;
+
+/** Every recruitment is for this entry rank; hiring places the applicant in it. */
+export const RECRUITMENT_RANK = { code: "Pat", name: "Patrolman / Patrolwoman" } as const;
 
 /** Credential names a promotion criterion can require, by personnel record type. */
 export const PNP_CREDENTIALS_BY_KIND = {

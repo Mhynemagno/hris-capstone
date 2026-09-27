@@ -8,7 +8,8 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-source-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono);
+  /* One typeface everywhere: headings, body, figures, and code all use Source Sans 3. */
+  --font-mono: var(--font-source-sans), ui-sans-serif, system-ui, sans-serif;
   --font-heading: var(--font-source-sans), ui-sans-serif, system-ui, sans-serif;
 
   /*
@@ -184,10 +185,22 @@
     overscroll-behavior: none;
     -webkit-text-size-adjust: 100%;
   }
+  /* Native controls and their pop-ups otherwise fall back to the system font. */
+  button,
+  input,
+  select,
+  option,
+  optgroup,
+  textarea,
+  ::file-selector-button {
+    font-family: inherit;
+  }
   h1,
   h2,
   h3,
-  h4 {
+  h4,
+  h5,
+  h6 {
     @apply font-heading tracking-tight text-balance;
   }
   p {

@@ -61,9 +61,13 @@ export async function listEmployeeOptions(): Promise<EmployeeOption[]> {
   }));
 }
 
-/** Fields shared by create and update. A deployment's employee is fixed once created. */
+/**
+ * Fields shared by create and update. A deployment's employee is fixed once created.
+ * The form no longer asks for an assignment role or project: the database still requires an
+ * assignment role, so the location is stored there, and the project is cleared.
+ */
 function rpcPayload(input: ReturnType<typeof deploymentInputSchema.parse>) {
-  return { target_location: input.location, target_unit: input.unit, target_project: input.project, target_assignment_role: input.assignmentRole, target_starts_on: input.startsOn, target_ends_on: input.endsOn, target_status: input.status, target_notes: input.notes };
+  return { target_location: input.location, target_unit: input.unit, target_project: null, target_assignment_role: input.location, target_starts_on: input.startsOn, target_ends_on: input.endsOn, target_status: input.status, target_notes: input.notes };
 }
 
 export async function createDeployment(input: unknown) {

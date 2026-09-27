@@ -14,7 +14,8 @@ async function fillValidJobOpening(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByLabelText(/Location/), "San Juan City Police Station");
   await user.type(screen.getByLabelText(/Deadline of Application/), "2026-10-31");
   await user.type(screen.getByLabelText(/Description/), "Support community safety and coordinate public outreach programs.");
-  await user.selectOptions(screen.getByLabelText(/Qualification 1/), "At least 2 years of police service");
+  await user.selectOptions(screen.getByLabelText(/Requirement 1: Education/), "Baccalaureate Degree");
+  await user.selectOptions(screen.getByLabelText(/Requirement 2: Eligibility/), "NAPOLCOM PNP Entrance Examination");
 }
 
 describe("HrJobForm", () => {
@@ -51,6 +52,8 @@ describe("HrJobForm", () => {
 
     expect(screen.queryByLabelText(/Department/)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/^Rank/)).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/^Position/)).toHaveValue("Pat — Patrolman / Patrolwoman");
+    expect(screen.getByLabelText(/^Position/)).toHaveAttribute("readonly");
     expect(screen.getByLabelText(/Title/)).toBeRequired();
     expect(screen.getByLabelText(/Location/)).toBeRequired();
     expect(screen.getByLabelText(/Deadline of Application/)).toBeRequired();
@@ -61,6 +64,82 @@ describe("HrJobForm", () => {
     expect(screen.getByText("Enter a title of at least 2 characters.")).toBeInTheDocument();
     expect(screen.getByText("Choose the deadline of application.")).toBeInTheDocument();
     expect(mocks.save).not.toHaveBeenCalled();
+  });
+
+  it("saves the General Requirements as education, eligibility and the checked other requirements", async () => {
+    const user = userEvent.setup();
+    render(<HrJobForm />);
+    expect(screen.getByRole("heading", { name: "General Requirements" })).toBeInTheDocument();
+    expect(screen.queryByText("Qualification criteria")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Add criterion" })).not.toBeInTheDocument();
+    const education = screen.getByLabelText(/Requirement 1: Education/);
+    expect([...education.querySelectorAll("option")].map((option) => option.textContent)).toEqual(["Select education", "Baccalaureate Degree", "Others"]);
+    const eligibility = screen.getByLabelText(/Requirement 2: Eligibility/);
+    expect([...eligibility.querySelectorAll("option")].map((option) => option.textContent)).toEqual([
+      "Select eligibility",
+      "NAPOLCOM PNP Entrance Examination",
+      "Licensed Criminologist",
+      "Bar or Board Examination / RA 1080",
+      "Civil Service Eligibility to College Honor Graduates (PD 907)",
+      "Civil Service Professional Examination",
+      "Others",
+    ]);
+    for (const name of ["Filipino Citizen", "No pending criminal case", "Minimum height requirement"]) {
+      expect(screen.getByRole("checkbox", { name })).toBeChecked();
+    }
+
+    await fillValidJobOpening(user);
+    await user.selectOptions(education, "Others");
+    await user.click(screen.getByRole("button", { name: "Save draft" }));
+    expect(await screen.findByText("Specify the education requirement.")).toBeInTheDocument();
+    expect(mocks.save).not.toHaveBeenCalled();
+
+    await user.click(screen.getByLabelText(/Specify education/));
+    await user.paste("Master's degree in Public Administration");
+    await user.click(screen.getByRole("checkbox", { name: "Minimum height requirement" }));
+    await user.click(screen.getByRole("button", { name: "Save draft" }));
+
+    await waitFor(() => expect(mocks.save).toHaveBeenCalledWith(expect.objectContaining({
+      input: expect.objectContaining({
+        criteria: [
+          { ordinal: 1, kind: "education", requirement: "Master's degree in Public Administration", isRequired: true },
+          { ordinal: 2, kind: "eligibility", requirement: "NAPOLCOM PNP Entrance Examination", isRequired: true },
+          { ordinal: 3, kind: "other", requirement: "Filipino Citizen", isRequired: true },
+          { ordinal: 4, kind: "other", requirement: "No pending criminal case", isRequired: true },
+        ],
+      }),
+    })));
+  }, 15_000);
+
+  it("keeps an older opening's unlisted criteria when editing it", async () => {
+    const user = userEvent.setup();
+    const criterion = (ordinal: number, kind: "education" | "eligibility" | "experience" | "other", requirement: string) => ({ id: `9b8f2c1e-1111-4222-8333-94445555666${ordinal}`, job_opening_id: 8, ordinal, kind, requirement, is_required: true, created_at: "" });
+    const job = { id: 8, title: "Patrolman", description: "Serve the community through visible patrol work.", location: "San Juan City", closes_on: "2026-10-31", status: "draft" as const, image_path: null, department_id: null, rank_id: null, published_at: null, created_by_user_id: "u1", created_at: "", updated_at: "", job_qualification_criteria: [
+      criterion(1, "education", "Baccalaureate degree in Criminology"),
+      criterion(2, "eligibility", "NAPOLCOM PNP Entrance Examination"),
+      criterion(3, "experience", "At least 2 years of police service"),
+      criterion(4, "other", "Filipino citizen"),
+    ] };
+    render(<HrJobForm job={job} />);
+
+    expect(screen.getByLabelText(/Requirement 1: Education/)).toHaveValue("Baccalaureate degree in Criminology");
+    expect(screen.getByLabelText(/Requirement 2: Eligibility/)).toHaveValue("NAPOLCOM PNP Entrance Examination");
+    expect(screen.getByRole("checkbox", { name: "Filipino Citizen" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "No pending criminal case" })).not.toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "At least 2 years of police service" })).toBeChecked();
+
+    await user.click(screen.getByRole("button", { name: "Save draft" }));
+    await waitFor(() => expect(mocks.save).toHaveBeenCalledWith(expect.objectContaining({
+      jobId: 8,
+      input: expect.objectContaining({
+        criteria: [
+          { ordinal: 1, kind: "education", requirement: "Baccalaureate degree in Criminology", isRequired: true },
+          { ordinal: 2, kind: "eligibility", requirement: "NAPOLCOM PNP Entrance Examination", isRequired: true },
+          { ordinal: 3, kind: "other", requirement: "Filipino Citizen", isRequired: true },
+          { ordinal: 4, kind: "experience", requirement: "At least 2 years of police service", isRequired: true },
+        ],
+      }),
+    })));
   });
 
   it("uploads an optional posting image with the save and shows a preview", async () => {
@@ -90,6 +169,8 @@ describe("HrJobForm", () => {
 
     await user.click(screen.getByRole("button", { name: "Remove image" }));
     expect(screen.queryByRole("img")).not.toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText(/Requirement 1: Education/), "Baccalaureate Degree");
+    await user.selectOptions(screen.getByLabelText(/Requirement 2: Eligibility/), "Licensed Criminologist");
     await user.click(screen.getByRole("button", { name: "Save draft" }));
     await waitFor(() => expect(mocks.save).toHaveBeenCalledWith(expect.objectContaining({ jobId: 8, image: { remove: true } })));
     vi.unstubAllEnvs();

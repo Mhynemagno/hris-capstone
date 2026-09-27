@@ -1,5 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
+import { formatDate } from "../src/lib/format-date";
+
 // One end-to-end journey per capstone objective (see docs/capstone-objectives-verification.md).
 // Every test creates its own uniquely named records in the LOCAL Supabase stack only
 // (playwright.config.ts refuses non-local URLs), so the suite can be re-run.
@@ -55,11 +57,21 @@ async function createEmployee(page: Page, suffix: string, startedOn = "2015-06-0
   await page.getByLabel(/^Personal email/).fill(`e2e.${runId.toLowerCase()}.${suffix.toLowerCase()}@example.test`);
   await page.getByLabel(/^First name/).fill(person.firstName);
   await page.getByLabel(/^Last name/).fill(person.lastName);
+  await page.getByLabel(/^Place of birth/).fill("San Juan City");
+  await page.getByLabel(/^Date of birth/).fill("1995-05-15");
+  await page.getByLabel(/^Gender/).selectOption("female");
+  await page.getByLabel(/^Religion/).fill("Roman Catholic");
+  await page.getByLabel(/^Phone/).first().fill("+639171234567");
+  await page.getByLabel(/^Home address/).fill("1 Test St., San Juan City");
+  await page.getByLabel(/^Emergency contact$/).fill("Test Contact");
+  await page.getByLabel(/^Emergency contact phone/).fill("+639181234567");
   await page.getByLabel(/^Employment start date/).fill(startedOn);
   await page.getByRole("button", { name: "Save employee" }).click();
-  await expect(page).toHaveURL(/\/hr\/employees\/[0-9a-f-]{36}$/, { timeout: 30_000 });
+  await expect(page).toHaveURL(/\/hr\/employees\/[0-9a-f-]{36}\?tab=official&saved=created$/, { timeout: 30_000 });
+  await expect(page.getByRole("status").filter({ hasText: "Employee account has been saved." })).toBeVisible();
   await expect(page.getByRole("heading", { name: `${person.firstName} ${person.lastName}` })).toBeVisible();
-  return { ...person, id: page.url().split("/").pop() as string, name: `${person.firstName} ${person.lastName}` };
+  const id = new URL(page.url()).pathname.split("/").pop() as string;
+  return { ...person, id, name: `${person.firstName} ${person.lastName}` };
 }
 
 async function chooseComboboxOption(page: Page, name: RegExp | string, search: string, option: RegExp | string) {
@@ -67,12 +79,12 @@ async function chooseComboboxOption(page: Page, name: RegExp | string, search: s
   await page.getByRole("option", { name: option }).first().click();
 }
 
-/** HR creates a deployment for the demo employee through the UI; returns its assignment role. */
-async function createDeployment(page: Page, role: string) {
+/** HR creates a deployment for the demo employee through the UI at the given (unique) location. */
+async function createDeployment(page: Page, location: string) {
   await page.goto("/hr/deployments/new");
   await chooseComboboxOption(page, /^Employee/, "0-00001", /Demo Employee/);
-  await page.getByLabel(/^Assignment role/).fill(role);
-  await page.getByLabel(/^Location/).fill("San Juan City Police Station");
+  await page.getByLabel(/^Location/).fill(location);
+  await page.getByLabel(/^Remarks/).fill("Initial assignment");
   await page.getByLabel(/^Start date/).fill(isoDate(0));
   await page.getByRole("button", { name: "Save deployment" }).click();
   await expect(page).toHaveURL(/\/hr\/deployments\/[0-9a-f-]{36}$/, { timeout: 30_000 });
@@ -83,11 +95,17 @@ test.describe("Objective 1: centralized personnel records", () => {
     await signIn(page, HR.email, HR.home);
     const employee = await createEmployee(page, "PR");
 
+    // Viewing is read-only; editing happens in edit mode.
+    await expect(page.getByRole("button", { name: "Save employee" })).toHaveCount(0);
+    await page.getByRole("button", { name: "Edit details" }).click();
+    await expect(page).toHaveURL(/mode=edit/);
+
     // Official record update.
     await page.getByLabel(/^Department/).first().selectOption({ label: "Intelligence Section" });
     await page.getByLabel(/^Rank/).first().selectOption({ label: "PCpl — Police Corporal" });
     await page.getByRole("button", { name: "Save employee" }).click();
-    await page.reload();
+    await expect(page.getByRole("status").filter({ hasText: "Employee account has been edited successfully." })).toBeVisible();
+    await page.goto(`/hr/employees/${employee.id}?tab=official&mode=edit`);
     await expect(page.getByLabel(/^Department/).first()).toHaveValue(/\d+/);
 
     const sections = page.getByRole("tablist", { name: "Personnel record sections" });
@@ -149,8 +167,8 @@ test.describe("Objective 2: recruitment management", () => {
     await page.getByLabel(/^Location/).fill("San Juan City Police Station");
     await page.getByLabel(/^Deadline of Application/).fill("2099-12-31");
     await page.getByLabel(/^Description/).fill("A patrol opening published by the capstone objective tests.");
-    await page.getByLabel("Criterion 1 type").selectOption("education");
-    await page.getByLabel("Qualification 1").selectOption("Baccalaureate degree from a recognized institution");
+    await page.getByLabel(/^Requirement 1: Education/).selectOption("Baccalaureate Degree");
+    await page.getByLabel(/^Requirement 2: Eligibility/).selectOption("NAPOLCOM PNP Entrance Examination");
     await page.getByRole("button", { name: "Publish opening" }).click();
     await expect(page).toHaveURL(/\/hr\/jobs$/);
     await signOut(page, HR.email);
@@ -169,14 +187,31 @@ test.describe("Objective 2: recruitment management", () => {
     await page.getByRole("button", { name: "Register" }).click();
     await expect(page).toHaveURL(/\/applicant$/, { timeout: 30_000 });
 
+    // The personal data sheet requires the personal information and Primary, Secondary and
+    // Bachelor's Degree education (qualifier, birthdate and mobile number come from registration;
+    // citizenship defaults to Filipino).
     await page.goto("/applicant/profile");
+    await page.getByLabel(/^Place of birth/).fill("San Juan City");
+    await page.getByLabel(/^Gender/).selectOption("female");
+    await page.getByLabel(/^Civil status/).selectOption("single");
+    await page.getByLabel(/^Religion/).fill("Roman Catholic");
+    await page.getByLabel(/^Home address/).fill("12 Mabini St., San Juan City");
+    for (const [level, school, course, year] of [["Primary", "San Juan Elementary School", "Primary Education", "2010"], ["Secondary", "San Juan National High School", "Senior High School", "2016"], ["Bachelor's Degree", "Polytechnic University of the Philippines", "BS Criminology", "2020"]]) {
+      const group = page.getByRole("group", { name: level, exact: true });
+      await group.getByLabel(/^Name of school/).fill(school);
+      await group.getByLabel(/^Course completed/).fill(course);
+      await group.getByLabel(/^Year graduated/).fill(year);
+      await group.getByLabel(/^Location/).fill("Metro Manila");
+    }
     await page.getByRole("button", { name: "Save profile" }).click();
     await expect(page.getByRole("status").filter({ hasText: "Profile saved." })).toBeVisible();
     await page.goto("/applicant/documents");
-    await page.getByLabel("Upload eligibility document").setInputFiles(pdf("eligibility.pdf"));
-    await expect(page.getByRole("status").filter({ hasText: "Eligibility document saved." })).toBeVisible();
-    await page.getByLabel("Upload diploma document").setInputFiles(pdf("diploma.pdf"));
-    await expect(page.getByRole("status").filter({ hasText: "Diploma document saved." })).toBeVisible();
+    // A minimal PNG (1x1 pixel) for the 2x2 picture, which must be an image.
+    const png = { name: "photo.png", mimeType: "image/png", buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64") };
+    for (const [label, file] of [["CV / Resume", pdf("resume.pdf")], ["PSA birth certificate", pdf("psa.pdf")], ["2x2 picture", png], ["Eligibility", pdf("eligibility.pdf")], ["Diploma", pdf("diploma.pdf")]] as const) {
+      await page.getByLabel(`Upload ${label} document`).setInputFiles(file);
+      await expect(page.getByRole("status").filter({ hasText: `${label} document saved.` })).toBeVisible();
+    }
 
     await page.goto("/jobs");
     await page.getByRole("link", { name: `View details for ${title}` }).click();
@@ -243,22 +278,22 @@ test.describe("Objective 3: deployment tracking", () => {
 
     await signIn(page, HR.email, HR.home);
 
-    // Validation: a deployment needs a location, unit, or project.
+    // Validation: a deployment needs a location and remarks.
     await page.goto("/hr/deployments/new");
     await chooseComboboxOption(page, /^Employee/, "0-00001", /Demo Employee/);
-    await page.getByLabel(/^Assignment role/).fill(role);
     await page.getByLabel(/^Start date/).fill(isoDate(0));
     await page.getByRole("button", { name: "Save deployment" }).click();
-    await expect(page.getByText("Provide a location, unit, or project.").first()).toBeVisible();
+    await expect(page.getByText("Location is required.").first()).toBeVisible();
+    await expect(page.getByText("Remarks are required.").first()).toBeVisible();
 
     await createDeployment(page, role);
-    await page.getByLabel(/^Unit assignment/).selectOption({ label: unit });
-    await page.getByLabel(/^Project/).fill(`Oplan Ligtas ${runId}`);
+    await page.getByLabel(/^Unit \/ Assignment/).selectOption({ label: unit });
+    await page.getByLabel(/^Remarks/).fill(`Oplan Ligtas ${runId}`);
     await page.getByRole("button", { name: "Save deployment" }).click();
     await expect(page.getByRole("status").filter({ hasText: "Deployment saved." })).toBeVisible();
     await page.reload();
-    await expect(page.getByLabel(/^Project/)).toHaveValue(`Oplan Ligtas ${runId}`);
-    await expect(page.getByLabel(/^Unit assignment/)).toHaveValue(unit);
+    await expect(page.getByLabel(/^Remarks/)).toHaveValue(`Oplan Ligtas ${runId}`);
+    await expect(page.getByLabel(/^Unit \/ Assignment/)).toHaveValue(unit);
     await expect(page.getByText(/History/).first()).toBeVisible();
 
     await page.goto("/hr/deployments");
@@ -292,9 +327,12 @@ test.describe("Objective 4: promotion eligibility tracker", () => {
     if (await existing.count() === 0) {
       await chooseComboboxOption(page, /^Target rank/, "PCpl", /PCpl — Police Corporal/);
       await page.getByLabel(/^Minimum years of service/).selectOption("3");
-      await page.getByLabel(/^Minimum performance rating/).selectOption({ label: "3 – Satisfactory" });
-      await page.getByLabel(/^Record type/).selectOption({ label: "Training" });
-      await page.getByLabel(/^Required record name/).selectOption(credential);
+      await expect(page.getByLabel(/^Minimum performance rating/)).toHaveCount(0);
+      await page.getByLabel(/^Record type/).selectOption({ label: "Training / Schooling" });
+      await page.getByLabel(/^Requirement 1/).selectOption(credential);
+      // A second requirement row can be added and removed again.
+      await page.getByRole("button", { name: "Add requirement" }).click();
+      await page.getByRole("button", { name: "Remove requirement 2" }).click();
       await page.getByRole("button", { name: "Save criteria" }).click();
       await expect(page.getByRole("status").filter({ hasText: "Promotion criteria saved." })).toBeVisible();
     } else if (await page.getByRole("button", { name: /^Activate criteria for PCpl/ }).count()) {
@@ -320,7 +358,7 @@ test.describe("Objective 4: promotion eligibility tracker", () => {
     await expect(page.getByRole("status").filter({ hasText: /Advisory review saved for PCpl/ })).toBeVisible();
 
     await page.goto("/hr/promotions");
-    await expect(page.getByRole("link", { name: new RegExp(`Open review for PCpl.*evaluated ${isoDate(0)}`) }).first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("link", { name: new RegExp(`Open review for PCpl.*evaluated ${formatDate(isoDate(0))}`) }).first()).toBeVisible({ timeout: 15_000 });
     await signOut(page, HR.email);
 
     await signIn(page, EMPLOYEE.email, EMPLOYEE.home);
@@ -354,9 +392,9 @@ test.describe("Objective 5: personnel self-service portal", () => {
 
     await signIn(page, HR.email, HR.home);
     await page.goto("/hr/leave-requests");
-    await page.getByRole("link", { name: new RegExp(`Review Demo leave request, ${start}`) }).first().click();
+    await page.getByRole("link", { name: new RegExp(`Review .+'s Demo leave request, ${formatDate(start)}`) }).first().click();
     await expect(page.getByText(reason)).toBeVisible({ timeout: 15_000 });
-    await page.getByLabel(/^Decision note/).fill("Staffing is short on these dates.");
+    await page.getByRole("textbox", { name: "Notes" }).fill("Staffing is short on these dates.");
     await page.getByRole("button", { name: "Reject request" }).click();
     await expect(page.getByRole("status").filter({ hasText: /rejected/i })).toBeVisible();
     await signOut(page, HR.email);

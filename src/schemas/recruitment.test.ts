@@ -70,3 +70,25 @@ describe("recruitment schemas", () => {
     });
   });
 });
+
+describe("job opening General Requirements", () => {
+  const requirements = {
+    education: { choice: "Baccalaureate Degree", other: "" },
+    eligibility: { choice: "Others", other: "" },
+    otherRequirements: [{ kind: "other", requirement: "Filipino Citizen", included: true, isRequired: true }],
+  };
+
+  it("asks HR to specify a requirement when Others is chosen", async () => {
+    const { generalRequirementsSchema } = await import("./recruitment");
+    const result = generalRequirementsSchema.safeParse(requirements);
+    expect(result.success).toBe(false);
+    expect(result.error?.issues).toEqual([expect.objectContaining({ path: ["eligibility", "other"], message: "Specify the eligibility requirement." })]);
+    expect(generalRequirementsSchema.safeParse({ ...requirements, eligibility: { choice: "Others", other: "Registered Nurse" } }).success).toBe(true);
+  });
+
+  it("requires both the education and the eligibility choice", async () => {
+    const { generalRequirementsSchema } = await import("./recruitment");
+    const result = generalRequirementsSchema.safeParse({ ...requirements, education: { choice: "", other: "" }, eligibility: { choice: "", other: "" } });
+    expect(result.error?.issues.map((issue) => issue.message)).toEqual(["Choose the education requirement.", "Choose the eligibility requirement."]);
+  });
+});

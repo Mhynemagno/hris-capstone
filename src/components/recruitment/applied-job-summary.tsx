@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge";
+import { formatDate, formatDateTime } from "@/lib/format-date";
 import { rankLabel } from "@/lib/ranks";
 import type { Application, AppliedJob } from "@/lib/types/database";
 
@@ -34,8 +35,8 @@ export function AppliedJobSummary({ job, status, submittedAt }: AppliedJobSummar
             {job.departments?.name ? <Detail label="Department" value={job.departments.name} /> : null}
             {job.ranks ? <Detail label="Rank" value={rankLabel(job.ranks)} /> : null}
             <Detail label="Location" value={job.location ?? "Not specified"} />
-            <Detail label="Deadline of Application" value={job.closes_on ?? "No closing date"} />
-            <Detail label="Submitted" value={new Date(submittedAt).toLocaleString()} />
+            <Detail label="Deadline of Application" value={formatDate(job.closes_on) ?? "No closing date"} />
+            <Detail label="Submitted" value={formatDateTime(submittedAt) ?? ""} />
           </dl>
           <div>
             <h3 className="text-sm font-semibold">About the job</h3>
@@ -55,7 +56,7 @@ export function AppliedJobSummary({ job, status, submittedAt }: AppliedJobSummar
       ) : (
         <div className="space-y-1 text-sm">
           <p className="text-muted-foreground">The job details are no longer available.</p>
-          <p>Submitted {new Date(submittedAt).toLocaleString()}</p>
+          <p>Submitted {formatDateTime(submittedAt) ?? ""}</p>
         </div>
       )}
     </section>

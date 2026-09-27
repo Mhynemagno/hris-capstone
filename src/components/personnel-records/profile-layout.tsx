@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 
+import { formatDate } from "@/lib/format-date";
 import { cn } from "@/lib/utils";
 
 /** Parses a `YYYY-MM-DD` date as a calendar day (UTC) so it never shifts across time zones. */
@@ -14,10 +15,9 @@ function startOfTodayUtc(today: Date) {
   return Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
 }
 
-/** A calendar date shown as "Aug 16, 1982" (Philippine English), or null when missing. */
+/** A calendar date shown in words as "August 16, 1982", or null when missing or invalid. */
 export function formatDay(value: string | null | undefined) {
-  const date = parseDay(value);
-  return date ? date.toLocaleDateString("en-PH", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) : null;
+  return value && parseDay(value) ? formatDate(value.slice(0, 10)) : null;
 }
 
 /** Length of service as "9 years 3 months", or null when the start date is missing. */
@@ -64,7 +64,7 @@ export function ProfileHeaderCard({ photo, name, subtitle, actions, meta, tags =
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
           {photo ? <div className="shrink-0">{photo}</div> : null}
           <div className="min-w-0 flex-1">
-            <h1 className="font-heading text-2xl font-semibold tracking-tight break-words sm:text-3xl">{name}</h1>
+            <h1 className="text-3xl font-semibold tracking-tight break-words">{name}</h1>
             <p className="mt-1 text-sm font-medium text-muted-foreground">{subtitle}</p>
             {actions ? <div className="mt-4 flex flex-wrap gap-2">{actions}</div> : null}
           </div>

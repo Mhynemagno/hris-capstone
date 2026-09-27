@@ -8,17 +8,13 @@ import { Input } from "@/components/ui/input";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useRemoveMyApplicantProfileDocument } from "@/hooks/use-applicant-portal";
 import { useApplicantProfileDocuments, useSaveApplicantProfileDocuments } from "@/hooks/use-recruitment";
+import { formatDate } from "@/lib/format-date";
+import type { ApplicantProfileDocumentKind } from "@/lib/types/database";
 import { getApplicantProfileDocumentUrl } from "@/queries/recruitment";
+import { APPLICANT_PROFILE_DOCUMENT_KINDS, applicantPhotoDocumentFileSchema } from "@/schemas/applicant-portal";
 import { applicantProfileDocumentFileSchema } from "@/schemas/recruitment";
 
-const documentKinds = [
-  { kind: "eligibility" as const, label: "Eligibility" },
-  { kind: "diploma" as const, label: "Diploma" },
-];
-
-type DocumentKind = (typeof documentKinds)[number]["kind"];
-
-const dateFormat = new Intl.DateTimeFormat("en-PH", { month: "short", day: "numeric", year: "numeric" });
+type DocumentKind = ApplicantProfileDocumentKind;
 
 export function ApplicantProfileDocuments() {
   const documents = useApplicantProfileDocuments();
@@ -28,18 +24,18 @@ export function ApplicantProfileDocuments() {
   const [notice, setNotice] = useState<string | null>(null);
   const busy = save.isPending || remove.isPending;
 
-  async function uploadDocument(kind: DocumentKind, file: File | undefined) {
+  async function uploadDocument(kind: DocumentKind, label: string, file: File | undefined) {
     if (!file) return;
     setError(null);
     setNotice(null);
-    const validated = applicantProfileDocumentFileSchema.safeParse(file);
+    const validated = (kind === "photo" ? applicantPhotoDocumentFileSchema : applicantProfileDocumentFileSchema).safeParse(file);
     if (!validated.success) {
       setError(validated.error.issues[0]?.message ?? "Choose a valid document.");
       return;
     }
     try {
       await save.mutateAsync([{ kind, file: validated.data }]);
-      setNotice(`${kind === "eligibility" ? "Eligibility" : "Diploma"} document saved.`);
+      setNotice(`${label} document saved.`);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Unable to save the document.");
     }
@@ -71,25 +67,26 @@ export function ApplicantProfileDocuments() {
 
   return <section aria-labelledby="applicant-documents" className="rounded-2xl border bg-card p-5 sm:p-6">
     <h2 className="text-lg font-semibold" id="applicant-documents">Required documents</h2>
-    <p className="mt-1 text-sm text-muted-foreground">Upload your Eligibility and Diploma (PDF, PNG, or JPEG, up to 10 MiB) before submitting an application.</p>
+    <p className="mt-1 text-sm text-muted-foreground">Upload all of these documents (up to 10 MiB each) before submitting an application. The 2x2 picture must be a PNG or JPEG image; the others may be PDF, PNG, or JPEG.</p>
     <ul className="mt-4 grid gap-4 sm:grid-cols-2">
-      {documentKinds.map(({ kind, label }) => {
+      {APPLICANT_PROFILE_DOCUMENT_KINDS.map(({ kind, label, accept, formats }) => {
         const document = documents.data?.find((item) => item.kind === kind);
         return <li className="rounded-xl border p-4" key={kind}>
           <div className="flex items-center gap-2">
             {document ? <CheckCircle2 aria-hidden="true" className="size-5 text-emerald-600" /> : <CircleDashed aria-hidden="true" className="size-5 text-muted-foreground" />}
-            <p className="font-medium">{label}</p>
+            <p className="font-medium">{label} <span aria-hidden="true" className="text-destructive">*</span><span className="sr-only">(required)</span></p>
           </div>
+          <p className="mt-1 text-xs text-muted-foreground">{formats}</p>
           {document ? <div className="mt-2 space-y-2">
             <p className="break-all text-sm">{document.file_name}</p>
-            <p className="text-xs text-muted-foreground">Uploaded {dateFormat.format(new Date(document.updated_at))}</p>
+            <p className="text-xs text-muted-foreground">Uploaded {formatDate(document.updated_at)}</p>
             <div className="flex flex-wrap gap-2">
               <Button onClick={() => void openDocument(document.object_path)} size="sm" type="button" variant="outline"><ExternalLink aria-hidden="true" /> View</Button>
-              <Button aria-label={`Remove ${label.toLowerCase()} document`} disabled={busy} onClick={() => void removeDocument(kind, label)} size="sm" type="button" variant="outline"><Trash2 aria-hidden="true" /> Remove</Button>
+              <Button aria-label={`Remove ${label} document`} disabled={busy} onClick={() => void removeDocument(kind, label)} size="sm" type="button" variant="outline"><Trash2 aria-hidden="true" /> Remove</Button>
             </div>
           </div> : <p className="mt-2 text-sm text-muted-foreground">Not uploaded</p>}
           <p aria-hidden="true" className="mt-3 text-sm font-medium">{document ? "Replace file" : "Upload file"}</p>
-          <Input accept="application/pdf,image/png,image/jpeg" aria-label={`Upload ${label.toLowerCase()} document`} className="mt-1" disabled={busy} id={`upload-${kind}`} onChange={(event) => { void uploadDocument(kind, event.target.files?.[0]); event.target.value = ""; }} type="file" />
+          <Input accept={accept} aria-label={`Upload ${label} document`} className="mt-1" disabled={busy} id={`upload-${kind}`} onChange={(event) => { void uploadDocument(kind, label, event.target.files?.[0]); event.target.value = ""; }} type="file" />
         </li>;
       })}
     </ul>

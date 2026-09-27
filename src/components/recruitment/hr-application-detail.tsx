@@ -17,16 +17,18 @@ import { getApplicantDocumentUrl } from "@/queries/recruitment";
 import { hiringDecisionSchema, type ApplicationStatus } from "@/schemas/recruitment";
 
 /**
- * Review transitions accepted by private.transition_application_status
- * (supabase/migrations/20260906185626_recruitment_workflow_feedback.sql).
- * Hiring is a separate flow; Needs Revision, Hired, and Not Selected have no
- * HR review transitions.
+ * Review transitions HR can choose. private.transition_application_status
+ * (supabase/migrations/20260906185626_recruitment_workflow_feedback.sql) also
+ * accepts Needs Revision, but HR no longer offers it (tester feedback); an
+ * application already in Needs Revision keeps and shows that status. Hiring is
+ * a separate flow; Needs Revision, Hired, and Not Selected have no HR review
+ * transitions.
  */
 export const allowedNextStatuses: Record<ApplicationStatus, readonly ApplicationStatus[]> = {
   Submitted: ["Under Review"],
-  "Under Review": ["Shortlisted", "Interview", "Needs Revision", "Not Selected"],
-  Shortlisted: ["Interview", "Needs Revision", "Not Selected"],
-  Interview: ["Shortlisted", "Needs Revision", "Not Selected"],
+  "Under Review": ["Shortlisted", "Interview", "Not Selected"],
+  Shortlisted: ["Interview", "Not Selected"],
+  Interview: ["Shortlisted", "Not Selected"],
   "Needs Revision": [],
   Hired: [],
   "Not Selected": [],

@@ -55,9 +55,14 @@ on conflict (user_id) do update set role = excluded.role, assigned_at = now();
 
 -- Ranks and departments come from migrations (20260924111000_demo_data_reset.sql); the demo
 -- employee starts without a department or rank, matching the client's reset data.
-insert into public.employees (profile_id, employee_number, first_name, last_name, personal_email, employment_status, employment_started_on)
-values ('00000000-0000-4000-8000-000000008103', '0-00001', 'Demo', 'Employee', 'demo.employee@example.test', 'active', '2024-01-01')
-on conflict (profile_id) do update set first_name = excluded.first_name, last_name = excluded.last_name, personal_email = excluded.personal_email;
+insert into public.employees (profile_id, employee_number, first_name, last_name, personal_email, employment_status, employment_started_on, place_of_birth, date_of_birth, gender, religion, phone, address, emergency_contact_name, emergency_contact_phone)
+values ('00000000-0000-4000-8000-000000008103', '0-00001', 'Demo', 'Employee', 'demo.employee@example.test', 'active', '2024-01-01', 'San Juan City', '1995-05-15', 'female', 'Roman Catholic', '+639171234567', '1 Demo St., San Juan City', 'Demo Contact', '+639181234567')
+on conflict (profile_id) do update set first_name = excluded.first_name, last_name = excluded.last_name, personal_email = excluded.personal_email,
+  place_of_birth = coalesce(public.employees.place_of_birth, excluded.place_of_birth), date_of_birth = coalesce(public.employees.date_of_birth, excluded.date_of_birth),
+  gender = coalesce(public.employees.gender, excluded.gender), religion = coalesce(public.employees.religion, excluded.religion),
+  phone = coalesce(public.employees.phone, excluded.phone), address = coalesce(public.employees.address, excluded.address),
+  emergency_contact_name = coalesce(public.employees.emergency_contact_name, excluded.emergency_contact_name),
+  emergency_contact_phone = coalesce(public.employees.emergency_contact_phone, excluded.emergency_contact_phone);
 
 insert into public.leave_types (name, description, requires_attachment, created_by_user_id, updated_by_user_id)
 select 'Demo leave', 'Fictitious demo leave type', false, '00000000-0000-4000-8000-000000008102'::uuid, '00000000-0000-4000-8000-000000008102'::uuid

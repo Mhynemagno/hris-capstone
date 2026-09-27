@@ -13,7 +13,7 @@ export const promotionReadinessSchema = z.enum(["ready", "not_ready"]);
 export const promotionCriterionRequirementSchema = z.object({
   id: uuidSchema.optional(),
   recordKind: promotionRecordKindSchema,
-  requiredName: z.string().trim().min(1, "A required record name is required.").max(200),
+  requiredName: z.string().trim().min(1, "Choose a requirement.").max(200),
   label: z.string().trim().min(1, "A requirement label is required.").max(200),
   isMandatory: z.boolean().default(true),
 });
@@ -21,8 +21,15 @@ export const promotionCriterionRequirementSchema = z.object({
 export const promotionCriterionSchema = z.object({
   targetRankId: positiveInteger,
   minimumYearsOfService: z.coerce.number().int().min(0).max(100),
+  // Promotion is judged on years of service and trainings only; the rating minimum is kept for older criteria.
   minimumPerformanceRating: optionalRating,
-  requirements: z.array(promotionCriterionRequirementSchema).max(30).default([]),
+  requirements: z.array(promotionCriterionRequirementSchema)
+    .min(1, "Add at least one requirement.")
+    .max(30)
+    .refine(
+      (requirements) => new Set(requirements.map((requirement) => `${requirement.recordKind}:${requirement.requiredName.toLowerCase()}`)).size === requirements.length,
+      "Each requirement can only be added once.",
+    ),
 });
 
 export const promotionCriterionUpdateSchema = promotionCriterionSchema.extend({

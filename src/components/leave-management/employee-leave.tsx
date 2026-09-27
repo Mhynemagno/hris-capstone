@@ -16,6 +16,7 @@ import {
   useRequestableLeaveTypes,
   useSubmitLeaveRequest,
 } from "@/hooks/use-leave-management";
+import { formatDateRange } from "@/lib/format-date";
 import { leaveRequestDraftSchema } from "@/schemas/leave-management";
 
 import { LeaveStatusBadge } from "./leave-status-badge";
@@ -64,12 +65,12 @@ export function EmployeeLeaveList() {
           <article key={request.id} className="rounded-xl border p-4">
             <div className="flex flex-wrap justify-between gap-2">
               <p className="font-medium">
-                {request.leave_type_name} · {request.starts_on} to {request.ends_on}
+                {request.leave_type_name} · {formatDateRange(request.starts_on, request.ends_on)}
               </p>
               <LeaveStatusBadge status={request.status} />
             </div>
             {request.reason ? <p className="mt-2 text-sm whitespace-pre-line text-muted-foreground">{request.reason}</p> : null}
-            {request.decision_note ? <p className="mt-2 text-sm">Decision note: {request.decision_note}</p> : null}
+            {request.decision_note ? <p className="mt-2 text-sm">Notes from HR: {request.decision_note}</p> : null}
             {request.status === "pending" ? (
               confirmingId === request.id ? (
                 <div className="mt-3 space-y-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3">
