@@ -14,7 +14,7 @@ import { useDecideProfileChangeRequest, useProfileChangeDocumentUrl, useProfileC
 import type { ProfileChangeRequestChange, ProfileChangeRequestDocument, ProfileChangeRequestHistory } from "@/lib/types/database";
 import { profileChangeDecisionSchema } from "@/schemas/profile-change-requests";
 
-function humanize(key: string) {
+export function humanize(key: string) {
   return key
     .replace(/_/g, " ")
     .replace(/([a-z])([A-Z])/g, "$1 $2")
@@ -22,7 +22,7 @@ function humanize(key: string) {
     .replace(/^./, (value) => value.toUpperCase());
 }
 
-function ValueView({ value }: { value: unknown }) {
+export function ValueView({ value }: { value: unknown }) {
   if (value === null || value === undefined || value === "") return <span className="text-muted-foreground">None</span>;
   if (typeof value === "object" && !Array.isArray(value)) {
     return (
@@ -39,7 +39,7 @@ function ValueView({ value }: { value: unknown }) {
   return <span className="break-words whitespace-pre-line">{typeof value === "string" ? value : JSON.stringify(value)}</span>;
 }
 
-function DocumentLink({ document }: { document: ProfileChangeRequestDocument }) {
+export function DocumentLink({ document }: { document: ProfileChangeRequestDocument }) {
   const url = useProfileChangeDocumentUrl(document.object_path);
   if (url.isLoading) return <span className="text-sm text-muted-foreground">Preparing {document.file_name}…</span>;
   if (url.error) return <span className="text-sm text-destructive">{document.file_name}: unavailable ({url.error.message})</span>;
@@ -50,14 +50,14 @@ function DocumentLink({ document }: { document: ProfileChangeRequestDocument }) 
   );
 }
 
-function ChangeCard({ change }: { change: ProfileChangeRequestChange }) {
+export function ChangeCard({ change, originalLabel = "Current (when submitted)" }: { change: ProfileChangeRequestChange; originalLabel?: string }) {
   const label = change.kind === "contact" ? humanize(change.field_key ?? "Contact detail") : `Qualification: ${change.operation ?? "change"}`;
   return (
     <li className="rounded-xl border p-4">
       <h3 className="font-semibold capitalize">{label}</h3>
       <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
         <div>
-          <dt className="font-semibold text-muted-foreground">Current (when submitted)</dt>
+          <dt className="font-semibold text-muted-foreground">{originalLabel}</dt>
           <dd className="mt-1 rounded-lg bg-muted p-3">
             <ValueView value={change.original_value} />
           </dd>

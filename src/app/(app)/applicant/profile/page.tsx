@@ -1,5 +1,6 @@
 import { ApplicantProfileForm } from "@/components/recruitment/applicant-profile-form";
+import { PageHeader } from "@/components/ui/page-header";
 
 export default function ApplicantProfilePage() {
-  return <div className="space-y-6"><div><h1 className="mt-1 text-3xl font-semibold tracking-tight">Your profile</h1><p className="mt-2 text-muted-foreground">Keep your contact information current before submitting an application.</p></div><ApplicantProfileForm /></div>;
+  return <div className="space-y-6"><PageHeader title="Profile" /><ApplicantProfileForm /></div>;
 }

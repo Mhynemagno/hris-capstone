@@ -62,4 +62,36 @@ describe("HrJobForm", () => {
     expect(screen.getByText("Choose the deadline of application.")).toBeInTheDocument();
     expect(mocks.save).not.toHaveBeenCalled();
   });
+
+  it("uploads an optional posting image with the save and shows a preview", async () => {
+    const user = userEvent.setup();
+    const createObjectURL = vi.fn(() => "blob:preview");
+    Object.assign(URL, { createObjectURL, revokeObjectURL: vi.fn() });
+    render(<HrJobForm />);
+    await fillValidJobOpening(user);
+    const file = new File(["image"], "poster.png", { type: "image/png" });
+
+    await user.upload(screen.getByLabelText(/^Image/), file);
+
+    expect(screen.getByRole("img", { name: "Job posting image preview" })).toHaveAttribute("src", "blob:preview");
+    await user.click(screen.getByRole("button", { name: "Save draft" }));
+    await waitFor(() => expect(mocks.save).toHaveBeenCalledWith(expect.objectContaining({ image: { file } })));
+  });
+
+  it("rejects an unsupported image type and removes a saved image on save", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "http://127.0.0.1:54321");
+    const user = userEvent.setup({ applyAccept: false });
+    const job = { id: 8, title: "Patrolman", description: "Serve the community through visible patrol work.", location: "San Juan City", closes_on: "2026-10-31", status: "draft" as const, image_path: "job-openings/8/0b8f2c1e-1111-4222-8333-944455556666.png", department_id: null, rank_id: null, published_at: null, created_by_user_id: "u1", created_at: "", updated_at: "", job_qualification_criteria: [{ id: "9b8f2c1e-1111-4222-8333-944455556666", job_opening_id: 8, ordinal: 1, kind: "experience" as const, requirement: "At least 2 years of police service", is_required: true, created_at: "" }] };
+    render(<HrJobForm job={job} />);
+
+    expect(screen.getByRole("img", { name: "Job posting image preview" })).toHaveAttribute("src", expect.stringContaining("/job-posting-images/job-openings/8/"));
+    await user.upload(screen.getByLabelText(/^Image/), new File(["gif"], "poster.gif", { type: "image/gif" }));
+    expect(screen.getByText("Use a PNG, JPEG, or WebP image.")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Remove image" }));
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Save draft" }));
+    await waitFor(() => expect(mocks.save).toHaveBeenCalledWith(expect.objectContaining({ jobId: 8, image: { remove: true } })));
+    vi.unstubAllEnvs();
+  });
 });

@@ -81,7 +81,7 @@ describe("EmployeeProfile", () => {
     expect(screen.queryByLabelText(/profile photo/i)).not.toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Contact information" })).not.toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Emergency contact" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Training" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Training records" })).not.toBeInTheDocument();
   });
 
   it("keeps trainings visible as promotion evidence", () => {
@@ -96,8 +96,31 @@ describe("EmployeeProfile", () => {
       notes: null,
     }]} />);
 
-    expect(screen.getByRole("heading", { name: "Training" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Training records" })).toBeInTheDocument();
     expect(screen.getByText("Leadership Development")).toBeInTheDocument();
     expect(screen.getByText(/16 hours/i)).toBeInTheDocument();
+  });
+
+  it("shows eligibility read-only, and service history and certifications only when recorded", () => {
+    const { rerender } = render(<EmployeeProfile employee={employee} qualifications={[{ id: "q1", employee_id: employee.id, name: "Career Service Professional", institution: "Civil Service Commission", qualification_level: "Second level", field_of_study: null, awarded_on: "2019-05-01", notes: null }]} trainings={[]} />);
+
+    const eligibility = screen.getByRole("region", { name: "Eligibility" });
+    expect(eligibility).toHaveTextContent("Career Service Professional");
+    expect(eligibility).toHaveTextContent("Second level · Civil Service Commission");
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Service history" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Certifications" })).not.toBeInTheDocument();
+
+    rerender(<EmployeeProfile certifications={[{ id: "c1", employee_id: employee.id, name: "First Aid", issuer: "Red Cross", credential_id: null, issued_on: "2025-02-01", expires_on: null, notes: null }]} employee={employee} qualifications={[]} serviceHistory={[{ id: "s1", employee_id: employee.id, department_id: 3, rank_id: 9, employment_title: null, started_on: "2024-01-01", ended_on: null, notes: null }]} trainings={[]} />);
+
+    expect(screen.getByRole("region", { name: "Eligibility" })).toHaveTextContent("No eligibility recorded.");
+    expect(screen.getByRole("region", { name: "Service history" })).toHaveTextContent("PCapt — Police Captain");
+    expect(screen.getByRole("region", { name: "Service history" })).toHaveTextContent(/Intelligence Section · Jan 1, 2024 – present/);
+    expect(screen.getByRole("region", { name: "Certifications" })).toHaveTextContent("First Aid");
+  });
+
+  it("hides eligibility when it is not provided (administrator view)", () => {
+    render(<EmployeeProfile employee={employee} trainings={[]} />);
+    expect(screen.queryByRole("region", { name: "Eligibility" })).not.toBeInTheDocument();
   });
 });

@@ -1,5 +1,7 @@
 "use client";
 
+import { ArrowRight } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { ErrorState } from "@/components/ui/error-state";
@@ -43,16 +45,19 @@ export function LoginForm({ error, nextPath }: LoginFormProps) {
           type="email"
         />
       </FormField>
-      <FormField htmlFor="login-password" label="Password">
-        <PasswordInput />
-      </FormField>
+      <div className="space-y-2">
+        <FormField htmlFor="login-password" label="Password">
+          <PasswordInput />
+        </FormField>
+        <div className="text-right text-sm"><Link className="font-medium text-primary underline-offset-4 hover:underline" href="/forgot-password">Forgot your password?</Link></div>
+      </div>
       {error ? <ErrorState message={error} /> : null}
       <button
-        className="min-h-11 w-full rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
         disabled={pending}
         type="submit"
       >
-        {pending ? "Signing in…" : "Sign in"}
+        {pending ? "Signing in…" : <>Login<ArrowRight aria-hidden="true" className="size-4" /></>}
       </button>
     </form>
   );

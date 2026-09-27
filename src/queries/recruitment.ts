@@ -1,3 +1,4 @@
+import { JOB_POSTING_IMAGE_BUCKET } from "@/lib/recruitment/job-posting-image";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import {
   applicantDocumentSchema,
@@ -11,6 +12,7 @@ import {
   hiringDecisionSchema,
   jobFiltersSchema,
   jobOpeningSchema,
+  jobPostingImageFileSchema,
   type ApplicationSubmissionInput,
   type ApplicantProfileDocumentFile,
   type ApplicantProfileInput,
@@ -62,8 +64,8 @@ function throwIfError(error: { message: string } | null) {
 function throwApplicationSubmissionError(error: { message: string } | null) {
   if (error && /eligibility/i.test(error.message) && /diploma/i.test(error.message)) {
     throw new ApplicantProfileRequiredError(
-      "Upload your Eligibility and Diploma documents under My profile > Required documents before applying.",
-      "/applicant/profile#applicant-documents",
+      "Upload your Eligibility and Diploma documents on the Documents page before applying.",
+      "/applicant/documents",
       "Update required documents",
     );
   }
@@ -85,6 +87,9 @@ const applicantProfilePhotoExtensions = {
   "image/jpeg": "jpg",
   "image/webp": "webp",
 } as const;
+
+/** The optional image change that accompanies a job-opening save. */
+export type JobPostingImageChange = { file: File } | { remove: true };
 
 const applicantProfileDocumentExtensions = {
   "application/pdf": "pdf",
@@ -284,7 +289,7 @@ export async function listHrJobs(input: Partial<JobFilters> = {}) {
   return { rows: (data ?? []) as Array<JobOpening & { job_qualification_criteria: JobQualificationCriterion[] }>, count: count ?? 0, filters } satisfies PaginatedResult<JobOpening & { job_qualification_criteria: JobQualificationCriterion[] }, JobFilters>;
 }
 
-export async function saveJobOpening(input: JobOpeningInput, jobId?: number) {
+export async function saveJobOpening(input: JobOpeningInput, jobId?: number, image?: JobPostingImageChange) {
   const values = jobOpeningSchema.parse(input);
   await requireCurrentUser();
   const client = createBrowserSupabaseClient();
@@ -301,7 +306,24 @@ export async function saveJobOpening(input: JobOpeningInput, jobId?: number) {
     requested_criteria: values.criteria,
   });
   throwIfError(error);
-  return data as JobOpening;
+  const job = data as JobOpening;
+  if (!image) return job;
+  const bucket = client.storage.from(JOB_POSTING_IMAGE_BUCKET);
+  let objectPath: string | null = null;
+  if ("file" in image) {
+    const file = jobPostingImageFileSchema.parse(image.file);
+    objectPath = `job-openings/${job.id}/${crypto.randomUUID()}.${applicantProfilePhotoExtensions[file.type as keyof typeof applicantProfilePhotoExtensions]}`;
+    const { error: uploadError } = await bucket.upload(objectPath, file, { contentType: file.type, upsert: false });
+    if (uploadError) throw new Error(`The job opening was saved, but its image could not be uploaded: ${uploadError.message}`);
+  }
+  const { data: previousPath, error: imageError } = await client.rpc("set_job_opening_image", { target_job_id: job.id, target_image_path: objectPath });
+  if (imageError) {
+    if (objectPath) await bucket.remove([objectPath]).catch(() => undefined);
+    throw new Error(`The job opening was saved, but its image could not be updated: ${imageError.message}`);
+  }
+  // The replaced image is no longer referenced; a failed cleanup only leaves an orphaned public object.
+  if (typeof previousPath === "string" && previousPath !== objectPath) await bucket.remove([previousPath]).catch(() => undefined);
+  return { ...job, image_path: objectPath };
 }
 
 export async function listHrApplications(input: Partial<ApplicationAiFilters> = {}) {

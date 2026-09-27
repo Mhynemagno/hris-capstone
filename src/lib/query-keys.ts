@@ -64,6 +64,8 @@ export const queryKeys = {
     applications: (filters: Record<string, unknown>) =>
       ["recruitment", "applications", filters] as const,
     aiScores: (applicationId: string) => ["recruitment", "ai-scores", applicationId] as const,
+    myEducation: () => ["recruitment", "my-education"] as const,
+    registeredApplicants: () => ["recruitment", "registered-applicants"] as const,
   },
   leaveManagement: {
     types: () => ["leave-management", "types"] as const,

@@ -212,6 +212,7 @@ export type JobOpening = {
   closes_on: string | null;
   status: "draft" | "published" | "closed";
   published_at: string | null;
+  image_path?: string | null;
   created_by_user_id: string;
   created_at: string;
   updated_at: string;
@@ -273,6 +274,40 @@ export type ApplicantProfileDocument = {
   uploaded_by_user_id: string;
   created_at: string;
   updated_at: string;
+};
+
+export type ApplicantEducationLevel = "elementary" | "secondary" | "college";
+
+export type ApplicantEducation = {
+  id: string;
+  applicant_id: string;
+  level: ApplicantEducationLevel;
+  school_name: string | null;
+  degree_course: string | null;
+  year_graduated: number | null;
+  created_at: string;
+  updated_at: string;
+};
+
+/** A registered applicant account as HR sees it, including accounts that have not applied yet. */
+export type HrRegisteredApplicant = {
+  user_id: string;
+  applicant_id: string | null;
+  applicant_number: number | null;
+  first_name: string | null;
+  middle_name: string | null;
+  last_name: string | null;
+  qualifier: string | null;
+  full_name: string | null;
+  email: string | null;
+  phone: string | null;
+  registered_at: string;
+  email_confirmed: boolean;
+  application_count: number;
+  latest_application_id: string | null;
+  latest_application_status: Application["status"] | null;
+  latest_job_title: string | null;
+  latest_submitted_at: string | null;
 };
 
 export type Application = {

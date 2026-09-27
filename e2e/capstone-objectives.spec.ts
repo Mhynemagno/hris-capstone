@@ -31,7 +31,7 @@ async function signIn(page: Page, email: string, home: string, password = demoPa
   await page.goto("/login");
   await page.getByLabel("Email").fill(email);
   await page.getByRole("textbox", { name: "Password" }).fill(password);
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("button", { name: "Login" }).click();
   await expect(page).toHaveURL(new RegExp(`${home}$`), { timeout: 30_000 });
 }
 
@@ -157,24 +157,30 @@ test.describe("Objective 2: recruitment management", () => {
 
     // A new applicant registers (hiring links a login to exactly one employee record).
     await page.goto("/applicant/register");
-    await page.getByLabel("First name").fill("Aplica");
-    await page.getByLabel("Last name").fill(`Candidate ${runId}`);
-    await page.getByLabel("Email").fill(applicantEmail);
+    await page.getByLabel(/^Email/).fill(applicantEmail);
+    await page.getByLabel(/^Mobile Number/).fill("09171234567");
+    await page.getByLabel(/^Last Name/).fill(`Candidate ${runId}`);
+    await page.getByLabel(/^First Name/).fill("Aplica");
+    await page.getByLabel(/^Middle Name/).fill("Objective");
+    await page.getByLabel(/^Qualifier/).selectOption("None");
+    await page.getByLabel(/^Birthdate/).fill("1998-04-12");
     await page.locator("#registration-password").fill(demoPassword);
-    await page.getByRole("button", { name: "Create account" }).click();
+    await page.locator("#registration-confirm-password").fill(demoPassword);
+    await page.getByRole("button", { name: "Register" }).click();
     await expect(page).toHaveURL(/\/applicant$/, { timeout: 30_000 });
 
     await page.goto("/applicant/profile");
     await page.getByRole("button", { name: "Save profile" }).click();
     await expect(page.getByRole("status").filter({ hasText: "Profile saved." })).toBeVisible();
+    await page.goto("/applicant/documents");
     await page.getByLabel("Upload eligibility document").setInputFiles(pdf("eligibility.pdf"));
     await expect(page.getByRole("status").filter({ hasText: "Eligibility document saved." })).toBeVisible();
     await page.getByLabel("Upload diploma document").setInputFiles(pdf("diploma.pdf"));
     await expect(page.getByRole("status").filter({ hasText: "Diploma document saved." })).toBeVisible();
 
     await page.goto("/jobs");
-    await page.getByRole("link", { name: `View ${title} opening` }).click();
-    await page.getByRole("link", { name: "Apply for this opening" }).click();
+    await page.getByRole("link", { name: `View details for ${title}` }).click();
+    await page.getByRole("link", { name: "Apply now" }).click();
     await page.getByLabel("Cover note").fill("I am applying through the capstone objective tests.");
     await page.getByLabel("CV (PDF)").setInputFiles(pdf("cv.pdf"));
     await page.getByRole("button", { name: "Submit application" }).click();

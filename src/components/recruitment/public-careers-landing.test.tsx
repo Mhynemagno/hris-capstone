@@ -28,9 +28,9 @@ it("connects visitors to live career openings and the application path", () => {
     screen.getByRole("heading", { level: 1, name: /serve san juan/i }),
   ).toBeVisible();
   expect(
-    screen.getByRole("link", { name: "View Patrol Officer opening" }),
+    screen.getByRole("link", { name: "View details for Patrol Officer" }),
   ).toHaveAttribute("href", "/jobs/7");
-  expect(screen.getByText("Deadline of Application: 2026-10-31")).toBeInTheDocument();
+  expect(screen.getByText("Deadline of Application: October 31, 2026")).toBeInTheDocument();
   expect(
     screen.getByRole("link", { name: /explore job openings/i }),
   ).toHaveAttribute("href", "/jobs");

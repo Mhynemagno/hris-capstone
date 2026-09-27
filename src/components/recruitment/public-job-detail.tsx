@@ -1,11 +1,15 @@
 "use client";
 
+import { ArrowRight } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { usePublishedJob } from "@/hooks/use-recruitment";
+import { formatDeadline } from "@/lib/recruitment/format-deadline";
+import { jobPostingImageUrl } from "@/lib/recruitment/job-posting-image";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 export function PublicJobDetail({ jobId }: { jobId: number }) {
@@ -19,5 +23,13 @@ export function PublicJobDetail({ jobId }: { jobId: number }) {
   if (job.error) return <ErrorState message={job.error.message} />;
   if (!job.data) return <ErrorState message="This job opening is unavailable or has closed." />;
   const criteria = [...(job.data.job_qualification_criteria ?? [])].sort((left, right) => left.ordinal - right.ordinal);
-  return <section className="mx-auto max-w-3xl space-y-6"><div><Link className="text-sm text-primary underline-offset-4 hover:underline" href="/jobs">All job openings</Link><p className="mt-4 text-sm text-muted-foreground">{job.data.location || "Location to be confirmed"}</p><h1 className="text-3xl font-semibold tracking-tight">{job.data.title}</h1><p className="mt-4 whitespace-pre-wrap text-muted-foreground">{job.data.description}</p></div><div className="rounded-xl border p-5"><h2 className="font-semibold">Qualification criteria</h2><ul className="mt-3 list-disc space-y-2 pl-5 text-sm">{criteria.map((criterion) => <li key={criterion.id}><span className="font-medium">{criterion.is_required ? "Required" : "Preferred"}:</span> {criterion.requirement}</li>)}</ul></div><div className="flex flex-wrap gap-3"><Link className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground" href={isSignedIn ? `/applicant/applications?jobId=${job.data.id}` : "/login"}>{isSignedIn ? "Apply for this opening" : "Sign in to apply"}</Link>{!isSignedIn ? <Link className="rounded-lg border px-4 py-2 text-sm font-medium" href="/applicant/register">Create applicant account</Link> : null}</div></section>;
+  const applyPath = `/applicant/applications?jobId=${job.data.id}`;
+  const imageUrl = jobPostingImageUrl(job.data.image_path);
+  return <section className="mx-auto max-w-4xl space-y-6">
+    <div><Link className="text-sm text-primary underline-offset-4 hover:underline" href="/jobs">All job openings</Link><h1 className="mt-4 text-3xl font-semibold tracking-tight">{job.data.title}</h1><p className="mt-2 text-sm text-muted-foreground">{[job.data.location, job.data.closes_on ? `Deadline of Application: ${formatDeadline(job.data.closes_on)}` : null].filter(Boolean).join(" · ")}</p></div>
+    {imageUrl ? <Image alt={`${job.data.title} job posting`} className="h-auto w-full rounded-xl border object-contain" height={900} priority src={imageUrl} unoptimized width={1600} /> : null}
+    <p className="whitespace-pre-wrap leading-7">{job.data.description}</p>
+    {criteria.length ? <div className="rounded-xl border p-5"><h2 className="font-semibold">Qualifications</h2><ul className="mt-3 list-disc space-y-2 pl-5 text-sm">{criteria.map((criterion) => <li key={criterion.id}><span className="font-medium">{criterion.is_required ? "Required" : "Preferred"}:</span> {criterion.requirement}</li>)}</ul></div> : null}
+    <Link className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/85 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50" href={isSignedIn ? applyPath : `/login?next=${encodeURIComponent(applyPath)}`}>Apply now<ArrowRight aria-hidden="true" className="size-4" /></Link>
+  </section>;
 }

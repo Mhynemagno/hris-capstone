@@ -9,11 +9,8 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useCancelProfileChangeRequest, useMyProfileChangeRequests } from "@/hooks/use-profile-change-requests";
-import type { ProfileChangeRequest } from "@/lib/types/database";
 
-function statusVariant(status: ProfileChangeRequest["status"]) {
-  return status === "approved" ? "secondary" : status === "rejected" ? "destructive" : ("outline" as const);
-}
+import { statusVariant } from "./profile-change-request-view";
 
 export function ProfileChangeRequestList() {
   const [page, setPage] = useState(1);
@@ -55,6 +52,9 @@ export function ProfileChangeRequestList() {
                 <Badge className="capitalize" variant={statusVariant(request.status)}>
                   {request.status}
                 </Badge>
+                <Link aria-label={`View ${request.status} request`} className={buttonVariants({ size: "sm", variant: "outline" })} href={`/employee/profile/change-requests/${request.id}`}>
+                  View
+                </Link>
               </div>
               {request.note ? <p className="mt-3 text-sm whitespace-pre-line">{request.note}</p> : null}
               {request.decision_reason ? (

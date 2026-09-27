@@ -7,7 +7,7 @@ const sets: [string, string, string[]][] = [
   ["demo.admin@example.test", "/admin", ["/admin", "/admin/users", "/admin/departments", "/admin/ranks", "/admin/settings", "/admin/audit-logs", "/admin/profile-change-requests", "/admin/integrations/attendance"]],
   ["demo.hr@example.test", "/hr", ["/hr", "/hr/employees", "/hr/jobs", "/hr/applications", "/hr/leave-requests", "/hr/deployments", "/hr/promotions", "/hr/promotions/criteria", "/hr/attendance", "/reports"]],
   ["demo.employee@example.test", "/employee", ["/employee", "/employee/profile", "/employee/leave", "/employee/deployments", "/employee/attendance", "/notifications"]],
-  ["demo.applicant@example.test", "/applicant", ["/applicant", "/applicant/profile", "/applicant/applications", "/jobs"]],
+  ["demo.applicant@example.test", "/applicant", ["/applicant", "/applicant/profile", "/applicant/applications", "/applicant/documents", "/jobs"]],
   ["demo.management@example.test", "/management", ["/management", "/reports"]],
 ];
 for (const [email, home, paths] of sets) {
@@ -17,7 +17,7 @@ for (const [email, home, paths] of sets) {
     await page.goto("/login");
     await page.getByLabel("Email").fill(email);
     await page.getByRole("textbox", { name: "Password" }).fill(process.env.HRIS_E2E_PASSWORD ?? "DemoPass!2026");
-    await page.getByRole("button", { name: "Sign in" }).click();
+    await page.getByRole("button", { name: "Login" }).click();
     await page.waitForURL(new RegExp(home + "$"));
     const bad: string[] = [];
     for (const path of paths) {

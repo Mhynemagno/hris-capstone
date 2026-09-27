@@ -6,6 +6,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { StatusPanel } from "@/components/ui/status-panel";
 import { usePublishedJobs } from "@/hooks/use-recruitment";
+import { formatDeadline } from "@/lib/recruitment/format-deadline";
 
 type PublicJobListProps = {
   pageSize?: number;
@@ -26,5 +27,5 @@ export function PublicJobList({ pageSize = 50, featured = false }: PublicJobList
       />
     );
   }
-  return <div className={featured ? "grid gap-4 lg:grid-cols-3" : "grid gap-4 md:grid-cols-2"}>{rows.map((job) => <article aria-labelledby={`job-${job.id}-title`} className="rounded-xl border border-border bg-card p-5 shadow-sm" key={job.id}><p className="text-sm text-muted-foreground">{job.location || "Location to be confirmed"}</p><h2 className="mt-1 text-xl font-semibold" id={`job-${job.id}-title`}>{job.title}</h2><p className="mt-2 line-clamp-3 text-sm leading-6 text-muted-foreground">{job.description}</p><p className="mt-3 text-xs font-medium text-muted-foreground">{job.closes_on ? `Deadline of Application: ${job.closes_on}` : "Open until filled"}</p><Link aria-label={`View ${job.title} opening`} className="mt-4 inline-flex min-h-11 items-center text-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50" href={`/jobs/${job.id}`}>View opening</Link></article>)}</div>;
+  return <div className={featured ? "grid gap-4 lg:grid-cols-3" : "grid gap-4"}>{rows.map((job) => <article aria-labelledby={`job-${job.id}-title`} className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between" key={job.id}><div><h2 className="text-xl font-semibold" id={`job-${job.id}-title`}>{job.title}</h2><p className="mt-1 text-sm text-muted-foreground">{job.closes_on ? `Deadline of Application: ${formatDeadline(job.closes_on)}` : "Open until filled"}</p></div><Link aria-label={`View details for ${job.title}`} className="inline-flex min-h-11 shrink-0 items-center text-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50" href={`/jobs/${job.id}`}>View details</Link></article>)}</div>;
 }

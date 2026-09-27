@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
-import { BadgeCheck, BookOpenCheck, Building2, Cake, Church, Clock, HeartPulse, House, Mail, MapPin, Phone, ShieldCheck, UserRound, Users } from "lucide-react";
+import { Award, BadgeCheck, BookOpenCheck, Building2, Cake, Church, Clock, GraduationCap, HeartPulse, History, House, Mail, MapPin, Phone, ShieldCheck, UserRound, Users } from "lucide-react";
 
 import { useDepartmentOptions, useRankOptions } from "@/hooks/use-administration";
 import { rankLabel } from "@/lib/ranks";
-import type { Employee, TrainingRecord } from "@/lib/types/database";
+import type { Certification, Employee, Qualification, ServiceHistory, TrainingRecord } from "@/lib/types/database";
 
 import { EmployeeProfilePhotoControl } from "./employee-profile-photo-control";
 import { ActivityTimeline, formatDay, InfoCard, InfoList, ProfileHeaderCard, serviceLength } from "./profile-layout";
@@ -11,6 +11,11 @@ import { ActivityTimeline, formatDay, InfoCard, InfoList, ProfileHeaderCard, ser
 type EmployeeProfileProps = {
   employee: Employee;
   trainings: TrainingRecord[];
+  /** Eligibility (qualifications); the section is hidden when not provided. */
+  qualifications?: Qualification[];
+  /** Service history and certifications appear only when entries exist. */
+  serviceHistory?: ServiceHistory[];
+  certifications?: Certification[];
   canManagePhoto?: boolean;
   /** Optional header actions, such as links to request a profile change. */
   actions?: ReactNode;
@@ -26,7 +31,17 @@ function words(value: string | null | undefined) {
   return value ? value.replaceAll("_", " ").replace(/^\w/, (letter) => letter.toUpperCase()) : null;
 }
 
-export function EmployeeProfile({ employee, trainings, canManagePhoto = false, actions, variant = "full" }: EmployeeProfileProps) {
+type RecordItem = { id: string; title: string; detail: string };
+
+/** A read-only list of personnel entries. */
+function RecordList({ items, emptyMessage }: { items: RecordItem[]; emptyMessage: string }) {
+  if (!items.length) return <p className="rounded-xl border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">{emptyMessage}</p>;
+  return <ul className="space-y-2">{items.map((item) => <li className="rounded-xl border bg-background/60 px-4 py-3" key={item.id}><p className="font-semibold break-words">{item.title}</p>{item.detail ? <p className="text-sm text-muted-foreground">{item.detail}</p> : null}</li>)}</ul>;
+}
+
+const byNewest = <T,>(rows: T[], date: (row: T) => string) => rows.toSorted((a, b) => date(b).localeCompare(date(a)));
+
+export function EmployeeProfile({ employee, trainings, qualifications, serviceHistory = [], certifications = [], canManagePhoto = false, actions, variant = "full" }: EmployeeProfileProps) {
   const fullName = [employee.first_name, employee.middle_name, employee.last_name].filter(Boolean).join(" ");
   const ranks = useRankOptions();
   const departments = useDepartmentOptions();
@@ -92,6 +107,19 @@ export function EmployeeProfile({ employee, trainings, canManagePhoto = false, a
             { label: "Religion", value: valueOrNotProvided(employee.religion), icon: Church },
           ]} />
         </InfoCard>
+        {qualifications ? <InfoCard className="md:col-span-2" icon={GraduationCap} id="profile-eligibility" title="Eligibility">
+          <RecordList emptyMessage="No eligibility recorded." items={byNewest(qualifications, (row) => row.awarded_on).map((row) => ({ id: row.id, title: row.name, detail: [row.qualification_level, row.field_of_study, row.institution, formatDay(row.awarded_on)].filter(Boolean).join(" · ") }))} />
+        </InfoCard> : null}
+        {serviceHistory.length ? <InfoCard className="md:col-span-2" icon={History} id="profile-service-history" title="Service history">
+          <RecordList emptyMessage="" items={byNewest(serviceHistory, (row) => row.started_on).map((row) => {
+            const entryRank = row.rank_id ? ranks.data?.find((option) => option.id === row.rank_id) : undefined;
+            const entryDepartment = row.department_id ? departments.data?.find((option) => option.id === row.department_id) : undefined;
+            return { id: row.id, title: row.employment_title || (entryRank ? rankLabel(entryRank) : "Service entry"), detail: [entryDepartment?.name, `${formatDay(row.started_on) ?? row.started_on} – ${row.ended_on ? formatDay(row.ended_on) ?? row.ended_on : "present"}`].filter(Boolean).join(" · ") };
+          })} />
+        </InfoCard> : null}
+        {certifications.length ? <InfoCard className="md:col-span-2" icon={Award} id="profile-certifications" title="Certifications">
+          <RecordList emptyMessage="" items={byNewest(certifications, (row) => row.issued_on).map((row) => ({ id: row.id, title: row.name, detail: [row.issuer, row.issued_on ? `Issued ${formatDay(row.issued_on)}` : null, row.expires_on ? `Expires ${formatDay(row.expires_on)}` : null].filter(Boolean).join(" · ") }))} />
+        </InfoCard> : null}
       </div>
 
       <InfoCard
@@ -99,7 +127,7 @@ export function EmployeeProfile({ employee, trainings, canManagePhoto = false, a
         className="self-start"
         icon={BookOpenCheck}
         id="training"
-        title="Training"
+        title="Training records"
       >
         <ActivityTimeline
           emptyMessage="No training records have been added."

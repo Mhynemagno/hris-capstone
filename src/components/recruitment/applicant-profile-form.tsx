@@ -4,21 +4,25 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 
-import { ApplicantProfileDocuments } from "@/components/recruitment/applicant-profile-documents";
 import { ApplicantProfilePhotoControl } from "@/components/recruitment/applicant-profile-photo-control";
 import { ErrorState } from "@/components/ui/error-state";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { LoadingState } from "@/components/ui/loading-state";
+import { useMyAccountEmail, useMyApplicantEducation, useSaveMyApplicantEducation } from "@/hooks/use-applicant-portal";
 import { useApplicantProfile, useSaveApplicantProfile } from "@/hooks/use-recruitment";
-import { applicantProfileSchema, type ApplicantProfileInput } from "@/schemas/recruitment";
+import type { ApplicantEducation } from "@/lib/types/database";
+import { APPLICANT_EDUCATION_LEVELS, applicantPersonalDataSheetSchema, type ApplicantPersonalDataSheetInput, type ApplicantPersonalDataSheetValues } from "@/schemas/applicant-portal";
+import { APPLICANT_QUALIFIERS } from "@/schemas/auth";
 import { nativeSelectClassName } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 
-const blankProfile: ApplicantProfileInput = {
+const blankEducation = { schoolName: "", degreeCourse: "", yearGraduated: "" };
+const blankProfile: ApplicantPersonalDataSheetInput = {
   firstName: "", middleName: "", lastName: "", qualifier: "", placeOfBirth: "", dateOfBirth: undefined,
   gender: undefined, civilStatus: undefined, religion: "", phone: "", address: "",
+  education: { elementary: blankEducation, secondary: blankEducation, college: blankEducation },
 };
 
 function formatApplicantNumber(value: number) {
@@ -26,12 +30,24 @@ function formatApplicantNumber(value: number) {
   return `${digits.slice(0, 1)}-${digits.slice(1)}`;
 }
 
+function educationDefaults(rows: ApplicantEducation[] | undefined) {
+  const byLevel = new Map((rows ?? []).map((row) => [row.level, row]));
+  return Object.fromEntries(APPLICANT_EDUCATION_LEVELS.map(({ level }) => {
+    const row = byLevel.get(level);
+    return [level, { schoolName: row?.school_name ?? "", degreeCourse: row?.degree_course ?? "", yearGraduated: row?.year_graduated ? String(row.year_graduated) : "" }];
+  })) as ApplicantPersonalDataSheetInput["education"];
+}
+
 export function ApplicantProfileForm() {
   const profile = useApplicantProfile();
+  const education = useMyApplicantEducation();
+  const email = useMyAccountEmail();
   const save = useSaveApplicantProfile();
+  const saveEducation = useSaveMyApplicantEducation();
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
-  const form = useForm<ApplicantProfileInput>({ resolver: zodResolver(applicantProfileSchema), defaultValues: blankProfile });
+  const form = useForm<ApplicantPersonalDataSheetInput, unknown, ApplicantPersonalDataSheetValues>({ resolver: zodResolver(applicantPersonalDataSheetSchema), defaultValues: blankProfile });
+  const errors = form.formState.errors;
 
   useEffect(() => {
     if (!profile.data) return;
@@ -40,38 +56,66 @@ export function ApplicantProfileForm() {
       qualifier: profile.data.qualifier ?? "", placeOfBirth: profile.data.place_of_birth ?? "", dateOfBirth: profile.data.date_of_birth ?? undefined,
       gender: profile.data.gender ?? undefined, civilStatus: profile.data.civil_status ?? undefined, religion: profile.data.religion ?? "",
       phone: profile.data.phone ?? "", address: profile.data.address ?? "",
+      education: educationDefaults(education.data),
     });
-  }, [form, profile.data]);
+  }, [form, profile.data, education.data]);
 
-  if (profile.isLoading) return <LoadingState label="Loading applicant profile…" />;
+  if (profile.isLoading || education.isLoading) return <LoadingState label="Loading applicant profile…" />;
   if (profile.error) return <ErrorState message={profile.error.message} />;
 
-  return <div className="max-w-2xl space-y-6">
+  const savedQualifier = profile.data?.qualifier;
+  const qualifierOptions: string[] = savedQualifier && !(APPLICANT_QUALIFIERS as readonly string[]).includes(savedQualifier) ? [...APPLICANT_QUALIFIERS, savedQualifier] : [...APPLICANT_QUALIFIERS];
+
+  return <div className="max-w-3xl space-y-6">
     {profile.data ? <section className="flex flex-col gap-4 rounded-2xl border bg-card p-5 sm:flex-row sm:items-center sm:p-6">
       <ApplicantProfilePhotoControl applicant={profile.data} />
-      <div><p className="text-sm text-muted-foreground">Applicant number</p><p className="text-xl font-semibold tracking-tight">{formatApplicantNumber(profile.data.applicant_number)}</p><p className="mt-1 text-sm text-muted-foreground">This permanent number is assigned automatically.</p></div>
+      <div><p className="text-sm text-muted-foreground">Applicant number</p><p className="text-xl font-semibold tracking-tight">{formatApplicantNumber(profile.data.applicant_number)}</p></div>
     </section> : null}
 
-    <form className="grid gap-4 rounded-2xl border bg-card p-5 sm:grid-cols-2 sm:p-6" noValidate onSubmit={form.handleSubmit(async (values) => {
+    <form className="space-y-6" noValidate onSubmit={form.handleSubmit(async ({ education: educationValues, ...values }) => {
       setError(null);
       setSaved(false);
-      try { await save.mutateAsync(values); setSaved(true); } catch (cause) { setError(cause instanceof Error ? cause.message : "We could not save your profile."); }
+      try {
+        const applicant = await save.mutateAsync(values);
+        await saveEducation.mutateAsync({ applicantId: applicant.id, education: educationValues as ApplicantPersonalDataSheetInput["education"] });
+        setSaved(true);
+      } catch (cause) { setError(cause instanceof Error ? cause.message : "We could not save your profile."); }
     })}>
-      <FormField error={form.formState.errors.firstName?.message} htmlFor="applicant-first-name" label="First name" required><Input autoComplete="given-name" id="applicant-first-name" {...form.register("firstName")} required /></FormField>
-      <FormField error={form.formState.errors.middleName?.message} htmlFor="applicant-middle-name" label="Middle name"><Input id="applicant-middle-name" {...form.register("middleName")} /></FormField>
-      <FormField error={form.formState.errors.lastName?.message} htmlFor="applicant-last-name" label="Last name" required><Input autoComplete="family-name" id="applicant-last-name" {...form.register("lastName")} required /></FormField>
-      <FormField error={form.formState.errors.qualifier?.message} htmlFor="applicant-qualifier" label="Qualifier"><Input id="applicant-qualifier" placeholder="Jr., Sr., III" {...form.register("qualifier")} /></FormField>
-      <FormField error={form.formState.errors.placeOfBirth?.message} htmlFor="applicant-place-of-birth" label="Place of birth"><Input id="applicant-place-of-birth" {...form.register("placeOfBirth")} /></FormField>
-      <FormField error={form.formState.errors.dateOfBirth?.message} htmlFor="applicant-date-of-birth" label="Date of birth"><Input id="applicant-date-of-birth" type="date" {...form.register("dateOfBirth")} /></FormField>
-      <FormField error={form.formState.errors.gender?.message} htmlFor="applicant-gender" label="Gender"><select className={nativeSelectClassName} id="applicant-gender" {...form.register("gender")}><option value="">Not provided</option><option value="female">Female</option><option value="male">Male</option><option value="prefer_not_to_say">Prefer not to say</option></select></FormField>
-      <FormField error={form.formState.errors.civilStatus?.message} htmlFor="applicant-civil-status" label="Civil status"><select className={nativeSelectClassName} id="applicant-civil-status" {...form.register("civilStatus")}><option value="">Not provided</option><option value="single">Single</option><option value="married">Married</option><option value="widowed">Widowed</option><option value="separated">Separated</option><option value="divorced">Divorced</option></select></FormField>
-      <FormField error={form.formState.errors.religion?.message} htmlFor="applicant-religion" label="Religion"><Input id="applicant-religion" {...form.register("religion")} /></FormField>
-      <FormField error={form.formState.errors.phone?.message} htmlFor="applicant-phone" label="Phone"><Input autoComplete="tel" id="applicant-phone" type="tel" {...form.register("phone")} /></FormField>
-      <div className="sm:col-span-2"><FormField error={form.formState.errors.address?.message} htmlFor="applicant-address" label="Home address"><Textarea autoComplete="street-address" id="applicant-address" {...form.register("address")} /></FormField></div>
-      {error ? <div className="sm:col-span-2"><ErrorState message={error} /></div> : null}
-      <div className="flex flex-wrap items-center gap-3 sm:col-span-2"><Button disabled={save.isPending} type="submit">{save.isPending ? "Saving…" : "Save profile"}</Button>{saved && !save.isPending ? <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400" role="status">Profile saved.</p> : null}</div>
-    </form>
+      <section aria-labelledby="pds-personal" className="rounded-2xl border bg-card p-5 sm:p-6">
+        <h2 className="text-lg font-semibold" id="pds-personal">I. Personal Information</h2>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <FormField error={errors.lastName?.message} htmlFor="applicant-last-name" label="Last name" required><Input autoComplete="family-name" id="applicant-last-name" {...form.register("lastName")} required /></FormField>
+          <FormField error={errors.firstName?.message} htmlFor="applicant-first-name" label="First name" required><Input autoComplete="given-name" id="applicant-first-name" {...form.register("firstName")} required /></FormField>
+          <FormField error={errors.middleName?.message} htmlFor="applicant-middle-name" label="Middle name"><Input autoComplete="additional-name" id="applicant-middle-name" {...form.register("middleName")} /></FormField>
+          <FormField error={errors.qualifier?.message} htmlFor="applicant-qualifier" label="Qualifier"><select className={nativeSelectClassName} id="applicant-qualifier" {...form.register("qualifier")}><option value="">None</option>{qualifierOptions.map((qualifier) => <option key={qualifier} value={qualifier}>{qualifier}</option>)}</select></FormField>
+          <FormField error={errors.dateOfBirth?.message} htmlFor="applicant-date-of-birth" label="Date of birth"><Input id="applicant-date-of-birth" type="date" {...form.register("dateOfBirth")} /></FormField>
+          <FormField error={errors.placeOfBirth?.message} htmlFor="applicant-place-of-birth" label="Place of birth"><Input id="applicant-place-of-birth" {...form.register("placeOfBirth")} /></FormField>
+          <FormField error={errors.gender?.message} htmlFor="applicant-gender" label="Gender"><select className={nativeSelectClassName} id="applicant-gender" {...form.register("gender")}><option value="">Not provided</option><option value="female">Female</option><option value="male">Male</option><option value="prefer_not_to_say">Prefer not to say</option></select></FormField>
+          <FormField error={errors.civilStatus?.message} htmlFor="applicant-civil-status" label="Civil status"><select className={nativeSelectClassName} id="applicant-civil-status" {...form.register("civilStatus")}><option value="">Not provided</option><option value="single">Single</option><option value="married">Married</option><option value="widowed">Widowed</option><option value="separated">Separated</option><option value="divorced">Divorced</option></select></FormField>
+          <FormField error={errors.religion?.message} htmlFor="applicant-religion" label="Religion"><Input id="applicant-religion" {...form.register("religion")} /></FormField>
+          <FormField error={errors.phone?.message} htmlFor="applicant-phone" label="Mobile number"><Input autoComplete="tel" className="placeholder:text-slate-400" id="applicant-phone" placeholder="+639XXXXXXXXX" type="tel" {...form.register("phone")} /></FormField>
+          <div className="sm:col-span-2"><FormField htmlFor="applicant-email" label="Email"><Input id="applicant-email" readOnly type="email" value={email.data ?? ""} /></FormField></div>
+          <div className="sm:col-span-2"><FormField error={errors.address?.message} htmlFor="applicant-address" label="Home address"><Textarea autoComplete="street-address" id="applicant-address" {...form.register("address")} /></FormField></div>
+        </div>
+      </section>
 
-    {profile.data ? <ApplicantProfileDocuments /> : <p className="text-sm text-muted-foreground">Save your basic profile first to upload your required documents and optional photo.</p>}
+      <section aria-labelledby="pds-education" className="rounded-2xl border bg-card p-5 sm:p-6">
+        <h2 className="text-lg font-semibold" id="pds-education">II. Educational Background</h2>
+        <div className="mt-4 space-y-5">
+          {APPLICANT_EDUCATION_LEVELS.map(({ level, label }) => {
+            const levelErrors = errors.education?.[level];
+            return <fieldset className="grid gap-4 border-t pt-4 first:border-t-0 first:pt-0 sm:grid-cols-[2fr_2fr_1fr]" key={level}>
+              <legend className="mb-2 text-sm font-semibold sm:col-span-3">{label}</legend>
+              <FormField error={levelErrors?.schoolName?.message} htmlFor={`education-${level}-school`} label="Name of school"><Input id={`education-${level}-school`} {...form.register(`education.${level}.schoolName`)} /></FormField>
+              <FormField error={levelErrors?.degreeCourse?.message} htmlFor={`education-${level}-course`} label="Basic education / degree / course"><Input id={`education-${level}-course`} {...form.register(`education.${level}.degreeCourse`)} /></FormField>
+              <FormField error={levelErrors?.yearGraduated?.message} htmlFor={`education-${level}-year`} label="Year graduated"><Input id={`education-${level}-year`} inputMode="numeric" maxLength={4} {...form.register(`education.${level}.yearGraduated`)} /></FormField>
+            </fieldset>;
+          })}
+        </div>
+      </section>
+
+      {error ? <ErrorState message={error} /> : null}
+      <div className="flex flex-wrap items-center gap-3"><Button disabled={save.isPending || saveEducation.isPending} type="submit">{save.isPending || saveEducation.isPending ? "Saving…" : "Save profile"}</Button>{saved && !save.isPending ? <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400" role="status">Profile saved.</p> : null}</div>
+    </form>
   </div>;
 }

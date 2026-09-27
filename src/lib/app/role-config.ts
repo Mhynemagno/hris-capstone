@@ -80,18 +80,14 @@ export const ROLE_CONFIG: Record<AppRole, RoleConfig> = {
     role: "applicant",
     label: "Applicant",
     homeHref: "/applicant",
-    landingTitle: "Applicant portal",
+    landingTitle: "Dashboard",
     landingDescription:
       "Explore opportunities and follow the progress of your applications.",
     navigation: [
-      {
-        href: "/applicant",
-        label: "Applicant portal",
-        icon: "LayoutDashboard",
-      },
-      { href: "/jobs", label: "Job openings", icon: "BriefcaseBusiness" },
-      { href: "/applicant/profile", label: "My profile", icon: "ContactRound" },
-      { href: "/applicant/applications", label: "My applications", icon: "FileText" },
+      { href: "/applicant", label: "Dashboard", icon: "LayoutDashboard" },
+      { href: "/applicant/profile", label: "Profile", icon: "ContactRound" },
+      { href: "/applicant/applications", label: "Application Status", icon: "Clock" },
+      { href: "/applicant/documents", label: "Documents", icon: "FileText" },
     ],
   },
   employee: {

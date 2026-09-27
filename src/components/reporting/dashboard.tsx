@@ -32,11 +32,11 @@ type DashboardRole = "hr_personnel" | "management";
 const iconClass = "size-5";
 
 /** The only headline tiles, in reading order. Keys the RPC does not return are skipped. */
-const KPIS: { key: string; label: string; hint: string; icon: ReactNode; tone?: "attention" }[] = [
+const KPIS: { key: string; label: string; hint: string; icon: ReactNode; tone?: "attention"; href?: Partial<Record<DashboardRole, `/${string}`>> }[] = [
   { key: "totalPersonnel", label: "Total Personnel", hint: "All personnel records", icon: <Users className={iconClass} /> },
   { key: "departments", label: "Departments", hint: "Active departments", icon: <Building2 className={iconClass} /> },
   { key: "activeDeployments", label: "Deployments", hint: "Personnel deployed now", icon: <MapPin className={iconClass} /> },
-  { key: "applicants", label: "Applicants", hint: "Applicant accounts", icon: <UserRoundSearch className={iconClass} /> },
+  { key: "applicants", label: "Applicants", hint: "Applicant accounts", icon: <UserRoundSearch className={iconClass} />, href: { hr_personnel: "/hr/applications?view=applicants" } },
   { key: "onLeave", label: "On-Leave", hint: "Employment status on leave", icon: <CalendarOff className={iconClass} /> },
 ];
 
@@ -191,7 +191,11 @@ function DashboardContent({ role, query }: { role: DashboardRole; query: { isLoa
     <AttentionRow data={data} role={role} />
 
     <section aria-label="Key figures" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-      {kpis.map((kpi) => <KpiTile hint={kpi.hint || undefined} icon={kpi.icon} key={kpi.key} label={kpi.label} tone={kpi.tone} value={data.metrics[kpi.key] ?? 0} />)}
+      {kpis.map((kpi) => {
+        const tile = <KpiTile hint={kpi.hint || undefined} icon={kpi.icon} key={kpi.key} label={kpi.label} tone={kpi.tone} value={data.metrics[kpi.key] ?? 0} />;
+        const href = kpi.href?.[role];
+        return href ? <Link aria-label={`${kpi.label}: view list`} className="rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" href={href} key={kpi.key}>{tile}</Link> : tile;
+      })}
     </section>
 
     <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
