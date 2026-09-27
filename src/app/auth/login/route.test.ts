@@ -57,4 +57,27 @@ describe("password login route", () => {
       "http://localhost/login?next=%2Fhr&error=invalid_credentials",
     );
   });
+
+  it("tells a person whose account was blocked from signing in", async () => {
+    signInWithPassword.mockResolvedValue({ data: { user: null }, error: Object.assign(new Error("User is banned"), { code: "user_banned" }) });
+
+    const response = await POST(loginRequest({ email: "person@example.com", password: "secret1" }));
+
+    expect(response.headers.get("location")).toBe("http://localhost/login?error=account_disabled");
+  });
+
+  it("signs a disabled account straight back out", async () => {
+    const signOut = vi.fn().mockResolvedValue({ error: null });
+    const maybeSingle = vi.fn().mockResolvedValue({ data: { is_active: false }, error: null });
+    createServerSupabaseClient.mockResolvedValue({
+      auth: { signInWithPassword, signOut },
+      from: vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ maybeSingle }) }) }),
+    });
+    signInWithPassword.mockResolvedValue({ data: { user: { id: "00000000-0000-4000-8000-000000000001" } }, error: null });
+
+    const response = await POST(loginRequest({ email: "person@example.com", password: "secret1", next: "/applicant" }));
+
+    expect(signOut).toHaveBeenCalled();
+    expect(response.headers.get("location")).toBe("http://localhost/login?next=%2Fapplicant&error=account_disabled");
+  });
 });

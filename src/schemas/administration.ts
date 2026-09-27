@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { AUDIT_ACTION_GROUP_KEYS } from "@/lib/administration/audit-presentation";
+
 import { appRoleSchema, paginationSchema, uuidSchema } from "./common";
 import { namePartsSchema, withFullName } from "./name";
 
@@ -68,7 +70,8 @@ export const referenceDataFiltersSchema = paginationSchema.extend({
 export const auditLogFiltersSchema = administrationPageSchema.extend({
   search: optionalFilterText(120),
   entityType: optionalFilterText(80),
-  action: optionalFilterText(80),
+  /** One of the short action groups (Created, Updated, ...); each covers several raw action codes. */
+  action: z.enum(AUDIT_ACTION_GROUP_KEYS).optional(),
 });
 
 export type ManagedUserUpdateInput = z.infer<typeof managedUserUpdateSchema>;

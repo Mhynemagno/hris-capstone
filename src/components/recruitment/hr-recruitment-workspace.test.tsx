@@ -20,26 +20,6 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: mocks.replace }) }));
 
-vi.mock("@/hooks/use-administration", () => ({
-  useDepartmentOptions: () => ({
-    isLoading: false,
-    error: null,
-    data: [
-      { id: 1, name: "People", is_active: true, created_at: "", updated_at: "" },
-      { id: 5, name: "Finance", is_active: true, created_at: "", updated_at: "" },
-    ],
-  }),
-  useRankOptions: () => ({
-    isLoading: false,
-    error: null,
-    data: [
-      { id: 2, name: "Patrolman / Patrolwoman", code: "Pat", sort_order: 1, is_active: true, created_at: "", updated_at: "" },
-      { id: 3, name: "Retired Rank", code: "RET", sort_order: 2, is_active: false, created_at: "", updated_at: "" },
-      { id: 6, name: "Police Corporal", code: "PCpl", sort_order: 3, is_active: true, created_at: "", updated_at: "" },
-    ],
-  }),
-}));
-
 vi.mock("@/hooks/use-recruitment", () => ({
   useSaveJobOpening: () => ({ isPending: false, mutateAsync: mocks.saveJob }),
   useMyApplication: () => ({
@@ -72,46 +52,20 @@ describe("HR recruitment workspace", () => {
     const user = userEvent.setup();
     render(<HrJobForm />);
 
-    expect(screen.getByLabelText(/^department/i)).toHaveValue("");
-    await user.selectOptions(screen.getByLabelText(/^department/i), "1");
-    // Every active rank is offered, whatever the department.
-    expect(screen.getByRole("option", { name: "Pat — Patrolman / Patrolwoman" })).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "PCpl — Police Corporal" })).toBeInTheDocument();
-    expect(screen.queryByRole("option", { name: /retired rank/i })).not.toBeInTheDocument();
-    await user.selectOptions(screen.getByLabelText(/^rank/i), "2");
     await user.click(screen.getByLabelText(/^title/i));
     await user.paste("Senior Recruiter");
+    await user.click(screen.getByLabelText(/^location/i));
+    await user.paste("San Juan City Police Station");
+    await user.type(screen.getByLabelText(/^deadline of application/i), "2026-10-31");
     await user.click(screen.getByLabelText(/^description/i));
     await user.paste("Lead recruitment operations across the organization.");
     await user.selectOptions(screen.getByLabelText("Qualification 1"), "At least 5 years of police service");
     await user.click(screen.getByRole("button", { name: "Save draft" }));
 
     await waitFor(() => expect(mocks.saveJob).toHaveBeenCalledWith(expect.objectContaining({
-      input: expect.objectContaining({ status: "draft", departmentId: 1, rankId: 2, criteria: [expect.objectContaining({ requirement: "At least 5 years of police service" })] }),
+      input: expect.objectContaining({ status: "draft", location: "San Juan City Police Station", closesOn: "2026-10-31", criteria: [expect.objectContaining({ requirement: "At least 5 years of police service" })] }),
     })));
     expect(await screen.findByRole("status")).toHaveTextContent("Draft saved.");
-  });
-
-  it("requires a department and rank instead of defaulting to the first one", async () => {
-    const user = userEvent.setup();
-    render(<HrJobForm />);
-
-    await user.click(screen.getByRole("button", { name: "Save draft" }));
-
-    expect(await screen.findByText("Select a department.")).toBeInTheDocument();
-    expect(screen.getByText("Select a rank.")).toBeInTheDocument();
-    expect(mocks.saveJob).not.toHaveBeenCalled();
-  });
-
-  it("keeps the chosen rank when the department changes", async () => {
-    const user = userEvent.setup();
-    render(<HrJobForm />);
-
-    await user.selectOptions(screen.getByLabelText(/^department/i), "1");
-    await user.selectOptions(screen.getByLabelText(/^rank/i), "2");
-    await user.selectOptions(screen.getByLabelText(/^department/i), "5");
-
-    expect(screen.getByLabelText(/^rank/i)).toHaveValue("2");
   });
 
   it("allows HR to move an application forward and open the hire decision", async () => {

@@ -40,9 +40,6 @@ export function HrJobList() {
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-muted-foreground">
-        <strong>Withdraw</strong> closes an opening to applicants and keeps its applications. <strong>Delete draft</strong> permanently removes a draft that nobody has applied to.
-      </p>
       {actionError ? <ErrorState message={actionError} /> : null}
       <p aria-live="polite" className="text-sm font-medium text-emerald-700 dark:text-emerald-400" role="status">{notice ?? ""}</p>
       {rows.map((job) => {

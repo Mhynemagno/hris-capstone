@@ -59,4 +59,16 @@ describe("getCurrentRole", () => {
 
     await expect(getCurrentRole()).resolves.toBeNull();
   });
+
+  it("returns null for an account that can no longer sign in", async () => {
+    getVerifiedUserId.mockResolvedValue("00000000-0000-4000-8000-000000000001");
+    const maybeSingle = vi.fn()
+      .mockResolvedValueOnce({ data: { role: "applicant" }, error: null })
+      .mockResolvedValueOnce({ data: { is_active: false }, error: null });
+    createServerSupabaseClient.mockResolvedValue({
+      from: vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ maybeSingle }) }) }),
+    });
+
+    await expect(getCurrentRole()).resolves.toBeNull();
+  });
 });

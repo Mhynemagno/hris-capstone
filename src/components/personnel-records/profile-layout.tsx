@@ -48,7 +48,7 @@ export function relativeDay(value: string | null | undefined, today = new Date()
 export type ProfileMetaItem = { label: string; value: ReactNode; icon: LucideIcon };
 
 type ProfileHeaderCardProps = {
-  photo: ReactNode;
+  photo?: ReactNode;
   name: string;
   subtitle: string;
   actions?: ReactNode;
@@ -56,32 +56,30 @@ type ProfileHeaderCardProps = {
   tags?: string[];
 };
 
-/** Top-of-profile summary: photo, name, rank, primary actions, key facts, and tag chips. */
+/** Top-of-profile summary: photo, name, rank, primary actions, key facts, and tag chips. The facts sit below the name so the name always keeps the full width. */
 export function ProfileHeaderCard({ photo, name, subtitle, actions, meta, tags = [] }: ProfileHeaderCardProps) {
   return (
     <section aria-label="Employee summary" className="overflow-hidden rounded-2xl border bg-card shadow-sm">
       <div className="bg-linear-to-br from-primary/10 via-primary/[0.03] to-transparent p-5 sm:p-6">
-        <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
-          <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start">
-            {photo}
-            <div className="min-w-0">
-              <h1 className="font-heading text-2xl font-semibold tracking-tight break-words sm:text-3xl">{name}</h1>
-              <p className="mt-1 text-sm font-medium text-muted-foreground">{subtitle}</p>
-              {actions ? <div className="mt-4 flex flex-wrap gap-2">{actions}</div> : null}
-            </div>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+          {photo ? <div className="shrink-0">{photo}</div> : null}
+          <div className="min-w-0 flex-1">
+            <h1 className="font-heading text-2xl font-semibold tracking-tight break-words sm:text-3xl">{name}</h1>
+            <p className="mt-1 text-sm font-medium text-muted-foreground">{subtitle}</p>
+            {actions ? <div className="mt-4 flex flex-wrap gap-2">{actions}</div> : null}
           </div>
-          <dl className="grid grid-cols-1 gap-x-6 gap-y-4 min-[420px]:grid-cols-2 md:grid-cols-3 xl:max-w-2xl xl:shrink-0">
-            {meta.map(({ label, value, icon: Icon }) => (
-              <div className="min-w-0" key={label}>
-                <dt className="flex items-center gap-2.5 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                  <Icon aria-hidden className="size-4 shrink-0 text-primary" />
-                  {label}
-                </dt>
-                <dd className="pl-6.5 font-semibold break-words">{value}</dd>
-              </div>
-            ))}
-          </dl>
         </div>
+        <dl className="mt-6 grid grid-cols-1 gap-x-6 gap-y-4 border-t pt-5 min-[420px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+          {meta.map(({ label, value, icon: Icon }) => (
+            <div className="min-w-0" key={label}>
+              <dt className="flex items-center gap-2.5 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                <Icon aria-hidden className="size-4 shrink-0 text-primary" />
+                {label}
+              </dt>
+              <dd className="pl-6.5 font-semibold break-words">{value}</dd>
+            </div>
+          ))}
+        </dl>
         {tags.length ? (
           <ul aria-label="Highlights" className="mt-5 flex flex-wrap gap-2">
             {tags.map((tag) => (

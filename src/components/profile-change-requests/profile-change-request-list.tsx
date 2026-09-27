@@ -55,9 +55,6 @@ export function ProfileChangeRequestList() {
                 <Badge className="capitalize" variant={statusVariant(request.status)}>
                   {request.status}
                 </Badge>
-                <time className="text-sm text-muted-foreground" dateTime={request.created_at}>
-                  Submitted {new Date(request.created_at).toLocaleString()}
-                </time>
               </div>
               {request.note ? <p className="mt-3 text-sm whitespace-pre-line">{request.note}</p> : null}
               {request.decision_reason ? (

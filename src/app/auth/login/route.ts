@@ -27,10 +27,21 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = await createServerSupabaseClient();
-  const { error } = await supabase.auth.signInWithPassword(result.data);
+  const { data, error } = await supabase.auth.signInWithPassword(result.data);
 
   if (error) {
-    return loginRedirect(request, nextPath, "invalid_credentials");
+    // Supabase Auth refuses accounts an administrator has blocked from signing in.
+    const code = (error as { code?: string }).code;
+    return loginRedirect(request, nextPath, code === "user_banned" ? "account_disabled" : "invalid_credentials");
+  }
+
+  // Belt and braces for "Account can sign in" being cleared: refuse the session here too.
+  if (data?.user) {
+    const { data: profile } = await supabase.from("profiles").select("is_active").eq("id", data.user.id).maybeSingle();
+    if (profile?.is_active === false) {
+      await supabase.auth.signOut();
+      return loginRedirect(request, nextPath, "account_disabled");
+    }
   }
 
   const continueUrl = new URL("/auth/continue", request.url);

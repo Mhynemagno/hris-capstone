@@ -164,16 +164,20 @@ describe("saveJobOpening", () => {
 
   it("saves the opening and its criteria through one transactional RPC", async () => {
     await expect(saveJobOpening({
-      departmentId: 1,
-      rankId: 2,
       title: "Public Safety Analyst",
       description: "Analyze public safety data and support evidence-based operational decisions.",
+      location: "San Juan City Police Station",
+      closesOn: "2026-10-31",
       status: "draft",
       criteria: [{ ordinal: 1, kind: "skill", requirement: "Clear written communication", isRequired: true }],
     }, 42)).resolves.toMatchObject({ id: 42 });
 
     expect(mocks.rpc).toHaveBeenCalledWith("save_job_opening", expect.objectContaining({
       target_job_id: 42,
+      target_department_id: null,
+      target_rank_id: null,
+      target_location: "San Juan City Police Station",
+      target_closes_on: "2026-10-31",
       requested_criteria: [{ ordinal: 1, kind: "skill", requirement: "Clear written communication", isRequired: true }],
     }));
     expect(mocks.from).not.toHaveBeenCalled();

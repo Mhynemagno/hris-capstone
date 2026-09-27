@@ -67,6 +67,23 @@ describe("EmployeeProfile", () => {
     expect(screen.getByRole("link", { name: "Request profile change" })).toBeInTheDocument();
   });
 
+  it("shows only the name, rank, and key service facts on the dashboard summary", () => {
+    render(<EmployeeProfile canManagePhoto employee={{ ...employee, gender: "male", date_of_birth: "1990-01-01", department_id: 3 }} trainings={[]} variant="summary" />);
+
+    expect(screen.getByRole("heading", { name: "Ada Dela Cruz" })).toBeInTheDocument();
+    expect(screen.getByText("PCapt — Police Captain")).toBeInTheDocument();
+    for (const label of ["Badge number", "Status", "Years of service", "Department", "Unit / Station"]) expect(screen.getByText(label)).toBeInTheDocument();
+    expect(screen.getByText("Intelligence Section")).toBeInTheDocument();
+    expect(screen.queryByText("Gender")).not.toBeInTheDocument();
+    expect(screen.queryByText("Born")).not.toBeInTheDocument();
+    expect(screen.queryByText(/In service since/)).not.toBeInTheDocument();
+    expect(screen.queryByAltText("Default profile avatar")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/profile photo/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Contact information" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Emergency contact" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Training" })).not.toBeInTheDocument();
+  });
+
   it("keeps trainings visible as promotion evidence", () => {
     render(<EmployeeProfile employee={employee} trainings={[{
       id: "00000000-0000-0000-0000-000000000020",

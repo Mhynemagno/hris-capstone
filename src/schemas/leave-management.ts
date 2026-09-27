@@ -7,7 +7,7 @@ const acceptedAttachmentMimeTypes = ["application/pdf", "image/png", "image/jpeg
 const leaveStatusSchema = z.enum(["pending", "approved", "rejected", "cancelled"]);
 const leaveTypeNameSchema = z.string().trim().min(1).max(100);
 const optionalDescriptionSchema = z.string().trim().max(2000).transform((value) => value || null).optional();
-const requestReasonSchema = z.string().trim().min(1).max(2000);
+const optionalNotesSchema = z.string().trim().max(2000, "Notes must be 2000 characters or fewer.").transform((value) => value || undefined).optional();
 const optionalDecisionNoteSchema = z.string().trim().max(2000).transform((value) => value || undefined).optional();
 
 function todayIsoDate() {
@@ -45,7 +45,7 @@ export const leaveRequestDraftSchema = z.object({
   leaveTypeId: uuidSchema,
   startsOn: isoDateSchema.refine(futureOrCurrentDate, "Choose today or a future start date."),
   endsOn: isoDateSchema.refine(futureOrCurrentDate, "Choose today or a future end date."),
-  reason: requestReasonSchema,
+  reason: optionalNotesSchema,
 }).superRefine((value, context) => {
   if (value.endsOn < value.startsOn) {
     context.addIssue({ code: "custom", path: ["endsOn"], message: "End date must be on or after the start date." });

@@ -330,8 +330,8 @@ export type LeaveType = {
   description: string | null;
   requires_attachment: boolean;
   is_active: boolean;
-  created_by_user_id: string;
-  updated_by_user_id: string;
+  created_by_user_id: string | null;
+  updated_by_user_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -346,7 +346,7 @@ export type LeaveRequest = {
   leave_type_name: string;
   starts_on: string;
   ends_on: string;
-  reason: string;
+  reason: string | null;
   status: LeaveRequestStatus;
   decision_note: string | null;
   decided_by_user_id: string | null;

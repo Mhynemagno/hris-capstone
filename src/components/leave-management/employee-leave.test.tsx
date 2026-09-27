@@ -62,15 +62,14 @@ describe("EmployeeLeaveRequestForm", () => {
     ];
   });
 
-  it("offers only active leave types and explains the attachment requirement", async () => {
-    const user = userEvent.setup();
+  it("offers only active leave types without evidence hints or an upload field", () => {
     render(<EmployeeLeaveRequestForm />);
     const select = screen.getByRole("combobox", { name: /Leave type/ });
     const options = within(select).getAllByRole("option").map((option) => option.textContent);
-    expect(options).toEqual(["Choose a type", "Annual leave", "Sick leave (evidence required)"]);
-
-    await user.selectOptions(select, "33333333-3333-4333-8333-333333333333");
-    expect(screen.getByText(/Sick leave requires supporting evidence/)).toBeVisible();
+    expect(options).toEqual(["Choose a type", "Annual leave", "Sick leave"]);
+    expect(screen.queryByLabelText(/Supporting evidence/)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/Reason/)).not.toBeInTheDocument();
+    expect(screen.queryByText("Must be on or after the start date.")).not.toBeInTheDocument();
   });
 
   it("binds the end date minimum to the start date and blocks an end date before the start", async () => {
@@ -82,7 +81,6 @@ describe("EmployeeLeaveRequestForm", () => {
     await user.type(screen.getByLabelText(/Start date/), start);
     expect(screen.getByLabelText(/End date/)).toHaveAttribute("min", start);
     await user.type(screen.getByLabelText(/End date/), end);
-    await user.type(screen.getByLabelText(/Reason/), "Family event");
     await user.click(screen.getByRole("button", { name: "Submit request" }));
 
     expect(await screen.findByText("End date must be on or after the start date.")).toBeVisible();
@@ -90,16 +88,19 @@ describe("EmployeeLeaveRequestForm", () => {
     expect(mocks.submit).not.toHaveBeenCalled();
   });
 
-  it("requires evidence for leave types that need it", async () => {
+  it("submits without notes or evidence and clears the form", async () => {
+    mocks.submit.mockResolvedValue(undefined);
     const user = userEvent.setup();
     render(<EmployeeLeaveRequestForm />);
     await user.selectOptions(screen.getByRole("combobox", { name: /Leave type/ }), "33333333-3333-4333-8333-333333333333");
     await user.type(screen.getByLabelText(/Start date/), isoDate(1));
     await user.type(screen.getByLabelText(/End date/), isoDate(2));
-    await user.type(screen.getByLabelText(/Reason/), "Flu");
+    expect(screen.getByLabelText("Notes")).not.toBeRequired();
     await user.click(screen.getByRole("button", { name: "Submit request" }));
 
-    expect(await screen.findByText(/requires supporting evidence\. Attach at least one document/)).toBeVisible();
-    expect(mocks.submit).not.toHaveBeenCalled();
+    expect(await screen.findByRole("status")).toHaveTextContent("Leave request submitted.");
+    expect(mocks.submit).toHaveBeenCalledWith({ draft: expect.objectContaining({ leaveTypeId: "33333333-3333-4333-8333-333333333333", reason: "" }), files: [] });
+    expect(screen.getByRole("combobox", { name: /Leave type/ })).toHaveValue("");
+    expect(screen.getByLabelText(/Start date/)).toHaveValue("");
   });
 });

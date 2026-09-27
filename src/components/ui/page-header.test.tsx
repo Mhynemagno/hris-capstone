@@ -9,7 +9,6 @@ it("presents a page purpose and its primary action", () => {
     <PageHeader
       action={<Link href="/jobs">Browse all openings</Link>}
       description="Apply securely for a role serving San Juan."
-      eyebrow="Careers"
       id="careers-title"
       title="Current openings"
     />,
@@ -18,7 +17,6 @@ it("presents a page purpose and its primary action", () => {
   expect(
     screen.getByRole("heading", { level: 1, name: "Current openings" }),
   ).toHaveAttribute("id", "careers-title");
-  expect(screen.getByText("Careers")).toBeVisible();
   expect(
     screen.getByRole("link", { name: "Browse all openings" }),
   ).toHaveAttribute("href", "/jobs");

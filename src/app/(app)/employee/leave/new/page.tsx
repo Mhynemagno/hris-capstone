@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/ui/page-header";
 export default function NewLeavePage() {
   return (
     <section className="space-y-6">
-      <PageHeader description="Choose a leave type and dates. Fields marked * are required." title="Request leave" />
+      <PageHeader title="Request leave" />
       <EmployeeLeaveRequestForm />
     </section>
   );

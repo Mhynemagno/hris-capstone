@@ -32,7 +32,7 @@ import {
   useSaveRank,
   useUpdateManagedUser,
 } from "@/hooks/use-administration";
-import type { AuditLogDisplay } from "@/lib/administration/audit-presentation";
+import { AUDIT_ACTION_GROUP_KEYS, AUDIT_ACTION_GROUPS, formatAuditDate, type AuditActionGroup, type AuditLogDisplay } from "@/lib/administration/audit-presentation";
 import type { Department, ManagedUser, Rank, UnitStation } from "@/lib/types/database";
 import { APP_ROLES, type AppRole } from "@/lib/types/roles";
 import { cn } from "@/lib/utils";
@@ -118,6 +118,32 @@ function StatusSelect({ label, onChange, value }: { label: string; onChange: (va
       <option value="inactive">Inactive</option>
     </select>
   );
+}
+
+/**
+ * Delays a fast-changing value (typed search text) so the list is queried once typing pauses,
+ * not on every keystroke.
+ */
+function useDebouncedValue<T>(value: T, delay = 300) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+  return debounced;
+}
+
+type ListQuery = { error: Error | null; isFetching?: boolean; isLoading: boolean; refetch: () => unknown };
+
+/**
+ * Loading and error states for the table area only. The filters above stay mounted, so typing in
+ * a search box never unmounts the input (which used to blank the page and drop focus mid-word),
+ * and the previous rows stay visible while the next page of results loads.
+ */
+function ListBody({ children, loadingLabel, result }: { children: ReactNode; loadingLabel: string; result: ListQuery }) {
+  if (result.isLoading) return <LoadingState label={loadingLabel} />;
+  if (result.error) return <ErrorWithRetry error={result.error} onRetry={() => void result.refetch()} />;
+  return <div aria-busy={result.isFetching || undefined} className={cn("transition-opacity", result.isFetching && "opacity-70")}>{children}</div>;
 }
 
 function CheckboxField({ children, ...props }: ComponentProps<"input"> & { children: ReactNode }) {
@@ -222,7 +248,7 @@ function ManagedUserForm({ onSaved, pending, user }: { onSaved: (input: ManagedU
           {APP_ROLES.map((role) => <option key={role} value={role}>{roleLabels[role]}</option>)}
         </select>
       </FormField>
-      <CheckboxField {...form.register("isActive")}>Account is active (can sign in)</CheckboxField>
+      <CheckboxField {...form.register("isActive")}>Account can sign in</CheckboxField>
       {error ? <ErrorState message={error} /> : null}
       <Button className="w-full" disabled={pending} type="submit">{pending ? "Saving…" : "Save account"}</Button>
     </form>
@@ -233,11 +259,9 @@ function accountName(user: ManagedUser) {
   return user.full_name || user.email || "account";
 }
 
-function ManagedUsersTable({ onDeactivate, onDelete, onEdit, pendingId, rows, showProfiles }: {
-  onDeactivate: (user: ManagedUser) => void;
+function ManagedUsersTable({ onDelete, onEdit, rows, showProfiles }: {
   onDelete: (user: ManagedUser) => void;
   onEdit: (user: ManagedUser) => void;
-  pendingId: string | null;
   rows: ManagedUser[];
   showProfiles: boolean;
 }) {
@@ -258,12 +282,7 @@ function ManagedUsersTable({ onDeactivate, onDelete, onEdit, pendingId, rows, sh
                 View profile
               </Link>
             ) : null}
-            <Button onClick={() => onEdit(user)} size="sm" type="button" variant="outline">Edit</Button>
-            {user.is_active ? (
-              <Button aria-label={`Deactivate ${accountName(user)}`} disabled={pendingId === user.id} onClick={() => onDeactivate(user)} size="sm" type="button" variant="outline">
-                {pendingId === user.id ? "Deactivating…" : "Deactivate"}
-              </Button>
-            ) : null}
+            <Button aria-label={`Edit ${accountName(user)}`} onClick={() => onEdit(user)} size="sm" type="button" variant="outline">Edit</Button>
             <Button aria-label={`Delete ${accountName(user)}`} onClick={() => onDelete(user)} size="sm" type="button" variant="destructive">Delete</Button>
           </RowActions>
         </tr>
@@ -280,10 +299,9 @@ function ManagedAccountsWorkspace({ invite }: { invite: boolean }) {
   const [selected, setSelected] = useState<ManagedUser | null>(null);
   const [deleting, setDeleting] = useState<ManagedUser | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
-  const [pendingId, setPendingId] = useState<string | null>(null);
-  const [actionError, setActionError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const filters = { page, pageSize: 20 as const, ...(search ? { search } : {}), ...(role ? { role } : {}), ...(status ? { status } : {}) };
+  const searchTerm = useDebouncedValue(search.trim());
+  const filters = { page, pageSize: 20 as const, ...(searchTerm ? { search: searchTerm } : {}), ...(role ? { role } : {}), ...(status ? { status } : {}) };
   const result = useManagedUsers(filters);
   const inviteMutation = useInviteInternalUser();
   const updateMutation = useUpdateManagedUser();
@@ -292,24 +310,6 @@ function ManagedAccountsWorkspace({ invite }: { invite: boolean }) {
     callback();
     setPage(1);
   }
-
-  async function deactivate(user: ManagedUser) {
-    setActionError(null);
-    setNotice(null);
-    setPendingId(user.id);
-    try {
-      await updateMutation.mutateAsync({ input: { userId: user.id, role: user.role, isActive: false } });
-      setNotice(`${accountName(user)} was deactivated and can no longer sign in.`);
-    } catch (cause) {
-      setActionError(errorMessage(cause, "We could not deactivate this account."));
-      throw cause;
-    } finally {
-      setPendingId(null);
-    }
-  }
-
-  if (result.isLoading) return <LoadingState label="Loading accounts…" />;
-  if (result.error) return <ErrorWithRetry error={result.error} onRetry={() => void result.refetch()} />;
 
   return (
     <div className="space-y-5">
@@ -324,19 +324,10 @@ function ManagedAccountsWorkspace({ invite }: { invite: boolean }) {
         />
         {invite ? <Button className="w-full sm:w-auto" onClick={() => setInviteOpen(true)} type="button">Invite account</Button> : null}
       </div>
-      <p className="text-sm text-muted-foreground">
-        <strong>Deactivate</strong> blocks sign-in but keeps the account and everything it created. <strong>Delete</strong> permanently removes an account that has no dependent records.
-      </p>
-      {actionError ? <ErrorState message={actionError} /> : null}
       <SuccessMessage message={notice} />
-      <ManagedUsersTable
-        onDeactivate={(user) => void deactivate(user).catch(() => undefined)}
-        onDelete={setDeleting}
-        onEdit={setSelected}
-        pendingId={pendingId}
-        rows={result.data?.rows ?? []}
-        showProfiles={invite}
-      />
+      <ListBody loadingLabel="Loading accounts…" result={result}>
+        <ManagedUsersTable onDelete={setDeleting} onEdit={setSelected} rows={result.data?.rows ?? []} showProfiles={invite} />
+      </ListBody>
       <PaginatedTableControls onPageChange={setPage} page={page} pageSize={20} totalCount={result.data?.count ?? 0} />
       {invite ? (
         <AdministrationFormPanel description="Invite an internal account without exposing administrative credentials." onOpenChange={setInviteOpen} open={inviteOpen} title="Invite account">
@@ -351,7 +342,7 @@ function ManagedAccountsWorkspace({ invite }: { invite: boolean }) {
         </AdministrationFormPanel>
       ) : null}
       {selected ? (
-        <AdministrationFormPanel description="Role and status changes use the audited protected workflow." onOpenChange={(open) => { if (!open) setSelected(null); }} open title="Manage account">
+        <AdministrationFormPanel description="Change the role, or clear “Account can sign in” to block this account from signing in. Changes are audited." onOpenChange={(open) => { if (!open) setSelected(null); }} open title="Manage account">
           <ManagedUserForm
             key={selected.id}
             onSaved={async (input) => {
@@ -365,7 +356,6 @@ function ManagedAccountsWorkspace({ invite }: { invite: boolean }) {
         </AdministrationFormPanel>
       ) : null}
       <DeleteRecordDialog
-        alternative={deleting?.is_active ? { label: "Deactivate instead", onSelect: () => deactivate(deleting) } : undefined}
         entityId={deleting?.id ?? null}
         entityType="managed_user"
         noun="account"
@@ -414,7 +404,6 @@ function DepartmentForm({ department, onSaved, pending }: { department?: Departm
       <FormField error={form.formState.errors.name?.message} htmlFor="department-name" label="Name" required>
         <Input id="department-name" {...form.register("name")} />
       </FormField>
-      <CheckboxField {...form.register("isActive")}>Department is active</CheckboxField>
       {error ? <ErrorState message={error} /> : null}
       <Button className="w-full" disabled={pending} type="submit">{pending ? "Saving…" : "Save department"}</Button>
     </form>
@@ -427,29 +416,14 @@ export function DepartmentsWorkspace() {
   const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<Department | null>(null);
   const [creating, setCreating] = useState(false);
-  const [actionError, setActionError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const result = useDepartments({ page, pageSize: 20, ...(search ? { search } : {}), ...(status ? { status } : {}) });
+  const searchTerm = useDebouncedValue(search.trim());
+  const result = useDepartments({ page, pageSize: 20, ...(searchTerm ? { search: searchTerm } : {}), ...(status ? { status } : {}) });
   const save = useSaveDepartment();
   const resetPage = (callback: () => void) => {
     callback();
     setPage(1);
   };
-
-  async function setActive(department: Department, isActive: boolean) {
-    setActionError(null);
-    setNotice(null);
-    try {
-      await save.mutateAsync({ departmentId: department.id, input: { name: department.name, isActive } });
-      setNotice(`${department.name} was ${isActive ? "reactivated" : "deactivated"}.`);
-    } catch (cause) {
-      setActionError(errorMessage(cause, "We could not update the department."));
-      throw cause;
-    }
-  }
-
-  if (result.isLoading) return <LoadingState label="Loading departments…" />;
-  if (result.error) return <ErrorWithRetry error={result.error} onRetry={() => void result.refetch()} />;
   const rows = result.data?.rows ?? [];
 
   return (
@@ -458,39 +432,28 @@ export function DepartmentsWorkspace() {
         <ReferenceFilters label="departments" onSearchChange={(value) => resetPage(() => setSearch(value))} onStatusChange={(value) => resetPage(() => setStatus(value))} search={search} status={status} />
         <Button className="w-full sm:w-auto" onClick={() => setCreating(true)} type="button">Add department</Button>
       </div>
-      <p className="text-sm text-muted-foreground">
-        Deactivated departments are hidden from new records but stay on historic ones.
-      </p>
-      {actionError ? <ErrorState message={actionError} /> : null}
       <SuccessMessage message={notice} />
-      <DataTable caption="Departments" columns={["Department", "Status", "Actions"]} minWidth="min-w-[560px]">
-        {rows.length ? rows.map((department) => (
-          <tr className="border-t" key={department.id}>
-            <td className="px-4 py-3 font-semibold">{department.name}</td>
-            <td className="px-4 py-3"><StatusBadge active={department.is_active} /></td>
-            <RowActions>
-              <Button onClick={() => setEditing(department)} size="sm" type="button" variant="outline">Edit</Button>
-              <Button
-                aria-label={`${department.is_active ? "Deactivate" : "Activate"} ${department.name}`}
-                disabled={save.isPending}
-                onClick={() => void setActive(department, !department.is_active).catch(() => undefined)}
-                size="sm"
-                type="button"
-                variant="outline"
-              >
-                {department.is_active ? "Deactivate" : "Activate"}
-              </Button>
-            </RowActions>
-          </tr>
-        )) : <tr><EmptyTableState colSpan={3} message="No departments match these filters." /></tr>}
-      </DataTable>
+      <ListBody loadingLabel="Loading departments…" result={result}>
+        <DataTable caption="Departments" columns={["Department", "Status", "Actions"]} minWidth="min-w-[560px]">
+          {rows.length ? rows.map((department) => (
+            <tr className="border-t" key={department.id}>
+              <td className="px-4 py-3 font-semibold">{department.name}</td>
+              <td className="px-4 py-3"><StatusBadge active={department.is_active} /></td>
+              <RowActions>
+                <Button aria-label={`Edit ${department.name}`} onClick={() => setEditing(department)} size="sm" type="button" variant="outline">Edit</Button>
+              </RowActions>
+            </tr>
+          )) : <tr><EmptyTableState colSpan={3} message="No departments match these filters." /></tr>}
+        </DataTable>
+      </ListBody>
       <PaginatedTableControls onPageChange={setPage} page={page} pageSize={20} totalCount={result.data?.count ?? 0} />
       <AdministrationFormPanel description="Create a department for personnel and job openings." onOpenChange={setCreating} open={creating} title="Add department">
-        <DepartmentForm onSaved={async (input) => { await save.mutateAsync({ input }); setCreating(false); setNotice(`${input.name} was added.`); }} pending={save.isPending} />
+        <DepartmentForm onSaved={async (input) => { await save.mutateAsync({ input: { ...input, isActive: true } }); setCreating(false); setNotice(`${input.name} was added.`); }} pending={save.isPending} />
       </AdministrationFormPanel>
       {editing ? (
         <AdministrationFormPanel description="Changes are audited and historical references are preserved." onOpenChange={(open) => { if (!open) setEditing(null); }} open title="Edit department">
-          <DepartmentForm department={editing} key={editing.id} onSaved={async (input) => { await save.mutateAsync({ input, departmentId: editing.id }); setEditing(null); setNotice("Department saved."); }} pending={save.isPending} />
+          {/* Editing keeps the current status; the form no longer offers deactivation. */}
+          <DepartmentForm department={editing} key={editing.id} onSaved={async (input) => { await save.mutateAsync({ input: { ...input, isActive: editing.is_active }, departmentId: editing.id }); setEditing(null); setNotice("Department saved."); }} pending={save.isPending} />
         </AdministrationFormPanel>
       ) : null}
     </div>
@@ -519,10 +482,9 @@ function UnitStationForm({ onSaved, pending, unitStation }: { onSaved: (input: U
 
   return (
     <form className="space-y-4" noValidate onSubmit={form.handleSubmit(submit)}>
-      <FormField description={unitStation ? "A name already used on personnel or deployment records cannot be changed; add the corrected station and deactivate this one." : undefined} error={form.formState.errors.name?.message} htmlFor="unit-station-name" label="Name" required>
+      <FormField description={unitStation ? "A name already used on personnel or deployment records cannot be changed; add the corrected unit instead." : undefined} error={form.formState.errors.name?.message} htmlFor="unit-station-name" label="Name" required>
         <Input id="unit-station-name" {...form.register("name")} />
       </FormField>
-      <CheckboxField {...form.register("isActive")}>Unit/station is active</CheckboxField>
       {error ? <ErrorState message={error} /> : null}
       <Button className="w-full" disabled={pending} type="submit">{pending ? "Saving…" : "Save unit/station"}</Button>
     </form>
@@ -535,28 +497,14 @@ export function UnitStationsWorkspace() {
   const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<UnitStation | null>(null);
   const [creating, setCreating] = useState(false);
-  const [actionError, setActionError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const result = useUnitStationCatalogue({ page, pageSize: 20, ...(search ? { search } : {}), ...(status ? { status } : {}) });
+  const searchTerm = useDebouncedValue(search.trim());
+  const result = useUnitStationCatalogue({ page, pageSize: 20, ...(searchTerm ? { search: searchTerm } : {}), ...(status ? { status } : {}) });
   const save = useSaveUnitStation();
   const resetPage = (callback: () => void) => {
     callback();
     setPage(1);
   };
-
-  async function setActive(unitStation: UnitStation, isActive: boolean) {
-    setActionError(null);
-    setNotice(null);
-    try {
-      await save.mutateAsync({ unitStationId: unitStation.id, input: { name: unitStation.name, isActive } });
-      setNotice(`${unitStation.name} was ${isActive ? "reactivated" : "deactivated"}.`);
-    } catch (cause) {
-      setActionError(errorMessage(cause, "We could not update the unit/station."));
-    }
-  }
-
-  if (result.isLoading) return <LoadingState label="Loading unit stations…" />;
-  if (result.error) return <ErrorWithRetry error={result.error} onRetry={() => void result.refetch()} />;
   const rows = result.data?.rows ?? [];
 
   return (
@@ -566,38 +514,29 @@ export function UnitStationsWorkspace() {
         <Button className="w-full sm:w-auto" onClick={() => setCreating(true)} type="button">Add unit/station</Button>
       </div>
       <p className="text-sm text-muted-foreground">
-        Active stations appear in the Unit / Station field of personnel records and the Unit assignment field of deployments. Deactivated stations stay on historic records.
+        Active units appear in the Unit / Station field of personnel records and the Unit assignment field of deployments.
       </p>
-      {actionError ? <ErrorState message={actionError} /> : null}
       <SuccessMessage message={notice} />
-      <DataTable caption="Unit stations" columns={["Unit/station", "Status", "Actions"]} minWidth="min-w-[560px]">
-        {rows.length ? rows.map((unitStation) => (
-          <tr className="border-t" key={unitStation.id}>
-            <td className="px-4 py-3 font-semibold">{unitStation.name}</td>
-            <td className="px-4 py-3"><StatusBadge active={unitStation.is_active} /></td>
-            <RowActions>
-              <Button aria-label={`Edit ${unitStation.name}`} onClick={() => setEditing(unitStation)} size="sm" type="button" variant="outline">Edit</Button>
-              <Button
-                aria-label={`${unitStation.is_active ? "Deactivate" : "Activate"} ${unitStation.name}`}
-                disabled={save.isPending}
-                onClick={() => void setActive(unitStation, !unitStation.is_active)}
-                size="sm"
-                type="button"
-                variant="outline"
-              >
-                {unitStation.is_active ? "Deactivate" : "Activate"}
-              </Button>
-            </RowActions>
-          </tr>
-        )) : <tr><EmptyTableState colSpan={3} message={search || status ? "No unit stations match these filters." : "No unit stations yet. Add the station's precincts and units so they can be assigned."} /></tr>}
-      </DataTable>
+      <ListBody loadingLabel="Loading units…" result={result}>
+        <DataTable caption="Units" columns={["Unit/station", "Status", "Actions"]} minWidth="min-w-[560px]">
+          {rows.length ? rows.map((unitStation) => (
+            <tr className="border-t" key={unitStation.id}>
+              <td className="px-4 py-3 font-semibold">{unitStation.name}</td>
+              <td className="px-4 py-3"><StatusBadge active={unitStation.is_active} /></td>
+              <RowActions>
+                <Button aria-label={`Edit ${unitStation.name}`} onClick={() => setEditing(unitStation)} size="sm" type="button" variant="outline">Edit</Button>
+              </RowActions>
+            </tr>
+          )) : <tr><EmptyTableState colSpan={3} message={searchTerm || status ? "No units match these filters." : "No units yet. Add the station's precincts and units so they can be assigned."} /></tr>}
+        </DataTable>
+      </ListBody>
       <PaginatedTableControls onPageChange={setPage} page={page} pageSize={20} totalCount={result.data?.count ?? 0} />
       <AdministrationFormPanel description="Create a unit or station for personnel records and deployments." onOpenChange={setCreating} open={creating} title="Add unit/station">
-        <UnitStationForm onSaved={async (input) => { await save.mutateAsync({ input }); setCreating(false); setNotice(`${input.name} was added.`); }} pending={save.isPending} />
+        <UnitStationForm onSaved={async (input) => { await save.mutateAsync({ input: { ...input, isActive: true } }); setCreating(false); setNotice(`${input.name} was added.`); }} pending={save.isPending} />
       </AdministrationFormPanel>
       {editing ? (
         <AdministrationFormPanel description="Changes are audited and historical references are preserved." onOpenChange={(open) => { if (!open) setEditing(null); }} open title="Edit unit/station">
-          <UnitStationForm key={editing.id} onSaved={async (input) => { await save.mutateAsync({ input, unitStationId: editing.id }); setEditing(null); setNotice("Unit/station saved."); }} pending={save.isPending} unitStation={editing} />
+          <UnitStationForm key={editing.id} onSaved={async (input) => { await save.mutateAsync({ input: { ...input, isActive: editing.is_active }, unitStationId: editing.id }); setEditing(null); setNotice("Unit/station saved."); }} pending={save.isPending} unitStation={editing} />
         </AdministrationFormPanel>
       ) : null}
     </div>
@@ -641,7 +580,6 @@ function RankForm({ onSaved, pending, rank }: { onSaved: (input: RankInput) => P
       <FormField description="Seniority order: 1 is the most junior rank." error={errors.sortOrder?.message} htmlFor="rank-order" label="Order" required>
         <Input id="rank-order" inputMode="numeric" type="number" {...form.register("sortOrder")} />
       </FormField>
-      <CheckboxField {...form.register("isActive")}>Rank is active</CheckboxField>
       {error ? <ErrorState message={error} /> : null}
       <Button className="w-full" disabled={pending} type="submit">{pending ? "Saving…" : "Save rank"}</Button>
     </form>
@@ -654,29 +592,14 @@ export function RanksWorkspace() {
   const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<Rank | null>(null);
   const [creating, setCreating] = useState(false);
-  const [actionError, setActionError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const result = useRanks({ page, pageSize: 20, ...(search ? { search } : {}), ...(status ? { status } : {}) });
+  const searchTerm = useDebouncedValue(search.trim());
+  const result = useRanks({ page, pageSize: 20, ...(searchTerm ? { search: searchTerm } : {}), ...(status ? { status } : {}) });
   const save = useSaveRank();
   const resetPage = (callback: () => void) => {
     callback();
     setPage(1);
   };
-
-  async function setActive(rank: Rank, isActive: boolean) {
-    setActionError(null);
-    setNotice(null);
-    try {
-      await save.mutateAsync({ rankId: rank.id, input: { name: rank.name, code: rank.code, sortOrder: rank.sort_order, isActive } });
-      setNotice(`${rank.name} was ${isActive ? "reactivated" : "deactivated"}.`);
-    } catch (cause) {
-      setActionError(errorMessage(cause, "We could not update the rank."));
-      throw cause;
-    }
-  }
-
-  if (result.isLoading) return <LoadingState label="Loading ranks…" />;
-  if (result.error) return <ErrorWithRetry error={result.error} onRetry={() => void result.refetch()} />;
   const rows = result.data?.rows ?? [];
 
   return (
@@ -686,40 +609,31 @@ export function RanksWorkspace() {
         <Button className="w-full sm:w-auto" onClick={() => setCreating(true)} type="button">Add rank</Button>
       </div>
       <p className="text-sm text-muted-foreground">
-        Every rank is available in every department. Deactivated ranks are hidden from new records but stay on historic ones.
+        Every rank is available in every department.
       </p>
-      {actionError ? <ErrorState message={actionError} /> : null}
       <SuccessMessage message={notice} />
-      <DataTable caption="Ranks" columns={["Code", "Name", "Order", "Status", "Actions"]} minWidth="min-w-[640px]">
-        {rows.length ? rows.map((rank) => (
-          <tr className="border-t" key={rank.id}>
-            <td className="px-4 py-3 font-semibold">{rank.code}</td>
-            <td className="px-4 py-3">{rank.name}</td>
-            <td className="px-4 py-3 text-muted-foreground">{rank.sort_order}</td>
-            <td className="px-4 py-3"><StatusBadge active={rank.is_active} /></td>
-            <RowActions>
-              <Button onClick={() => setEditing(rank)} size="sm" type="button" variant="outline">Edit</Button>
-              <Button
-                aria-label={`${rank.is_active ? "Deactivate" : "Activate"} ${rank.name}`}
-                disabled={save.isPending}
-                onClick={() => void setActive(rank, !rank.is_active).catch(() => undefined)}
-                size="sm"
-                type="button"
-                variant="outline"
-              >
-                {rank.is_active ? "Deactivate" : "Activate"}
-              </Button>
-            </RowActions>
-          </tr>
-        )) : <tr><EmptyTableState colSpan={5} message="No ranks match these filters." /></tr>}
-      </DataTable>
+      <ListBody loadingLabel="Loading ranks…" result={result}>
+        <DataTable caption="Ranks" columns={["Code", "Name", "Order", "Status", "Actions"]} minWidth="min-w-[640px]">
+          {rows.length ? rows.map((rank) => (
+            <tr className="border-t" key={rank.id}>
+              <td className="px-4 py-3 font-semibold">{rank.code}</td>
+              <td className="px-4 py-3">{rank.name}</td>
+              <td className="px-4 py-3 text-muted-foreground">{rank.sort_order}</td>
+              <td className="px-4 py-3"><StatusBadge active={rank.is_active} /></td>
+              <RowActions>
+                <Button aria-label={`Edit ${rank.name}`} onClick={() => setEditing(rank)} size="sm" type="button" variant="outline">Edit</Button>
+              </RowActions>
+            </tr>
+          )) : <tr><EmptyTableState colSpan={5} message="No ranks match these filters." /></tr>}
+        </DataTable>
+      </ListBody>
       <PaginatedTableControls onPageChange={setPage} page={page} pageSize={20} totalCount={result.data?.count ?? 0} />
       <AdministrationFormPanel description="Add a police rank. It becomes available in every department." onOpenChange={setCreating} open={creating} title="Add rank">
-        <RankForm onSaved={async (input) => { await save.mutateAsync({ input, rankId: undefined }); setCreating(false); setNotice(`${input.name} was added.`); }} pending={save.isPending} />
+        <RankForm onSaved={async (input) => { await save.mutateAsync({ input: { ...input, isActive: true }, rankId: undefined }); setCreating(false); setNotice(`${input.name} was added.`); }} pending={save.isPending} />
       </AdministrationFormPanel>
       {editing ? (
         <AdministrationFormPanel description="Changes are audited and historical references are preserved." onOpenChange={(open) => { if (!open) setEditing(null); }} open title="Edit rank">
-          <RankForm key={editing.id} onSaved={async (input) => { await save.mutateAsync({ input, rankId: editing.id }); setEditing(null); setNotice("Rank saved."); }} pending={save.isPending} rank={editing} />
+          <RankForm key={editing.id} onSaved={async (input) => { await save.mutateAsync({ input: { ...input, isActive: editing.is_active }, rankId: editing.id }); setEditing(null); setNotice("Rank saved."); }} pending={save.isPending} rank={editing} />
         </AdministrationFormPanel>
       ) : null}
     </div>
@@ -816,66 +730,81 @@ export function SettingsWorkspace() {
 const AUDIT_ENTITY_SUGGESTIONS = [
   "applications", "attendance_imports", "attendance_integration_settings", "attendance_unmatched_events", "deployments",
   "departments", "employees", "job_openings", "leave_requests", "leave_types", "organization_settings", "performance_ratings",
-  "profile_change_requests", "ranks", "profiles", "promotion_criteria", "promotion_evaluations", "user_roles",
+  "profile_change_requests", "ranks", "profiles", "promotion_criteria", "promotion_evaluations", "unit_stations", "user_roles",
 ];
-const AUDIT_ACTION_SUGGESTIONS = ["insert", "update", "delete", "created", "updated", "hired", "imported", "resolved", "queued"];
 
 export function AuditLogsWorkspace() {
   const [search, setSearch] = useState("");
   const [entityType, setEntityType] = useState("");
-  const [action, setAction] = useState("");
+  const [action, setAction] = useState<AuditActionGroup | "">("");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<AuditLogDisplay | null>(null);
-  const result = useAuditLogs({ page, pageSize: 20, ...(search ? { search } : {}), ...(entityType ? { entityType } : {}), ...(action ? { action } : {}) });
+  const searchTerm = useDebouncedValue(search.trim());
+  const entityTerm = useDebouncedValue(entityType.trim());
+  const result = useAuditLogs({ page, pageSize: 20, ...(searchTerm ? { search: searchTerm } : {}), ...(entityTerm ? { entityType: entityTerm } : {}), ...(action ? { action } : {}) });
   const resetPage = (callback: () => void) => {
     callback();
     setPage(1);
   };
   const filtered = Boolean(search || entityType || action);
-
-  if (result.isLoading) return <LoadingState label="Loading audit history…" />;
-  if (result.error) return <ErrorWithRetry error={result.error} onRetry={() => void result.refetch()} />;
   const rows = result.data?.rows ?? [];
 
   return (
     <div className="space-y-5">
       <div className="grid gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
         <FormField htmlFor="audit-search" label="Search">
-          <Input id="audit-search" onChange={(event) => resetPage(() => setSearch(event.target.value))} placeholder="Record, ID, or action" type="search" value={search} />
+          <Input id="audit-search" onChange={(event) => resetPage(() => setSearch(event.target.value))} placeholder="Name, record, or ID" type="search" value={search} />
         </FormField>
         <FormField htmlFor="audit-entity" label="Record type">
-          <Input id="audit-entity" list="audit-entity-options" onChange={(event) => resetPage(() => setEntityType(event.target.value.trim()))} placeholder="Any" value={entityType} />
+          <Input id="audit-entity" list="audit-entity-options" onChange={(event) => resetPage(() => setEntityType(event.target.value))} placeholder="Any" value={entityType} />
         </FormField>
         <FormField htmlFor="audit-action" label="Action">
-          <Input id="audit-action" list="audit-action-options" onChange={(event) => resetPage(() => setAction(event.target.value.trim()))} placeholder="Any" value={action} />
+          <select className={nativeSelectClassName} id="audit-action" onChange={(event) => resetPage(() => setAction(event.target.value as AuditActionGroup | ""))} value={action}>
+            <option value="">All actions</option>
+            {AUDIT_ACTION_GROUP_KEYS.map((key) => <option key={key} value={key}>{AUDIT_ACTION_GROUPS[key].label}</option>)}
+          </select>
         </FormField>
         <Button disabled={!filtered} onClick={() => resetPage(() => { setSearch(""); setEntityType(""); setAction(""); })} type="button" variant="outline">Clear filters</Button>
         <datalist id="audit-entity-options">{AUDIT_ENTITY_SUGGESTIONS.map((value) => <option key={value} value={value} />)}</datalist>
-        <datalist id="audit-action-options">{AUDIT_ACTION_SUGGESTIONS.map((value) => <option key={value} value={value} />)}</datalist>
       </div>
-      <DataTable caption="Audit history" columns={["When", "Actor", "Record", "Action", "Details"]} minWidth="min-w-[820px]">
-        {rows.length ? rows.map((entry) => (
-          <tr className="border-t" key={entry.id}>
-            <td className="px-4 py-3 whitespace-nowrap"><time dateTime={entry.created_at}>{new Date(entry.created_at).toLocaleString()}</time></td>
-            <td className="px-4 py-3">{entry.actorLabel}</td>
-            <td className="px-4 py-3">{entry.recordLabel}</td>
-            <td className="px-4 py-3">{entry.actionLabel}</td>
-            <td className="px-4 py-3">
-              <Button aria-label={`View details for audit record ${entry.id}`} onClick={() => setSelected(entry)} size="sm" type="button" variant="outline">Details</Button>
-            </td>
-          </tr>
-        )) : <tr><EmptyTableState colSpan={5} message={filtered ? "No audit entries match these filters." : "No audit entries have been recorded yet."} /></tr>}
-      </DataTable>
+      <ListBody loadingLabel="Loading audit history…" result={result}>
+        <DataTable caption="Audit history" columns={["Date", "Account", "Logs", "Action", "Details"]} minWidth="min-w-[760px]">
+          {rows.length ? rows.map((entry) => (
+            <tr className="border-t" key={entry.id}>
+              <td className="px-4 py-3 whitespace-nowrap"><time dateTime={entry.created_at}>{formatAuditDate(entry.created_at)}</time></td>
+              <td className="px-4 py-3">{entry.actorLabel}</td>
+              <td className="px-4 py-3">{entry.recordLabel}</td>
+              <td className="px-4 py-3">{entry.actionLabel}</td>
+              <td className="px-4 py-3">
+                <Button aria-label={`View details for audit record ${entry.id}`} onClick={() => setSelected(entry)} size="sm" type="button" variant="outline">Details</Button>
+              </td>
+            </tr>
+          )) : <tr><EmptyTableState colSpan={5} message={filtered ? "No audit entries match these filters." : "No audit entries have been recorded yet."} /></tr>}
+        </DataTable>
+      </ListBody>
       <PaginatedTableControls onPageChange={setPage} page={page} pageSize={20} totalCount={result.data?.count ?? 0} />
       {selected ? (
-        <AdministrationFormPanel description="Original audit values are available for traceability and cannot be changed." onOpenChange={(open) => { if (!open) setSelected(null); }} open title="Audit record details">
+        <AdministrationFormPanel description="Audit entries are a permanent record and cannot be changed." onOpenChange={(open) => { if (!open) setSelected(null); }} open title="Audit record details">
           <div className="space-y-4">
-            <p className="rounded-lg bg-muted px-4 py-3">{selected.summary}</p>
-            <dl className="grid gap-3">
-              <div><dt className="text-sm font-semibold text-muted-foreground">Actor</dt><dd>{selected.actorLabel}</dd></div>
-              <div><dt className="text-sm font-semibold text-muted-foreground">When</dt><dd>{new Date(selected.created_at).toLocaleString()}</dd></div>
+            <p className="rounded-lg bg-muted px-4 py-3 font-medium">{selected.summary}</p>
+            <dl className="grid gap-x-4 gap-y-3 sm:grid-cols-[auto_minmax(0,1fr)]">
+              <dt className="text-sm font-semibold text-muted-foreground">Account</dt><dd>{selected.actorLabel}</dd>
+              <dt className="text-sm font-semibold text-muted-foreground">Action</dt><dd>{selected.actionLabel}</dd>
+              <dt className="text-sm font-semibold text-muted-foreground">Date</dt><dd>{new Date(selected.created_at).toLocaleString("en-US", { month: "long", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}</dd>
             </dl>
-            <pre className="max-h-72 overflow-auto rounded-lg bg-muted p-3 text-xs">{JSON.stringify(selected.details, null, 2)}</pre>
+            {selected.detailEntries.length ? (
+              <div className="space-y-2">
+                <h3 className="font-semibold">Recorded values</h3>
+                <dl className="grid gap-x-4 gap-y-2 rounded-lg border p-4 text-sm sm:grid-cols-[auto_minmax(0,1fr)]">
+                  {selected.detailEntries.map((item) => (
+                    <div className="contents" key={item.label}>
+                      <dt className="font-semibold text-muted-foreground">{item.label}</dt>
+                      <dd className="break-words">{item.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            ) : null}
           </div>
         </AdministrationFormPanel>
       ) : null}

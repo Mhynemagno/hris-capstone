@@ -189,8 +189,8 @@ export function HrLeaveDetail({ requestId }: { requestId: string }) {
           <dd>{data.created_at.slice(0, 10)}</dd>
         </div>
         <div className="sm:col-span-2">
-          <dt className="font-semibold text-muted-foreground">Reason</dt>
-          <dd className="mt-1 rounded-lg bg-muted p-3 whitespace-pre-line">{data.reason}</dd>
+          <dt className="font-semibold text-muted-foreground">Notes</dt>
+          <dd className="mt-1 rounded-lg bg-muted p-3 whitespace-pre-line">{data.reason || "No notes provided."}</dd>
         </div>
         {data.decision_note ? (
           <div className="sm:col-span-2">

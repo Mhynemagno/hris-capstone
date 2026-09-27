@@ -166,7 +166,7 @@ export function ReportDetail({ role, reportKey }: { role: "hr_personnel" | "mana
             </Button>
           </div>
         }
-        eyebrow="Reports"
+       
         title={title}
       />
       <form
