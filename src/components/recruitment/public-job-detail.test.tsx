@@ -1,9 +1,11 @@
 import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ usePublishedJob: vi.fn(), getUser: vi.fn() }));
+const mocks = vi.hoisted(() => ({ usePublishedJob: vi.fn(), getUser: vi.fn(), push: vi.fn() }));
 
 vi.mock("@/hooks/use-recruitment", () => ({ usePublishedJob: mocks.usePublishedJob }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: mocks.push }) }));
 vi.mock("@/lib/supabase/client", () => ({ createBrowserSupabaseClient: () => ({ auth: { getUser: mocks.getUser } }) }));
 
 import { PublicJobDetail } from "./public-job-detail";
@@ -26,7 +28,8 @@ describe("PublicJobDetail", () => {
     mocks.usePublishedJob.mockReturnValue({ data: job, error: null, isLoading: false });
   });
 
-  it("shows the title, posting image, description and sends signed-out visitors to login with a return path", async () => {
+  it("shows the title, posting image, description and sends signed-out visitors to login after they accept the privacy notice", async () => {
+    const user = userEvent.setup();
     mocks.getUser.mockResolvedValue({ data: { user: null } });
     render(<PublicJobDetail jobId={9} />);
 
@@ -35,14 +38,36 @@ describe("PublicJobDetail", () => {
     expect(screen.getByText("Serve the community through visible patrol work.")).toBeVisible();
     expect(screen.getByText(/Deadline of Application: September 29, 2026/)).toBeVisible();
     await waitFor(() => expect(mocks.getUser).toHaveBeenCalled());
-    expect(screen.getByRole("link", { name: "Apply now" })).toHaveAttribute("href", `/login?next=${encodeURIComponent("/applicant/applications?jobId=9")}`);
+    await user.click(screen.getByRole("button", { name: "Apply now" }));
+    expect(await screen.findByRole("dialog", { name: "Data Privacy Notice" })).toBeVisible();
+    const agree = screen.getByRole("button", { name: "I Agree & Continue" });
+    expect(agree).toBeDisabled();
+    await user.click(screen.getByRole("checkbox", { name: /I have read and agree/ }));
+    await user.click(agree);
+    expect(mocks.push).toHaveBeenCalledWith(`/login?next=${encodeURIComponent("/applicant/applications?jobId=9")}`);
   });
 
-  it("sends signed-in applicants straight to the application", async () => {
+  it("does not continue when the privacy notice is cancelled", async () => {
+    const user = userEvent.setup();
+    mocks.getUser.mockResolvedValue({ data: { user: null } });
+    render(<PublicJobDetail jobId={9} />);
+
+    await user.click(screen.getByRole("button", { name: "Apply now" }));
+    await user.click(await screen.findByRole("button", { name: "Cancel" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(mocks.push).not.toHaveBeenCalled();
+  });
+
+  it("sends signed-in applicants to the application after they accept the privacy notice", async () => {
+    const user = userEvent.setup();
     mocks.getUser.mockResolvedValue({ data: { user: { id: "u1" } } });
     render(<PublicJobDetail jobId={9} />);
 
-    await waitFor(() => expect(screen.getByRole("link", { name: "Apply now" })).toHaveAttribute("href", "/applicant/applications?jobId=9"));
+    await waitFor(() => expect(mocks.getUser).toHaveBeenCalled());
+    await user.click(screen.getByRole("button", { name: "Apply now" }));
+    await user.click(await screen.findByRole("checkbox", { name: /I have read and agree/ }));
+    await user.click(screen.getByRole("button", { name: "I Agree & Continue" }));
+    await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/applicant/applications?jobId=9"));
   });
 
   it("omits the image when the posting has none", () => {

@@ -180,7 +180,9 @@ test.describe("Objective 2: recruitment management", () => {
 
     await page.goto("/jobs");
     await page.getByRole("link", { name: `View details for ${title}` }).click();
-    await page.getByRole("link", { name: "Apply now" }).click();
+    await page.getByRole("button", { name: "Apply now" }).click();
+    await page.getByRole("checkbox", { name: /I have read and agree/ }).check();
+    await page.getByRole("button", { name: "I Agree & Continue" }).click();
     await page.getByLabel("Cover note").fill("I am applying through the capstone objective tests.");
     await page.getByLabel("CV (PDF)").setInputFiles(pdf("cv.pdf"));
     await page.getByRole("button", { name: "Submit application" }).click();
