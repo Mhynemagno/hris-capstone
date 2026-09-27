@@ -12,6 +12,8 @@ import { formatDeadline } from "@/lib/recruitment/format-deadline";
 import { jobPostingImageUrl } from "@/lib/recruitment/job-posting-image";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
+import { ApplyPrivacyNotice } from "./apply-privacy-notice";
+
 export function PublicJobDetail({ jobId }: { jobId: number }) {
   const job = usePublishedJob(jobId);
   const [isSignedIn, setIsSignedIn] = useState(false);
@@ -30,6 +32,6 @@ export function PublicJobDetail({ jobId }: { jobId: number }) {
     {imageUrl ? <Image alt={`${job.data.title} job posting`} className="h-auto w-full rounded-xl border object-contain" height={900} priority src={imageUrl} unoptimized width={1600} /> : null}
     <p className="whitespace-pre-wrap leading-7">{job.data.description}</p>
     {criteria.length ? <div className="rounded-xl border p-5"><h2 className="font-semibold">Qualifications</h2><ul className="mt-3 list-disc space-y-2 pl-5 text-sm">{criteria.map((criterion) => <li key={criterion.id}><span className="font-medium">{criterion.is_required ? "Required" : "Preferred"}:</span> {criterion.requirement}</li>)}</ul></div> : null}
-    <Link className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/85 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50" href={isSignedIn ? applyPath : `/login?next=${encodeURIComponent(applyPath)}`}>Apply now<ArrowRight aria-hidden="true" className="size-4" /></Link>
+    <ApplyPrivacyNotice className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/85 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50" href={isSignedIn ? applyPath : `/login?next=${encodeURIComponent(applyPath)}`}>Apply now<ArrowRight aria-hidden="true" className="size-4" /></ApplyPrivacyNotice>
   </section>;
 }
