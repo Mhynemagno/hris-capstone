@@ -8,16 +8,13 @@ const optionalText = (maximum: number) => z.string().trim().max(maximum).nullabl
 
 export const deploymentInputSchema = z.object({
   employeeId: uuidSchema,
-  location: optionalText(200),
+  location: z.string({ error: "Location is required." }).trim().min(1, "Location is required.").max(200),
   unit: optionalText(200),
-  project: optionalText(200),
-  assignmentRole: z.string().trim().min(1, "Assignment role is required.").max(200),
   startsOn: isoDateSchema,
   endsOn: isoDateSchema.nullable().optional().transform((value) => value ?? null),
   status: deploymentStatusSchema,
-  notes: optionalText(2000),
+  notes: z.string({ error: "Remarks are required." }).trim().min(1, "Remarks are required.").max(2000),
 }).superRefine((value, context) => {
-  if (!value.location && !value.unit && !value.project) context.addIssue({ code: "custom", path: ["location"], message: "Provide a location, unit, or project." });
   if (value.endsOn && value.endsOn < value.startsOn) context.addIssue({ code: "custom", path: ["endsOn"], message: "End date must be on or after start date." });
 });
 

@@ -10,10 +10,9 @@ import { ErrorState } from "@/components/ui/error-state";
 import { Input } from "@/components/ui/input";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useHrRegisteredApplicants } from "@/hooks/use-applicant-portal";
+import { formatDate } from "@/lib/format-date";
 import type { HrRegisteredApplicant } from "@/lib/types/database";
 import { cn } from "@/lib/utils";
-
-const dateFormat = new Intl.DateTimeFormat("en-PH", { month: "short", day: "numeric", year: "numeric" });
 
 function formatApplicantNumber(value: number | null) {
   if (value === null) return null;
@@ -67,12 +66,11 @@ export function HrRegisteredApplicantList() {
                     </td>
                     <td className="px-4 py-3 align-middle break-all">{applicant.email ?? "—"}{applicant.email_confirmed ? null : <p className="text-xs text-muted-foreground">Email not confirmed</p>}</td>
                     <td className="px-4 py-3 align-middle whitespace-nowrap tabular-nums">{applicant.phone ?? "—"}</td>
-                    <td className="px-4 py-3 align-middle whitespace-nowrap tabular-nums">{dateFormat.format(new Date(applicant.registered_at))}</td>
+                    <td className="px-4 py-3 align-middle whitespace-nowrap tabular-nums">{formatDate(applicant.registered_at)}</td>
                     <td className="px-4 py-3 align-middle">
-                      {status ? <div className="space-y-1">
-                        <span className={cn("inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset", statusStyles[status] ?? statusStyles["Not Selected"])}>{status}</span>
-                        <p className="text-xs text-muted-foreground">{applicant.latest_job_title}{applicant.application_count > 1 ? ` · ${applicant.application_count} applications` : ""}</p>
-                      </div> : <span className="text-muted-foreground">No application yet</span>}
+                      {status
+                        ? <span className={cn("inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset", statusStyles[status] ?? statusStyles["Not Selected"])}>{status}</span>
+                        : <span className="text-muted-foreground">No application yet</span>}
                     </td>
                     <td className="px-4 py-3 text-right align-middle">
                       {applicant.latest_application_id ? <Link className={buttonVariants({ className: "min-h-10", size: "sm", variant: "outline" })} href={`/hr/applications/${applicant.latest_application_id}`}><Eye aria-hidden="true" />Review{" "}<span className="sr-only">latest application of {name}</span></Link> : <span className="text-muted-foreground">—</span>}

@@ -33,6 +33,7 @@ import {
   useUpdateManagedUser,
 } from "@/hooks/use-administration";
 import { AUDIT_ACTION_GROUP_KEYS, AUDIT_ACTION_GROUPS, formatAuditDate, type AuditActionGroup, type AuditLogDisplay } from "@/lib/administration/audit-presentation";
+import { formatDateTime } from "@/lib/format-date";
 import type { Department, ManagedUser, Rank, UnitStation } from "@/lib/types/database";
 import { APP_ROLES, type AppRole } from "@/lib/types/roles";
 import { cn } from "@/lib/utils";
@@ -514,7 +515,7 @@ export function UnitStationsWorkspace() {
         <Button className="w-full sm:w-auto" onClick={() => setCreating(true)} type="button">Add unit/station</Button>
       </div>
       <p className="text-sm text-muted-foreground">
-        Active units appear in the Unit / Station field of personnel records and the Unit assignment field of deployments.
+        Active units appear in the Unit / Station field of personnel records and the Unit / Assignment field of deployments.
       </p>
       <SuccessMessage message={notice} />
       <ListBody loadingLabel="Loading units…" result={result}>
@@ -790,7 +791,7 @@ export function AuditLogsWorkspace() {
             <dl className="grid gap-x-4 gap-y-3 sm:grid-cols-[auto_minmax(0,1fr)]">
               <dt className="text-sm font-semibold text-muted-foreground">Account</dt><dd>{selected.actorLabel}</dd>
               <dt className="text-sm font-semibold text-muted-foreground">Action</dt><dd>{selected.actionLabel}</dd>
-              <dt className="text-sm font-semibold text-muted-foreground">Date</dt><dd>{new Date(selected.created_at).toLocaleString("en-US", { month: "long", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}</dd>
+              <dt className="text-sm font-semibold text-muted-foreground">Date</dt><dd>{formatDateTime(selected.created_at)}</dd>
             </dl>
             {selected.detailEntries.length ? (
               <div className="space-y-2">

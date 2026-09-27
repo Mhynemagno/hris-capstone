@@ -248,6 +248,7 @@ export type Applicant = {
   gender: "female" | "male" | "prefer_not_to_say" | null;
   civil_status: "single" | "married" | "widowed" | "separated" | "divorced" | null;
   religion: string | null;
+  citizenship: string | null;
   profile_image_path: string | null;
   phone: string | null;
   address: string | null;
@@ -263,10 +264,12 @@ export type UnitStation = {
   updated_at?: string;
 };
 
+export type ApplicantProfileDocumentKind = "eligibility" | "diploma" | "resume" | "psa" | "photo";
+
 export type ApplicantProfileDocument = {
   id: string;
   applicant_id: string;
-  kind: "eligibility" | "diploma";
+  kind: ApplicantProfileDocumentKind;
   object_path: string;
   file_name: string;
   mime_type: "application/pdf" | "image/png" | "image/jpeg";
@@ -276,7 +279,7 @@ export type ApplicantProfileDocument = {
   updated_at: string;
 };
 
-export type ApplicantEducationLevel = "elementary" | "secondary" | "college";
+export type ApplicantEducationLevel = "elementary" | "secondary" | "college" | "graduate";
 
 export type ApplicantEducation = {
   id: string;
@@ -285,6 +288,7 @@ export type ApplicantEducation = {
   school_name: string | null;
   degree_course: string | null;
   year_graduated: number | null;
+  location: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -388,6 +392,11 @@ export type LeaveRequest = {
   decided_at: string | null;
   created_at: string;
   updated_at: string;
+};
+
+/** A leave request with the submitting employee's name, as HR sees it in the queue and detail page. */
+export type LeaveRequestWithEmployee = LeaveRequest & {
+  employees: Pick<Employee, "first_name" | "middle_name" | "last_name" | "employee_number"> | null;
 };
 
 export type LeaveRequestAttachment = {

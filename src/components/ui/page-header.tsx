@@ -18,11 +18,11 @@ export function PageHeader({
   return (
     <header className="flex flex-col gap-4 border-b border-border/80 pb-6 sm:flex-row sm:items-end sm:justify-between">
       <div className="max-w-3xl space-y-2">
-        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl" id={id}>
+        <h1 className="text-3xl font-semibold tracking-tight" id={id}>
           {title}
         </h1>
         {description ? (
-          <p className="text-base leading-7 text-muted-foreground sm:text-lg">
+          <p className="text-base leading-7 text-muted-foreground">
             {description}
           </p>
         ) : null}

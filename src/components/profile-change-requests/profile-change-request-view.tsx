@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useProfileChangeRequest } from "@/hooks/use-profile-change-requests";
+import { formatDateTime } from "@/lib/format-date";
 import type { ProfileChangeRequest, ProfileChangeRequestChange, ProfileChangeRequestDocument } from "@/lib/types/database";
 
 import { ChangeCard, DocumentLink } from "./admin-profile-change-request-detail";
@@ -31,12 +32,12 @@ export function ProfileChangeRequestView({ requestId }: { requestId: string }) {
   return <section className="max-w-4xl space-y-6">
     <Link className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-primary underline-offset-4 hover:underline" href="/employee/profile/change-requests"><ArrowLeft aria-hidden className="size-4" />Back to my requests</Link>
     <div className="flex flex-wrap items-center justify-between gap-3">
-      <div><h1 className="text-2xl font-semibold tracking-tight">Profile change request</h1><p className="text-sm text-muted-foreground">Submitted {new Date(data.created_at).toLocaleString()}</p></div>
+      <div><h1 className="text-3xl font-semibold tracking-tight">Profile change request</h1><p className="text-sm text-muted-foreground">Submitted {formatDateTime(data.created_at)}</p></div>
       <Badge className="capitalize" variant={statusVariant(data.status)}>{data.status}</Badge>
     </div>
     <section aria-labelledby="request-decision" className="space-y-2 rounded-xl border p-4">
       <h2 className="font-semibold" id="request-decision">Decision</h2>
-      <p className="text-sm">{decisionText[data.status]}{data.decided_at && data.status !== "cancelled" ? <span className="text-muted-foreground"> {new Date(data.decided_at).toLocaleString()}</span> : null}</p>
+      <p className="text-sm">{decisionText[data.status]}{data.decided_at && data.status !== "cancelled" ? <span className="text-muted-foreground"> {formatDateTime(data.decided_at)}</span> : null}</p>
       {data.decision_reason ? <p className="rounded-lg bg-muted px-3 py-2 text-sm whitespace-pre-line"><span className="font-medium">Reviewer note:</span> {data.decision_reason}</p> : null}
     </section>
     {data.note ? <section className="space-y-2"><h2 className="font-semibold">Your note</h2><p className="rounded-lg bg-muted p-3 text-sm whitespace-pre-line">{data.note}</p></section> : null}

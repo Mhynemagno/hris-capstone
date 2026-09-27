@@ -9,6 +9,7 @@ import {
   useNotifications,
   useUnreadNotificationCount,
 } from "@/hooks/use-notifications";
+import { formatDateTime } from "@/lib/format-date";
 
 import { DeleteRecordDialog } from "@/components/deletion/delete-record-dialog";
 import { Badge } from "@/components/ui/badge";
@@ -18,13 +19,6 @@ import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
 
 const pageSize = 20;
-
-function formatNotificationDate(value: string) {
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
-}
 
 export function NotificationInbox() {
   const [page, setPage] = useState(1);
@@ -42,7 +36,7 @@ export function NotificationInbox() {
     <section aria-labelledby="notifications-heading" className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-2">
-          <h1 id="notifications-heading" className="text-3xl font-semibold tracking-tight sm:text-4xl">Notifications</h1>
+          <h1 id="notifications-heading" className="text-3xl font-semibold tracking-tight">Notifications</h1>
           <p className="max-w-2xl text-muted-foreground">Review your HRIS updates and decisions.</p>
         </div>
         <Button
@@ -73,7 +67,7 @@ export function NotificationInbox() {
                   <div className="space-y-1">
                     <CardTitle>{notification.title}</CardTitle>
                     <time dateTime={notification.created_at} className="text-sm text-muted-foreground">
-                      {formatNotificationDate(notification.created_at)}
+                      {formatDateTime(notification.created_at)}
                     </time>
                   </div>
                   {notification.read_at ? null : <Badge variant="secondary">Unread</Badge>}

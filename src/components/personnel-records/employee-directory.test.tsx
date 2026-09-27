@@ -66,7 +66,7 @@ describe("EmployeeDirectory", () => {
     expect(within(table).getByRole("cell", { name: "Jr." })).toBeInTheDocument();
     expect(within(table).getByRole("cell", { name: "On leave" })).toBeInTheDocument();
     expect(within(table).getByRole("link", { name: /view record for ana reyes/i })).toHaveAttribute("href", `/hr/employees/${employee.id}`);
-    expect(within(table).getByRole("link", { name: /edit record for ana reyes/i })).toHaveAttribute("href", `/hr/employees/${employee.id}?tab=official`);
+    expect(within(table).getByRole("link", { name: /edit record for ana reyes/i })).toHaveAttribute("href", `/hr/employees/${employee.id}?tab=official&mode=edit`);
     expect(screen.getByRole("link", { name: "Add New Employee" })).toHaveAttribute("href", "/hr/employees/new");
     expect(screen.getByText("1 record")).toBeInTheDocument();
 
@@ -78,7 +78,7 @@ describe("EmployeeDirectory", () => {
     mocks.useEmployeeDirectory.mockReturnValue({ data: { rows: [{ ...employee, employee_number: "EMP-2026-123" }], count: 1 }, error: null, isLoading: false });
     render(<EmployeeDirectory />);
 
-    expect(screen.getByRole("link", { name: /update to 0-00000 for ana reyes/i })).toHaveAttribute("href", `/hr/employees/${employee.id}?tab=official`);
+    expect(screen.getByRole("link", { name: /update to 0-00000 for ana reyes/i })).toHaveAttribute("href", `/hr/employees/${employee.id}?tab=official&mode=edit`);
   });
 
   it("does not flag a badge number already in the 0-00000 format", () => {

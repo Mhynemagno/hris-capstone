@@ -1,3 +1,4 @@
+import { RECRUITMENT_RANK } from "@/lib/pnp-catalogue";
 import { JOB_POSTING_IMAGE_BUCKET } from "@/lib/recruitment/job-posting-image";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import {
@@ -31,7 +32,7 @@ type PendingApplicantDocument = {
 };
 
 type PendingApplicantProfileDocument = {
-  kind: "eligibility" | "diploma";
+  kind: ApplicantProfileDocument["kind"];
   file: ApplicantProfileDocumentFile;
 };
 
@@ -64,7 +65,7 @@ function throwIfError(error: { message: string } | null) {
 function throwApplicationSubmissionError(error: { message: string } | null) {
   if (error && /eligibility/i.test(error.message) && /diploma/i.test(error.message)) {
     throw new ApplicantProfileRequiredError(
-      "Upload your Eligibility and Diploma documents on the Documents page before applying.",
+      "Upload all required documents (Eligibility, Diploma, CV / Resume, PSA birth certificate, and 2x2 picture) on the Documents page before applying.",
       "/applicant/documents",
       "Update required documents",
     );
@@ -102,9 +103,17 @@ function pageRange(page: number, pageSize: number) {
   return { from, to: from + pageSize - 1 };
 }
 
+/** Shown instead of supabase-js's "Auth session missing!" when the browser's sign-in has ended or was revoked. */
+export const SESSION_ENDED_MESSAGE = "Your session has ended. Sign in again to continue.";
+
+function throwIfAuthError(error: { message: string; name?: string } | null) {
+  if (error?.name === "AuthSessionMissingError") throw new Error(SESSION_ENDED_MESSAGE);
+  throwIfError(error);
+}
+
 async function requireCurrentUser() {
   const { data, error } = await createBrowserSupabaseClient().auth.getUser();
-  throwIfError(error);
+  throwIfAuthError(error);
   if (!data.user) throw new Error("Sign in to continue.");
   return data.user;
 }
@@ -154,6 +163,7 @@ export async function saveApplicantProfile(input: ApplicantProfileInput) {
     gender: values.gender ?? null,
     civil_status: values.civilStatus ?? null,
     religion: values.religion ?? null,
+    citizenship: values.citizenship ?? null,
     phone: values.phone ?? null,
     address: values.address ?? null,
   };
@@ -291,13 +301,19 @@ export async function listHrJobs(input: Partial<JobFilters> = {}) {
 
 export async function saveJobOpening(input: JobOpeningInput, jobId?: number, image?: JobPostingImageChange) {
   const values = jobOpeningSchema.parse(input);
-  await requireCurrentUser();
+  // No auth.getUser() round trip here: save_job_opening, set_job_opening_image and the storage policies
+  // authorize the HR caller from the request's access token. getUser() asks the Auth server whether the
+  // session still exists and fails with "Auth session missing!" (and signs this browser out) once it was
+  // revoked elsewhere, even though the page and the token are still valid.
   const client = createBrowserSupabaseClient();
+  // Every recruitment is for the Patrolman / Patrolwoman rank.
+  const { data: rank, error: rankError } = await client.from("ranks").select("id").eq("code", RECRUITMENT_RANK.code).maybeSingle();
+  throwIfError(rankError);
   const { data, error } = await client.rpc("save_job_opening", {
     target_job_id: jobId ?? null,
-    // Job postings no longer carry a department or rank; on update the RPC keeps any saved ones.
+    // Job postings carry no department; on update the RPC keeps a saved one.
     target_department_id: null,
-    target_rank_id: null,
+    target_rank_id: (rank as { id: number } | null)?.id ?? null,
     target_title: values.title,
     target_description: values.description,
     target_location: values.location,
@@ -393,7 +409,7 @@ export async function retryApplicationAnalysis(applicationId: string) {
 export async function submitApplication(input: SubmitApplicationInput) {
   const client = createBrowserSupabaseClient();
   const { data: userData, error: userError } = await client.auth.getUser();
-  throwIfError(userError);
+  throwIfAuthError(userError);
   const user = userData.user;
   if (!user) throw new Error("Sign in as an applicant before submitting an application.");
 

@@ -28,6 +28,16 @@ describe("promotion eligibility schemas", () => {
     expect(promotionCriterionSchema.safeParse({ targetRankId: 4, minimumYearsOfService: -1, requirements: [{ recordKind: "deployment", requiredName: "x", label: "x", isMandatory: true }] }).success).toBe(false);
   });
 
+  it("requires at least one requirement, without duplicates, and needs no rating minimum", () => {
+    const training = (name: string) => ({ recordKind: "training", requiredName: name, label: name, isMandatory: true });
+    const base = { targetRankId: 4, minimumYearsOfService: 3 };
+    expect(promotionCriterionSchema.safeParse({ ...base, requirements: [] }).error?.issues[0]?.message).toBe("Add at least one requirement.");
+    expect(promotionCriterionSchema.safeParse(base).success).toBe(false);
+    expect(promotionCriterionSchema.safeParse({ ...base, requirements: [training("PSJLC"), training(" psjlc ")] }).error?.issues[0]?.message).toBe("Each requirement can only be added once.");
+    expect(promotionCriterionSchema.safeParse({ ...base, requirements: [training("")] }).error?.issues[0]?.message).toBe("Choose a requirement.");
+    expect(promotionCriterionSchema.parse({ ...base, requirements: [training("PSJLC"), training("PSOAC")] })).toMatchObject({ minimumPerformanceRating: null, requirements: [{ requiredName: "PSJLC" }, { requiredName: "PSOAC" }] });
+  });
+
   it("bounds page size while normalizing directory filters", () => {
     expect(promotionEvaluationFiltersSchema.parse({ page: "2", pageSize: "200", readiness: "ready", recommendation: "recommended" })).toEqual({ page: 2, pageSize: 100, readiness: "ready", recommendation: "recommended" });
   });

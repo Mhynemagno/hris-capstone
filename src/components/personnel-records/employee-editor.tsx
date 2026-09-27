@@ -16,5 +16,10 @@ export function EmployeeEditor({ employee, profileId }: { employee?: Employee; p
   if (profileId && accounts.error) return <ErrorState message={accounts.error.message} />;
   const account = profileId ? accounts.data?.find((candidate) => candidate.profile_id === profileId) : undefined;
   if (profileId && !account) return <ErrorState message="This Employee account is no longer available for a new personnel record." />;
-  return <EmployeeForm account={account} employee={employee} pending={save.isPending} onSaved={async (input) => { const result = await save.mutateAsync({ input, employeeId: employee?.id }); router.push(`/hr/employees/${result.id}`); router.refresh(); }} />;
+  return <EmployeeForm account={account} employee={employee} pending={save.isPending} onSaved={async (input) => {
+    const result = await save.mutateAsync({ input, employeeId: employee?.id });
+    // Back to the read-only record, where `saved` shows the confirmation banner.
+    router.push(`/hr/employees/${result.id}?tab=official&saved=${employee ? "edited" : "created"}`);
+    router.refresh();
+  }} />;
 }

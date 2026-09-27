@@ -115,7 +115,7 @@ describe("EmployeeProfile", () => {
 
     expect(screen.getByRole("region", { name: "Eligibility" })).toHaveTextContent("No eligibility recorded.");
     expect(screen.getByRole("region", { name: "Service history" })).toHaveTextContent("PCapt — Police Captain");
-    expect(screen.getByRole("region", { name: "Service history" })).toHaveTextContent(/Intelligence Section · Jan 1, 2024 – present/);
+    expect(screen.getByRole("region", { name: "Service history" })).toHaveTextContent(/Intelligence Section · January 1, 2024 – present/);
     expect(screen.getByRole("region", { name: "Certifications" })).toHaveTextContent("First Aid");
   });
 

@@ -11,7 +11,8 @@ import { LoadingState } from "@/components/ui/loading-state";
 import { nativeSelectClassName } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { useDecideLeaveRequest, useHrLeaveRequests, useLeaveRequest } from "@/hooks/use-leave-management";
-import type { LeaveRequestStatus } from "@/lib/types/database";
+import { formatDate, formatDateRange } from "@/lib/format-date";
+import type { LeaveRequestStatus, LeaveRequestWithEmployee } from "@/lib/types/database";
 import { getLeaveAttachmentUrl } from "@/queries/leave-management";
 
 import { LeaveStatusBadge } from "./leave-status-badge";
@@ -22,6 +23,13 @@ const statusOptions: Array<{ value: LeaveRequestStatus; label: string }> = [
   { value: "rejected", label: "Rejected" },
   { value: "cancelled", label: "Cancelled" },
 ];
+
+/** Full name of the employee who submitted a leave request, e.g. "Juan Dela Cruz". */
+function employeeName(request: Pick<LeaveRequestWithEmployee, "employees">) {
+  const employee = request.employees;
+  if (!employee) return "Unknown employee";
+  return [employee.first_name, employee.middle_name, employee.last_name].filter(Boolean).join(" ");
+}
 
 export function HrLeaveQueue() {
   const [status, setStatus] = useState<LeaveRequestStatus | "">("");
@@ -59,10 +67,11 @@ export function HrLeaveQueue() {
         <ErrorState message={result.error.message} />
       ) : (
         <div className="relative overflow-x-auto rounded-xl border">
-          <table className="w-full min-w-[640px] text-left text-sm">
+          <table className="w-full min-w-[760px] text-left text-sm">
             <caption className="sr-only">Leave requests{statusLabel ? ` with status ${statusLabel}` : ""}</caption>
             <thead className="bg-muted/60">
               <tr>
+                <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Employee</th>
                 <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Leave type</th>
                 <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Dates</th>
                 <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Submitted</th>
@@ -74,17 +83,21 @@ export function HrLeaveQueue() {
               {rows.length ? (
                 rows.map((row) => (
                   <tr className="border-t" key={row.id}>
-                    <td className="px-4 py-3 align-top font-medium">{row.leave_type_name}</td>
                     <td className="px-4 py-3 align-top">
-                      {row.starts_on} to {row.ends_on}
+                      <span className="font-medium">{employeeName(row)}</span>
+                      {row.employees?.employee_number ? (
+                        <span className="block text-xs text-muted-foreground">Badge no. {row.employees.employee_number}</span>
+                      ) : null}
                     </td>
-                    <td className="px-4 py-3 align-top">{row.created_at.slice(0, 10)}</td>
+                    <td className="px-4 py-3 align-top font-medium">{row.leave_type_name}</td>
+                    <td className="px-4 py-3 align-top">{formatDateRange(row.starts_on, row.ends_on)}</td>
+                    <td className="px-4 py-3 align-top">{formatDate(row.created_at)}</td>
                     <td className="px-4 py-3 align-top">
                       <LeaveStatusBadge status={row.status} />
                     </td>
                     <td className="px-4 py-3 align-top">
                       <Link
-                        aria-label={`${row.status === "pending" ? "Review" : "View"} ${row.leave_type_name} request, ${row.starts_on} to ${row.ends_on}`}
+                        aria-label={`${row.status === "pending" ? "Review" : "View"} ${employeeName(row)}'s ${row.leave_type_name} request, ${formatDateRange(row.starts_on, row.ends_on)}`}
                         className="font-medium text-primary underline underline-offset-4"
                         href={`/hr/leave-requests/${row.id}`}
                       >
@@ -96,7 +109,7 @@ export function HrLeaveQueue() {
               ) : (
                 <tr>
                   <EmptyTableState
-                    colSpan={5}
+                    colSpan={6}
                     message={statusLabel ? `No ${statusLabel} leave requests. Try another status.` : "No leave requests have been submitted yet."}
                   />
                 </tr>
@@ -174,19 +187,24 @@ export function HrLeaveDetail({ requestId }: { requestId: string }) {
         Back to leave requests
       </Link>
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-2xl font-semibold">{data.leave_type_name}</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">{data.leave_type_name}</h1>
         <LeaveStatusBadge status={data.status} />
       </div>
       <dl className="grid gap-3 text-sm sm:grid-cols-2">
-        <div>
-          <dt className="font-semibold text-muted-foreground">Dates</dt>
+        <div className="sm:col-span-2">
+          <dt className="font-semibold text-muted-foreground">Employee</dt>
           <dd>
-            {data.starts_on} to {data.ends_on}
+            {employeeName(data)}
+            {data.employees?.employee_number ? <span className="text-muted-foreground"> · Badge no. {data.employees.employee_number}</span> : null}
           </dd>
         </div>
         <div>
+          <dt className="font-semibold text-muted-foreground">Dates</dt>
+          <dd>{formatDateRange(data.starts_on, data.ends_on)}</dd>
+        </div>
+        <div>
           <dt className="font-semibold text-muted-foreground">Submitted</dt>
-          <dd>{data.created_at.slice(0, 10)}</dd>
+          <dd>{formatDate(data.created_at)}</dd>
         </div>
         <div className="sm:col-span-2">
           <dt className="font-semibold text-muted-foreground">Notes</dt>
@@ -194,7 +212,7 @@ export function HrLeaveDetail({ requestId }: { requestId: string }) {
         </div>
         {data.decision_note ? (
           <div className="sm:col-span-2">
-            <dt className="font-semibold text-muted-foreground">Decision note</dt>
+            <dt className="font-semibold text-muted-foreground">Notes from HR</dt>
             <dd className="mt-1 whitespace-pre-line">{data.decision_note}</dd>
           </div>
         ) : null}
@@ -222,15 +240,29 @@ export function HrLeaveDetail({ requestId }: { requestId: string }) {
       ) : null}
       {data.status === "pending" ? (
         <div className="space-y-4 rounded-xl border p-4">
-          <h2 className="text-lg font-semibold">Decision</h2>
-          <FormField
-            description="Optional when approving; required when rejecting. The employee can see this note."
-            error={noteError}
-            htmlFor="decision-note"
-            label="Decision note"
-          >
-            <Textarea id="decision-note" maxLength={2000} onChange={(event) => setNote(event.target.value)} rows={4} value={note} />
-          </FormField>
+          <h2 className="text-lg font-semibold" id="decision-notes-heading">
+            Notes
+          </h2>
+          <div className="space-y-2">
+            <Textarea
+              aria-describedby={noteError ? "decision-note-description decision-note-error" : "decision-note-description"}
+              aria-invalid={noteError ? true : undefined}
+              aria-label="Notes"
+              id="decision-note"
+              maxLength={2000}
+              onChange={(event) => setNote(event.target.value)}
+              rows={4}
+              value={note}
+            />
+            <p className="text-sm text-muted-foreground" id="decision-note-description">
+              Optional when approving; required when rejecting. The employee can see this note.
+            </p>
+            {noteError ? (
+              <p className="text-sm font-medium text-destructive" id="decision-note-error" role="alert">
+                {noteError}
+              </p>
+            ) : null}
+          </div>
           {error ? <ErrorState message={error} /> : null}
           <div className="flex flex-wrap gap-2">
             <Button disabled={decide.isPending} onClick={() => void submitDecision("approved")}>

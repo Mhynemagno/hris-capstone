@@ -50,6 +50,14 @@ describe("EmployeeLeaveList", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Cancellation failed");
     expect(screen.getByText(/Annual leave/)).toBeVisible();
   });
+
+  it("shows leave dates in words and HR's notes", () => {
+    mocks.rows = [{ id: "123e4567-e89b-42d3-a456-426614174000", leave_type_name: "Annual leave", starts_on: "2026-09-01", ends_on: "2026-09-02", reason: null, status: "rejected", decision_note: "Short staffed." }];
+    render(<EmployeeLeaveList />);
+
+    expect(screen.getByText("Annual leave · September 1, 2026 to September 2, 2026")).toBeVisible();
+    expect(screen.getByText("Notes from HR: Short staffed.")).toBeVisible();
+  });
 });
 
 describe("EmployeeLeaveRequestForm", () => {

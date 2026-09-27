@@ -22,7 +22,19 @@ vi.mock("@/lib/supabase/client", () => ({
 
 import * as recruitmentQueries from "./recruitment";
 
-import { getPublishedJob, retryApplicationAnalysis, saveJobOpening, submitApplication } from "./recruitment";
+import { getPublishedJob, retryApplicationAnalysis, saveApplicantProfile, saveJobOpening, SESSION_ENDED_MESSAGE, submitApplication } from "./recruitment";
+
+/** The Patrolman / Patrolwoman rank lookup every job-opening save makes. */
+function mockPatrolRank(id: number | null = 1) {
+  const query = { select: vi.fn(), eq: vi.fn(), maybeSingle: vi.fn().mockResolvedValue({ data: id === null ? null : { id }, error: null }) };
+  query.select.mockReturnValue(query);
+  query.eq.mockReturnValue(query);
+  mocks.from.mockReturnValue(query);
+  return query;
+}
+
+/** What supabase-js returns from auth.getUser() when the browser's session is gone or was revoked. */
+const sessionMissing = Object.assign(new Error("Auth session missing!"), { name: "AuthSessionMissingError", status: 400 });
 
 describe("getPublishedJob", () => {
   beforeEach(() => vi.resetAllMocks());
@@ -162,7 +174,25 @@ describe("saveJobOpening", () => {
     mocks.rpc.mockResolvedValue({ data: { id: 42 }, error: null });
   });
 
-  it("saves the opening and its criteria through one transactional RPC", async () => {
+  it("does not depend on auth.getUser(), which reports a revoked session as \"Auth session missing!\"", async () => {
+    mockPatrolRank();
+    mocks.getUser.mockResolvedValue({ data: { user: null }, error: sessionMissing });
+
+    await expect(saveJobOpening({
+      title: "Patrolman",
+      description: "Serve the community through visible patrol work and outreach.",
+      location: "San Juan City Police Station",
+      closesOn: "2026-10-31",
+      status: "published",
+      criteria: [{ ordinal: 1, kind: "education", requirement: "Baccalaureate Degree", isRequired: true }],
+    })).resolves.toMatchObject({ id: 42 });
+
+    expect(mocks.getUser).not.toHaveBeenCalled();
+    expect(mocks.rpc).toHaveBeenCalledWith("save_job_opening", expect.objectContaining({ target_status: "published" }));
+  });
+
+  it("saves the opening, its criteria and the Patrolman / Patrolwoman rank through one transactional RPC", async () => {
+    const rankQuery = mockPatrolRank(7);
     await expect(saveJobOpening({
       title: "Public Safety Analyst",
       description: "Analyze public safety data and support evidence-based operational decisions.",
@@ -175,12 +205,13 @@ describe("saveJobOpening", () => {
     expect(mocks.rpc).toHaveBeenCalledWith("save_job_opening", expect.objectContaining({
       target_job_id: 42,
       target_department_id: null,
-      target_rank_id: null,
+      target_rank_id: 7,
       target_location: "San Juan City Police Station",
       target_closes_on: "2026-10-31",
       requested_criteria: [{ ordinal: 1, kind: "skill", requirement: "Clear written communication", isRequired: true }],
     }));
-    expect(mocks.from).not.toHaveBeenCalled();
+    expect(mocks.from).toHaveBeenCalledWith("ranks");
+    expect(rankQuery.eq).toHaveBeenCalledWith("code", "Pat");
   });
 });
 
@@ -199,6 +230,7 @@ describe("saveJobOpening with an image", () => {
     mocks.getUser.mockResolvedValue({ data: { user: { id: userId } }, error: null });
     mocks.upload.mockResolvedValue({ error: null });
     mocks.remove.mockResolvedValue({ error: null });
+    mockPatrolRank();
   });
 
   it("uploads the image under the job, saves its path, and deletes the replaced image", async () => {
@@ -223,6 +255,17 @@ describe("saveJobOpening with an image", () => {
     expect(mocks.upload).not.toHaveBeenCalled();
     expect(mocks.rpc).toHaveBeenLastCalledWith("set_job_opening_image", { target_job_id: 42, target_image_path: null });
     expect(mocks.remove).toHaveBeenCalledWith(["job-openings/42/old.png"]);
+  });
+});
+
+describe("signed-in checks", () => {
+  beforeEach(() => vi.resetAllMocks());
+
+  it("explains an ended session instead of showing \"Auth session missing!\"", async () => {
+    mocks.getUser.mockResolvedValue({ data: { user: null }, error: sessionMissing });
+
+    await expect(saveApplicantProfile({ firstName: "Maria", lastName: "Reyes" })).rejects.toThrow(SESSION_ENDED_MESSAGE);
+    expect(mocks.from).not.toHaveBeenCalled();
   });
 });
 

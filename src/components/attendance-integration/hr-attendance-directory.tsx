@@ -6,6 +6,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useHrAttendanceLogs } from "@/hooks/use-attendance-integration";
+import { formatDate } from "@/lib/format-date";
 
 import { AttendanceStatusBadge } from "./attendance-status-badge";
 import { formatAttendanceTime } from "./attendance-time";
@@ -44,7 +45,7 @@ export function HrAttendanceDirectory() {
           <tbody>
             {rows.length ? rows.map((row) => (
               <tr className="border-t" key={row.id}>
-                <td className="px-4 py-3 align-top whitespace-nowrap">{row.attendance_date}</td>
+                <td className="px-4 py-3 align-top whitespace-nowrap">{formatDate(row.attendance_date)}</td>
                 <td className="px-4 py-3 align-top">{row.external_employee_id}</td>
                 <td className="px-4 py-3 align-top tabular-nums">{formatAttendanceTime(row.time_in)}</td>
                 <td className="px-4 py-3 align-top tabular-nums">{formatAttendanceTime(row.time_out)}</td>

@@ -6,7 +6,7 @@ const today = new Date(2026, 8, 26);
 
 describe("profile-layout helpers", () => {
   it("formats calendar days without time-zone drift", () => {
-    expect(formatDay("1982-08-16")).toBe("Aug 16, 1982");
+    expect(formatDay("1982-08-16")).toBe("August 16, 1982");
     expect(formatDay(null)).toBeNull();
   });
 

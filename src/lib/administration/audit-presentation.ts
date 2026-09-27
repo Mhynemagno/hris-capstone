@@ -1,3 +1,4 @@
+import { formatDate, formatDateTime } from "@/lib/format-date";
 import type { AuditLog } from "@/lib/types/database";
 import type { AppRole } from "@/lib/types/roles";
 
@@ -144,19 +145,14 @@ function actionWord(action: string) {
   return group ? AUDIT_ACTION_GROUPS[group].label : humanize(action);
 }
 
-function formatDateTime(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(value);
-  return dateOnly
-    ? new Date(`${value}T00:00:00`).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
-    : date.toLocaleString("en-US", { month: "long", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
+/** A date-only value in words ("September 15, 2026"); a timestamp with its Philippine time. */
+function formatAuditValueDate(value: string) {
+  return (/^\d{4}-\d{2}-\d{2}$/.test(value) ? formatDate(value) : formatDateTime(value)) ?? value;
 }
 
 /** "September 15, 2026" — the audit table's date column. */
 export function formatAuditDate(value: string) {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  return formatDate(value) ?? value;
 }
 
 function formatValue(key: string, value: unknown, lookups: AuditPresentationLookups): string {
@@ -166,7 +162,7 @@ function formatValue(key: string, value: unknown, lookups: AuditPresentationLook
   if (typeof value === "string") {
     if (key === "role" && value in roleLabels) return roleLabels[value as AppRole];
     if (uuidPattern.test(value) && lookups.profiles[value]) return lookups.profiles[value];
-    if (isoDatePattern.test(value)) return formatDateTime(value);
+    if (isoDatePattern.test(value)) return formatAuditValueDate(value);
     return value;
   }
   if (Array.isArray(value)) {

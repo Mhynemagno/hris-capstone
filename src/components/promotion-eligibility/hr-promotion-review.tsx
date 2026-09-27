@@ -10,6 +10,7 @@ import { LoadingState } from "@/components/ui/loading-state";
 import { nativeSelectClassName } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { useRankOptions } from "@/hooks/use-administration";
+import { formatDate, formatDateRange } from "@/lib/format-date";
 import { rankLabel } from "@/lib/ranks";
 import {
   useCreatePerformanceRating,
@@ -147,7 +148,7 @@ export function HrPromotionReview({ employeeId }: { employeeId: string }) {
         </div>
         <div>
           <dt className="text-sm text-muted-foreground">Employment started</dt>
-          <dd className="font-medium">{data.employee.employment_started_on}</dd>
+          <dd className="font-medium">{formatDate(data.employee.employment_started_on) ?? "—"}</dd>
         </div>
       </dl>
       <section className="space-y-2">
@@ -162,7 +163,7 @@ export function HrPromotionReview({ employeeId }: { employeeId: string }) {
           <ul className="space-y-2">
             {data.ratings.map((rating) => (
               <li className="rounded-lg border p-3 text-sm" key={rating.id}>
-                <span className="font-medium">{ratingLabel(rating.rating)}</span> · {rating.review_period_starts_on} to {rating.review_period_ends_on}
+                <span className="font-medium">{ratingLabel(rating.rating)}</span> · {formatDateRange(rating.review_period_starts_on, rating.review_period_ends_on)}
                 {rating.notes ? <p className="mt-1 whitespace-pre-line text-muted-foreground">{rating.notes}</p> : null}
               </li>
             ))}
@@ -228,7 +229,6 @@ export function HrPromotionReview({ employeeId }: { employeeId: string }) {
               {criteria.data?.map((criterion) => (
                 <option key={criterion.id} value={criterion.id}>
                   {rankTitle(criterion.target_rank_id)} · {criterion.minimum_years_of_service}+ yrs
-                  {criterion.minimum_performance_rating ? ` · rating ≥ ${criterion.minimum_performance_rating}` : ""}
                 </option>
               ))}
             </select>

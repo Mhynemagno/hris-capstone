@@ -21,7 +21,8 @@ describe("HrRegisteredApplicantList", () => {
     expect(first).toHaveTextContent("+639171234567");
     expect(first).toHaveTextContent("No application yet");
     expect(second).toHaveTextContent("Interview");
-    expect(second).toHaveTextContent("Patrolman · 2 applications");
+    expect(second).not.toHaveTextContent("Patrolman");
+    expect(first).toHaveTextContent("September 20, 2026");
     expect(within(second!).getByRole("link", { name: /Review/ })).toHaveAttribute("href", "/hr/applications/123e4567-e89b-42d3-a456-426614174000");
   });
 

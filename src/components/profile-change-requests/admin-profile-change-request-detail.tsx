@@ -11,6 +11,7 @@ import { FormField } from "@/components/ui/form-field";
 import { LoadingState } from "@/components/ui/loading-state";
 import { Textarea } from "@/components/ui/textarea";
 import { useDecideProfileChangeRequest, useProfileChangeDocumentUrl, useProfileChangeRequest } from "@/hooks/use-profile-change-requests";
+import { formatDateTime } from "@/lib/format-date";
 import type { ProfileChangeRequestChange, ProfileChangeRequestDocument, ProfileChangeRequestHistory } from "@/lib/types/database";
 import { profileChangeDecisionSchema } from "@/schemas/profile-change-requests";
 
@@ -83,7 +84,7 @@ function History({ entries }: { entries: ProfileChangeRequestHistory[] }) {
           <li className="text-sm" key={entry.id}>
             <span className="font-medium capitalize">{entry.event_type}</span>{" "}
             <time className="text-muted-foreground" dateTime={entry.created_at}>
-              — {new Date(entry.created_at).toLocaleString()}
+              — {formatDateTime(entry.created_at)}
             </time>
           </li>
         ))}
@@ -144,7 +145,7 @@ export function AdminProfileChangeRequestDetail({ requestId }: { requestId: stri
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-semibold">Review request</h2>
-          <p className="text-sm text-muted-foreground">Submitted {new Date(data.created_at).toLocaleString()}</p>
+          <p className="text-sm text-muted-foreground">Submitted {formatDateTime(data.created_at)}</p>
         </div>
         <Badge className="capitalize" variant={data.status === "approved" ? "secondary" : data.status === "rejected" ? "destructive" : "outline"}>
           {data.status}

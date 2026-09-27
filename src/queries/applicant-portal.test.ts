@@ -28,23 +28,37 @@ function tableMock(existing: { id: string; level: string }[]) {
 describe("saveMyApplicantEducation", () => {
   beforeEach(() => vi.resetAllMocks());
 
-  it("inserts new levels, updates existing ones, and removes cleared ones", async () => {
-    const writes = tableMock([{ id: "row-secondary", level: "secondary" }, { id: "row-college", level: "college" }]);
-    await saveMyApplicantEducation(applicantId, {
-      elementary: { schoolName: "San Juan Elementary", degreeCourse: "", yearGraduated: "2008" },
-      secondary: { schoolName: "San Juan High", degreeCourse: "", yearGraduated: "" },
-      college: { schoolName: "", degreeCourse: "", yearGraduated: "" },
-    });
+  const primary = { schoolName: "San Juan Elementary", degreeCourse: "Primary Education", yearGraduated: "2008", location: "San Juan City" };
+  const secondary = { schoolName: "San Juan High", degreeCourse: "Junior High School", yearGraduated: "2012", location: "San Juan City" };
+  const bachelors = { schoolName: "PUP", degreeCourse: "BS Criminology", yearGraduated: "2016", location: "Manila" };
+  const blank = { schoolName: "", degreeCourse: "", yearGraduated: "", location: "" };
+
+  it("inserts new levels, updates existing ones, and removes a cleared optional level", async () => {
+    const writes = tableMock([{ id: "row-secondary", level: "secondary" }, { id: "row-graduate", level: "graduate" }]);
+    await saveMyApplicantEducation(applicantId, { elementary: primary, secondary, college: bachelors, graduate: blank });
     expect(writes).toEqual([
-      { op: "insert", payload: { applicant_id: applicantId, level: "elementary", school_name: "San Juan Elementary", degree_course: null, year_graduated: 2008 } },
-      { op: "update", payload: { school_name: "San Juan High", degree_course: null, year_graduated: null }, id: "row-secondary" },
-      { op: "delete", id: "row-college" },
+      { op: "insert", payload: { applicant_id: applicantId, level: "elementary", school_name: "San Juan Elementary", degree_course: "Primary Education", year_graduated: 2008, location: "San Juan City" } },
+      { op: "update", payload: { school_name: "San Juan High", degree_course: "Junior High School", year_graduated: 2012, location: "San Juan City" }, id: "row-secondary" },
+      { op: "insert", payload: { applicant_id: applicantId, level: "college", school_name: "PUP", degree_course: "BS Criminology", year_graduated: 2016, location: "Manila" } },
+      { op: "delete", id: "row-graduate" },
     ]);
+  });
+
+  it("saves an optional graduate degree when it is filled in completely", async () => {
+    const writes = tableMock([]);
+    await saveMyApplicantEducation(applicantId, { elementary: primary, secondary, college: bachelors, graduate: { schoolName: "UP Diliman", degreeCourse: "MA Public Administration", yearGraduated: "2020", location: "Quezon City" } });
+    expect(writes.at(-1)).toEqual({ op: "insert", payload: { applicant_id: applicantId, level: "graduate", school_name: "UP Diliman", degree_course: "MA Public Administration", year_graduated: 2020, location: "Quezon City" } });
+  });
+
+  it("rejects a required level with a missing field before writing", async () => {
+    const writes = tableMock([]);
+    await expect(saveMyApplicantEducation(applicantId, { elementary: { ...primary, location: "" }, secondary, college: bachelors, graduate: blank })).rejects.toThrow();
+    expect(writes).toEqual([]);
   });
 
   it("rejects an out-of-range graduation year before writing", async () => {
     const writes = tableMock([]);
-    await expect(saveMyApplicantEducation(applicantId, { elementary: { yearGraduated: "1850" }, secondary: {}, college: {} })).rejects.toThrow();
+    await expect(saveMyApplicantEducation(applicantId, { elementary: { ...primary, yearGraduated: "1850" }, secondary, college: bachelors, graduate: blank })).rejects.toThrow();
     expect(writes).toEqual([]);
   });
 });

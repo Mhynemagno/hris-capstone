@@ -32,6 +32,8 @@ describe("AppliedJobSummary", () => {
     expect(screen.getByText("Handles case files for the station.")).toBeInTheDocument();
     expect(screen.getByText("Under Review")).toBeInTheDocument();
     expect(screen.getByText("Deadline of Application")).toBeInTheDocument();
+    expect(screen.getByText("October 31, 2026")).toBeInTheDocument();
+    expect(screen.getByText(/^September 20, 2026.*4:00/)).toBeInTheDocument();
   });
 
   it("leaves out department and rank when the job posting has none", () => {

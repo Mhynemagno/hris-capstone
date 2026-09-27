@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { OTHERS_CHOICE } from "@/lib/pnp-catalogue";
+
 import { employeeNumberSchema, isoDateSchema, paginationSchema, uuidSchema } from "./common";
 
 const optionalText = (max: number) =>
@@ -50,6 +52,32 @@ export const jobOpeningSchema = z.object({
   criteria: z.array(jobCriterionSchema).min(1).max(30),
 });
 
+/** A dropdown requirement; "Others" needs the requirement typed in. */
+const generalRequirementChoiceSchema = (label: string) => z.object({
+  choice: z.string().trim().min(1, `Choose the ${label} requirement.`),
+  other: z.string().trim().max(1000).default(""),
+}).superRefine((value, context) => {
+  if (value.choice === OTHERS_CHOICE && value.other.length < 2) {
+    context.addIssue({ code: "custom", path: ["other"], message: `Specify the ${label} requirement.` });
+  }
+});
+
+/** The job form's General Requirements, saved as job qualification criteria. */
+export const generalRequirementsSchema = z.object({
+  education: generalRequirementChoiceSchema("education"),
+  eligibility: generalRequirementChoiceSchema("eligibility"),
+  otherRequirements: z.array(z.object({
+    kind: jobCriterionKindSchema,
+    requirement: z.string().trim().min(2).max(1000),
+    included: z.boolean(),
+    isRequired: z.boolean().default(true),
+  })).max(28),
+});
+
+export const jobOpeningFormSchema = jobOpeningSchema.omit({ criteria: true }).extend({
+  requirements: generalRequirementsSchema,
+});
+
 export const applicantProfileSchema = z.object({
   firstName: z.string().trim().min(1).max(80),
   middleName: optionalText(80),
@@ -60,6 +88,7 @@ export const applicantProfileSchema = z.object({
   gender: optionalEnum(["female", "male", "prefer_not_to_say"]),
   civilStatus: optionalEnum(["single", "married", "widowed", "separated", "divorced"]),
   religion: optionalText(120),
+  citizenship: optionalText(80),
   phone: optionalText(32),
   address: optionalText(500),
 });
@@ -153,6 +182,8 @@ export const applicationAiFiltersSchema = applicationFiltersSchema.extend({ aiSt
 export type ApplicationStatus = z.infer<typeof applicationStatusSchema>;
 export type JobOpeningInput = z.infer<typeof jobOpeningSchema>;
 export type JobCriterionInput = z.infer<typeof jobCriterionSchema>;
+export type GeneralRequirementsInput = z.infer<typeof generalRequirementsSchema>;
+export type JobOpeningFormInput = z.infer<typeof jobOpeningFormSchema>;
 export type ApplicantProfileInput = z.input<typeof applicantProfileSchema>;
 export type ApplicantProfilePhotoFile = z.infer<typeof applicantProfilePhotoFileSchema>;
 export type ApplicantProfileDocumentFile = z.infer<typeof applicantProfileDocumentFileSchema>;

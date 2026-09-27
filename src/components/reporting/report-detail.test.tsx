@@ -16,7 +16,7 @@ vi.mock("@/hooks/use-administration", () => ({
   }),
 }));
 
-import { REPORT_STATUS_FILTERS, ReportDetail } from "./report-detail";
+import { formatCell, REPORT_STATUS_FILTERS, ReportDetail } from "./report-detail";
 
 const report = {
   reportKey: "deployments",
@@ -33,6 +33,15 @@ const report = {
 };
 
 const optionValues = (select: HTMLElement) => within(select).getAllByRole("option").map((option) => (option as HTMLOptionElement).value);
+
+describe("formatCell", () => {
+  it("shows dates in words and leaves other values alone", () => {
+    expect(formatCell("2026-09-23")).toBe("September 23, 2026");
+    expect(formatCell("2026-09-23T06:05:00+00:00")).toBe("September 23, 2026 at 2:05 PM");
+    expect(formatCell("PNP-2026-09")).toBe("PNP-2026-09");
+    expect(formatCell(null)).toBe("—");
+  });
+});
 
 describe("ReportDetail filters", () => {
   beforeEach(() => {

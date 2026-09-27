@@ -40,7 +40,7 @@ describe("ApplicantApplicationDetail", () => {
     expect(screen.getByRole("heading", { name: "What you applied for" })).toBeInTheDocument();
     expect(screen.getByText("Investigator")).toBeInTheDocument();
     expect(screen.getByText("PCpl — Police Corporal")).toBeInTheDocument();
-    expect(screen.getByRole("list", { name: "Status history" })).toHaveTextContent(new Date("2026-09-08T00:00:00.000Z").toLocaleDateString());
+    expect(screen.getByRole("list", { name: "Status history" })).toHaveTextContent("September 8, 2026");
     expect(screen.getByRole("list", { name: "Documents" })).toHaveTextContent("CV");
   });
 });

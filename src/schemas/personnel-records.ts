@@ -6,6 +6,33 @@ const optionalText = (max: number) =>
   z.string().trim().max(max).transform((value) => value || undefined).optional();
 
 const optionalDate = isoDateSchema.optional();
+
+/** Required free text with a field-specific message when it is left blank. */
+const requiredText = (max: number, message: string) =>
+  z.string({ error: message }).trim().min(1, message).max(max);
+
+/** Philippine mobile number as stored on the official record: +639 followed by 9 digits. */
+export const PHILIPPINE_MOBILE_PATTERN = /^\+639\d{9}$/;
+
+/**
+ * Rewrites a saved or typed mobile number into the +639XXXXXXXXX format:
+ * spaces and dashes are dropped and the local 09XXXXXXXXX form gets the +63 prefix.
+ * Anything else is returned cleaned but otherwise unchanged so validation can explain it.
+ */
+export function toPhilippineMobile(value: string | null | undefined) {
+  const cleaned = (value ?? "").trim().replace(/[\s-]/g, "");
+  if (/^09\d{9}$/.test(cleaned)) return `+63${cleaned.slice(1)}`;
+  if (/^639\d{9}$/.test(cleaned)) return `+${cleaned}`;
+  return cleaned;
+}
+
+/** Same format as `philippineMobileSchema` in auth, with the wording HR sees on the employee form. */
+const requiredMobile = (message: string) =>
+  z
+    .string({ error: message })
+    .transform(toPhilippineMobile)
+    .pipe(z.string().min(1, message).regex(PHILIPPINE_MOBILE_PATTERN, "Enter the number as +639XXXXXXXXX."));
+
 const employmentStatuses = ["active", "on_leave"] as const;
 const profilePhotoMimeTypes = ["image/png", "image/jpeg", "image/webp"] as const;
 const genders = ["female", "male", "prefer_not_to_say"] as const;
@@ -54,21 +81,22 @@ export const employeeSchema = z
     middleName: optionalText(80),
     lastName: z.string().trim().min(1).max(80),
     qualifier: optionalText(32),
-    placeOfBirth: optionalText(160),
-    dateOfBirth: z.preprocess((value) => value === "" ? undefined : value, isoDateSchema.optional()),
-    gender: z.preprocess((value) => value === "" ? undefined : value, z.enum(genders).optional()),
+    placeOfBirth: requiredText(160, "Enter the place of birth."),
+    dateOfBirth: z.iso.date({ error: (issue) => (issue.input === undefined || issue.input === "" ? "Enter the date of birth." : "Enter a valid date of birth.") }),
+    gender: z.enum(genders, { error: "Choose a gender." }),
     civilStatus: z.preprocess((value) => value === "" ? undefined : value, z.enum(civilStatuses).optional()),
-    religion: optionalText(120),
+    religion: requiredText(120, "Enter the religion."),
     unitStation: optionalText(160),
     personalEmail: z.string().trim().toLowerCase().pipe(z.email()),
-    phone: optionalText(32),
-    address: optionalText(500),
-    emergencyContactName: optionalText(160),
-    emergencyContactPhone: optionalText(32),
+    phone: requiredMobile("Enter the phone number."),
+    address: requiredText(500, "Enter the home address."),
+    emergencyContactName: requiredText(160, "Enter the emergency contact."),
+    emergencyContactPhone: requiredMobile("Enter the emergency contact phone."),
     departmentId: z.coerce.number().int().positive().optional(),
     rankId: z.coerce.number().int().positive().optional(),
     employmentStatus: z.enum(employmentStatuses).default("active"),
-    employmentStartedOn: isoDateSchema,
+    employmentStartedOn: z.iso.date({ error: (issue) => (issue.input === undefined || issue.input === "" ? "Enter the employment start date." : "Enter a valid date.") }),
+    // Not shown on the form (only Active and On leave records are kept); an existing value is carried through unchanged.
     employmentEndedOn: optionalDate,
   })
   .refine(hasValidDateRange("employmentStartedOn", "employmentEndedOn"), {
