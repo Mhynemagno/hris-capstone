@@ -17,4 +17,20 @@ describe("ChangePasswordForm", () => {
     expect(onChangePassword).not.toHaveBeenCalled();
     expect(screen.getByRole("alert")).toHaveTextContent(/match/i);
   });
+
+  it("confirms the change and clears the form after the password is updated", async () => {
+    const user = userEvent.setup();
+    const onChangePassword = vi.fn().mockResolvedValue(undefined);
+    render(<ChangePasswordForm onChangePassword={onChangePassword} />);
+
+    await user.type(screen.getByLabelText(/^new password/i), "long-enough-password");
+    await user.type(screen.getByLabelText(/confirm new password/i), "long-enough-password");
+    await user.click(screen.getByRole("button", { name: /change password/i }));
+
+    expect(onChangePassword).toHaveBeenCalledWith("long-enough-password");
+    expect(await screen.findByRole("status")).toHaveTextContent("Password updated.");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/^new password/i)).toHaveValue("");
+    expect(screen.getByLabelText(/confirm new password/i)).toHaveValue("");
+  });
 });

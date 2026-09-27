@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(67);
+select extensions.plan(69);
 
 delete from public.applications;
 delete from public.job_openings;
@@ -187,8 +187,8 @@ select extensions.lives_ok(
     rank.id,
     'Transactional opening',
     'A job opening created together with its qualification criteria in one transaction.',
-    null,
-    null,
+    'Headquarters',
+    '2026-12-31',
     'closed',
     '[{"ordinal":1,"kind":"experience","requirement":"Two years of relevant experience","isRequired":true}]'::jsonb
   ) from public.departments department
@@ -209,7 +209,7 @@ select extensions.lives_ok(
     'Transactional opening updated',
     'The edited job opening and its replacement qualification criteria remain consistent.',
     'Headquarters',
-    null,
+    '2026-12-31',
     'closed',
     '[{"ordinal":1,"kind":"experience","requirement":"Three years of relevant experience","isRequired":true},{"ordinal":2,"kind":"skill","requirement":"Clear written communication","isRequired":false}]'::jsonb
   ) from public.job_openings opening where opening.title = 'Transactional opening'$$,
@@ -233,7 +233,7 @@ select extensions.throws_ok(
     'Transactional opening updated',
     'The edited job opening and its replacement qualification criteria remain consistent.',
     'Headquarters',
-    null,
+    '2026-12-31',
     'draft',
     '[{"ordinal":1,"kind":"skill","requirement":"Valid criterion","isRequired":true},{"ordinal":2,"kind":"invalid","requirement":"Invalid criterion","isRequired":true}]'::jsonb
   ) from public.job_openings opening where opening.title = 'Transactional opening updated'$$,
@@ -249,6 +249,31 @@ select extensions.is(
   (select status from public.job_openings where title = 'Transactional opening updated'),
   'closed',
   'The atomic job workflow leaves a valid opening state after a failed retry'
+);
+select extensions.lives_ok(
+  $$select public.save_job_opening(
+    null, null, null,
+    'Opening without department or rank',
+    'Job postings no longer need a department or a rank to be saved by HR.',
+    'Headquarters',
+    '2026-12-31',
+    'closed',
+    '[{"ordinal":1,"kind":"skill","requirement":"Clear written communication","isRequired":true}]'::jsonb
+  )$$,
+  'HR saves a job posting without a department or rank'
+);
+select extensions.throws_ok(
+  $$select public.save_job_opening(
+    null, null, null,
+    'Opening without a deadline',
+    'Job postings must carry a location and a deadline of application.',
+    'Headquarters',
+    null,
+    'draft',
+    '[{"ordinal":1,"kind":"skill","requirement":"Clear written communication","isRequired":true}]'::jsonb
+  )$$,
+  '22023', 'Job opening details are invalid.',
+  'A job posting requires a deadline of application'
 );
 select extensions.lives_ok(
   $$select public.transition_application_status('00000000-0000-4000-8000-000000009401'::uuid, 'Under Review', 'Initial review started')$$,

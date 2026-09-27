@@ -18,7 +18,7 @@ describe("role configuration", () => {
       homeHref: "/hr",
       navigation: [
         { href: "/hr", label: "Dashboard", group: "Overview" },
-        { href: "/hr/jobs", label: "Job Opening", group: "Recruitment" },
+        { href: "/hr/jobs", label: "Job Posting", group: "Recruitment" },
         { href: "/hr/applications", label: "Applications", group: "Recruitment" },
         { href: "/hr/employees", label: "Employee Records", group: "Personnel Management" },
         { href: "/hr/deployments", label: "Deployment Records", group: "Personnel Management" },
@@ -35,7 +35,7 @@ describe("role configuration", () => {
   it("exposes attendance only to its intended operational roles", () => {
     expect(getRoleConfig("hr_personnel").navigation).toContainEqual({ href: "/hr/attendance", label: "Attendance Records", icon: "Clock", group: "Attendance Management" });
     expect(getRoleConfig("employee").navigation).toContainEqual({ href: "/employee/attendance", label: "Attendance", icon: "Clock" });
-    expect(getRoleConfig("system_administrator").navigation).toContainEqual({ href: "/admin/integrations/attendance", label: "Attendance integration", icon: "Fingerprint", group: "System" });
+    expect(getRoleConfig("system_administrator").navigation).toContainEqual({ href: "/admin/integrations/attendance", label: "Attendance Integration", icon: "Fingerprint", group: "System" });
     expect(getRoleConfig("management").navigation.some((item) => item.href.includes("attendance"))).toBe(false);
     expect(getRoleConfig("management").navigation).toContainEqual({ href: "/reports", label: "Reports", icon: "ChartColumn" });
   });
@@ -56,7 +56,7 @@ describe("role configuration", () => {
   it("uses one account-management destination for administrator account and role work", () => {
     const navigation = getRoleConfig("system_administrator").navigation;
 
-    expect(navigation).toContainEqual({ href: "/admin/users", label: "Account management", icon: "Users", group: "Access" });
+    expect(navigation).toContainEqual({ href: "/admin/users", label: "Account Management", icon: "Users", group: "Administration" });
     expect(navigation.some((item) => item.href === "/admin/roles")).toBe(false);
   });
 });

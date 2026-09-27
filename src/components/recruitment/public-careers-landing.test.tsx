@@ -30,6 +30,7 @@ it("connects visitors to live career openings and the application path", () => {
   expect(
     screen.getByRole("link", { name: "View Patrol Officer opening" }),
   ).toHaveAttribute("href", "/jobs/7");
+  expect(screen.getByText("Deadline of Application: 2026-10-31")).toBeInTheDocument();
   expect(
     screen.getByRole("link", { name: /explore job openings/i }),
   ).toHaveAttribute("href", "/jobs");

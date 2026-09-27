@@ -173,8 +173,37 @@ describe("administration queries", () => {
     expect(page.rows[0]).toMatchObject({
       actorLabel: "Chief Ada Lovelace",
       recordLabel: "Account “Officer Grace Hopper”",
-      actionLabel: "Role changed to System Administrator",
+      actionLabel: "Updated",
     });
+  });
+
+  it("filters audit entries by an action group and names deleted accounts from their deletion entry", async () => {
+    const deletedId = "cf77c8cd-e89b-42d3-a456-426614174000";
+    const auditChain = createChain({
+      data: [{ id: 2, actor_user_id: testUserId, entity_type: "user_roles", entity_id: deletedId, action: "delete", metadata: { user_id: deletedId, role: "applicant" }, created_at: "2026-09-15T09:00:00+00:00" }],
+      count: 1,
+      error: null,
+    });
+    auditChain.in.mockReturnValue(auditChain);
+    const profileChain = createChain({ data: [{ id: testUserId, full_name: "Chief Ada Lovelace", email: "ada@example.com" }], error: null });
+    const deletedChain = createChain({ data: [{ entity_id: deletedId, metadata: { full_name: "Fernando Allen" } }], error: null });
+    mocks.from.mockReturnValueOnce(auditChain).mockReturnValueOnce(profileChain).mockReturnValueOnce(deletedChain);
+
+    const page = await listAuditLogs({ page: 1, pageSize: 20, action: "deleted", search: "Allen, F" });
+
+    expect(auditChain.in).toHaveBeenCalledWith("action", ["delete", "deleted"]);
+    expect(auditChain.or).toHaveBeenCalledWith(expect.stringContaining("metadata->>full_name.ilike.%Allen_ F%"));
+    expect(deletedChain.in).toHaveBeenCalledWith("entity_id", [deletedId]);
+    expect(page.rows[0]).toMatchObject({ recordLabel: "Account “Fernando Allen”", actionLabel: "Deleted" });
+  });
+
+  it("keeps PostgREST filter syntax out of typed account searches", async () => {
+    const profileChain = createChain({ data: [], count: 0, error: null });
+    mocks.from.mockReturnValueOnce(profileChain);
+
+    await listManagedUsers({ page: 1, pageSize: 20, search: "Allen, (Fernando)" });
+
+    expect(profileChain.or).toHaveBeenCalledWith("full_name.ilike.%Allen_ _Fernando_%,email.ilike.%Allen_ _Fernando_%");
   });
 
   it("sends name parts only to the protected invitation workflow", async () => {

@@ -54,7 +54,8 @@ test.describe("administrator master data", () => {
     await expect(page.getByRole("cell", { name, exact: true })).toBeVisible();
 
     await expect(page.getByRole("button", { name: `Delete ${name}` })).toHaveCount(0);
-    await expect(page.getByRole("button", { name: `Deactivate ${name}` })).toBeVisible();
+    await expect(page.getByRole("button", { name: `Edit ${name}` })).toBeVisible();
+    await expect(page.getByRole("button", { name: `Deactivate ${name}` })).toHaveCount(0);
   });
 
   test("lists the station ranks with their codes and offers no deletion", async ({ page }) => {
@@ -98,7 +99,7 @@ test.describe("leave journey", () => {
     await page.getByLabel(/^Leave type/).selectOption({ label: "Demo leave" });
     await page.getByLabel(/^Start date/).fill(isoDate(offset + 3));
     await page.getByLabel(/^End date/).fill(isoDate(offset));
-    await page.getByLabel(/^Reason/).fill(reason);
+    await page.getByLabel(/^Notes/).fill(reason);
     await page.getByRole("button", { name: "Submit request" }).click();
     await expect(page.getByText(/end date/i).and(page.getByRole("alert"))).toBeVisible();
 
@@ -204,9 +205,9 @@ test.describe("read-only and public journeys", () => {
     const title = `E2E Opening ${runId}`;
     await signIn(page, "demo.hr@example.test", "/hr");
     await page.goto("/hr/jobs/new");
-    await page.getByLabel(/^Department/).selectOption({ label: "Tactical Operations Center" });
-    await page.getByLabel(/^Rank/).selectOption({ label: "Pat — Patrolman / Patrolwoman" });
     await page.getByLabel(/^Title/).fill(title);
+    await page.getByLabel(/^Location/).fill("San Juan City Police Station");
+    await page.getByLabel(/^Deadline of Application/).fill("2099-12-31");
     await page.getByLabel(/^Description/).fill("An opening published by the end-to-end journey tests.");
     await page.getByLabel("Criterion 1 type").selectOption("skill");
     await page.getByLabel("Qualification 1").selectOption("Physically fit (passed the Physical Fitness Test)");

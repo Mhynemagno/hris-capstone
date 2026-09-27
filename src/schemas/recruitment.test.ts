@@ -4,8 +4,6 @@ import * as schemas from "./index";
 
 const validJob = {
   title: "Recruitment Officer",
-  departmentId: 1,
-  rankId: 2,
   description: "Coordinate candidate sourcing, screening, and recruitment records.",
   location: "Ulaanbaatar",
   closesOn: "2026-10-01",
@@ -31,6 +29,16 @@ describe("recruitment schemas", () => {
       title: "Recruitment Officer",
       criteria: [{ ordinal: 1, isRequired: true }],
     });
+  });
+
+  it("requires a title, a location, and a deadline of application, but no department or rank", () => {
+    const parsed = schemas.jobOpeningSchema.parse(validJob);
+    expect(parsed).not.toHaveProperty("departmentId");
+    expect(parsed).not.toHaveProperty("rankId");
+    for (const field of ["title", "location", "closesOn"] as const) {
+      const result = schemas.jobOpeningSchema.safeParse({ ...validJob, [field]: field === "closesOn" ? undefined : " " });
+      expect(result.success, field).toBe(false);
+    }
   });
 
   it("accepts the applicant personal details collected before an application", () => {

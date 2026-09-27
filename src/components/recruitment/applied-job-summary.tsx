@@ -31,10 +31,10 @@ export function AppliedJobSummary({ job, status, submittedAt }: AppliedJobSummar
         <>
           <dl className="grid gap-4 text-sm sm:grid-cols-2">
             <Detail label="Job" value={job.title} />
-            <Detail label="Department" value={job.departments?.name ?? "Not assigned"} />
-            <Detail label="Rank" value={job.ranks ? rankLabel(job.ranks) : "Not assigned"} />
+            {job.departments?.name ? <Detail label="Department" value={job.departments.name} /> : null}
+            {job.ranks ? <Detail label="Rank" value={rankLabel(job.ranks)} /> : null}
             <Detail label="Location" value={job.location ?? "Not specified"} />
-            <Detail label="Applications close" value={job.closes_on ?? "No closing date"} />
+            <Detail label="Deadline of Application" value={job.closes_on ?? "No closing date"} />
             <Detail label="Submitted" value={new Date(submittedAt).toLocaleString()} />
           </dl>
           <div>

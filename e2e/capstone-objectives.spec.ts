@@ -145,9 +145,9 @@ test.describe("Objective 2: recruitment management", () => {
 
     await signIn(page, HR.email, HR.home);
     await page.goto("/hr/jobs/new");
-    await page.getByLabel(/^Department/).selectOption({ label: "Tactical Operations Center" });
-    await page.getByLabel(/^Rank/).selectOption({ label: "Pat — Patrolman / Patrolwoman" });
     await page.getByLabel(/^Title/).fill(title);
+    await page.getByLabel(/^Location/).fill("San Juan City Police Station");
+    await page.getByLabel(/^Deadline of Application/).fill("2099-12-31");
     await page.getByLabel(/^Description/).fill("A patrol opening published by the capstone objective tests.");
     await page.getByLabel("Criterion 1 type").selectOption("education");
     await page.getByLabel("Qualification 1").selectOption("Baccalaureate degree from a recognized institution");
@@ -317,7 +317,7 @@ test.describe("Objective 4: promotion eligibility tracker", () => {
 
     await signIn(page, EMPLOYEE.email, EMPLOYEE.home);
     await page.goto("/employee/promotion-eligibility");
-    await expect(page.getByRole("heading", { name: "Promotion eligibility" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Promotion", exact: true })).toBeVisible();
   });
 });
 
@@ -339,7 +339,7 @@ test.describe("Objective 5: personnel self-service portal", () => {
     await page.getByLabel(/^Leave type/).selectOption({ label: "Demo leave" });
     await page.getByLabel(/^Start date/).fill(start);
     await page.getByLabel(/^End date/).fill(start);
-    await page.getByLabel(/^Reason/).fill(reason);
+    await page.getByLabel(/^Notes/).fill(reason);
     await page.getByRole("button", { name: "Submit request" }).click();
     await expect(page.getByRole("status").filter({ hasText: /Leave request submitted/ })).toBeVisible();
     await signOut(page, EMPLOYEE.email);
@@ -415,24 +415,24 @@ test.describe("Objective 7: analytics dashboard", () => {
     await signIn(page, HR.email, HR.home);
     await createDeployment(page, `E2E Dashboard ${runId}`);
     await page.goto("/hr");
-    await expect(page.getByRole("heading", { name: "HR operations dashboard" })).toBeVisible({ timeout: 30_000 });
-    for (const metric of ["Active personnel", "Active deployments", "Recruitment applications", "Attendance exceptions", "Pending leave", "Promotion ready", "Training needs"]) {
-      await expect(page.getByRole("article", { name: metric })).toContainText(/\d+/);
+    await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible({ timeout: 30_000 });
+    for (const metric of ["Total Personnel", "Departments", "Deployments", "Applicants", "On-Leave"]) {
+      await expect(page.getByRole("article", { name: metric, exact: true })).toContainText(/\d+/);
     }
-    expect(Number(await page.getByRole("article", { name: "Active deployments" }).locator("p").nth(1).innerText())).toBeGreaterThan(0);
-    expect(Number(await page.getByRole("article", { name: "Active personnel" }).locator("p").nth(1).innerText())).toBeGreaterThan(0);
+    expect(Number(await page.getByRole("article", { name: "Deployments", exact: true }).locator("p").nth(1).innerText())).toBeGreaterThan(0);
+    expect(Number(await page.getByRole("article", { name: "Total Personnel", exact: true }).locator("p").nth(1).innerText())).toBeGreaterThan(0);
     for (const heading of ["Recruitment pipeline", "Deployment status", "Attendance status", "Leave status"]) {
       await expect(page.getByRole("heading", { name: heading })).toBeVisible();
     }
     await signOut(page, HR.email);
 
     await signIn(page, MANAGEMENT.email, MANAGEMENT.home);
-    await expect(page.getByRole("heading", { name: "Personnel analytics" })).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible({ timeout: 30_000 });
     for (const heading of ["Personnel by department", "Recruitment pipeline", "Deployment status", "Attendance and leave exceptions"]) {
       await expect(page.getByRole("heading", { name: heading })).toBeVisible();
     }
-    await expect(page.getByRole("article", { name: "Promotion ready" })).toContainText(/\d+/);
-    await expect(page.getByRole("article", { name: "Training needs" })).toContainText(/\d+/);
+    await expect(page.getByRole("heading", { name: "Promotion Status" })).toBeVisible();
+    await expect(page.getByRole("article", { name: "Total Personnel", exact: true })).toContainText(/\d+/);
   });
 });
 

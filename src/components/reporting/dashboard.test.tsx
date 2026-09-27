@@ -11,12 +11,12 @@ vi.mock("@/hooks/use-reporting", () => ({
   useManagementDashboard,
 }));
 
-it("presents HR metrics through scannable civic dashboard cards", () => {
+it("shows only the five headline tiles, in order, under a plain Dashboard title", () => {
   useHrDashboard.mockReturnValue({
     data: {
       breakdowns: { employmentStatus: [{ count: 42, label: "Active" }] },
       generatedAt: "2026-08-24T00:00:00+00:00",
-      metrics: { totalEmployees: 42 },
+      metrics: { onLeave: 3, applicants: 9, activeDeployments: 7, departments: 5, totalPersonnel: 42, openJobs: 2, totalEmployees: 42 },
       range: { endsOn: "2026-08-24", startsOn: "2026-07-26" },
     },
     error: null,
@@ -25,12 +25,16 @@ it("presents HR metrics through scannable civic dashboard cards", () => {
 
   render(<ReportingDashboard role="hr_personnel" />);
 
-  expect(
-    screen.getByRole("heading", { level: 1, name: "HR operations dashboard" }),
-  ).toBeVisible();
-  const metric = screen.getByRole("article", { name: "Total employees" });
+  expect(screen.getByRole("heading", { level: 1, name: "Dashboard" })).toBeVisible();
+  expect(screen.queryByText(/Reporting period/)).not.toBeInTheDocument();
+  const tiles = within(screen.getByRole("region", { name: "Key figures" })).getAllByRole("article");
+  expect(tiles.map((tile) => tile.getAttribute("aria-label"))).toEqual(["Total Personnel", "Departments", "Deployments", "Applicants", "On-Leave"]);
+  const metric = screen.getByRole("article", { name: "Total Personnel" });
   expect(metric).toHaveTextContent("42");
   expect(within(metric).getByText("42")).toHaveClass("tabular-nums");
+  expect(screen.getByRole("article", { name: "Deployments" })).toHaveTextContent("7");
+  expect(screen.queryByRole("article", { name: "Open job postings" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("article", { name: "Total employees" })).not.toBeInTheDocument();
 });
 
 it("charts every breakdown with accessible summaries and links to the detailed reports", () => {
@@ -39,11 +43,13 @@ it("charts every breakdown with accessible summaries and links to the detailed r
       breakdowns: {
         attendanceStatus: [{ count: 18, label: "present" }, { count: 2, label: "late" }],
         attendanceTrend: [{ count: 0, label: "2026-08-23" }, { count: 5, label: "2026-08-24" }],
+        leaveByType: [{ count: 2, label: "Vacation" }],
+        promotionReadiness: [{ count: 1, label: "Ready" }],
         recruitmentPipeline: [{ count: 1, label: "Hired" }, { count: 4, label: "Submitted" }],
         workforceByRank: [],
       },
       generatedAt: "2026-08-24T00:00:00+00:00",
-      metrics: { activeWorkforce: 30, pendingLeave: 3, openJobs: 2 },
+      metrics: { onLeave: 4, pendingLeave: 3, openJobs: 2 },
       range: { endsOn: "2026-08-24", startsOn: "2026-07-26" },
     },
     error: null,
@@ -52,8 +58,11 @@ it("charts every breakdown with accessible summaries and links to the detailed r
 
   render(<ReportingDashboard role="management" />);
 
-  expect(screen.getByRole("article", { name: "Active personnel" })).toHaveTextContent("30");
-  expect(screen.getByRole("article", { name: "Open job postings" })).toHaveTextContent("2");
+  expect(screen.getByRole("heading", { level: 1, name: "Dashboard" })).toBeVisible();
+  expect(screen.getByRole("article", { name: "On-Leave" })).toHaveTextContent("4");
+  expect(screen.queryByRole("article", { name: "Open job postings" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("region", { name: "Leave by type" })).not.toBeInTheDocument();
+  expect(screen.getByRole("region", { name: "Promotion Status" })).toBeInTheDocument();
 
   const attendance = screen.getByRole("region", { name: "Attendance status" });
   expect(within(attendance).getByRole("img", { name: "Present: 18, Late: 2" })).toBeInTheDocument();
@@ -69,7 +78,7 @@ it("charts every breakdown with accessible summaries and links to the detailed r
   expect(screen.getByRole("link", { name: /Attendance and leave/ })).toHaveAttribute("href", "/reports/attendance-leave");
 });
 
-it("welcomes HR with shortcuts, open work, and an attendance gauge", () => {
+it("gives HR shortcuts, open work notifications, and an attendance gauge", () => {
   useHrDashboard.mockReturnValue({
     data: {
       breakdowns: {},
@@ -83,11 +92,12 @@ it("welcomes HR with shortcuts, open work, and an attendance gauge", () => {
 
   render(<ReportingDashboard role="hr_personnel" />);
 
-  expect(screen.getByText(/Welcome back/)).toBeInTheDocument();
+  expect(screen.queryByText(/Welcome back/)).not.toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "Reports" })).toHaveAttribute("href", "/reports");
   expect(screen.getByRole("link", { name: "New Employee" })).toHaveAttribute("href", "/hr/employees/new");
-  const attention = screen.getByRole("region", { name: "Needs attention" });
+  const attention = screen.getByRole("region", { name: "Notification" });
   expect(within(attention).getByText("1 of 2 clear")).toBeInTheDocument();
   expect(within(attention).getByRole("link", { name: /^3 leave requests awaiting a decision\s*\(open\)$/ })).toHaveAttribute("href", "/hr/leave-requests");
   expect(within(attention).getByRole("link", { name: /^0 attendance exceptions to review\s*\(clear\)$/ })).toHaveAttribute("href", "/hr/attendance");
-  expect(screen.getByRole("img", { name: "Present today: 94% (47 of 50)" })).toBeInTheDocument();
+  expect(screen.getByRole("img", { name: "Present: 94% (47 of 50)" })).toBeInTheDocument();
 });

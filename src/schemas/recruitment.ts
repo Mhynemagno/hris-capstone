@@ -42,12 +42,10 @@ export const jobCriterionSchema = z.object({
 
 export const jobOpeningSchema = z.object({
   id: positiveInteger.optional(),
-  departmentId: positiveInteger,
-  rankId: positiveInteger,
-  title: z.string().trim().min(2).max(160),
+  title: z.string().trim().min(2, "Enter a title of at least 2 characters.").max(160),
   description: z.string().trim().min(20).max(10_000),
-  location: optionalText(160),
-  closesOn: isoDateSchema.optional(),
+  location: z.string().trim().min(2, "Enter a location of at least 2 characters.").max(160),
+  closesOn: z.iso.date({ error: "Choose the deadline of application." }),
   status: jobOpeningStatusSchema.default("draft"),
   criteria: z.array(jobCriterionSchema).min(1).max(30),
 });

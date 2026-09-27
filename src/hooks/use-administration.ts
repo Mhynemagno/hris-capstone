@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { queryKeys } from "@/lib/query-keys";
 import {
@@ -50,22 +50,22 @@ function auditFilters(filters: Partial<AuditLogFilters> = {}) {
 
 export function useManagedUsers(filters: Partial<ManagedUserFilters> = {}) {
   const parsed = managedFilters(filters);
-  return useQuery({ queryKey: queryKeys.administration.users(parsed), queryFn: () => listManagedUsers(parsed) });
+  return useQuery({ queryKey: queryKeys.administration.users(parsed), queryFn: () => listManagedUsers(parsed), placeholderData: keepPreviousData });
 }
 
 export function useManagedRoles(filters: Partial<ManagedUserFilters> = {}) {
   const parsed = managedFilters(filters);
-  return useQuery({ queryKey: queryKeys.administration.roles(parsed), queryFn: () => listManagedUsers(parsed) });
+  return useQuery({ queryKey: queryKeys.administration.roles(parsed), queryFn: () => listManagedUsers(parsed), placeholderData: keepPreviousData });
 }
 
 export function useDepartments(filters: Partial<ReferenceDataFilters> = {}) {
   const parsed = referenceFilters(filters);
-  return useQuery({ queryKey: queryKeys.administration.departments(parsed), queryFn: () => listDepartments(parsed) });
+  return useQuery({ queryKey: queryKeys.administration.departments(parsed), queryFn: () => listDepartments(parsed), placeholderData: keepPreviousData });
 }
 
 export function useRanks(filters: Partial<ReferenceDataFilters> = {}) {
   const parsed = referenceFilters(filters);
-  return useQuery({ queryKey: queryKeys.administration.ranks(parsed), queryFn: () => listRanks(parsed) });
+  return useQuery({ queryKey: queryKeys.administration.ranks(parsed), queryFn: () => listRanks(parsed), placeholderData: keepPreviousData });
 }
 
 /** All departments for dropdowns (not paginated). */
@@ -84,7 +84,7 @@ export function useOrganizationSettings() {
 
 export function useAuditLogs(filters: Partial<AuditLogFilters> = {}) {
   const parsed = auditFilters(filters);
-  return useQuery({ queryKey: queryKeys.administration.auditLogs(parsed), queryFn: () => listAuditLogs(parsed) });
+  return useQuery({ queryKey: queryKeys.administration.auditLogs(parsed), queryFn: () => listAuditLogs(parsed), placeholderData: keepPreviousData });
 }
 
 function useAdministrationMutations() {
@@ -128,7 +128,7 @@ export function useSaveDepartment() {
 
 export function useUnitStationCatalogue(filters: Partial<ReferenceDataFilters> = {}) {
   const parsed = referenceFilters(filters);
-  return useQuery({ queryKey: queryKeys.administration.unitStations(parsed), queryFn: () => listUnitStationCatalogue(parsed) });
+  return useQuery({ queryKey: queryKeys.administration.unitStations(parsed), queryFn: () => listUnitStationCatalogue(parsed), placeholderData: keepPreviousData });
 }
 
 export function useSaveUnitStation() {

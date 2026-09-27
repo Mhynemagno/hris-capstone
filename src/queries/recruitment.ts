@@ -290,12 +290,13 @@ export async function saveJobOpening(input: JobOpeningInput, jobId?: number) {
   const client = createBrowserSupabaseClient();
   const { data, error } = await client.rpc("save_job_opening", {
     target_job_id: jobId ?? null,
-    target_department_id: values.departmentId,
-    target_rank_id: values.rankId,
+    // Job postings no longer carry a department or rank; on update the RPC keeps any saved ones.
+    target_department_id: null,
+    target_rank_id: null,
     target_title: values.title,
     target_description: values.description,
-    target_location: values.location ?? null,
-    target_closes_on: values.closesOn ?? null,
+    target_location: values.location,
+    target_closes_on: values.closesOn,
     target_status: values.status,
     requested_criteria: values.criteria,
   });

@@ -28,6 +28,12 @@ describe("leave management schemas", () => {
     })).toMatchObject({ startsOn: "2099-08-24", endsOn: "2099-08-26" });
   });
 
+  it("treats notes as optional and stores blank notes as undefined", () => {
+    expect(leaveRequestDraftSchema.parse({ leaveTypeId, startsOn: "2099-08-24", endsOn: "2099-08-24" }).reason).toBeUndefined();
+    expect(leaveRequestDraftSchema.parse({ leaveTypeId, startsOn: "2099-08-24", endsOn: "2099-08-24", reason: "   " }).reason).toBeUndefined();
+    expect(leaveRequestDraftSchema.safeParse({ leaveTypeId, startsOn: "2099-08-24", endsOn: "2099-08-24", reason: "x".repeat(2001) }).success).toBe(false);
+  });
+
   it("rejects past or reversed date ranges", () => {
     expect(leaveRequestDraftSchema.safeParse({
       leaveTypeId,

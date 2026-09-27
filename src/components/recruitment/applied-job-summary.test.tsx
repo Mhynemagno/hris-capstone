@@ -31,6 +31,15 @@ describe("AppliedJobSummary", () => {
     expect(screen.getByText("Main station")).toBeInTheDocument();
     expect(screen.getByText("Handles case files for the station.")).toBeInTheDocument();
     expect(screen.getByText("Under Review")).toBeInTheDocument();
+    expect(screen.getByText("Deadline of Application")).toBeInTheDocument();
+  });
+
+  it("leaves out department and rank when the job posting has none", () => {
+    render(<AppliedJobSummary job={{ ...job, departments: null, ranks: null }} status="Under Review" submittedAt="2026-09-20T08:00:00Z" />);
+
+    expect(screen.queryByText("Department")).not.toBeInTheDocument();
+    expect(screen.queryByText("Rank")).not.toBeInTheDocument();
+    expect(screen.queryByText(/null|Not assigned/)).not.toBeInTheDocument();
   });
 
   it("lists the qualification criteria in order and marks the required ones", () => {

@@ -23,5 +23,16 @@ export async function getCurrentRole(): Promise<AppRole | null> {
     return null;
   }
 
+  // An account whose "can sign in" flag was cleared keeps its role row but gets no access.
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("is_active")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (profile?.is_active === false) {
+    return null;
+  }
+
   return appRoleSchema.safeParse(data.role).data ?? null;
 }

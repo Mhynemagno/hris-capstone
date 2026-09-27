@@ -14,6 +14,8 @@ type EmployeeProfileProps = {
   canManagePhoto?: boolean;
   /** Optional header actions, such as links to request a profile change. */
   actions?: ReactNode;
+  /** `summary` shows only the name, rank, and key service facts (the employee dashboard); `full` is the complete profile. */
+  variant?: "full" | "summary";
 };
 
 function valueOrNotProvided(value: string | null | undefined) {
@@ -24,7 +26,7 @@ function words(value: string | null | undefined) {
   return value ? value.replaceAll("_", " ").replace(/^\w/, (letter) => letter.toUpperCase()) : null;
 }
 
-export function EmployeeProfile({ employee, trainings, canManagePhoto = false, actions }: EmployeeProfileProps) {
+export function EmployeeProfile({ employee, trainings, canManagePhoto = false, actions, variant = "full" }: EmployeeProfileProps) {
   const fullName = [employee.first_name, employee.middle_name, employee.last_name].filter(Boolean).join(" ");
   const ranks = useRankOptions();
   const departments = useDepartmentOptions();
@@ -33,21 +35,31 @@ export function EmployeeProfile({ employee, trainings, canManagePhoto = false, a
   const sortedTrainings = trainings.toSorted((a, b) => b.completed_on.localeCompare(a.completed_on));
   const totalHours = trainings.reduce((sum, training) => sum + (training.hours ?? 0), 0);
 
+  const badge = { label: "Badge number", value: <span className="tabular-nums">{employee.employee_number}</span>, icon: BadgeCheck };
+  const status = { label: "Status", value: employee.employment_status === "on_leave" ? "On leave" : "Active", icon: ShieldCheck };
+  const service = { label: "Years of service", value: serviceLength(employee.employment_started_on, employee.employment_ended_on) ?? "Not recorded", icon: Clock };
+  const assignment = [
+    { label: "Department", value: department?.name ?? "Not assigned", icon: Building2 },
+    { label: "Unit / Station", value: employee.unit_station || "Not assigned", icon: MapPin },
+  ];
+  const subtitle = rank ? rankLabel(rank) : "Rank not provided";
+
+  if (variant === "summary") return <ProfileHeaderCard actions={actions} meta={[badge, status, service, ...assignment]} name={fullName} subtitle={subtitle} />;
+
   return <div className="space-y-6">
     <ProfileHeaderCard
       actions={actions}
       meta={[
-        { label: "Badge number", value: <span className="tabular-nums">{employee.employee_number}</span>, icon: BadgeCheck },
-        { label: "Status", value: employee.employment_status === "on_leave" ? "On leave" : "Active", icon: ShieldCheck },
+        badge,
+        status,
         { label: "Born", value: valueOrNotProvided(formatDay(employee.date_of_birth)), icon: Cake },
         { label: "Gender", value: valueOrNotProvided(words(employee.gender)), icon: UserRound },
-        { label: "Years of service", value: serviceLength(employee.employment_started_on, employee.employment_ended_on) ?? "Not recorded", icon: Clock },
-        { label: "Department", value: department?.name ?? "Not assigned", icon: Building2 },
-        { label: "Unit / Station", value: employee.unit_station || "Not assigned", icon: MapPin },
+        service,
+        ...assignment,
       ]}
       name={fullName}
       photo={<EmployeeProfilePhotoControl canManagePhoto={canManagePhoto} employee={employee} />}
-      subtitle={rank ? rankLabel(rank) : "Rank not provided"}
+      subtitle={subtitle}
       tags={[
         ...(employee.employment_started_on ? [`In service since ${formatDay(employee.employment_started_on)}`] : []),
         ...(trainings.length ? [`${trainings.length} ${trainings.length === 1 ? "training" : "trainings"} completed`] : []),

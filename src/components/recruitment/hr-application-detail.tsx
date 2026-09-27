@@ -103,7 +103,7 @@ export function HrApplicationDetail({ applicationId }: { applicationId: string }
     <section className="max-w-3xl space-y-5">
       <PageHeader
         description={`Current status: ${application.status}`}
-        eyebrow="Recruitment"
+       
         meta={application.cover_note ? <p className="whitespace-pre-wrap text-sm">{application.cover_note}</p> : undefined}
         title={`Application ${application.id.slice(0, 8)}`}
       />

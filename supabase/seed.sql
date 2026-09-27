@@ -63,6 +63,12 @@ insert into public.leave_types (name, description, requires_attachment, created_
 select 'Demo leave', 'Fictitious demo leave type', false, '00000000-0000-4000-8000-000000008102'::uuid, '00000000-0000-4000-8000-000000008102'::uuid
 where not exists (select 1 from public.leave_types where name = 'Demo leave');
 
+-- Default leave types (also provided by migration 20260927100000_default_leave_types.sql).
+insert into public.leave_types (name, requires_attachment, is_active)
+select defaults.name, false, true
+from (values ('Vacation Leave'), ('Sick Leave'), ('Mandatory Leave'), ('Maternity Leave'), ('Paternity Leave')) as defaults(name)
+where not exists (select 1 from public.leave_types existing where lower(existing.name) = lower(defaults.name));
+
 insert into public.applicants (profile_id, first_name, last_name)
 values ('00000000-0000-4000-8000-000000008104', 'Demo', 'Applicant')
 on conflict (profile_id) do update set first_name = excluded.first_name, last_name = excluded.last_name;

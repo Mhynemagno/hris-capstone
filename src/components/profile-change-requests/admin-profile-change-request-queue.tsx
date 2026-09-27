@@ -13,12 +13,13 @@ import { nativeSelectClassName } from "@/components/ui/native-select";
 import { useAdminProfileChangeRequests } from "@/hooks/use-profile-change-requests";
 import type { ProfileChangeStatus } from "@/schemas/profile-change-requests";
 
-const statuses: Array<ProfileChangeStatus | ""> = ["", "pending", "approved", "rejected", "cancelled"];
+// "All statuses" is the default and includes pending requests, so they can still be actioned.
+const statuses: Array<ProfileChangeStatus | ""> = ["", "approved", "rejected"];
 const statusLabel = (status: ProfileChangeStatus | "") => (status ? status[0].toUpperCase() + status.slice(1) : "All statuses");
 
 export function AdminProfileChangeRequestQueue() {
   const [page, setPage] = useState(1);
-  const [status, setStatus] = useState<ProfileChangeStatus | "">("pending");
+  const [status, setStatus] = useState<ProfileChangeStatus | "">("");
   const result = useAdminProfileChangeRequests({ page, pageSize: 20, ...(status ? { status } : {}) });
   const rows = result.data?.rows ?? [];
 
@@ -44,14 +45,14 @@ export function AdminProfileChangeRequestQueue() {
         </FormField>
       </div>
       {result.isLoading ? (
-        <LoadingState label="Loading profile-change requests…" />
+        <LoadingState label="Loading requests…" />
       ) : result.error ? (
         <ErrorState message={result.error.message} />
       ) : (
         <>
           <div className="relative overflow-x-auto rounded-xl border">
             <table className="w-full min-w-[640px] text-left text-sm">
-              <caption className="sr-only">Profile-change requests: {statusLabel(status).toLowerCase()}</caption>
+              <caption className="sr-only">Reviews and approvals: {statusLabel(status).toLowerCase()}</caption>
               <thead className="bg-muted/60">
                 <tr>
                   <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Status</th>

@@ -8,7 +8,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useEmployeeOptions, useHrDeployments } from "@/hooks/use-deployment-tracking";
 
-import { DeploymentStatusBadge } from "./deployment-status-badge";
+import { DeploymentStatusBadge, effectiveDeploymentStatus, manilaToday } from "./deployment-status-badge";
 
 export function HrDeploymentDirectory() {
   const query = useHrDeployments({ page: 1, pageSize: 25 });
@@ -20,6 +20,7 @@ export function HrDeploymentDirectory() {
   if (query.error) return <ErrorState message={query.error.message} />;
   const rows = query.data?.rows ?? [];
   const total = query.data?.count ?? rows.length;
+  const today = manilaToday();
 
   return (
     <section className="space-y-4">
@@ -50,8 +51,8 @@ export function HrDeploymentDirectory() {
                   </td>
                   <td className="px-4 py-3 align-top">{row.assignment_role}</td>
                   <td className="px-4 py-3 align-top">{[row.location, row.unit, row.project].filter(Boolean).join(" · ") || "—"}</td>
-                  <td className="px-4 py-3 align-top whitespace-nowrap">{row.starts_on} – {row.ends_on ?? "ongoing"}</td>
-                  <td className="px-4 py-3 align-top"><DeploymentStatusBadge status={row.status} /></td>
+                  <td className="px-4 py-3 align-top whitespace-nowrap">{row.starts_on} – {row.ends_on ?? (effectiveDeploymentStatus(row, today) === "upcoming" ? "no end date" : "ongoing")}</td>
+                  <td className="px-4 py-3 align-top"><DeploymentStatusBadge deployment={row} today={today} /></td>
                   <td className="px-4 py-3 align-top text-right">
                     <Link className={buttonVariants({ size: "sm", variant: "outline" })} href={`/hr/deployments/${row.id}`}>
                       View details{" "}<span className="sr-only">for {row.assignment_role}{employee ? `, ${employee.fullName}` : ""}</span>

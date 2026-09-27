@@ -14,7 +14,7 @@ export function RoleLanding({ config }: RoleLandingProps) {
     <section className="space-y-8" aria-labelledby="page-title">
       <PageHeader
         description={config.landingDescription}
-        eyebrow={config.label}
+       
         id="page-title"
         title={config.landingTitle}
       />

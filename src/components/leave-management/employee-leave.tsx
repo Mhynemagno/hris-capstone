@@ -68,7 +68,7 @@ export function EmployeeLeaveList() {
               </p>
               <LeaveStatusBadge status={request.status} />
             </div>
-            <p className="mt-2 text-sm whitespace-pre-line text-muted-foreground">{request.reason}</p>
+            {request.reason ? <p className="mt-2 text-sm whitespace-pre-line text-muted-foreground">{request.reason}</p> : null}
             {request.decision_note ? <p className="mt-2 text-sm">Decision note: {request.decision_note}</p> : null}
             {request.status === "pending" ? (
               confirmingId === request.id ? (
@@ -116,7 +116,7 @@ export function EmployeeLeaveList() {
   );
 }
 
-type LeaveFieldErrors = Partial<Record<"leaveTypeId" | "startsOn" | "endsOn" | "reason" | "attachments", string>>;
+type LeaveFieldErrors = Partial<Record<"leaveTypeId" | "startsOn" | "endsOn" | "reason", string>>;
 
 export function EmployeeLeaveRequestForm() {
   const types = useRequestableLeaveTypes();
@@ -124,6 +124,7 @@ export function EmployeeLeaveRequestForm() {
   const [leaveTypeId, setLeaveTypeId] = useState("");
   const [startsOn, setStartsOn] = useState("");
   const [endsOn, setEndsOn] = useState("");
+  const [notes, setNotes] = useState("");
   const [fieldErrors, setFieldErrors] = useState<LeaveFieldErrors>({});
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -131,42 +132,29 @@ export function EmployeeLeaveRequestForm() {
   if (types.isLoading) return <LoadingState label="Loading leave types…" />;
   if (types.error) return <ErrorState message={types.error.message} />;
   const activeTypes = (types.data ?? []).filter((type) => type.is_active);
-  const selectedType = activeTypes.find((type) => type.id === leaveTypeId);
   const minDate = today();
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
     setSuccess(null);
-    const formElement = event.currentTarget;
-    const form = new FormData(formElement);
-    const files = Array.from((formElement.elements.namedItem("attachments") as HTMLInputElement | null)?.files ?? []);
-    const draft = {
-      leaveTypeId: String(form.get("leaveTypeId") ?? ""),
-      startsOn: String(form.get("startsOn") ?? ""),
-      endsOn: String(form.get("endsOn") ?? ""),
-      reason: String(form.get("reason") ?? ""),
-    };
+    const draft = { leaveTypeId, startsOn, endsOn, reason: notes };
     const nextErrors: LeaveFieldErrors = {};
     const parsed = leaveRequestDraftSchema.safeParse(draft);
     if (!parsed.success) {
       for (const issue of parsed.error.issues) {
         const key = issue.path[0] as keyof LeaveFieldErrors;
-        if (key && !nextErrors[key]) {
-          nextErrors[key] = key === "leaveTypeId" ? "Choose a leave type." : key === "reason" && !draft.reason.trim() ? "Enter a reason for your leave." : issue.message;
-        }
+        if (key && !nextErrors[key]) nextErrors[key] = key === "leaveTypeId" ? "Choose a leave type." : issue.message;
       }
     }
-    const type = activeTypes.find((item) => item.id === draft.leaveTypeId);
-    if (type?.requires_attachment && !files.length) nextErrors.attachments = `${type.name} requires supporting evidence. Attach at least one document.`;
     setFieldErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
     try {
-      await submit.mutateAsync({ draft: { requestId: crypto.randomUUID(), ...draft }, files });
-      formElement.reset();
+      await submit.mutateAsync({ draft: { requestId: crypto.randomUUID(), ...draft }, files: [] });
       setLeaveTypeId("");
       setStartsOn("");
       setEndsOn("");
+      setNotes("");
       setSuccess("Leave request submitted. HR will review it and you will be notified of the decision.");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Unable to submit leave request.");
@@ -176,15 +164,7 @@ export function EmployeeLeaveRequestForm() {
   return (
     <form className="max-w-3xl space-y-5" noValidate onSubmit={onSubmit}>
       <FormField
-        description={
-          activeTypes.length
-            ? selectedType
-              ? selectedType.requires_attachment
-                ? `${selectedType.name} requires supporting evidence (for example a medical certificate).`
-                : `${selectedType.name} does not require supporting evidence.`
-              : undefined
-            : "No leave types are available right now. Contact HR."
-        }
+        description={activeTypes.length ? undefined : "No leave types are available right now. Contact HR."}
         error={fieldErrors.leaveTypeId}
         htmlFor="leave-type"
         label="Leave type"
@@ -202,7 +182,6 @@ export function EmployeeLeaveRequestForm() {
           {activeTypes.map((type) => (
             <option key={type.id} value={type.id}>
               {type.name}
-              {type.requires_attachment ? " (evidence required)" : ""}
             </option>
           ))}
         </select>
@@ -219,13 +198,7 @@ export function EmployeeLeaveRequestForm() {
             value={startsOn}
           />
         </FormField>
-        <FormField
-          description="Must be on or after the start date."
-          error={fieldErrors.endsOn}
-          htmlFor="ends-on"
-          label="End date"
-          required
-        >
+        <FormField error={fieldErrors.endsOn} htmlFor="ends-on" label="End date" required>
           <Input
             id="ends-on"
             min={startsOn && startsOn > minDate ? startsOn : minDate}
@@ -237,17 +210,8 @@ export function EmployeeLeaveRequestForm() {
           />
         </FormField>
       </div>
-      <FormField error={fieldErrors.reason} htmlFor="leave-reason" label="Reason" required>
-        <Textarea id="leave-reason" maxLength={2000} name="reason" required rows={4} />
-      </FormField>
-      <FormField
-        description={`PDF, PNG, JPEG, or WEBP; up to 10 MiB each, 10 files maximum.${selectedType?.requires_attachment ? " Required for this leave type." : ""}`}
-        error={fieldErrors.attachments}
-        htmlFor="attachments"
-        label="Supporting evidence"
-        required={Boolean(selectedType?.requires_attachment)}
-      >
-        <Input accept="application/pdf,image/png,image/jpeg,image/webp" id="attachments" multiple name="attachments" type="file" />
+      <FormField error={fieldErrors.reason} htmlFor="leave-notes" label="Notes">
+        <Textarea id="leave-notes" maxLength={2000} name="reason" onChange={(event) => setNotes(event.target.value)} rows={4} value={notes} />
       </FormField>
       {error ? <ErrorState message={error} /> : null}
       {success ? (

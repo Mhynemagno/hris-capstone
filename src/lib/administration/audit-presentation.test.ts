@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { AuditLog } from "@/lib/types/database";
 
-import { presentAuditLog } from "./audit-presentation";
+import { AUDIT_ACTION_GROUPS, auditActionGroup, formatAuditDate, presentAuditLog } from "./audit-presentation";
 
 const actorId = "f988df5c-804b-47bf-a5ad-4d48387f5b21";
 const targetId = "c038df5c-804b-47bf-a5ad-4d48387f5b21";
@@ -51,8 +51,12 @@ describe("presentAuditLog", () => {
     }), lookups);
 
     expect(entry.recordLabel).toBe("Account “Officer Grace Hopper”");
-    expect(entry.actionLabel).toBe("Role changed to System Administrator");
-    expect(entry.summary).toBe("Account role changed to System Administrator");
+    expect(entry.actionLabel).toBe("Updated");
+    expect(entry.summary).toBe("Account “Officer Grace Hopper”: role changed to System Administrator");
+    expect(entry.detailEntries).toEqual([
+      { label: "Role", value: "System Administrator" },
+      { label: "User ID", value: "Officer Grace Hopper" },
+    ]);
   });
 
   it("uses a system actor and activation language for profile status history", () => {
@@ -66,8 +70,12 @@ describe("presentAuditLog", () => {
 
     expect(entry.actorLabel).toBe("System");
     expect(entry.recordLabel).toBe("Account “Officer Grace Hopper”");
-    expect(entry.actionLabel).toBe("Activated");
-    expect(entry.summary).toBe("Account activated");
+    expect(entry.actionLabel).toBe("Updated");
+    expect(entry.summary).toBe("Account “Officer Grace Hopper” can sign in again");
+    expect(entry.detailEntries).toEqual([
+      { label: "Active", value: "Yes" },
+      { label: "Previously active", value: "No" },
+    ]);
   });
 
   it("uses safe fallback labels when historical lookup data is unavailable", () => {
@@ -82,5 +90,45 @@ describe("presentAuditLog", () => {
     expect(entry.recordLabel).toBe("Rank #42");
     expect(entry.actionLabel).toBe("Updated");
     expect(entry.summary).toBe("Rank #42 updated");
+  });
+
+  it("names a deleted account from its deletion entry instead of a raw UUID", () => {
+    const entry = presentAuditLog(auditLog({
+      entity_type: "user_roles",
+      entity_id: "cf77c8cd-0000-4000-8000-000000000000",
+      action: "delete",
+      metadata: { user_id: "cf77c8cd-0000-4000-8000-000000000000", role: "applicant" },
+    }), { profiles: { [actorId]: "Chief Ada Lovelace" }, departments: {}, ranks: {} });
+
+    expect(entry.recordLabel).toBe("Deleted account");
+    expect(entry.summary).not.toContain("cf77c8cd");
+  });
+
+  it("formats deletion summaries and dates as readable values", () => {
+    const entry = presentAuditLog(auditLog({
+      entity_type: "profiles",
+      entity_id: targetId,
+      action: "delete",
+      metadata: { full_name: "Fernando Allen", removed: [{ label: "job applications", count: 2 }], created_at: "2026-09-15T08:00:00+00:00" },
+    }), lookups);
+
+    expect(entry.recordLabel).toBe("Account “Fernando Allen”");
+    expect(entry.actionLabel).toBe("Deleted");
+    expect(entry.detailEntries).toContainEqual({ label: "Name", value: "Fernando Allen" });
+    expect(entry.detailEntries).toContainEqual({ label: "Also removed", value: "2 job applications" });
+    expect(entry.detailEntries.find((item) => item.label === "Created")?.value).toMatch(/^September 15, 2026/);
+  });
+
+  it("groups raw action codes into the short filter list", () => {
+    expect(auditActionGroup("insert")).toBe("created");
+    expect(auditActionGroup("hired")).toBe("approved");
+    expect(auditActionGroup("rejected")).toBe("rejected");
+    expect(auditActionGroup("delete")).toBe("deleted");
+    expect(auditActionGroup("activation_changed")).toBe("updated");
+    expect(Object.values(AUDIT_ACTION_GROUPS).map((group) => group.label)).toEqual(["Created", "Updated", "Deleted", "Approved", "Rejected"]);
+  });
+
+  it("formats the table date without a time", () => {
+    expect(formatAuditDate("2026-09-15T12:00:00Z")).toBe("September 15, 2026");
   });
 });

@@ -39,7 +39,7 @@ export async function submitLeaveRequest(draft: unknown, files: File[]) {
       attachments.push({ objectPath, fileName: file.name, mimeType: file.type as typeof attachments[number]["mimeType"], sizeBytes: file.size });
     }
     const payload = leaveRequestSubmissionSchema.parse({ ...initial, attachments });
-    const { error } = await client.rpc("submit_leave_request", { target_request_id: payload.requestId, target_leave_type_id: payload.leaveTypeId, target_starts_on: payload.startsOn, target_ends_on: payload.endsOn, request_reason: payload.reason, requested_attachments: payload.attachments });
+    const { error } = await client.rpc("submit_leave_request", { target_request_id: payload.requestId, target_leave_type_id: payload.leaveTypeId, target_starts_on: payload.startsOn, target_ends_on: payload.endsOn, request_reason: payload.reason ?? null, requested_attachments: payload.attachments });
     throwIfError(error);
   } catch (error) {
     if (attachments.length > 0) {

@@ -6,7 +6,7 @@ import { ReportingDashboard } from "./dashboard";
 const dashboard = {
   generatedAt: "2026-08-24T00:00:00.000Z",
   range: { startsOn: "2026-08-01", endsOn: "2026-08-31" },
-  metrics: { activeWorkforce: 3 },
+  metrics: { totalPersonnel: 3 },
   breakdowns: { recruitmentPipeline: [{ label: "Submitted", count: 2 }] },
 };
 
@@ -18,8 +18,8 @@ vi.mock("@/hooks/use-reporting", () => ({
 describe("reporting dashboard", () => {
   it("shows management analytics without mutation controls", () => {
     render(<ReportingDashboard role="management" />);
-    expect(screen.getByRole("heading", { name: "Personnel analytics" })).toBeVisible();
-    expect(screen.getByText("Active personnel")).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+    expect(screen.getByText("Total Personnel")).toBeVisible();
     expect(screen.queryByRole("button", { name: /new|approve|import|edit/i })).not.toBeInTheDocument();
   });
 });

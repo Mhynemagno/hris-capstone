@@ -24,17 +24,27 @@ function createHandler(
     administrator?: boolean;
     blockedMessage?: string;
     deleteError?: Error | null;
+    storage?: Record<string, string[]>;
   } = {},
 ) {
   let deleteUserCalls = 0;
+  const rpcCalls: string[] = [];
+  const removedObjects: Array<{ bucket: string; paths: string[] }> = [];
   let auditInsert: Record<string, unknown> | null = null;
   const callerClient = {
     auth: {
       getUser: async () => ({ data: { user: { id: actorId } }, error: null }),
     },
     rpc: async (name: string, args: Record<string, unknown>) => {
-      assertEquals(name, "assert_managed_user_deletable");
+      rpcCalls.push(name);
       assertEquals(args, { target_user_id: targetId });
+      if (name === "remove_applicant_account_data") {
+        return {
+          data: { removes: [], storage: options.storage ?? {} },
+          error: null,
+        };
+      }
+      assertEquals(name, "assert_managed_user_deletable");
       if (options.administrator === false) {
         return {
           data: null,
@@ -54,6 +64,14 @@ function createHandler(
     },
   };
   const adminClient = {
+    storage: {
+      from: (bucket: string) => ({
+        remove: async (paths: string[]) => {
+          removedObjects.push({ bucket, paths });
+          return { data: [], error: null };
+        },
+      }),
+    },
     auth: {
       admin: {
         deleteUser: async () => {
@@ -99,6 +117,8 @@ function createHandler(
     handler,
     getAuditInsert: () => auditInsert,
     getDeleteUserCalls: () => deleteUserCalls,
+    getRemovedObjects: () => removedObjects,
+    getRpcCalls: () => rpcCalls,
   };
 }
 
@@ -172,4 +192,20 @@ Deno.test("reports a conflict when the auth deletion is blocked by a new depende
 
   assertEquals(response.status, 409);
   assertEquals(getAuditInsert(), null);
+});
+
+Deno.test("removes an applicant's recruitment records and files before deleting the account", async () => {
+  const { handler, getDeleteUserCalls, getRemovedObjects, getRpcCalls } = createHandler({
+    storage: {
+      "applicant-documents": ["applicants/a/b/cv.pdf"],
+      "applicant-profile-documents": [],
+    },
+  });
+
+  const response = await handler(deleteRequest(targetId));
+
+  assertEquals(response.status, 204);
+  assertEquals(getRpcCalls(), ["assert_managed_user_deletable", "remove_applicant_account_data"]);
+  assertEquals(getRemovedObjects(), [{ bucket: "applicant-documents", paths: ["applicants/a/b/cv.pdf"] }]);
+  assertEquals(getDeleteUserCalls(), 1);
 });

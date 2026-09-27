@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(11);
+select extensions.plan(14);
 
 select extensions.has_table('public', 'leave_types', 'Leave types table exists');
 select extensions.has_table('public', 'leave_requests', 'Leave requests table exists');
@@ -39,6 +39,12 @@ values (
   '{"mimetype":"application/pdf","size":1024}'::jsonb
 );
 
+select extensions.is(
+  (select count(*)::integer from public.leave_types where is_active and name in ('Vacation Leave', 'Sick Leave', 'Mandatory Leave', 'Maternity Leave', 'Paternity Leave')),
+  5,
+  'Default leave types are available'
+);
+
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000701';
 
@@ -52,6 +58,24 @@ select extensions.lives_ok(
     '[{"objectPath":"leave-requests/00000000-0000-4000-8000-000000000701/00000000-0000-4000-8000-000000000741/evidence.pdf","fileName":"evidence.pdf","mimeType":"application/pdf","sizeBytes":1024}]'::jsonb
   )$$,
   'Employee can submit an owned leave attachment'
+);
+
+select extensions.lives_ok(
+  $$select public.submit_leave_request(
+    '00000000-0000-4000-8000-000000000742'::uuid,
+    '00000000-0000-4000-8000-000000000721'::uuid,
+    '2099-02-10',
+    '2099-02-11',
+    '   ',
+    '[]'::jsonb
+  )$$,
+  'Employee can submit a leave request without notes or supporting evidence'
+);
+
+select extensions.is(
+  (select reason from public.leave_requests where id = '00000000-0000-4000-8000-000000000742'),
+  null::text,
+  'Blank leave notes are stored as null'
 );
 
 select * from extensions.finish();

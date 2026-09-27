@@ -9,7 +9,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-source-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-lexend), var(--font-source-sans), ui-sans-serif, sans-serif;
+  --font-heading: var(--font-source-sans), ui-sans-serif, system-ui, sans-serif;
 
   /*
    * Readability-first type scale (UI/UX Pro Max "Corporate Trust" pairing).

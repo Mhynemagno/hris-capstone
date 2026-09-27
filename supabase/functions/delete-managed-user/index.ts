@@ -96,6 +96,29 @@ export function createDeleteManagedUserHandler(
     }
     if (!targetProfile) return json(404, { error: "Account not found." });
 
+    // An applicant's own recruitment data (applicant profile, applications, documents, AI
+    // screening results) is removed with the account; for other roles this removes nothing.
+    // It runs with the administrator's JWT so the database re-checks access and dependencies.
+    const { data: removal, error: removalError } = await callerClient.rpc(
+      "remove_applicant_account_data",
+      { target_user_id: parsed.data.userId },
+    );
+    if (removalError) {
+      if (removalError.code === "P0001") {
+        return json(409, { error: removalError.message });
+      }
+      return json(500, { error: "Unable to remove this applicant's records." });
+    }
+    const storage = (removal?.storage ?? {}) as Record<string, unknown>;
+    for (const [bucket, paths] of Object.entries(storage)) {
+      const objectPaths = Array.isArray(paths)
+        ? paths.filter((path): path is string => typeof path === "string")
+        : [];
+      if (!objectPaths.length) continue;
+      // Files are best-effort: the records that referenced them are already gone.
+      await adminClient.storage.from(bucket).remove(objectPaths).catch(() => undefined);
+    }
+
     const { error: deleteError } = await adminClient.auth.admin.deleteUser(
       parsed.data.userId,
     );
@@ -103,7 +126,7 @@ export function createDeleteManagedUserHandler(
       // Foreign keys still protect history if a record was linked after the check.
       return json(409, {
         error:
-          "This account could not be deleted because records now depend on it. Deactivate the account instead.",
+          "This account could not be deleted because records now depend on it. Edit the account and clear \"Account can sign in\" instead.",
       });
     }
 

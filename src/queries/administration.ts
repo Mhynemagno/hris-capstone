@@ -1,5 +1,5 @@
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
-import { presentAuditLog, type AuditLogDisplay, type AuditPresentationLookups } from "@/lib/administration/audit-presentation";
+import { AUDIT_ACTION_GROUPS, presentAuditLog, type AuditLogDisplay, type AuditPresentationLookups } from "@/lib/administration/audit-presentation";
 import type {
   AuditLog,
   Department,
@@ -62,6 +62,15 @@ async function invitationErrorMessage(error: unknown) {
     : "The invitation service could not be reached. Please try again.";
 }
 
+/**
+ * Makes typed search text safe inside a PostgREST filter. Commas, parentheses, quotes, and
+ * backslashes are filter syntax in `or=(...)` (a name like "Allen, Fernando" used to make the
+ * request fail); `%` and `*` are wildcards. Each becomes `_`, which matches that one character.
+ */
+export function searchPattern(value: string) {
+  return `%${value.replace(/[%*,()"\\]/g, "_")}%`;
+}
+
 function pageRange(page: number) {
   const from = (page - 1) * 20;
   return { from, to: from + 19 };
@@ -89,7 +98,10 @@ export async function listManagedUsers(input: Partial<ManagedUserFilters> = {}):
     .order("full_name")
     .order("email");
 
-  if (filters.search) query = query.or(`full_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`);
+  if (filters.search) {
+    const pattern = searchPattern(filters.search);
+    query = query.or(`full_name.ilike.${pattern},email.ilike.${pattern}`);
+  }
   if (filters.status) query = query.eq("is_active", filters.status === "active");
 
   const { data, error, count } = await query.range(from, to);
@@ -164,7 +176,7 @@ export async function listDepartments(input: Partial<ReferenceDataFilters> = {})
   const filters = referenceDataFilters(input);
   const { from, to } = pageRange(filters.page);
   let query = createBrowserSupabaseClient().from("departments").select("*", { count: "exact" }).order("name");
-  if (filters.search) query = query.ilike("name", `%${filters.search}%`);
+  if (filters.search) query = query.ilike("name", searchPattern(filters.search));
   if (filters.status) query = query.eq("is_active", filters.status === "active");
   const { data, error, count } = await query.range(from, to);
   throwIfError(error);
@@ -196,7 +208,7 @@ export async function listUnitStationCatalogue(input: Partial<ReferenceDataFilte
   const filters = referenceDataFilters(input);
   const { from, to } = pageRange(filters.page);
   let query = createBrowserSupabaseClient().from("unit_stations").select("*", { count: "exact" }).order("name");
-  if (filters.search) query = query.ilike("name", `%${filters.search}%`);
+  if (filters.search) query = query.ilike("name", searchPattern(filters.search));
   if (filters.status) query = query.eq("is_active", filters.status === "active");
   const { data, error, count } = await query.range(from, to);
   throwIfError(error);
@@ -218,7 +230,10 @@ export async function listRanks(input: Partial<ReferenceDataFilters> = {}): Prom
   const filters = referenceDataFilters(input);
   const { from, to } = pageRange(filters.page);
   let query = createBrowserSupabaseClient().from("ranks").select("*", { count: "exact" }).order("sort_order");
-  if (filters.search) query = query.or(`name.ilike.%${filters.search}%,code.ilike.%${filters.search}%`);
+  if (filters.search) {
+    const pattern = searchPattern(filters.search);
+    query = query.or(`name.ilike.${pattern},code.ilike.${pattern}`);
+  }
   if (filters.status) query = query.eq("is_active", filters.status === "active");
   const { data, error, count } = await query.range(from, to);
   throwIfError(error);
@@ -270,9 +285,12 @@ export async function listAuditLogs(input: Partial<AuditLogFilters> = {}): Promi
   const { from, to } = pageRange(filters.page);
   const client = createBrowserSupabaseClient();
   let query = client.from("audit_logs").select("*", { count: "exact" }).order("created_at", { ascending: false });
-  if (filters.search) query = query.or(`entity_type.ilike.%${filters.search}%,entity_id.ilike.%${filters.search}%,action.ilike.%${filters.search}%`);
+  if (filters.search) {
+    const pattern = searchPattern(filters.search);
+    query = query.or(["entity_type", "entity_id", "action", "metadata->>name", "metadata->>full_name", "metadata->>email"].map((column) => `${column}.ilike.${pattern}`).join(","));
+  }
   if (filters.entityType) query = query.eq("entity_type", filters.entityType);
-  if (filters.action) query = query.eq("action", filters.action);
+  if (filters.action) query = query.in("action", [...AUDIT_ACTION_GROUPS[filters.action].actions]);
   const { data, error, count } = await query.range(from, to);
   throwIfError(error);
   const rows = (data ?? []) as AuditLog[];
@@ -298,6 +316,21 @@ export async function listAuditLogs(input: Partial<AuditLogFilters> = {}): Promi
     for (const profile of (profileRows ?? []) as AuditProfileRow[]) {
       const label = profile.full_name?.trim() || profile.email?.trim();
       if (label) lookups.profiles[profile.id] = label;
+    }
+    // Deleted accounts no longer have a profile; their deletion entry kept the name.
+    const missingIds = profileIds.filter((id) => !lookups.profiles[id]);
+    if (missingIds.length) {
+      const { data: deletedRows, error: deletedError } = await client
+        .from("audit_logs")
+        .select("entity_id, metadata")
+        .eq("entity_type", "profiles")
+        .eq("action", "delete")
+        .in("entity_id", missingIds);
+      throwIfError(deletedError);
+      for (const deleted of (deletedRows ?? []) as Array<Pick<AuditLog, "entity_id" | "metadata">>) {
+        const name = deleted.metadata?.full_name ?? deleted.metadata?.email;
+        if (typeof name === "string" && name.trim()) lookups.profiles[deleted.entity_id] = name.trim();
+      }
     }
   }
   if (departmentIds.length) {

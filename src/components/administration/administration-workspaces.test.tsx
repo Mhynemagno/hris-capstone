@@ -1,5 +1,5 @@
 import userEvent from "@testing-library/user-event";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 const hooks = vi.hoisted(() => ({
@@ -148,28 +148,66 @@ describe("administration shared controls", () => {
     expect(screen.getByRole("dialog", { name: /organization settings/i })).toHaveAttribute("data-side", "center");
   });
 
-  it("keeps department deactivation non-destructive", async () => {
+  it("offers only Edit for departments and keeps the current status when an edit is saved", async () => {
     const user = userEvent.setup();
     const mutateAsync = vi.fn().mockResolvedValue(undefined);
-    hooks.useDepartments.mockReturnValue({ data: { rows: [{ id: 1, name: "Operations", is_active: true }], count: 1 }, error: null, isLoading: false, refetch: vi.fn() });
+    hooks.useDepartments.mockReturnValue({ data: { rows: [{ id: 1, name: "Operations", is_active: false }], count: 1 }, error: null, isLoading: false, refetch: vi.fn() });
     hooks.useSaveDepartment.mockReturnValue({ isPending: false, mutateAsync });
 
     render(<DepartmentsWorkspace />);
-    await user.click(screen.getByRole("button", { name: /deactivate operations/i }));
+    expect(screen.queryByRole("button", { name: /deactivate|activate/i })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Edit Operations" }));
+    expect(screen.getByRole("dialog", { name: "Edit department" })).toBeInTheDocument();
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+    await user.clear(screen.getByLabelText(/^name/i));
+    await user.type(screen.getByLabelText(/^name/i), "Operations Section");
+    await user.click(screen.getByRole("button", { name: /save department/i }));
 
-    expect(mutateAsync).toHaveBeenCalledWith({ departmentId: 1, input: { name: "Operations", isActive: false } });
+    expect(mutateAsync).toHaveBeenCalledWith({ departmentId: 1, input: { name: "Operations Section", isActive: false } });
   });
 
-  it("keeps a department row visible and reports a failed deactivation", async () => {
+  it("keeps the search box and results on screen while a search is typed", async () => {
     const user = userEvent.setup();
-    hooks.useDepartments.mockReturnValue({ data: { rows: [{ id: 1, name: "Operations", is_active: true }], count: 1 }, error: null, isLoading: false, refetch: vi.fn() });
-    hooks.useSaveDepartment.mockReturnValue({ isPending: false, mutateAsync: vi.fn().mockRejectedValue(new Error("Department is referenced")) });
+    hooks.useDepartments.mockReset();
+    hooks.useDepartments.mockReturnValue({ data: { rows: [{ id: 1, name: "Operations", is_active: true }], count: 1 }, error: null, isFetching: true, isLoading: false, refetch: vi.fn() });
+    hooks.useSaveDepartment.mockReturnValue({ isPending: false, mutateAsync: vi.fn() });
 
     render(<DepartmentsWorkspace />);
-    await user.click(screen.getByRole("button", { name: /deactivate operations/i }));
+    const search = screen.getByRole("searchbox", { name: "Search departments" });
+    await user.type(search, "Oper");
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("Department is referenced");
+    expect(search).toHaveValue("Oper");
+    expect(search).toHaveFocus();
     expect(screen.getByText("Operations")).toBeInTheDocument();
+    await waitFor(() => expect(hooks.useDepartments).toHaveBeenLastCalledWith(expect.objectContaining({ search: "Oper", page: 1 })));
+    // The query only follows the pause in typing, not every keystroke.
+    expect(hooks.useDepartments.mock.calls.some(([filters]) => filters.search === "Op")).toBe(false);
+  });
+
+  it("shows the first load inside the table area so the search box stays usable", () => {
+    hooks.useManagedUsers.mockReturnValue({ data: undefined, error: null, isLoading: true, refetch: vi.fn() });
+    hooks.useInviteInternalUser.mockReturnValue({ isPending: false, mutateAsync: vi.fn() });
+    hooks.useUpdateManagedUser.mockReturnValue({ isPending: false, mutateAsync: vi.fn() });
+
+    render(<UsersWorkspace />);
+
+    expect(screen.getByRole("searchbox", { name: "Search accounts" })).toBeInTheDocument();
+    expect(screen.getByText("Loading accounts…")).toBeInTheDocument();
+  });
+
+  it("offers Edit and Delete for accounts, with sign-in blocked from the edit form", async () => {
+    const user = userEvent.setup();
+    hooks.useManagedUsers.mockReturnValue({ data: { rows: [{ id: "00000000-0000-0000-0000-000000000002", email: "fernando@example.com", full_name: "Fernando Allen", is_active: true, role: "applicant", assigned_at: "2026-08-01T00:00:00Z", created_at: "2026-08-01T00:00:00Z", updated_at: "2026-08-01T00:00:00Z" }], count: 1 }, error: null, isLoading: false, refetch: vi.fn() });
+    hooks.useInviteInternalUser.mockReturnValue({ isPending: false, mutateAsync: vi.fn() });
+    hooks.useUpdateManagedUser.mockReturnValue({ isPending: false, mutateAsync: vi.fn() });
+
+    render(<UsersWorkspace />);
+
+    expect(screen.queryByRole("button", { name: /deactivate/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/blocks sign-in/i)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Delete Fernando Allen" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Edit Fernando Allen" }));
+    expect(screen.getByRole("checkbox", { name: "Account can sign in" })).toBeChecked();
   });
 
   it("renders audit history without mutation controls", () => {
@@ -181,7 +219,7 @@ describe("administration shared controls", () => {
     expect(screen.queryByRole("button", { name: /add|edit|delete/i })).not.toBeInTheDocument();
   });
 
-  it("renders human-readable audit history and exposes structured details in a modal", async () => {
+  it("renders the audit table as Date, Account, Logs, Action, Details with a readable details dialog", async () => {
     const user = userEvent.setup();
     hooks.useAuditLogs.mockReturnValue({
       data: {
@@ -192,12 +230,13 @@ describe("administration shared controls", () => {
           entity_id: "c038df5c-804b-47bf-a5ad-4d48387f5b21",
           action: "update",
           metadata: { user_id: "c038df5c-804b-47bf-a5ad-4d48387f5b21", role: "system_administrator" },
-          created_at: "2026-08-15T09:18:40.330063+00:00",
+          created_at: "2026-09-15T09:18:40.330063+00:00",
           actorLabel: "Chief Ada Lovelace",
           recordLabel: "Account “Officer Grace Hopper”",
-          actionLabel: "Role changed to System Administrator",
-          summary: "Account role changed to System Administrator",
+          actionLabel: "Updated",
+          summary: "Account “Officer Grace Hopper”: role changed to System Administrator",
           details: { user_id: "c038df5c-804b-47bf-a5ad-4d48387f5b21", role: "system_administrator" },
+          detailEntries: [{ label: "Role", value: "System Administrator" }, { label: "User ID", value: "Officer Grace Hopper" }],
         }],
         count: 1,
       },
@@ -208,25 +247,17 @@ describe("administration shared controls", () => {
 
     render(<AuditLogsWorkspace />);
 
+    expect(screen.getAllByRole("columnheader").map((header) => header.textContent)).toEqual(["Date", "Account", "Logs", "Action", "Details"]);
+    expect(screen.getByText("September 15, 2026")).toBeInTheDocument();
     expect(screen.getByText("Chief Ada Lovelace")).toBeInTheDocument();
     expect(screen.getByText("Account “Officer Grace Hopper”")).toBeInTheDocument();
-    expect(screen.getByText("Role changed to System Administrator")).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Action" })).toHaveTextContent("All actionsCreatedUpdatedDeletedApprovedRejected");
 
     await user.click(screen.getByRole("button", { name: /view details for audit record 1/i }));
-    expect(screen.getByRole("dialog", { name: /audit record details/i })).toHaveTextContent("system_administrator");
-  });
-
-  it("lets administrators deactivate departments but never delete them", async () => {
-    const user = userEvent.setup();
-    const saveDepartment = vi.fn().mockResolvedValue(undefined);
-    hooks.useDepartments.mockReturnValue({ data: { rows: [{ id: 7, name: "Intelligence Section", is_active: true }], count: 1 }, error: null, isLoading: false, refetch: vi.fn() });
-    hooks.useSaveDepartment.mockReturnValue({ isPending: false, mutateAsync: saveDepartment });
-
-    render(<DepartmentsWorkspace />);
-
-    expect(screen.queryByRole("button", { name: /delete/i })).not.toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /deactivate intelligence section/i }));
-    expect(saveDepartment).toHaveBeenCalledWith({ departmentId: 7, input: { name: "Intelligence Section", isActive: false } });
+    const dialog = screen.getByRole("dialog", { name: /audit record details/i });
+    expect(dialog).toHaveTextContent("System Administrator");
+    expect(dialog).not.toHaveTextContent("system_administrator");
+    expect(dialog).not.toHaveTextContent("{");
   });
 
   it("lists ranks by code and name without a delete action", () => {

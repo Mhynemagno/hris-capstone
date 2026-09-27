@@ -7,5 +7,5 @@ export default async function HrJobDetailPage({ params }: { params: Promise<{ jo
   const { jobId } = await params;
   const parsed = Number(jobId);
   if (!Number.isInteger(parsed) || parsed < 1) notFound();
-  return <div className="space-y-6"><PageHeader description="Update the role details and qualification criteria." eyebrow="Recruitment" title="Edit job opening" /><HrJobEditor jobId={parsed} /></div>;
+  return <div className="space-y-6"><PageHeader title="Edit Recruitment" /><HrJobEditor jobId={parsed} /></div>;
 }

@@ -8,6 +8,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const { error, next } = await searchParams;
   const errorMessage = error === "invalid_credentials"
     ? "We could not sign you in. Check your details and try again."
+    : error === "account_disabled"
+      ? "This account can no longer sign in. Contact your system administrator if you think this is a mistake."
     : error === "invitation_expired"
       ? "This invitation link is invalid or has expired. Ask an administrator to send a new invitation."
       : undefined;
