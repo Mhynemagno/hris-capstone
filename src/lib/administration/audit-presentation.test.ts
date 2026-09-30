@@ -35,9 +35,9 @@ describe("presentAuditLog", () => {
 
     expect(entry).toMatchObject({
       actorLabel: "Chief Ada Lovelace",
-      recordLabel: "Department “Employees”",
+      recordLabel: "Unit / Section “Employees”",
       actionLabel: "Created",
-      summary: "Department “Employees” created",
+      summary: "Unit / Section “Employees” created",
     });
     expect(entry.details).toEqual({ id: 18, name: "Employees", is_active: true });
   });

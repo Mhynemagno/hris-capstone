@@ -5,15 +5,21 @@ import { Award, BookOpenCheck, GraduationCap, History, IdCard, type LucideIcon }
 
 import { cn } from "@/lib/utils";
 
-export const RECORD_TABS = [
+const ALL_RECORD_TABS = [
   { key: "official", label: "Official record" },
   { key: "service-history", label: "Service history" },
-  { key: "qualifications", label: "Qualifications" },
-  { key: "certifications", label: "Certifications" },
+  { key: "qualifications", label: "Eligibility" },
+  { key: "certifications", label: "Certification / Training" },
   { key: "training", label: "Training" },
 ] as const;
 
-export type RecordTabKey = (typeof RECORD_TABS)[number]["key"];
+export type RecordTabKey = (typeof ALL_RECORD_TABS)[number]["key"];
+
+/**
+ * The sections shown. Certification and training are one "Certification / Training" section, so
+ * the separate training section (older entries) is no longer listed.
+ */
+export const RECORD_TABS: readonly (typeof ALL_RECORD_TABS)[number][] = ALL_RECORD_TABS.filter((tab) => tab.key !== "training");
 
 const tabIcons: Record<RecordTabKey, LucideIcon> = {
   official: IdCard,

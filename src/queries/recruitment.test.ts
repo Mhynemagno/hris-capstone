@@ -211,7 +211,7 @@ describe("saveJobOpening", () => {
       requested_criteria: [{ ordinal: 1, kind: "skill", requirement: "Clear written communication", isRequired: true }],
     }));
     expect(mocks.from).toHaveBeenCalledWith("ranks");
-    expect(rankQuery.eq).toHaveBeenCalledWith("code", "Pat");
+    expect(rankQuery.eq).toHaveBeenCalledWith("code", "PAT");
   });
 });
 

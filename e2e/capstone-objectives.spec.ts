@@ -53,6 +53,7 @@ function isoDate(daysFromToday: number) {
 async function createEmployee(page: Page, suffix: string, startedOn = "2015-06-01") {
   const person = { badge: uniqueBadge(), firstName: "Etoe", lastName: `Tester ${suffix}${runId}` };
   await page.goto("/hr/employees/new");
+  await page.getByLabel(/^Rank/).selectOption({ label: "PAT — Patrolman / Patrolwoman" });
   await page.getByLabel(/^Badge number/).fill(person.badge);
   await page.getByLabel(/^Personal email/).fill(`e2e.${runId.toLowerCase()}.${suffix.toLowerCase()}@example.test`);
   await page.getByLabel(/^First name/).fill(person.firstName);
@@ -60,11 +61,13 @@ async function createEmployee(page: Page, suffix: string, startedOn = "2015-06-0
   await page.getByLabel(/^Place of birth/).fill("San Juan City");
   await page.getByLabel(/^Date of birth/).fill("1995-05-15");
   await page.getByLabel(/^Gender/).selectOption("female");
+  await page.getByLabel(/^Civil status/).selectOption("single");
   await page.getByLabel(/^Religion/).fill("Roman Catholic");
-  await page.getByLabel(/^Phone/).first().fill("+639171234567");
+  await page.locator("#phone").fill("+639171234567");
   await page.getByLabel(/^Home address/).fill("1 Test St., San Juan City");
   await page.locator("#emergency-contact-name").fill("Test Contact");
-  await page.getByLabel(/^Emergency contact phone/).fill("+639181234567");
+  await page.locator("#emergency-contact-phone").fill("+639181234567");
+  await page.getByLabel(/^Unit \/ Section/).selectOption({ label: "Office of the Chief of Police" });
   await page.getByLabel(/^Employment start date/).fill(startedOn);
   await page.getByRole("button", { name: "Save employee" }).click();
   await expect(page).toHaveURL(/\/hr\/employees\/[0-9a-f-]{36}\?tab=official&saved=created$/, { timeout: 30_000 });
@@ -101,51 +104,42 @@ test.describe("Objective 1: centralized personnel records", () => {
     await expect(page).toHaveURL(/mode=edit/);
 
     // Official record update.
-    await page.getByLabel(/^Department/).first().selectOption({ label: "Intelligence Section" });
-    await page.getByLabel(/^Rank/).first().selectOption({ label: "PCpl — Police Corporal" });
+    await page.getByLabel(/^Unit \/ Section/).first().selectOption({ label: "Traffic and Investigation Section" });
+    await page.getByLabel(/^Rank/).first().selectOption({ label: "PCPL — Police Corporal" });
     await page.getByRole("button", { name: "Save employee" }).click();
     await expect(page.getByRole("status").filter({ hasText: "Employee account has been edited successfully." })).toBeVisible();
     await page.goto(`/hr/employees/${employee.id}?tab=official&mode=edit`);
-    await expect(page.getByLabel(/^Department/).first()).toHaveValue(/\d+/);
+    await expect(page.getByLabel(/^Unit \/ Section/).first()).toHaveValue(/\d+/);
 
     const sections = page.getByRole("tablist", { name: "Personnel record sections" });
 
     await sections.getByRole("tab", { name: "Service history" }).click();
     const history = page.getByRole("tabpanel", { name: "Service history" });
     await history.getByLabel(/^Start date/).fill("2015-06-01");
-    await history.getByLabel(/^Notes/).fill(`Initial assignment ${runId}`);
+    await history.getByLabel(/^Remarks/).fill(`Initial assignment ${runId}`);
     await page.getByRole("button", { name: "Add service history" }).click();
     await expect(page.getByRole("status").filter({ hasText: "Service history added." })).toBeVisible();
 
-    await sections.getByRole("tab", { name: "Qualifications" }).click();
-    await page.getByLabel(/^Qualification name/).selectOption("Baccalaureate Degree");
-    await page.getByLabel(/^Institution/).selectOption("Private College or University");
-    await page.getByRole("button", { name: "Add qualification" }).click();
-    await expect(page.getByRole("tabpanel", { name: "Qualifications" }).getByRole("alert").filter({ hasText: "This field is required." }).first()).toBeVisible();
+    await sections.getByRole("tab", { name: "Eligibility" }).click();
+    await page.locator("#qualification-primary").selectOption("NAPOLCOM PNP Entrance Examination");
+    await page.getByRole("button", { name: "Add eligibility" }).click();
+    await expect(page.getByRole("tabpanel", { name: "Eligibility" }).getByRole("alert").filter({ hasText: "This field is required." }).first()).toBeVisible();
     await expect(page.getByText(/Invalid ISO date|Too small|expected string/)).toHaveCount(0);
-    await page.getByLabel(/^Awarded date/).fill("2014-04-10");
-    await page.getByRole("button", { name: "Add qualification" }).click();
-    await expect(page.getByRole("status").filter({ hasText: "Qualification added." })).toBeVisible();
+    await page.getByLabel(/^Date awarded/).fill("2014-04-10");
+    await page.getByRole("button", { name: "Add eligibility" }).click();
+    await expect(page.getByRole("status").filter({ hasText: "Eligibility added." })).toBeVisible();
 
-    await sections.getByRole("tab", { name: "Certifications" }).click();
-    await page.getByLabel(/^Certificate name/).selectOption("Marksmanship Qualification");
-    await page.getByLabel(/^Issuer/).selectOption("PNP Training Service");
-    await page.getByLabel(/^Issued date/).fill("2019-08-01");
-    await page.getByRole("button", { name: "Add certification" }).click();
-    await expect(page.getByRole("status").filter({ hasText: "Certification added." })).toBeVisible();
-
-    await sections.getByRole("tab", { name: "Training" }).click();
-    await page.getByLabel(/^Course name/).selectOption("Criminal Investigation Course (CIC)");
-    await page.getByLabel(/^Provider/).selectOption("Regional Training Center");
-    await page.getByLabel(/^Completed date/).fill("2020-03-15");
-    await page.getByRole("button", { name: "Add training" }).click();
-    await expect(page.getByRole("status").filter({ hasText: "Training added." })).toBeVisible();
+    await sections.getByRole("tab", { name: "Certification / Training" }).click();
+    await page.locator("#certification-primary").selectOption("Leadership and Management Course");
+    await page.getByLabel(/^Completion date/).fill("2019-08-01");
+    await page.getByRole("button", { name: "Add certification / training" }).click();
+    await expect(page.getByRole("status").filter({ hasText: "Certification / Training added." })).toBeVisible();
 
     // Everything persists and the record is findable in the directory.
     await page.reload();
-    await sections.getByRole("tab", { name: "Qualifications" }).click();
+    await sections.getByRole("tab", { name: "Eligibility" }).click();
     // The saved entry, not the matching choice in the add-qualification dropdown.
-    await expect(page.getByRole("tabpanel", { name: "Qualifications" }).locator("p", { hasText: /^Baccalaureate Degree$/ })).toBeVisible();
+    await expect(page.getByRole("tabpanel", { name: "Eligibility" }).locator("p", { hasText: /^NAPOLCOM PNP Entrance Examination$/ })).toBeVisible();
     await sections.getByRole("tab", { name: "Service history" }).click();
     await expect(page.getByRole("tabpanel", { name: "Service history" }).getByText("June 1, 2015 to present")).toBeVisible();
 
@@ -265,14 +259,14 @@ test.describe("Objective 3: deployment tracking", () => {
     // The administrator maintains the Unit/Station catalogue that deployments use.
     await signIn(page, ADMIN.email, ADMIN.home);
     await page.goto("/admin/unit-stations");
-    await page.getByRole("button", { name: "Add unit/station" }).click();
-    const panel = page.getByRole("dialog", { name: "Add unit/station" });
-    await panel.getByRole("button", { name: "Save unit/station" }).click();
+    await page.getByRole("button", { name: "Add unit / station" }).click();
+    const panel = page.getByRole("dialog", { name: "Add unit / station" });
+    await panel.getByRole("button", { name: "Save unit / station" }).click();
     await expect(panel.getByText("This field is required.")).toBeVisible();
     await panel.getByLabel(/^Name/).fill(unit);
-    await panel.getByRole("button", { name: "Save unit/station" }).click();
+    await panel.getByRole("button", { name: "Save unit / station" }).click();
     await expect(page.getByRole("status").filter({ hasText: `${unit} was added.` })).toBeVisible();
-    await page.getByLabel("Search unit stations").fill(unit);
+    await page.getByLabel("Search units / stations").fill(unit);
     await expect(page.getByRole("cell", { name: unit, exact: true })).toBeVisible();
     await signOut(page, ADMIN.email);
 
@@ -287,13 +281,11 @@ test.describe("Objective 3: deployment tracking", () => {
     await expect(page.getByText("Remarks are required.").first()).toBeVisible();
 
     await createDeployment(page, role);
-    await page.getByLabel(/^Unit \/ Assignment/).selectOption({ label: unit });
     await page.getByLabel(/^Remarks/).fill(`Oplan Ligtas ${runId}`);
     await page.getByRole("button", { name: "Save deployment" }).click();
     await expect(page.getByRole("status").filter({ hasText: "Deployment saved." })).toBeVisible();
     await page.reload();
     await expect(page.getByLabel(/^Remarks/)).toHaveValue(`Oplan Ligtas ${runId}`);
-    await expect(page.getByLabel(/^Unit \/ Assignment/)).toHaveValue(unit);
     await expect(page.getByText(/History/).first()).toBeVisible();
 
     await page.goto("/hr/deployments");
@@ -303,42 +295,44 @@ test.describe("Objective 3: deployment tracking", () => {
     await signIn(page, EMPLOYEE.email, EMPLOYEE.home);
     await page.goto("/employee/deployments");
     await expect(page.getByText(role).first()).toBeVisible({ timeout: 15_000 });
+
+    // The employee is notified of the assignment.
+    await page.goto("/notifications");
+    await expect(page.getByText(`You are deployed to ${role}`).first()).toBeVisible({ timeout: 15_000 });
   });
 });
 
 test.describe("Objective 4: promotion eligibility tracker", () => {
   test("HR evaluates service years, a performance rating, and a training credential", async ({ page }) => {
-    const credential = "Public Safety Junior Leadership Course (PSJLC)";
+    const credential = "Criminal Investigation Course";
     await signIn(page, HR.email, HR.home);
     const employee = await createEmployee(page, "PROMO", "2014-01-06");
     // Records are added in edit mode; viewing a record is read-only.
-    await page.goto(`/hr/employees/${employee.id}?tab=training&mode=edit`);
+    await page.goto(`/hr/employees/${employee.id}?tab=certifications&mode=edit`);
 
-    // The training credential the criteria require.
-    await page.getByRole("tablist", { name: "Personnel record sections" }).getByRole("tab", { name: "Training" }).click();
-    await page.getByLabel(/^Course name/).selectOption(credential);
-    await page.getByLabel(/^Provider/).selectOption("Regional Training Center");
-    await page.getByLabel(/^Completed date/).fill("2021-05-20");
-    await page.getByRole("button", { name: "Add training" }).click();
-    await expect(page.getByRole("status").filter({ hasText: "Training added." })).toBeVisible();
+    // The certification / training the criteria require.
+    await page.getByRole("tablist", { name: "Personnel record sections" }).getByRole("tab", { name: "Certification / Training" }).click();
+    await page.locator("#certification-primary").selectOption(credential);
+    await page.getByLabel(/^Completion date/).fill("2021-05-20");
+    await page.getByRole("button", { name: "Add certification / training" }).click();
+    await expect(page.getByRole("status").filter({ hasText: "Certification / Training added." })).toBeVisible();
 
-    // Each rank has one set of criteria; create them for PCpl on the first run, reuse afterwards.
+    // Each rank has one set of criteria; create them for PCPL on the first run, reuse afterwards.
     await page.goto("/hr/promotions/criteria");
-    const existing = page.getByRole("button", { name: /(Deactivate|Activate) criteria for PCpl/ });
+    const existing = page.getByRole("button", { name: /(Deactivate|Activate) criteria for PCPL/ });
     await expect(page.getByText(/Loading promotion criteria/)).toHaveCount(0, { timeout: 15_000 });
     if (await existing.count() === 0) {
-      await chooseComboboxOption(page, /^Target rank/, "PCpl", /PCpl — Police Corporal/);
+      await chooseComboboxOption(page, /^Target rank/, "PCPL", /PCPL — Police Corporal/);
       await page.getByLabel(/^Minimum years of service/).selectOption("3");
       await expect(page.getByLabel(/^Minimum performance rating/)).toHaveCount(0);
-      await page.getByLabel(/^Record type/).selectOption({ label: "Training / Schooling" });
-      await page.getByLabel(/^Requirement 1/).selectOption(credential);
+      await page.getByLabel(/^Certification \/ Training/).selectOption(credential);
       // A second requirement row can be added and removed again.
-      await page.getByRole("button", { name: "Add requirement" }).click();
+      await page.getByRole("button", { name: "Add another certification / training" }).click();
       await page.getByRole("button", { name: "Remove requirement 2" }).click();
       await page.getByRole("button", { name: "Save criteria" }).click();
       await expect(page.getByRole("status").filter({ hasText: "Promotion criteria saved." })).toBeVisible();
-    } else if (await page.getByRole("button", { name: /^Activate criteria for PCpl/ }).count()) {
-      await page.getByRole("button", { name: /^Activate criteria for PCpl/ }).click();
+    } else if (await page.getByRole("button", { name: /^Activate criteria for PCPL/ }).count()) {
+      await page.getByRole("button", { name: /^Activate criteria for PCPL/ }).click();
     }
 
     await page.goto(`/hr/employees/${employee.id}`);
@@ -351,16 +345,16 @@ test.describe("Objective 4: promotion eligibility tracker", () => {
     await page.getByRole("button", { name: "Save rating" }).click();
     await expect(page.getByRole("status").filter({ hasText: "Performance rating saved." })).toBeVisible();
 
-    const criterion = page.locator("#criterion option", { hasText: "PCpl" }).first();
+    const criterion = page.locator("#criterion option", { hasText: "PCPL" }).first();
     await page.locator("#criterion").selectOption(await criterion.getAttribute("value") as string);
     await page.getByLabel(/^Evaluation date/).fill(isoDate(0));
     await page.getByLabel(/^Recommendation/).selectOption({ label: "Recommended" });
     await page.locator("#evaluation-notes").fill(`Meets service, rating, and training requirements ${runId}`);
     await page.getByRole("button", { name: "Save advisory review" }).click();
-    await expect(page.getByRole("status").filter({ hasText: /Advisory review saved for PCpl/ })).toBeVisible();
+    await expect(page.getByRole("status").filter({ hasText: /Advisory review saved for PCPL/ })).toBeVisible();
 
     await page.goto("/hr/promotions");
-    await expect(page.getByRole("link", { name: new RegExp(`Open review for PCpl.*evaluated ${formatDate(isoDate(0))}`) }).first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("link", { name: new RegExp(`Open review for PCPL.*evaluated ${formatDate(isoDate(0))}`) }).first()).toBeVisible({ timeout: 15_000 });
     await signOut(page, HR.email);
 
     await signIn(page, EMPLOYEE.email, EMPLOYEE.home);
@@ -464,7 +458,7 @@ test.describe("Objective 7: analytics dashboard", () => {
     await createDeployment(page, `E2E Dashboard ${runId}`);
     await page.goto("/hr");
     await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible({ timeout: 30_000 });
-    for (const metric of ["Total Personnel", "Departments", "Deployments", "Applicants", "On-Leave"]) {
+    for (const metric of ["Total Personnel", "Units / Sections", "Deployments", "Applicants", "On-Leave"]) {
       await expect(page.getByRole("article", { name: metric, exact: true })).toContainText(/\d+/);
     }
     expect(Number(await page.getByRole("article", { name: "Deployments", exact: true }).locator("p").nth(1).innerText())).toBeGreaterThan(0);
@@ -476,7 +470,7 @@ test.describe("Objective 7: analytics dashboard", () => {
 
     await signIn(page, MANAGEMENT.email, MANAGEMENT.home);
     await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible({ timeout: 30_000 });
-    for (const heading of ["Personnel by department", "Recruitment pipeline", "Deployment status", "Attendance and leave exceptions"]) {
+    for (const heading of ["Personnel by unit / section", "Recruitment pipeline", "Deployment status", "Attendance and leave exceptions"]) {
       await expect(page.getByRole("heading", { name: heading })).toBeVisible();
     }
     await expect(page.getByRole("heading", { name: "Promotion Status" })).toBeVisible();

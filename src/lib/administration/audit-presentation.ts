@@ -94,7 +94,7 @@ function resourceLabel(log: AuditLog, lookups: AuditPresentationLookups) {
   switch (log.entity_type) {
     case "departments": {
       const departmentName = textValue(metadata.name) ?? lookups.departments[log.entity_id];
-      return departmentName ? quoted("Department", departmentName) : `Department ${shortId(log.entity_id)}`;
+      return departmentName ? quoted("Unit / Section", departmentName) : `Unit / Section ${shortId(log.entity_id)}`;
     }
     case "ranks": {
       const rankName = textValue(metadata.name) ?? lookups.ranks[log.entity_id];

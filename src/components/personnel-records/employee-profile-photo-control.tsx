@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { Camera } from "lucide-react";
 import Image from "next/image";
+import { useId, useRef, useState } from "react";
 
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   useEmployeeProfilePhotoUrl,
   useRemoveMyEmployeeProfilePhoto,
@@ -31,6 +31,9 @@ export function EmployeeProfilePhotoControl({
   const replace = useReplaceMyEmployeeProfilePhoto(employee);
   const remove = useRemoveMyEmployeeProfilePhoto(employee);
   const hasPhoto = Boolean(employee.profile_image_path);
+  const inputId = useId();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const busy = replace.isPending || remove.isPending;
 
   async function uploadPhoto(file: File | undefined) {
     if (!file) return;
@@ -65,16 +68,26 @@ export function EmployeeProfilePhotoControl({
       <Image alt={photo.data ? "Employee profile photo" : "Default profile avatar"} className="size-full rounded-full object-cover" height={80} src={photo.data ?? "/default-profile-avatar.png"} unoptimized width={80} />
     </Avatar>
     {canManagePhoto ? <div className="mt-3 space-y-2">
-      <Input
+      {/* The native file input is visually hidden (so no file name is shown); the button opens it. */}
+      <input
         accept="image/png,image/jpeg,image/webp"
         aria-label={hasPhoto ? "Replace profile photo" : "Upload profile photo"}
-        disabled={replace.isPending || remove.isPending}
-        onChange={(event) => void uploadPhoto(event.target.files?.[0])}
+        className="sr-only"
+        disabled={busy}
+        id={inputId}
+        onChange={(event) => { void uploadPhoto(event.target.files?.[0]); event.target.value = ""; }}
+        ref={inputRef}
+        tabIndex={-1}
         type="file"
       />
-      {hasPhoto ? <Button disabled={replace.isPending || remove.isPending} onClick={() => void removePhoto()} size="sm" type="button" variant="outline">
-        {remove.isPending ? "Removing…" : "Remove profile photo"}
-      </Button> : null}
+      <div className="flex flex-wrap gap-2">
+        <Button aria-controls={inputId} disabled={busy} onClick={() => inputRef.current?.click()} size="sm" type="button" variant="outline">
+          <Camera aria-hidden="true" /> {replace.isPending ? "Uploading…" : hasPhoto ? "Change photo" : "Upload photo"}
+        </Button>
+        {hasPhoto ? <Button disabled={busy} onClick={() => void removePhoto()} size="sm" type="button" variant="outline">
+          {remove.isPending ? "Removing…" : "Remove profile photo"}
+        </Button> : null}
+      </div>
       <p className="text-xs text-muted-foreground">Optional. PNG, JPEG, or WebP up to 5 MB.</p>
     </div> : null}
     {error ? <p className="mt-2 text-sm text-destructive" role="alert">{error}</p> : null}

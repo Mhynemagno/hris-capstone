@@ -30,13 +30,12 @@ export function HrDeploymentDirectory() {
         {newDeploymentLink}
       </div>
       <div className="relative overflow-x-auto rounded-xl border">
-        <table className="w-full min-w-[640px] text-left text-sm">
+        <table className="w-full min-w-[560px] text-left text-sm">
           <caption className="sr-only">Personnel deployments</caption>
           <thead className="bg-muted/60">
             <tr>
               <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Employee</th>
               <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Location</th>
-              <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Unit / Assignment</th>
               <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Dates</th>
               <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Status</th>
               <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col"><span className="sr-only">Actions</span></th>
@@ -51,19 +50,18 @@ export function HrDeploymentDirectory() {
                     {employee ? <><span className="block font-medium">{employee.fullName}</span><span className="block text-muted-foreground tabular-nums">{employee.employeeNumber}</span></> : <span className="text-muted-foreground">{employees.isLoading ? "Loading…" : "Unknown employee"}</span>}
                   </td>
                   <td className="px-4 py-3 align-top">{row.location || "—"}</td>
-                  <td className="px-4 py-3 align-top">{[row.unit, row.project].filter(Boolean).join(" · ") || "—"}</td>
                   <td className="px-4 py-3 align-top whitespace-nowrap">{formatDate(row.starts_on)} – {formatDate(row.ends_on) ?? (effectiveDeploymentStatus(row, today) === "upcoming" ? "no end date" : "ongoing")}</td>
                   <td className="px-4 py-3 align-top"><DeploymentStatusBadge deployment={row} today={today} /></td>
                   <td className="px-4 py-3 align-top text-right">
                     <Link className={buttonVariants({ size: "sm", variant: "outline" })} href={`/hr/deployments/${row.id}`}>
-                      View details{" "}<span className="sr-only">for {row.location || row.unit || "deployment"}{employee ? `, ${employee.fullName}` : ""}</span>
+                      View details{" "}<span className="sr-only">for {row.location || "deployment"}{employee ? `, ${employee.fullName}` : ""}</span>
                     </Link>
                   </td>
                 </tr>
               );
             }) : (
               <tr>
-                <td className="px-4 py-10 text-center text-muted-foreground" colSpan={6}>
+                <td className="px-4 py-10 text-center text-muted-foreground" colSpan={5}>
                   No deployments yet. <Link className="font-medium text-primary underline underline-offset-4" href="/hr/deployments/new">Create the first deployment</Link>.
                 </td>
               </tr>

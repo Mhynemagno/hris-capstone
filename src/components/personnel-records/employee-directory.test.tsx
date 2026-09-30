@@ -92,7 +92,7 @@ describe("EmployeeDirectory", () => {
 
     await user.click(screen.getByRole("button", { name: "Filter" }));
     expect(screen.getByRole("button", { name: "Clear filters" })).toBeDisabled();
-    await user.selectOptions(screen.getByLabelText("Department"), "3");
+    await user.selectOptions(screen.getByLabelText("Unit / Section"), "3");
     expect(within(screen.getByLabelText("Rank")).getByRole("option", { name: "PCpl — Police Corporal" })).toBeInTheDocument();
     await user.selectOptions(screen.getByLabelText("Rank"), "7");
     expect(within(screen.getByLabelText("Employment status")).getAllByRole("option").map((option) => option.textContent)).toEqual(["All statuses", "Active", "On leave"]);

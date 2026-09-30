@@ -1,10 +1,22 @@
 "use client";
 
-import { BriefcaseBusiness } from "lucide-react";
+import { BriefcaseBusiness, ChevronDown, UserRound } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+
+const loginChoices = [
+  { href: "/login?as=employee", icon: UserRound, label: "Login as Employee" },
+  { href: "/login?as=applicant", icon: BriefcaseBusiness, label: "Login as Applicant" },
+] as const;
 
 export function PublicSiteHeader() {
   const [isSignedIn, setIsSignedIn] = useState(false);
@@ -22,21 +34,32 @@ export function PublicSiteHeader() {
         className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8"
       >
         <Link
-          className="inline-flex min-h-11 items-center gap-2 font-semibold tracking-tight"
+          className="inline-flex min-h-11 items-center gap-2.5 rounded-lg font-semibold tracking-tight focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
           href="/"
         >
-          <BriefcaseBusiness aria-hidden="true" className="size-5 text-primary" />
+          <Image alt="" className="size-9 object-contain" height={36} src="/san-juan-police-logo.png" width={36} />
           <span>San Juan City Police</span>
         </Link>
-        <div className="flex items-center gap-1 sm:gap-2">
-          <Link
-            className="inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-medium transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-            href="/jobs"
-          >
-            Careers
+        {isSignedIn ? (
+          <Link className="inline-flex min-h-11 items-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/85 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50" href="/applicant/applications">
+            Application Status
           </Link>
-          <Link className="inline-flex min-h-11 items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/85 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50" href={isSignedIn ? "/applicant/applications" : "/login"}>{isSignedIn ? "Application Status" : "Login"}</Link>
-        </div>
+        ) : (
+          <DropdownMenu>
+            <DropdownMenuTrigger className="inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/85 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
+              Login
+              <ChevronDown aria-hidden="true" className="size-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 p-1.5">
+              {loginChoices.map(({ href, icon: Icon, label }) => (
+                <DropdownMenuItem className="min-h-11 gap-2.5 px-3 text-sm font-medium" key={href} render={<Link href={href} />}>
+                  <Icon aria-hidden="true" className="size-4 text-primary" />
+                  {label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </nav>
     </header>
   );

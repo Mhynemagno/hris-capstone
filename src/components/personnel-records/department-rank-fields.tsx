@@ -14,7 +14,7 @@ type ChoiceOptions = {
 };
 
 /**
- * Department choices for a dropdown. Inactive departments are hidden unless
+ * Unit / Section (department) choices for a dropdown. Inactive departments are hidden unless
  * they are the record's saved value, which stays selectable and is labelled
  * "(inactive)" so editing never silently drops it.
  */
@@ -32,7 +32,7 @@ export function buildDepartmentChoices(
     }));
   if (savedDepartmentId && !rows.some((department) => department.id === savedDepartmentId)) {
     // Keep the saved value submittable while the catalogue loads or if it is unavailable.
-    choices.unshift({ value: String(savedDepartmentId), label: departments ? "Current department (unavailable)" : "Current department (loading…)" });
+    choices.unshift({ value: String(savedDepartmentId), label: departments ? "Current unit / section (unavailable)" : "Current unit / section (loading…)" });
   }
   return choices;
 }
@@ -78,8 +78,105 @@ type DepartmentRankFieldsProps = {
   rankPlaceholder?: string;
 };
 
+type DepartmentFieldProps = {
+  idPrefix: string;
+  value: string;
+  onChange: (departmentId: string) => void;
+  savedId?: number | null;
+  name?: string;
+  error?: string;
+  required?: boolean;
+  activeOnly?: boolean;
+  label?: string;
+  placeholder?: string;
+};
+
+/** The Unit / Section (department) select on its own. */
+export function DepartmentField({
+  idPrefix,
+  value,
+  onChange,
+  savedId,
+  name,
+  error,
+  required = false,
+  activeOnly = true,
+  label = "Unit / Section",
+  placeholder = "Select a unit / section",
+}: DepartmentFieldProps) {
+  const departments = useDepartmentOptions();
+  const choices = buildDepartmentChoices(departments.data, savedId, { activeOnly });
+  const description = departments.isLoading
+    ? "Loading units / sections…"
+    : departments.error
+      ? "Units / sections could not be loaded. Refresh the page to try again."
+      : undefined;
+  return (
+    <FormField description={description} error={error} htmlFor={`${idPrefix}-department`} label={label} required={required}>
+      <NativeSelect
+        aria-busy={departments.isLoading || undefined}
+        id={`${idPrefix}-department`}
+        name={name}
+        onChange={(event) => onChange(event.target.value)}
+        required={required}
+        value={value}
+      >
+        <option value="">{placeholder}</option>
+        {choices.map((choice) => (
+          <option key={choice.value} value={choice.value}>
+            {choice.label}
+          </option>
+        ))}
+      </NativeSelect>
+    </FormField>
+  );
+}
+
+type RankFieldProps = Omit<DepartmentFieldProps, "label" | "placeholder"> & { label?: string; placeholder?: string };
+
+/** The Rank select on its own, junior to senior. */
+export function RankField({
+  idPrefix,
+  value,
+  onChange,
+  savedId,
+  name,
+  error,
+  required = false,
+  activeOnly = true,
+  label = "Rank",
+  placeholder = "Select a rank",
+}: RankFieldProps) {
+  const ranks = useRankOptions();
+  const choices = buildRankChoices(ranks.data, savedId, { activeOnly });
+  const description = ranks.isLoading
+    ? "Loading ranks…"
+    : ranks.error
+      ? "Ranks could not be loaded. Refresh the page to try again."
+      : undefined;
+  return (
+    <FormField description={description} error={error} htmlFor={`${idPrefix}-rank`} label={label} required={required}>
+      <NativeSelect
+        aria-busy={ranks.isLoading || undefined}
+        id={`${idPrefix}-rank`}
+        name={name}
+        onChange={(event) => onChange(event.target.value)}
+        required={required}
+        value={value}
+      >
+        <option value="">{placeholder}</option>
+        {choices.map((choice) => (
+          <option key={choice.value} value={choice.value}>
+            {choice.label}
+          </option>
+        ))}
+      </NativeSelect>
+    </FormField>
+  );
+}
+
 /**
- * Independent Department and Rank selects. Render inside a grid; the two
+ * Independent Unit / Section and Rank selects. Render inside a grid; the two
  * fields are returned as siblings.
  */
 export function DepartmentRankFields({
@@ -96,62 +193,37 @@ export function DepartmentRankFields({
   rankError,
   required = false,
   activeOnly = true,
-  departmentLabel = "Department",
-  rankLabel: rankFieldLabel = "Rank",
-  departmentPlaceholder = "Select a department",
-  rankPlaceholder = "Select a rank",
+  departmentLabel,
+  rankLabel: rankFieldLabel,
+  departmentPlaceholder,
+  rankPlaceholder,
 }: DepartmentRankFieldsProps) {
-  const departments = useDepartmentOptions();
-  const ranks = useRankOptions();
-  const departmentChoices = buildDepartmentChoices(departments.data, savedDepartmentId, { activeOnly });
-  const rankChoices = buildRankChoices(ranks.data, savedRankId, { activeOnly });
-  const departmentDescription = departments.isLoading
-    ? "Loading departments…"
-    : departments.error
-      ? "Departments could not be loaded. Refresh the page to try again."
-      : undefined;
-  const rankDescription = ranks.isLoading
-    ? "Loading ranks…"
-    : ranks.error
-      ? "Ranks could not be loaded. Refresh the page to try again."
-      : undefined;
-
   return (
     <>
-      <FormField description={departmentDescription} error={departmentError} htmlFor={`${idPrefix}-department`} label={departmentLabel} required={required}>
-        <NativeSelect
-          aria-busy={departments.isLoading || undefined}
-          id={`${idPrefix}-department`}
-          name={departmentName}
-          onChange={(event) => onDepartmentChange(event.target.value)}
-          required={required}
-          value={departmentId}
-        >
-          <option value="">{departmentPlaceholder}</option>
-          {departmentChoices.map((choice) => (
-            <option key={choice.value} value={choice.value}>
-              {choice.label}
-            </option>
-          ))}
-        </NativeSelect>
-      </FormField>
-      <FormField description={rankDescription} error={rankError} htmlFor={`${idPrefix}-rank`} label={rankFieldLabel} required={required}>
-        <NativeSelect
-          aria-busy={ranks.isLoading || undefined}
-          id={`${idPrefix}-rank`}
-          name={rankName}
-          onChange={(event) => onRankChange(event.target.value)}
-          required={required}
-          value={rankId}
-        >
-          <option value="">{rankPlaceholder}</option>
-          {rankChoices.map((choice) => (
-            <option key={choice.value} value={choice.value}>
-              {choice.label}
-            </option>
-          ))}
-        </NativeSelect>
-      </FormField>
+      <DepartmentField
+        activeOnly={activeOnly}
+        error={departmentError}
+        idPrefix={idPrefix}
+        label={departmentLabel}
+        name={departmentName}
+        onChange={onDepartmentChange}
+        placeholder={departmentPlaceholder}
+        required={required}
+        savedId={savedDepartmentId}
+        value={departmentId}
+      />
+      <RankField
+        activeOnly={activeOnly}
+        error={rankError}
+        idPrefix={idPrefix}
+        label={rankFieldLabel}
+        name={rankName}
+        onChange={onRankChange}
+        placeholder={rankPlaceholder}
+        required={required}
+        savedId={savedRankId}
+        value={rankId}
+      />
     </>
   );
 }

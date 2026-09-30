@@ -69,8 +69,8 @@ describe("ReportDetail filters", () => {
   it("offers active departments and passes the chosen filters to the report", async () => {
     const user = userEvent.setup();
     render(<ReportDetail reportKey="deployments" role="management" />);
-    const department = screen.getByLabelText("Department");
-    expect(within(department).getAllByRole("option").map((option) => option.textContent)).toEqual(["All departments", "Criminal Police"]);
+    const department = screen.getByLabelText("Unit / Section");
+    expect(within(department).getAllByRole("option").map((option) => option.textContent)).toEqual(["All units / sections", "Criminal Police"]);
 
     await user.selectOptions(department, "1");
     await user.selectOptions(screen.getByLabelText("Deployment status"), "active");

@@ -18,6 +18,7 @@ import {
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -114,6 +115,18 @@ export function AppShell({ children, config, email }: AppShellProps) {
               ))}
             </nav>
           </SidebarContent>
+          <SidebarFooter className="items-center border-t border-white/10 px-4 py-4">
+            {/* The wordmark is dark blue, so it sits on a light chip to stay legible on the navy sidebar. */}
+            <div className="rounded-xl bg-white px-4 py-2 shadow-sm">
+              <Image
+                alt="Bagong Pilipinas logo"
+                className="h-14 w-auto object-contain"
+                height={56}
+                src="/bagong-pilipinas-logo.png"
+                width={60}
+              />
+            </div>
+          </SidebarFooter>
         </Sidebar>
         <SidebarInset className="min-w-0 overflow-y-auto overscroll-contain bg-background" id="main-content">
           <header className="dark sticky top-0 z-20 flex h-16 shrink-0 items-center gap-3 border-b border-white/10 bg-topbar px-3 text-foreground sm:px-4">

@@ -13,8 +13,8 @@ vi.mock("@/hooks/use-administration", () => ({
   }),
   useRankOptions: () => ({
     data: [
-      { id: 7, name: "Patrolman / Patrolwoman", code: "Pat", sort_order: 1, is_active: true, ...stamp },
-      { id: 9, name: "Police Corporal", code: "PCpl", sort_order: 2, is_active: true, ...stamp },
+      { id: 7, name: "Patrolman / Patrolwoman", code: "PAT", sort_order: 1, is_active: true, ...stamp },
+      { id: 9, name: "Police Corporal", code: "PCPL", sort_order: 2, is_active: true, ...stamp },
     ],
     isLoading: false,
     error: null,
@@ -40,9 +40,9 @@ describe("RecordEntryForm", () => {
     render(<RecordEntryForm employeeId={employeeId} kind="training" onSaved={onSaved} training={training} />);
 
     expect(screen.getByLabelText(/^course name/i)).toHaveValue("Leadership Development");
-    expect(screen.getByLabelText("Notes")).toHaveValue("Initial qualification");
-    await user.clear(screen.getByLabelText("Notes"));
-    await user.type(screen.getByLabelText("Notes"), "Updated qualification");
+    expect(screen.getByLabelText("Remarks")).toHaveValue("Initial qualification");
+    await user.clear(screen.getByLabelText("Remarks"));
+    await user.type(screen.getByLabelText("Remarks"), "Updated qualification");
     await user.click(screen.getByRole("button", { name: "Save training" }));
 
     await waitFor(() => expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({
@@ -51,48 +51,75 @@ describe("RecordEntryForm", () => {
     }), training.id));
   });
 
-  it("records service history with a department, a rank, and an optional title", async () => {
+  it("records service history with a unit / section, a rank, and remarks", async () => {
     const user = userEvent.setup();
     const onSaved = vi.fn().mockResolvedValue(undefined);
     render(<RecordEntryForm employeeId={employeeId} kind="serviceHistory" onSaved={onSaved} />);
 
-    await user.selectOptions(screen.getByLabelText("Department"), "4");
-    expect(screen.getByRole("option", { name: "Pat — Patrolman / Patrolwoman" })).toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText("Unit / Section"), "4");
+    expect(screen.getByRole("option", { name: "PAT — Patrolman / Patrolwoman" })).toBeInTheDocument();
     await user.selectOptions(screen.getByLabelText("Rank"), "9");
     await user.type(screen.getByLabelText(/start date/i), "2025-01-01");
     expect(screen.getByLabelText(/end date/i)).toHaveAttribute("min", "2025-01-01");
-    await user.type(screen.getByLabelText("Notes"), "Transferred");
+    await user.type(screen.getByLabelText("Remarks"), "Transferred");
     await user.click(screen.getByRole("button", { name: "Add service history" }));
 
     await waitFor(() => expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({
       departmentId: 4,
       rankId: 9,
-      employmentTitle: undefined,
       notes: "Transferred",
       startedOn: "2025-01-01",
     }), undefined));
+    expect(onSaved.mock.calls[0]![0]).not.toHaveProperty("employmentTitle");
+    expect(screen.queryByLabelText(/employment title/i)).not.toBeInTheDocument();
     expect(await screen.findByRole("status")).toHaveTextContent("Service history added.");
   });
 
-  it("shows the end date error next to the end date field", async () => {
+  it("records a certification / training with a completion date and optional remarks only", async () => {
     const user = userEvent.setup();
-    render(<RecordEntryForm employeeId={employeeId} kind="certification" onSaved={vi.fn()} />);
+    const onSaved = vi.fn().mockResolvedValue(undefined);
+    render(<RecordEntryForm employeeId={employeeId} kind="certification" onSaved={onSaved} />);
 
-    await user.selectOptions(screen.getByLabelText(/certificate name/i), "Basic Life Support and First Aid Certification");
-    await user.selectOptions(screen.getByLabelText(/issuer/i), "Philippine Red Cross");
-    await user.type(screen.getByLabelText(/issued date/i), "2025-05-01");
-    await user.type(screen.getByLabelText(/expiry date/i), "2025-01-01");
-    await user.click(screen.getByRole("button", { name: "Add certification" }));
+    expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual([
+      "Select a certification / training",
+      "Criminal Investigation Course",
+      "Police Intelligence Operations Course",
+      "Drug Enforcement Operations Course",
+      "Leadership and Management Course",
+      "Senior Police Leadership and Command Course",
+    ]);
+    expect(screen.queryByLabelText(/issuer/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/expiry date/i)).not.toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText(/^certification \/ training/i), "Criminal Investigation Course");
+    await user.type(screen.getByLabelText(/completion date/i), "2025-05-01");
+    await user.click(screen.getByRole("button", { name: "Add certification / training" }));
 
-    expect(screen.getByLabelText(/expiry date/i)).toHaveAttribute("aria-invalid", "true");
-    expect(screen.getByText("Expiry date cannot be before the issued date.")).toBeInTheDocument();
+    await waitFor(() => expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({
+      name: "Criminal Investigation Course",
+      issuedOn: "2025-05-01",
+    }), undefined));
   });
 
-  it("offers qualification levels as a select", () => {
-    render(<RecordEntryForm employeeId={employeeId} kind="qualification" onSaved={vi.fn()} />);
+  it("records eligibility from the listed choices without institution, level, or field of study", async () => {
+    const user = userEvent.setup();
+    const onSaved = vi.fn().mockResolvedValue(undefined);
+    render(<RecordEntryForm employeeId={employeeId} kind="qualification" onSaved={onSaved} />);
 
-    expect(screen.getByLabelText("Qualification level")).toHaveRole("combobox");
-    expect(screen.getByRole("option", { name: "Bachelor's Degree" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "NAPOLCOM PNP Entrance Examination" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Philippine National Police Academy (PNPA)" })).toBeInTheDocument();
+    expect(screen.queryByLabelText(/institution/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/qualification level/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/field of study/i)).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Add eligibility" }));
+    expect(screen.getByText("Select an eligibility.")).toBeInTheDocument();
+
+    await user.selectOptions(screen.getByLabelText(/^eligibility/i), "Licensed Criminologist (RA 6506)");
+    await user.type(screen.getByLabelText(/date awarded/i), "2024-03-01");
+    await user.click(screen.getByRole("button", { name: "Add eligibility" }));
+    await waitFor(() => expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({
+      name: "Licensed Criminologist (RA 6506)",
+      awardedOn: "2024-03-01",
+    }), undefined));
   });
 
   it("offers PNP credentials as dropdowns and asks for a choice when none is made", async () => {

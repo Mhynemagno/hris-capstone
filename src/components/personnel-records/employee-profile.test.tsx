@@ -11,7 +11,7 @@ vi.mock("@/hooks/use-personnel-records", () => ({
 
 vi.mock("@/hooks/use-administration", () => ({
   useDepartmentOptions: () => ({ data: [{ id: 3, name: "Intelligence Section", is_active: true }] }),
-  useRankOptions: () => ({ data: [{ id: 9, name: "Police Captain", code: "PCapt", sort_order: 9, is_active: true, created_at: "", updated_at: "" }] }),
+  useRankOptions: () => ({ data: [{ id: 9, name: "Police Captain", code: "PCPT", sort_order: 9, is_active: true, created_at: "", updated_at: "" }] }),
 }));
 
 import { EmployeeProfile } from "./employee-profile";
@@ -52,7 +52,7 @@ describe("EmployeeProfile", () => {
     expect(screen.getByRole("heading", { name: "Ada Dela Cruz" })).toBeInTheDocument();
     expect(screen.getByAltText("Default profile avatar")).toBeInTheDocument();
     expect(screen.getByText("Badge number")).toBeInTheDocument();
-    expect(screen.getByText("PCapt — Police Captain")).toBeInTheDocument();
+    expect(screen.getByText("PCPT — Police Captain")).toBeInTheDocument();
     expect(screen.getAllByText("Not provided")).toHaveLength(9);
     expect(screen.getByText("Not assigned")).toBeInTheDocument();
   });
@@ -71,8 +71,8 @@ describe("EmployeeProfile", () => {
     render(<EmployeeProfile canManagePhoto employee={{ ...employee, gender: "male", date_of_birth: "1990-01-01", department_id: 3 }} trainings={[]} variant="summary" />);
 
     expect(screen.getByRole("heading", { name: "Ada Dela Cruz" })).toBeInTheDocument();
-    expect(screen.getByText("PCapt — Police Captain")).toBeInTheDocument();
-    for (const label of ["Badge number", "Status", "Years of service", "Department", "Unit / Station"]) expect(screen.getByText(label)).toBeInTheDocument();
+    expect(screen.getByText("PCPT — Police Captain")).toBeInTheDocument();
+    for (const label of ["Badge number", "Status", "Years of service", "Unit / Section", "Unit / Station"]) expect(screen.getByText(label)).toBeInTheDocument();
     expect(screen.getByText("Intelligence Section")).toBeInTheDocument();
     expect(screen.queryByText("Gender")).not.toBeInTheDocument();
     expect(screen.queryByText("Born")).not.toBeInTheDocument();
@@ -84,7 +84,7 @@ describe("EmployeeProfile", () => {
     expect(screen.queryByRole("heading", { name: "Training records" })).not.toBeInTheDocument();
   });
 
-  it("keeps trainings visible as promotion evidence", () => {
+  it("no longer shows a separate training timeline", () => {
     render(<EmployeeProfile employee={employee} trainings={[{
       id: "00000000-0000-0000-0000-000000000020",
       employee_id: employee.id,
@@ -96,9 +96,7 @@ describe("EmployeeProfile", () => {
       notes: null,
     }]} />);
 
-    expect(screen.getByRole("heading", { name: "Training records" })).toBeInTheDocument();
-    expect(screen.getByText("Leadership Development")).toBeInTheDocument();
-    expect(screen.getByText(/16 hours/i)).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Training records" })).not.toBeInTheDocument();
   });
 
   it("shows eligibility read-only, and service history and certifications only when recorded", () => {
@@ -106,17 +104,19 @@ describe("EmployeeProfile", () => {
 
     const eligibility = screen.getByRole("region", { name: "Eligibility" });
     expect(eligibility).toHaveTextContent("Career Service Professional");
-    expect(eligibility).toHaveTextContent("Second level · Civil Service Commission");
+    expect(eligibility).toHaveTextContent("May 1, 2019");
+    expect(eligibility).not.toHaveTextContent("Civil Service Commission");
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Service history" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("region", { name: "Certifications" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Certification / Training" })).not.toBeInTheDocument();
 
     rerender(<EmployeeProfile certifications={[{ id: "c1", employee_id: employee.id, name: "First Aid", issuer: "Red Cross", credential_id: null, issued_on: "2025-02-01", expires_on: null, notes: null }]} employee={employee} qualifications={[]} serviceHistory={[{ id: "s1", employee_id: employee.id, department_id: 3, rank_id: 9, employment_title: null, started_on: "2024-01-01", ended_on: null, notes: null }]} trainings={[]} />);
 
     expect(screen.getByRole("region", { name: "Eligibility" })).toHaveTextContent("No eligibility recorded.");
-    expect(screen.getByRole("region", { name: "Service history" })).toHaveTextContent("PCapt — Police Captain");
+    expect(screen.getByRole("region", { name: "Service history" })).toHaveTextContent("PCPT — Police Captain");
     expect(screen.getByRole("region", { name: "Service history" })).toHaveTextContent(/Intelligence Section · January 1, 2024 – present/);
-    expect(screen.getByRole("region", { name: "Certifications" })).toHaveTextContent("First Aid");
+    expect(screen.getByRole("region", { name: "Certification / Training" })).toHaveTextContent("First Aid");
+    expect(screen.getByRole("region", { name: "Certification / Training" })).toHaveTextContent("Completed February 1, 2025");
   });
 
   it("hides eligibility when it is not provided (administrator view)", () => {

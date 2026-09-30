@@ -1,12 +1,12 @@
 import type { ReactNode } from "react";
-import { Award, BadgeCheck, BookOpenCheck, Building2, Cake, Church, Clock, GraduationCap, HeartPulse, History, House, Mail, MapPin, Phone, ShieldCheck, UserRound, Users } from "lucide-react";
+import { Award, BadgeCheck, Building2, Cake, Church, Clock, GraduationCap, HeartPulse, History, House, Mail, MapPin, Phone, ShieldCheck, UserRound, Users } from "lucide-react";
 
 import { useDepartmentOptions, useRankOptions } from "@/hooks/use-administration";
 import { rankLabel } from "@/lib/ranks";
 import type { Certification, Employee, Qualification, ServiceHistory, TrainingRecord } from "@/lib/types/database";
 
 import { EmployeeProfilePhotoControl } from "./employee-profile-photo-control";
-import { ActivityTimeline, formatDay, InfoCard, InfoList, ProfileHeaderCard, serviceLength } from "./profile-layout";
+import { formatDay, InfoCard, InfoList, ProfileHeaderCard, serviceLength } from "./profile-layout";
 
 type EmployeeProfileProps = {
   employee: Employee;
@@ -47,14 +47,12 @@ export function EmployeeProfile({ employee, trainings, qualifications, serviceHi
   const departments = useDepartmentOptions();
   const rank = employee.rank_id ? ranks.data?.find((row) => row.id === employee.rank_id) : undefined;
   const department = employee.department_id ? departments.data?.find((row) => row.id === employee.department_id) : undefined;
-  const sortedTrainings = trainings.toSorted((a, b) => b.completed_on.localeCompare(a.completed_on));
-  const totalHours = trainings.reduce((sum, training) => sum + (training.hours ?? 0), 0);
 
   const badge = { label: "Badge number", value: <span className="tabular-nums">{employee.employee_number}</span>, icon: BadgeCheck };
   const status = { label: "Status", value: employee.employment_status === "on_leave" ? "On leave" : "Active", icon: ShieldCheck };
   const service = { label: "Years of service", value: serviceLength(employee.employment_started_on, employee.employment_ended_on) ?? "Not recorded", icon: Clock };
   const assignment = [
-    { label: "Department", value: department?.name ?? "Not assigned", icon: Building2 },
+    { label: "Unit / Section", value: department?.name ?? "Not assigned", icon: Building2 },
     { label: "Unit / Station", value: employee.unit_station || "Not assigned", icon: MapPin },
   ];
   const subtitle = rank ? rankLabel(rank) : "Rank not provided";
@@ -81,18 +79,17 @@ export function EmployeeProfile({ employee, trainings, qualifications, serviceHi
       ]}
     />
 
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] 2xl:grid-cols-[minmax(0,1fr)_24rem]">
-      <div className="grid content-start gap-6 md:grid-cols-2">
+    <div className="grid content-start gap-6 md:grid-cols-2">
         <InfoCard icon={Mail} id="profile-contact" title="Contact information">
           <InfoList rows={[
             { label: "Personal email", value: employee.personal_email, icon: Mail },
-            { label: "Phone", value: valueOrNotProvided(employee.phone), icon: Phone },
+            { label: "Phone number", value: valueOrNotProvided(employee.phone), icon: Phone },
           ]} />
         </InfoCard>
         <InfoCard icon={HeartPulse} id="profile-emergency" title="Emergency contact">
           <InfoList rows={[
-            { label: "Emergency contact", value: valueOrNotProvided(employee.emergency_contact_name), icon: Users },
-            { label: "Emergency phone", value: valueOrNotProvided(employee.emergency_contact_phone), icon: Phone },
+            { label: "Name", value: valueOrNotProvided(employee.emergency_contact_name), icon: Users },
+            { label: "Phone number", value: valueOrNotProvided(employee.emergency_contact_phone), icon: Phone },
           ]} />
         </InfoCard>
         <InfoCard icon={House} id="profile-address" title="Address information">
@@ -108,7 +105,7 @@ export function EmployeeProfile({ employee, trainings, qualifications, serviceHi
           ]} />
         </InfoCard>
         {qualifications ? <InfoCard className="md:col-span-2" icon={GraduationCap} id="profile-eligibility" title="Eligibility">
-          <RecordList emptyMessage="No eligibility recorded." items={byNewest(qualifications, (row) => row.awarded_on).map((row) => ({ id: row.id, title: row.name, detail: [row.qualification_level, row.field_of_study, row.institution, formatDay(row.awarded_on)].filter(Boolean).join(" · ") }))} />
+          <RecordList emptyMessage="No eligibility recorded." items={byNewest(qualifications, (row) => row.awarded_on).map((row) => ({ id: row.id, title: row.name, detail: [formatDay(row.awarded_on), row.notes].filter(Boolean).join(" · ") }))} />
         </InfoCard> : null}
         {serviceHistory.length ? <InfoCard className="md:col-span-2" icon={History} id="profile-service-history" title="Service history">
           <RecordList emptyMessage="" items={byNewest(serviceHistory, (row) => row.started_on).map((row) => {
@@ -117,31 +114,9 @@ export function EmployeeProfile({ employee, trainings, qualifications, serviceHi
             return { id: row.id, title: row.employment_title || (entryRank ? rankLabel(entryRank) : "Service entry"), detail: [entryDepartment?.name, `${formatDay(row.started_on) ?? row.started_on} – ${row.ended_on ? formatDay(row.ended_on) ?? row.ended_on : "present"}`].filter(Boolean).join(" · ") };
           })} />
         </InfoCard> : null}
-        {certifications.length ? <InfoCard className="md:col-span-2" icon={Award} id="profile-certifications" title="Certifications">
-          <RecordList emptyMessage="" items={byNewest(certifications, (row) => row.issued_on).map((row) => ({ id: row.id, title: row.name, detail: [row.issuer, row.issued_on ? `Issued ${formatDay(row.issued_on)}` : null, row.expires_on ? `Expires ${formatDay(row.expires_on)}` : null].filter(Boolean).join(" · ") }))} />
+        {certifications.length ? <InfoCard className="md:col-span-2" icon={Award} id="profile-certifications" title="Certification / Training">
+          <RecordList emptyMessage="" items={byNewest(certifications, (row) => row.issued_on).map((row) => ({ id: row.id, title: row.name, detail: [row.issued_on ? `Completed ${formatDay(row.issued_on)}` : null, row.notes].filter(Boolean).join(" · ") }))} />
         </InfoCard> : null}
-      </div>
-
-      <InfoCard
-        action={totalHours ? <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground">{totalHours} hrs total</span> : undefined}
-        className="self-start"
-        icon={BookOpenCheck}
-        id="training"
-        title="Training records"
-      >
-        <ActivityTimeline
-          emptyMessage="No training records have been added."
-          items={sortedTrainings.map((training) => ({
-            id: training.id,
-            icon: BookOpenCheck,
-            tone: "primary",
-            category: formatDay(training.completed_on) ?? "Completed",
-            title: training.course_name,
-            detail: [training.provider, training.hours === null ? null : `${training.hours} hours`].filter(Boolean).join(" · "),
-            date: training.completed_on,
-          }))}
-        />
-      </InfoCard>
     </div>
   </div>;
 }

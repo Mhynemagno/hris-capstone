@@ -58,6 +58,14 @@ describe("password login route", () => {
     );
   });
 
+  it("returns a failed attempt to the login page the visitor chose", async () => {
+    signInWithPassword.mockResolvedValue({ error: new Error("Invalid login credentials") });
+
+    const response = await POST(loginRequest({ as: "employee", email: "person@example.com", password: "secret1" }));
+
+    expect(response.headers.get("location")).toBe("http://localhost/login?as=employee&error=invalid_credentials");
+  });
+
   it("tells a person whose account was blocked from signing in", async () => {
     signInWithPassword.mockResolvedValue({ data: { user: null }, error: Object.assign(new Error("User is banned"), { code: "user_banned" }) });
 

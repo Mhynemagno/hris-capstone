@@ -52,7 +52,7 @@ describe("HrJobForm", () => {
 
     expect(screen.queryByLabelText(/Department/)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/^Rank/)).not.toBeInTheDocument();
-    expect(screen.getByLabelText(/^Position/)).toHaveValue("Pat — Patrolman / Patrolwoman");
+    expect(screen.getByLabelText(/^Position/)).toHaveValue("PAT — Patrolman / Patrolwoman");
     expect(screen.getByLabelText(/^Position/)).toHaveAttribute("readonly");
     expect(screen.getByLabelText(/Title/)).toBeRequired();
     expect(screen.getByLabelText(/Location/)).toBeRequired();

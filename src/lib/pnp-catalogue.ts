@@ -8,35 +8,23 @@
  * longer listed is still shown as its own choice (see `withSavedValue`).
  */
 
+/** Eligibility (stored as qualifications) that HR can record on a personnel file. */
 export const PNP_QUALIFICATIONS = [
-  "Baccalaureate Degree",
-  "Master's Degree",
-  "Doctorate Degree",
-  "Registered Criminologist (RCrim) Licensure",
-  "NAPOLCOM Police Entrance Examination",
-  "NAPOLCOM Promotional Examination – Police Officer",
-  "NAPOLCOM Promotional Examination – Senior Police Officer",
-  "NAPOLCOM Promotional Examination – Police Inspector",
-  "NAPOLCOM Promotional Examination – Police Superintendent",
-  "CSC Professional Eligibility",
-  "RA 1080 Board or Bar Eligibility",
-  "RA 6506 (Licensed Criminologist) Eligibility",
-  "PD 907 (Honor Graduate) Eligibility",
+  "NAPOLCOM PNP Entrance Examination",
+  "Licensed Criminologist (RA 6506)",
+  "Bar or Board Examination (RA 1080)",
+  "Civil Service Eligibility to College Honor Graduates (PD 907)",
+  "Civil Service Professional Examination",
+  "Philippine National Police Academy (PNPA)",
 ] as const;
 
+/** Certification / Training courses (stored as certifications); also the promotion requirements. */
 export const PNP_CERTIFICATIONS = [
-  "Firearms Proficiency Certification",
-  "Marksmanship Qualification",
-  "Basic Life Support and First Aid Certification",
-  "Explosive Ordnance Disposal (EOD) Certification",
-  "K9 Handler Certification",
-  "SWAT Operations Certification",
-  "Cybercrime Investigator Certification",
-  "Scene of the Crime Operations (SOCO) Certification",
-  "Professional Driver's License",
-  "Drug Test Clearance",
-  "Neuro-Psychiatric Examination Clearance",
-  "Physical Fitness Test Clearance",
+  "Criminal Investigation Course",
+  "Police Intelligence Operations Course",
+  "Drug Enforcement Operations Course",
+  "Leadership and Management Course",
+  "Senior Police Leadership and Command Course",
 ] as const;
 
 export const PNP_TRAININGS = [
@@ -132,7 +120,7 @@ export const PNP_GENERAL_REQUIREMENTS = {
 } as const;
 
 /** Every recruitment is for this entry rank; hiring places the applicant in it. */
-export const RECRUITMENT_RANK = { code: "Pat", name: "Patrolman / Patrolwoman" } as const;
+export const RECRUITMENT_RANK = { code: "PAT", name: "Patrolman / Patrolwoman" } as const;
 
 /** Credential names a promotion criterion can require, by personnel record type. */
 export const PNP_CREDENTIALS_BY_KIND = {

@@ -148,8 +148,8 @@ type PersonnelKind = "serviceHistory" | "qualification" | "certification" | "tra
 
 const childConfig = {
   serviceHistory: { table: "service_history", schema: serviceHistorySchema, payload: (v: ServiceHistoryInput) => ({ employee_id: v.employeeId, department_id: v.departmentId ?? null, rank_id: v.rankId ?? null, employment_title: v.employmentTitle ?? null, started_on: v.startedOn, ended_on: v.endedOn ?? null, notes: v.notes ?? null }) },
-  qualification: { table: "qualifications", schema: qualificationSchema, payload: (v: QualificationInput) => ({ employee_id: v.employeeId, name: v.name, institution: v.institution, qualification_level: v.qualificationLevel ?? null, field_of_study: v.fieldOfStudy ?? null, awarded_on: v.awardedOn, notes: v.notes ?? null }) },
-  certification: { table: "certifications", schema: certificationSchema, payload: (v: CertificationInput) => ({ employee_id: v.employeeId, name: v.name, issuer: v.issuer, credential_id: v.credentialId ?? null, issued_on: v.issuedOn, expires_on: v.expiresOn ?? null, notes: v.notes ?? null }) },
+  qualification: { table: "qualifications", schema: qualificationSchema, payload: (v: QualificationInput) => ({ employee_id: v.employeeId, name: v.name, institution: v.institution ?? null, qualification_level: v.qualificationLevel ?? null, field_of_study: v.fieldOfStudy ?? null, awarded_on: v.awardedOn, notes: v.notes ?? null }) },
+  certification: { table: "certifications", schema: certificationSchema, payload: (v: CertificationInput) => ({ employee_id: v.employeeId, name: v.name, issuer: v.issuer ?? null, credential_id: v.credentialId ?? null, issued_on: v.issuedOn, expires_on: v.expiresOn ?? null, notes: v.notes ?? null }) },
   training: { table: "training_records", schema: trainingRecordSchema, payload: (v: TrainingRecordInput) => ({ employee_id: v.employeeId, course_name: v.courseName, provider: v.provider, completed_on: v.completedOn, expires_on: v.expiresOn ?? null, hours: v.hours ?? null, notes: v.notes ?? null }) },
 } as const;
 

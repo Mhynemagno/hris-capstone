@@ -396,7 +396,7 @@ function DepartmentForm({ department, onSaved, pending }: { department?: Departm
     try {
       await onSaved(values);
     } catch (cause) {
-      setError(errorMessage(cause, "We could not save the department."));
+      setError(errorMessage(cause, "We could not save the unit / section."));
     }
   }
 
@@ -406,7 +406,7 @@ function DepartmentForm({ department, onSaved, pending }: { department?: Departm
         <Input id="department-name" {...form.register("name")} />
       </FormField>
       {error ? <ErrorState message={error} /> : null}
-      <Button className="w-full" disabled={pending} type="submit">{pending ? "Saving…" : "Save department"}</Button>
+      <Button className="w-full" disabled={pending} type="submit">{pending ? "Saving…" : "Save unit / section"}</Button>
     </form>
   );
 }
@@ -430,12 +430,12 @@ export function DepartmentsWorkspace() {
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <ReferenceFilters label="departments" onSearchChange={(value) => resetPage(() => setSearch(value))} onStatusChange={(value) => resetPage(() => setStatus(value))} search={search} status={status} />
-        <Button className="w-full sm:w-auto" onClick={() => setCreating(true)} type="button">Add department</Button>
+        <ReferenceFilters label="units / sections" onSearchChange={(value) => resetPage(() => setSearch(value))} onStatusChange={(value) => resetPage(() => setStatus(value))} search={search} status={status} />
+        <Button className="w-full sm:w-auto" onClick={() => setCreating(true)} type="button">Add unit / section</Button>
       </div>
       <SuccessMessage message={notice} />
-      <ListBody loadingLabel="Loading departments…" result={result}>
-        <DataTable caption="Departments" columns={["Department", "Status", "Actions"]} minWidth="min-w-[560px]">
+      <ListBody loadingLabel="Loading units / sections…" result={result}>
+        <DataTable caption="Units / Sections" columns={["Unit / Section", "Status", "Actions"]} minWidth="min-w-[560px]">
           {rows.length ? rows.map((department) => (
             <tr className="border-t" key={department.id}>
               <td className="px-4 py-3 font-semibold">{department.name}</td>
@@ -444,17 +444,17 @@ export function DepartmentsWorkspace() {
                 <Button aria-label={`Edit ${department.name}`} onClick={() => setEditing(department)} size="sm" type="button" variant="outline">Edit</Button>
               </RowActions>
             </tr>
-          )) : <tr><EmptyTableState colSpan={3} message="No departments match these filters." /></tr>}
+          )) : <tr><EmptyTableState colSpan={3} message="No units / sections match these filters." /></tr>}
         </DataTable>
       </ListBody>
       <PaginatedTableControls onPageChange={setPage} page={page} pageSize={20} totalCount={result.data?.count ?? 0} />
-      <AdministrationFormPanel description="Create a department for personnel and job openings." onOpenChange={setCreating} open={creating} title="Add department">
+      <AdministrationFormPanel description="Create a unit / section for personnel and job openings." onOpenChange={setCreating} open={creating} title="Add unit / section">
         <DepartmentForm onSaved={async (input) => { await save.mutateAsync({ input: { ...input, isActive: true } }); setCreating(false); setNotice(`${input.name} was added.`); }} pending={save.isPending} />
       </AdministrationFormPanel>
       {editing ? (
-        <AdministrationFormPanel description="Changes are audited and historical references are preserved." onOpenChange={(open) => { if (!open) setEditing(null); }} open title="Edit department">
+        <AdministrationFormPanel description="Changes are audited and historical references are preserved." onOpenChange={(open) => { if (!open) setEditing(null); }} open title="Edit unit / section">
           {/* Editing keeps the current status; the form no longer offers deactivation. */}
-          <DepartmentForm department={editing} key={editing.id} onSaved={async (input) => { await save.mutateAsync({ input: { ...input, isActive: editing.is_active }, departmentId: editing.id }); setEditing(null); setNotice("Department saved."); }} pending={save.isPending} />
+          <DepartmentForm department={editing} key={editing.id} onSaved={async (input) => { await save.mutateAsync({ input: { ...input, isActive: editing.is_active }, departmentId: editing.id }); setEditing(null); setNotice("Unit / section saved."); }} pending={save.isPending} />
         </AdministrationFormPanel>
       ) : null}
     </div>
@@ -477,7 +477,7 @@ function UnitStationForm({ onSaved, pending, unitStation }: { onSaved: (input: U
     try {
       await onSaved(values);
     } catch (cause) {
-      setError(errorMessage(cause, "We could not save the unit/station."));
+      setError(errorMessage(cause, "We could not save the unit / station."));
     }
   }
 
@@ -487,7 +487,7 @@ function UnitStationForm({ onSaved, pending, unitStation }: { onSaved: (input: U
         <Input id="unit-station-name" {...form.register("name")} />
       </FormField>
       {error ? <ErrorState message={error} /> : null}
-      <Button className="w-full" disabled={pending} type="submit">{pending ? "Saving…" : "Save unit/station"}</Button>
+      <Button className="w-full" disabled={pending} type="submit">{pending ? "Saving…" : "Save unit / station"}</Button>
     </form>
   );
 }
@@ -511,15 +511,15 @@ export function UnitStationsWorkspace() {
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <ReferenceFilters label="unit stations" onSearchChange={(value) => resetPage(() => setSearch(value))} onStatusChange={(value) => resetPage(() => setStatus(value))} search={search} status={status} />
-        <Button className="w-full sm:w-auto" onClick={() => setCreating(true)} type="button">Add unit/station</Button>
+        <ReferenceFilters label="units / stations" onSearchChange={(value) => resetPage(() => setSearch(value))} onStatusChange={(value) => resetPage(() => setStatus(value))} search={search} status={status} />
+        <Button className="w-full sm:w-auto" onClick={() => setCreating(true)} type="button">Add unit / station</Button>
       </div>
       <p className="text-sm text-muted-foreground">
-        Active units appear in the Unit / Station field of personnel records and the Unit / Assignment field of deployments.
+        Active units appear in the Unit / Station field of personnel records.
       </p>
       <SuccessMessage message={notice} />
       <ListBody loadingLabel="Loading units…" result={result}>
-        <DataTable caption="Units" columns={["Unit/station", "Status", "Actions"]} minWidth="min-w-[560px]">
+        <DataTable caption="Units / Stations" columns={["Unit / Station", "Status", "Actions"]} minWidth="min-w-[560px]">
           {rows.length ? rows.map((unitStation) => (
             <tr className="border-t" key={unitStation.id}>
               <td className="px-4 py-3 font-semibold">{unitStation.name}</td>
@@ -532,12 +532,12 @@ export function UnitStationsWorkspace() {
         </DataTable>
       </ListBody>
       <PaginatedTableControls onPageChange={setPage} page={page} pageSize={20} totalCount={result.data?.count ?? 0} />
-      <AdministrationFormPanel description="Create a unit or station for personnel records and deployments." onOpenChange={setCreating} open={creating} title="Add unit/station">
+      <AdministrationFormPanel description="Create a unit / station for personnel records." onOpenChange={setCreating} open={creating} title="Add unit / station">
         <UnitStationForm onSaved={async (input) => { await save.mutateAsync({ input: { ...input, isActive: true } }); setCreating(false); setNotice(`${input.name} was added.`); }} pending={save.isPending} />
       </AdministrationFormPanel>
       {editing ? (
-        <AdministrationFormPanel description="Changes are audited and historical references are preserved." onOpenChange={(open) => { if (!open) setEditing(null); }} open title="Edit unit/station">
-          <UnitStationForm key={editing.id} onSaved={async (input) => { await save.mutateAsync({ input: { ...input, isActive: editing.is_active }, unitStationId: editing.id }); setEditing(null); setNotice("Unit/station saved."); }} pending={save.isPending} unitStation={editing} />
+        <AdministrationFormPanel description="Changes are audited and historical references are preserved." onOpenChange={(open) => { if (!open) setEditing(null); }} open title="Edit unit / station">
+          <UnitStationForm key={editing.id} onSaved={async (input) => { await save.mutateAsync({ input: { ...input, isActive: editing.is_active }, unitStationId: editing.id }); setEditing(null); setNotice("Unit / station saved."); }} pending={save.isPending} unitStation={editing} />
         </AdministrationFormPanel>
       ) : null}
     </div>
@@ -629,7 +629,7 @@ export function RanksWorkspace() {
         </DataTable>
       </ListBody>
       <PaginatedTableControls onPageChange={setPage} page={page} pageSize={20} totalCount={result.data?.count ?? 0} />
-      <AdministrationFormPanel description="Add a police rank. It becomes available in every department." onOpenChange={setCreating} open={creating} title="Add rank">
+      <AdministrationFormPanel description="Add a police rank. It becomes available in every unit / section." onOpenChange={setCreating} open={creating} title="Add rank">
         <RankForm onSaved={async (input) => { await save.mutateAsync({ input: { ...input, isActive: true }, rankId: undefined }); setCreating(false); setNotice(`${input.name} was added.`); }} pending={save.isPending} />
       </AdministrationFormPanel>
       {editing ? (

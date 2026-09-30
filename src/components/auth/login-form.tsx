@@ -11,10 +11,12 @@ import { PasswordInput } from "./password-input";
 
 type LoginFormProps = {
   error?: string;
+  /** Which login the visitor chose; kept so a failed attempt returns to the same page. */
+  mode?: "employee" | "applicant" | null;
   nextPath: string;
 };
 
-export function LoginForm({ error, nextPath }: LoginFormProps) {
+export function LoginForm({ error, mode, nextPath }: LoginFormProps) {
   const [pending, setPending] = useState(false);
 
   useEffect(() => {
@@ -35,6 +37,7 @@ export function LoginForm({ error, nextPath }: LoginFormProps) {
       onSubmit={() => setPending(true)}
     >
       <input name="next" type="hidden" value={nextPath} />
+      {mode ? <input name="as" type="hidden" value={mode} /> : null}
       <FormField htmlFor="login-email" label="Email">
         <input
           autoComplete="username"

@@ -10,9 +10,8 @@ import { nativeSelectClassName } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { useEmployeeForCurrentUser, usePersonnelEntries } from "@/hooks/use-personnel-records";
 import { useSubmitProfileChangeRequest } from "@/hooks/use-profile-change-requests";
-import { PNP_FIELDS_OF_STUDY, PNP_INSTITUTIONS, PNP_QUALIFICATIONS, withSavedValue } from "@/lib/pnp-catalogue";
+import { PNP_QUALIFICATIONS, withSavedValue } from "@/lib/pnp-catalogue";
 import type { Qualification } from "@/lib/types/database";
-import { QUALIFICATION_LEVELS } from "@/schemas/personnel-records";
 import {
   profileChangeContactChangeSchema,
   profileChangeQualificationSnapshotSchema,
@@ -20,26 +19,36 @@ import {
 } from "@/schemas/profile-change-requests";
 
 type QualificationChange = Extract<ProfileChangeDraftInput["changes"][number], { kind: "qualification" }>;
-type QualificationFields = { name: string; institution: string; qualificationLevel: string; fieldOfStudy: string; awardedOn: string; notes: string };
-const emptyQualification: QualificationFields = { name: "", institution: "", qualificationLevel: "", fieldOfStudy: "", awardedOn: "", notes: "" };
+type QualificationFields = { name: string; awardedOn: string; notes: string };
+const emptyQualification: QualificationFields = { name: "", awardedOn: "", notes: "" };
 
 function snapshot(qualification: Qualification): QualificationFields {
   return {
     name: qualification.name,
-    institution: qualification.institution,
-    qualificationLevel: qualification.qualification_level ?? "",
-    fieldOfStudy: qualification.field_of_study ?? "",
     awardedOn: qualification.awarded_on,
     notes: qualification.notes ?? "",
   };
 }
+/** Eligibility is recorded by name and date only; institution, level, and field of study are sent as null. */
 function toRequestedValue(fields: QualificationFields) {
-  return { ...fields, qualificationLevel: fields.qualificationLevel || null, fieldOfStudy: fields.fieldOfStudy || null, notes: fields.notes || null };
+  return { ...fields, institution: null, qualificationLevel: null, fieldOfStudy: null, notes: fields.notes || null };
+}
+
+/** The saved entry as it is compared on approval, keeping any older institution, level, or field of study. */
+function originalValue(qualification: Qualification) {
+  return {
+    name: qualification.name,
+    institution: qualification.institution ?? null,
+    qualificationLevel: qualification.qualification_level ?? null,
+    fieldOfStudy: qualification.field_of_study ?? null,
+    awardedOn: qualification.awarded_on,
+    notes: qualification.notes ?? null,
+  };
 }
 function qualificationDescription(change: QualificationChange) {
   return change.operation === "remove"
     ? `Remove: ${change.originalValue.name}`
-    : `${change.operation === "add" ? "Add" : "Edit"}: ${change.requestedValue.name} — ${change.requestedValue.institution}`;
+    : `${change.operation === "add" ? "Add" : "Edit"}: ${change.requestedValue.name}`;
 }
 
 type QualificationErrors = Partial<Record<keyof QualificationFields | "qualificationId", string>>;
@@ -54,12 +63,10 @@ function qualificationFieldErrors(fields: QualificationFields): QualificationErr
     if (!key || errors[key]) continue;
     errors[key] =
       key === "name"
-        ? "Select a qualification."
-        : key === "institution"
-          ? "Select an institution."
-          : key === "awardedOn"
-            ? "Enter the date the qualification was awarded."
-            : issue.message;
+        ? "Select an eligibility."
+        : key === "awardedOn"
+          ? "Enter the date the eligibility was obtained."
+          : issue.message;
   }
   return errors;
 }
@@ -86,9 +93,6 @@ export function ProfileChangeRequestForm() {
   if (!employee.data) return <ErrorState message="Your official employee record is not available." />;
   const employeeData = employee.data;
   const qualificationRows = (qualifications.data ?? []) as Qualification[];
-  // Keep a legacy free-text level selectable so editing an existing record does not silently drop it.
-  const levelOptions: string[] = [...QUALIFICATION_LEVELS];
-  if (qualification.qualificationLevel && !levelOptions.includes(qualification.qualificationLevel)) levelOptions.push(qualification.qualificationLevel);
 
   function changeQualificationField(field: keyof QualificationFields, value: string) {
     setQualification((current) => ({ ...current, [field]: value }));
@@ -104,7 +108,7 @@ export function ProfileChangeRequestForm() {
     setSuccess(null);
     const selected = qualificationRows.find((item) => item.id === qualificationId);
     const errors: QualificationErrors = {};
-    if (operation !== "add" && !selected) errors.qualificationId = "Choose an existing qualification to edit or remove.";
+    if (operation !== "add" && !selected) errors.qualificationId = "Choose an existing eligibility to edit or remove.";
     if (operation !== "remove") Object.assign(errors, qualificationFieldErrors(qualification));
     setQualificationErrors(errors);
     if (Object.values(errors).some(Boolean)) return;
@@ -113,8 +117,8 @@ export function ProfileChangeRequestForm() {
       operation === "add"
         ? { kind: "qualification", operation: "add", originalValue: null, requestedValue }
         : operation === "edit"
-          ? { kind: "qualification", operation: "edit", qualificationId: selected!.id, originalValue: toRequestedValue(snapshot(selected!)), requestedValue }
-          : { kind: "qualification", operation: "remove", qualificationId: selected!.id, originalValue: toRequestedValue(snapshot(selected!)), requestedValue: null };
+          ? { kind: "qualification", operation: "edit", qualificationId: selected!.id, originalValue: originalValue(selected!), requestedValue }
+          : { kind: "qualification", operation: "remove", qualificationId: selected!.id, originalValue: originalValue(selected!), requestedValue: null };
     setQualificationChanges((current) =>
       change.operation === "add"
         ? [...current, change]
@@ -151,7 +155,7 @@ export function ProfileChangeRequestForm() {
     if (Object.keys(nextContactErrors).length) return;
     const changes = [...contactChanges, ...qualificationChanges];
     if (!changes.length) {
-      setError("Change at least one contact field or add a qualification proposal.");
+      setError("Change at least one contact field or add an eligibility proposal.");
       return;
     }
     try {
@@ -179,9 +183,9 @@ export function ProfileChangeRequestForm() {
           {(
             [
               ["personalEmail", "Personal email", employeeData.personal_email, "email", "email"],
-              ["phone", "Phone", employeeData.phone ?? "", "tel", "tel"],
+              ["phone", "Phone number", employeeData.phone ?? "", "tel", "tel"],
               ["emergencyContactName", "Emergency contact name", employeeData.emergency_contact_name ?? "", "text", "off"],
-              ["emergencyContactPhone", "Emergency contact phone", employeeData.emergency_contact_phone ?? "", "tel", "off"],
+              ["emergencyContactPhone", "Emergency contact phone number", employeeData.emergency_contact_phone ?? "", "tel", "off"],
             ] as const
           ).map(([name, label, value, type, autoComplete]) => (
             <FormField error={contactErrors[name]} htmlFor={name} key={name} label={label}>
@@ -191,9 +195,9 @@ export function ProfileChangeRequestForm() {
         </div>
       </fieldset>
       <fieldset className="space-y-4 rounded-xl border p-4">
-        <legend className="px-1 text-base font-semibold">Qualification proposals</legend>
+        <legend className="px-1 text-base font-semibold">Eligibility proposals</legend>
         <p className="text-sm text-muted-foreground">
-          Add, edit, or remove any number of qualifications. Each proposal is reviewed with the rest of this request.
+          Add, edit, or remove any number of eligibility entries. Each proposal is reviewed with the rest of this request.
         </p>
         <div className="grid gap-4 sm:grid-cols-2">
           <FormField htmlFor="qualification-operation" label="Requested action">
@@ -210,24 +214,24 @@ export function ProfileChangeRequestForm() {
               }}
               value={operation}
             >
-              <option value="add">Add qualification</option>
-              <option value="edit">Edit qualification</option>
-              <option value="remove">Remove qualification</option>
+              <option value="add">Add eligibility</option>
+              <option value="edit">Edit eligibility</option>
+              <option value="remove">Remove eligibility</option>
             </select>
           </FormField>
           {operation !== "add" ? (
             <FormField
-              description={qualificationRows.length ? undefined : "You have no qualifications on record yet."}
+              description={qualificationRows.length ? undefined : "You have no eligibility on record yet."}
               error={qualificationErrors.qualificationId}
               htmlFor="qualification-id"
-              label="Existing qualification"
+              label="Existing eligibility"
               required
             >
               <select className={nativeSelectClassName} id="qualification-id" onChange={(event) => selectQualification(event.target.value)} value={qualificationId}>
-                <option value="">Choose a qualification</option>
+                <option value="">Choose an eligibility</option>
                 {qualificationRows.map((item) => (
                   <option key={item.id} value={item.id}>
-                    {item.name} — {item.institution}
+                    {item.name}
                   </option>
                 ))}
               </select>
@@ -236,56 +240,29 @@ export function ProfileChangeRequestForm() {
         </div>
         {operation !== "remove" ? (
           <div className="grid gap-4 sm:grid-cols-2">
-            <FormField error={qualificationErrors.name} htmlFor="qualification-name" label="Qualification name" required>
+            <FormField error={qualificationErrors.name} htmlFor="qualification-name" label="Eligibility" required>
               <select className={nativeSelectClassName} id="qualification-name" onChange={(event) => changeQualificationField("name", event.target.value)} value={qualification.name}>
-                <option value="">Select a qualification</option>
+                <option value="">Select an eligibility</option>
                 {withSavedValue(PNP_QUALIFICATIONS, qualification.name).map((choice) => <option key={choice} value={choice}>{choice}</option>)}
               </select>
             </FormField>
-            <FormField error={qualificationErrors.institution} htmlFor="qualification-institution" label="Institution" required>
-              <select className={nativeSelectClassName} id="qualification-institution" onChange={(event) => changeQualificationField("institution", event.target.value)} value={qualification.institution}>
-                <option value="">Select an institution</option>
-                {withSavedValue(PNP_INSTITUTIONS, qualification.institution).map((choice) => <option key={choice} value={choice}>{choice}</option>)}
-              </select>
-            </FormField>
-            <FormField error={qualificationErrors.qualificationLevel} htmlFor="qualification-level" label="Qualification level">
-              <select
-                className={nativeSelectClassName}
-                id="qualification-level"
-                onChange={(event) => changeQualificationField("qualificationLevel", event.target.value)}
-                value={qualification.qualificationLevel}
-              >
-                <option value="">Not specified</option>
-                {levelOptions.map((level) => (
-                  <option key={level} value={level}>
-                    {level}
-                  </option>
-                ))}
-              </select>
-            </FormField>
-            <FormField error={qualificationErrors.fieldOfStudy} htmlFor="field-of-study" label="Field of study">
-              <select className={nativeSelectClassName} id="field-of-study" onChange={(event) => changeQualificationField("fieldOfStudy", event.target.value)} value={qualification.fieldOfStudy}>
-                <option value="">Not specified</option>
-                {withSavedValue(PNP_FIELDS_OF_STUDY, qualification.fieldOfStudy).map((choice) => <option key={choice} value={choice}>{choice}</option>)}
-              </select>
-            </FormField>
-            <FormField error={qualificationErrors.awardedOn} htmlFor="awarded-on" label="Awarded on" required>
+            <FormField error={qualificationErrors.awardedOn} htmlFor="awarded-on" label="Date obtained" required>
               <Input id="awarded-on" onChange={(event) => changeQualificationField("awardedOn", event.target.value)} type="date" value={qualification.awardedOn} />
             </FormField>
             <div className="sm:col-span-2">
-              <FormField error={qualificationErrors.notes} htmlFor="qualification-notes" label="Notes">
+              <FormField error={qualificationErrors.notes} htmlFor="qualification-notes" label="Remarks">
                 <Textarea id="qualification-notes" maxLength={2000} onChange={(event) => changeQualificationField("notes", event.target.value)} value={qualification.notes} />
               </FormField>
             </div>
           </div>
         ) : (
-          <p className="rounded-lg bg-muted px-3 py-2 text-sm">The selected qualification will be removed only if the request is approved.</p>
+          <p className="rounded-lg bg-muted px-3 py-2 text-sm">The selected eligibility will be removed only if the request is approved.</p>
         )}
         <Button onClick={addQualificationChange} type="button" variant="outline">
           Add proposal to request
         </Button>
         {qualificationChanges.length ? (
-          <ul aria-label="Qualification proposals" className="space-y-2">
+          <ul aria-label="Eligibility proposals" className="space-y-2">
             {qualificationChanges.map((change, index) => (
               <li
                 className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-muted px-3 py-2 text-sm"
@@ -293,7 +270,7 @@ export function ProfileChangeRequestForm() {
               >
                 <span>{qualificationDescription(change)}</span>
                 <Button
-                  aria-label={`Remove qualification proposal ${index + 1}`}
+                  aria-label={`Remove eligibility proposal ${index + 1}`}
                   onClick={() => setQualificationChanges((current) => current.filter((_, currentIndex) => currentIndex !== index))}
                   size="sm"
                   type="button"

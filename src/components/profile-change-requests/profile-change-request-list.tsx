@@ -103,7 +103,7 @@ export function ProfileChangeRequestList() {
           ))
         ) : (
           <p className="rounded-xl border border-dashed p-5 text-sm text-muted-foreground">
-            No profile-change requests yet. Use “Request a change” to propose updates to your contact details or qualifications.
+            No profile-change requests yet. Use “Request a change” to propose updates to your contact details or eligibility.
           </p>
         )}
       </div>
