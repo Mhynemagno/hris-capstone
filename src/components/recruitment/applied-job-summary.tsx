@@ -32,7 +32,7 @@ export function AppliedJobSummary({ job, status, submittedAt }: AppliedJobSummar
         <>
           <dl className="grid gap-4 text-sm sm:grid-cols-2">
             <Detail label="Job" value={job.title} />
-            {job.departments?.name ? <Detail label="Department" value={job.departments.name} /> : null}
+            {job.departments?.name ? <Detail label="Unit / Section" value={job.departments.name} /> : null}
             {job.ranks ? <Detail label="Rank" value={rankLabel(job.ranks)} /> : null}
             <Detail label="Location" value={job.location ?? "Not specified"} />
             <Detail label="Deadline of Application" value={formatDate(job.closes_on) ?? "No closing date"} />

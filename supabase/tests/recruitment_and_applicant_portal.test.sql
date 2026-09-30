@@ -81,7 +81,7 @@ select extensions.is(
 
 insert into public.departments (name) values ('Recruitment test department');
 insert into public.ranks (name, code, sort_order) values ('Recruitment test rank', 'RTR', 9201);
-insert into public.ranks (name, code, sort_order) values ('Patrolman / Patrolwoman', 'Pat', 9202) on conflict (code) do nothing;
+insert into public.ranks (name, code, sort_order) values ('Patrolman / Patrolwoman', 'PAT', 9202) on conflict (code) do nothing;
 
 insert into public.job_openings (department_id, rank_id, title, description, status, published_at, created_by_user_id)
 select department.id, rank.id, opening.title, opening.description, opening.status, opening.published_at, '00000000-0000-4000-8000-000000009101'::uuid
@@ -449,7 +449,7 @@ select extensions.is(
   (select rank.code from public.employees employee join public.ranks rank on rank.id = employee.rank_id
     join public.applications application on application.hired_employee_id = employee.id
     where application.id = '00000000-0000-4000-8000-000000009401'::uuid),
-  'Pat', 'Hiring assigns the Patrolman / Patrolwoman rank looked up by its code');
+  'PAT', 'Hiring assigns the Patrolman / Patrolwoman rank looked up by its code');
 select extensions.is(
   (select employee.department_id from public.employees employee
     join public.applications application on application.hired_employee_id = employee.id

@@ -114,7 +114,7 @@ export function EmployeeDirectory() {
           <DepartmentRankFields
             activeOnly={false}
             departmentId={departmentId}
-            departmentPlaceholder="All departments"
+            departmentPlaceholder="All units / sections"
             idPrefix="employee-filter"
             onDepartmentChange={setDepartmentId}
             onRankChange={setRankId}

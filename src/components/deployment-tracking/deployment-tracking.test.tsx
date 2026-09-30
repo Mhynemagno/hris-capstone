@@ -38,15 +38,15 @@ describe("deployment tracking presentation", () => {
   it("shows the employee's deployments by location with dates in words and remarks", () => {
     render(<EmployeeDeploymentList />);
     expect(screen.getByText("San Juan")).toBeVisible();
-    expect(screen.getByText("Station 1")).toBeVisible();
+    expect(screen.queryByText("Station 1")).not.toBeInTheDocument();
     expect(screen.getByText("September 23, 2026 – October 9, 2026")).toBeVisible();
     expect(screen.getByText(/Relief duty/)).toBeVisible();
   });
 
-  it("lists deployments with location and unit columns and dates in words", () => {
+  it("lists deployments with a location column, no unit column, and dates in words", () => {
     render(<HrDeploymentDirectory />);
     expect(screen.getByRole("columnheader", { name: "Location" })).toBeInTheDocument();
-    expect(screen.getByRole("columnheader", { name: "Unit / Assignment" })).toBeInTheDocument();
+    expect(screen.queryByRole("columnheader", { name: "Unit / Assignment" })).not.toBeInTheDocument();
     expect(screen.queryByRole("columnheader", { name: "Role" })).not.toBeInTheDocument();
     expect(screen.getByText("September 23, 2026 – October 9, 2026")).toBeInTheDocument();
     expect(screen.queryByText(/2026-09-23/)).not.toBeInTheDocument();

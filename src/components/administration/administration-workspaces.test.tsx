@@ -157,11 +157,11 @@ describe("administration shared controls", () => {
     render(<DepartmentsWorkspace />);
     expect(screen.queryByRole("button", { name: /deactivate|activate/i })).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Edit Operations" }));
-    expect(screen.getByRole("dialog", { name: "Edit department" })).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Edit unit / section" })).toBeInTheDocument();
     expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
     await user.clear(screen.getByLabelText(/^name/i));
     await user.type(screen.getByLabelText(/^name/i), "Operations Section");
-    await user.click(screen.getByRole("button", { name: /save department/i }));
+    await user.click(screen.getByRole("button", { name: /save unit \/ section/i }));
 
     expect(mutateAsync).toHaveBeenCalledWith({ departmentId: 1, input: { name: "Operations Section", isActive: false } });
   });
@@ -173,7 +173,7 @@ describe("administration shared controls", () => {
     hooks.useSaveDepartment.mockReturnValue({ isPending: false, mutateAsync: vi.fn() });
 
     render(<DepartmentsWorkspace />);
-    const search = screen.getByRole("searchbox", { name: "Search departments" });
+    const search = screen.getByRole("searchbox", { name: "Search units / sections" });
     await user.type(search, "Oper");
 
     expect(search).toHaveValue("Oper");

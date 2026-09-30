@@ -21,7 +21,7 @@ import { ActivityTimeline, formatDay, InfoCard, ProfileHeaderCard, serviceLength
 import { RecordEntryForm } from "./record-entry-form";
 import { parseRecordTab, RECORD_TABS, RecordTabs, type RecordTabKey } from "./record-tabs";
 
-const titles: Record<PersonnelKind, string> = { serviceHistory: "Service history", qualification: "Qualifications", certification: "Certifications", training: "Training" };
+const titles: Record<PersonnelKind, string> = { serviceHistory: "Service history", qualification: "Eligibility", certification: "Certification / Training", training: "Training" };
 const icons: Record<PersonnelKind, LucideIcon> = { serviceHistory: History, qualification: GraduationCap, certification: Award, training: BookOpenCheck };
 const listItemClassName = "flex flex-col gap-3 rounded-xl border bg-background/60 px-4 py-3 transition-colors hover:bg-muted/60 sm:flex-row sm:items-center sm:justify-between";
 const emptyItemClassName = "rounded-xl border border-dashed px-4 py-6 text-center text-muted-foreground";
@@ -38,9 +38,9 @@ function day(value: unknown) {
 
 function entryDetail(kind: PersonnelKind, entry: Record<string, unknown>) {
   const parts = kind === "qualification"
-    ? [entry.qualification_level, entry.institution, day(entry.awarded_on)]
+    ? [day(entry.awarded_on), entry.notes]
     : kind === "certification"
-      ? [entry.issuer, entry.issued_on && `Issued ${day(entry.issued_on)}`, entry.expires_on && `Expires ${day(entry.expires_on)}`]
+      ? [entry.issued_on && `Completed ${day(entry.issued_on)}`, entry.notes]
       : [typeof entry.started_on === "string" && entry.started_on && formatDateRange(entry.started_on, typeof entry.ended_on === "string" ? entry.ended_on : null)];
   return parts.filter(Boolean).join(" · ");
 }
@@ -58,7 +58,7 @@ function Records({ employeeId, kind, editable }: { employeeId: string; kind: Per
   const [deleteError, setDeleteError] = useState<string | null>(null);
   // Service history is the official employment record: it is added to, never deleted.
   const deletable = editable && kind !== "serviceHistory";
-  const noun = kind === "qualification" ? "qualification" : "certification";
+  const noun = kind === "qualification" ? "eligibility" : "certification / training";
 
   async function confirmDelete() {
     if (!deleting) return;
@@ -163,15 +163,15 @@ function useRecordActivity(employeeId: string, rankTitles: Map<number, string>, 
       date: entry.started_on,
     })),
     ...((qualifications.data ?? []) as Qualification[]).map((entry): TimelineItem => ({
-      id: `qualification-${entry.id}`, icon: GraduationCap, tone: "violet", category: "Qualification",
-      title: entry.name, detail: entry.institution, date: entry.awarded_on,
+      id: `qualification-${entry.id}`, icon: GraduationCap, tone: "violet", category: "Eligibility",
+      title: entry.name, detail: entry.notes ?? undefined, date: entry.awarded_on,
     })),
     ...((certifications.data ?? []) as Certification[]).map((entry): TimelineItem => ({
-      id: `certification-${entry.id}`, icon: Award, tone: "amber", category: "Certification",
-      title: entry.name, detail: [entry.issuer, entry.expires_on ? `Expires ${formatDay(entry.expires_on)}` : null].filter(Boolean).join(" · "), date: entry.issued_on,
+      id: `certification-${entry.id}`, icon: Award, tone: "amber", category: "Certification / Training",
+      title: entry.name, detail: entry.notes ?? undefined, date: entry.issued_on,
     })),
     ...((trainings.data ?? []) as TrainingRecord[]).map((entry): TimelineItem => ({
-      id: `training-${entry.id}`, icon: BookOpenCheck, tone: "emerald", category: "Training",
+      id: `training-${entry.id}`, icon: BookOpenCheck, tone: "emerald", category: "Certification / Training",
       title: entry.course_name, detail: [entry.provider, entry.hours === null ? null : `${entry.hours} hours`].filter(Boolean).join(" · "), date: entry.completed_on,
     })),
   ].filter((item) => Boolean(item.date)).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 8), [service.data, qualifications.data, certifications.data, trainings.data, rankTitles, departmentNames]);
@@ -192,39 +192,56 @@ function useRecordActivity(employeeId: string, rankTitles: Map<number, string>, 
 const genderLabels: Record<NonNullable<Employee["gender"]>, string> = { female: "Female", male: "Male", prefer_not_to_say: "Prefer not to say" };
 const savedMessages = { created: "Employee account has been saved.", edited: "Employee account has been edited successfully." } as const;
 
-/** The official record as a read-only list, shown in view mode instead of the form. */
-function OfficialDetails({ record, departmentName, rankName }: { record: Employee; departmentName?: string; rankName?: string }) {
-  const rows: { label: string; value: ReactNode }[] = [
-    { label: "Badge number", value: <span className="tabular-nums">{record.employee_number}</span> },
-    { label: "Personal email", value: record.personal_email },
-    { label: "First name", value: record.first_name },
-    { label: "Middle name", value: record.middle_name },
-    { label: "Last name", value: record.last_name },
-    { label: "Qualifier", value: record.qualifier },
-    { label: "Place of birth", value: record.place_of_birth },
-    { label: "Date of birth", value: formatDate(record.date_of_birth) },
-    { label: "Gender", value: record.gender ? genderLabels[record.gender] : null },
-    { label: "Civil status", value: titleCase(record.civil_status) },
-    { label: "Religion", value: record.religion },
-    { label: "Phone", value: record.phone },
-    { label: "Home address", value: record.address },
-    { label: "Emergency contact", value: record.emergency_contact_name },
-    { label: "Emergency contact phone", value: record.emergency_contact_phone },
-    { label: "Department", value: departmentName },
-    { label: "Rank", value: rankName },
-    { label: "Unit / Station", value: record.unit_station },
-    { label: "Employment status", value: record.employment_status === "on_leave" ? "On leave" : "Active" },
-    { label: "Employment start date", value: formatDate(record.employment_started_on) },
-  ];
+type DetailRow = { label: string; value: ReactNode; wide?: boolean };
+
+/** One numbered group of the official record, laid out like the edit form. */
+function DetailSection({ title, rows }: { title: string; rows: DetailRow[] }) {
   return (
-    <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
-      {rows.map(({ label, value }) => (
-        <div className="min-w-0 border-b pb-3" key={label}>
-          <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</dt>
-          <dd className="mt-1 font-medium break-words">{value || <span className="font-normal text-muted-foreground">Not provided</span>}</dd>
-        </div>
-      ))}
-    </dl>
+    <section aria-label={title} className="@container rounded-xl border bg-background/60 p-4">
+      <h3 className="border-b pb-2 font-heading text-base font-semibold">{title}</h3>
+      <dl className="mt-3 grid gap-x-6 gap-y-4 @lg:grid-cols-2 @2xl:grid-cols-3">
+        {rows.map(({ label, value, wide }) => (
+          <div className={wide ? "min-w-0 @lg:col-span-2 @2xl:col-span-3" : "min-w-0"} key={label}>
+            <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</dt>
+            <dd className="mt-1 font-medium break-words">{value || <span className="font-normal text-muted-foreground">Not provided</span>}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  );
+}
+
+/** The official record as a read-only view, shown in view mode instead of the form. */
+function OfficialDetails({ record, departmentName, rankName }: { record: Employee; departmentName?: string; rankName?: string }) {
+  return (
+    <div className="space-y-4">
+      <DetailSection title="I. Personal Information" rows={[
+        { label: "Rank", value: rankName },
+        { label: "Badge number", value: <span className="tabular-nums">{record.employee_number}</span> },
+        { label: "Personal email", value: record.personal_email },
+        { label: "First name", value: record.first_name },
+        { label: "Middle name", value: record.middle_name },
+        { label: "Last name", value: record.last_name },
+        { label: "Qualifier", value: record.qualifier },
+        { label: "Place of birth", value: record.place_of_birth },
+        { label: "Date of birth", value: formatDate(record.date_of_birth) },
+        { label: "Gender", value: record.gender ? genderLabels[record.gender] : null },
+        { label: "Civil status", value: titleCase(record.civil_status) },
+        { label: "Religion", value: record.religion },
+        { label: "Phone number", value: record.phone },
+        { label: "Home address", value: record.address, wide: true },
+      ]} />
+      <DetailSection title="II. Emergency Contact" rows={[
+        { label: "Name", value: record.emergency_contact_name },
+        { label: "Phone number", value: record.emergency_contact_phone },
+      ]} />
+      <DetailSection title="III. Employment" rows={[
+        { label: "Unit / Section", value: departmentName },
+        { label: "Unit / Station", value: record.unit_station },
+        { label: "Employment status", value: record.employment_status === "on_leave" ? "On leave" : "Active" },
+        { label: "Employment start date", value: formatDate(record.employment_started_on) },
+      ]} />
+    </div>
   );
 }
 
@@ -314,7 +331,7 @@ export function EmployeeRecordDetail({ employeeId }: { employeeId: string }) {
         { label: "Born", value: formatDay(record.date_of_birth) ?? "Not provided", icon: Cake },
         { label: "Gender", value: titleCase(record.gender) ?? "Not provided", icon: UserRound },
         { label: "Years of service", value: serviceLength(record.employment_started_on, record.employment_ended_on) ?? "Not recorded", icon: Clock },
-        { label: "Department", value: departmentName ?? "Not assigned", icon: Building2 },
+        { label: "Unit / Section", value: departmentName ?? "Not assigned", icon: Building2 },
         { label: "Unit / Station", value: record.unit_station || "Not assigned", icon: MapPin },
       ]}
       name={fullName}
@@ -337,7 +354,7 @@ export function EmployeeRecordDetail({ employeeId }: { employeeId: string }) {
         ))}
       </div>
       <InfoCard className="self-start lg:col-start-2 2xl:col-start-3 2xl:row-start-1" icon={Activity} id="recent-activity" title="Recent activity">
-        {activity.loading ? <LoadingState label="Loading recent activity…" /> : <ActivityTimeline emptyMessage="No service, qualification, certification, or training entries yet." items={activity.items} />}
+        {activity.loading ? <LoadingState label="Loading recent activity…" /> : <ActivityTimeline emptyMessage="No service history, eligibility, or certification / training entries yet." items={activity.items} />}
       </InfoCard>
     </div>
   </div>;

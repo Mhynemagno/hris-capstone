@@ -16,7 +16,8 @@ const nullableText = (max: number) => z.string().trim().max(max).transform((valu
 
 export const profileChangeQualificationSnapshotSchema = z.object({
   name: z.string().trim().min(2).max(160),
-  institution: z.string().trim().min(2).max(160),
+  // Eligibility no longer records an institution, level, or field of study; older entries may still carry them.
+  institution: nullableText(160).optional().transform((value) => value ?? null),
   qualificationLevel: nullableText(80),
   fieldOfStudy: nullableText(160),
   awardedOn: isoDateSchema,

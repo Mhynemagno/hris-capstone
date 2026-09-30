@@ -11,16 +11,19 @@ import { FormField } from "@/components/ui/form-field";
 import { LoadingState } from "@/components/ui/loading-state";
 import { nativeSelectClassName } from "@/components/ui/native-select";
 import { useRankOptions } from "@/hooks/use-administration";
-import { PNP_TRAININGS, SERVICE_YEAR_CHOICES } from "@/lib/pnp-catalogue";
+import { PNP_CERTIFICATIONS, SERVICE_YEAR_CHOICES } from "@/lib/pnp-catalogue";
 import { rankLabel } from "@/lib/ranks";
 import { useCreatePromotionCriterion, usePromotionCriteria, useSetPromotionCriterionActive } from "@/hooks/use-promotion-eligibility";
 import type { PromotionCriterionRequirement } from "@/lib/types/database";
 import { promotionCriterionSchema } from "@/schemas/promotion-eligibility";
 
-const recordKindLabels = { certification: "Certification", qualification: "Qualification", training: "Training / Schooling" } as const;
+const recordKindLabels = { certification: "Certification / Training", qualification: "Eligibility", training: "Training" } as const;
 
-/** Promotion requirements are trainings or schoolings picked from the PNP catalogue. */
-const REQUIREMENT_RECORD_KIND = "training" as const;
+/**
+ * Promotion requirements are the Certification / Training courses HR records on personnel files,
+ * so an employee meets one when the same course is on their Certification / Training list.
+ */
+const REQUIREMENT_RECORD_KIND = "certification" as const;
 const MAX_REQUIREMENTS = 30;
 
 type RequirementRow = { key: number; name: string };
@@ -36,7 +39,7 @@ function CriterionForm({ rankOptions, takenRankIds }: { rankOptions: { value: st
   const [notice, setNotice] = useState<string | null>(null);
   const available = rankOptions.filter((option) => !takenRankIds.has(Number(option.value)));
   const chosenNames = new Set(rows.map((row) => row.name).filter(Boolean));
-  const canAddRow = rows.length < MAX_REQUIREMENTS && rows.length < PNP_TRAININGS.length;
+  const canAddRow = rows.length < MAX_REQUIREMENTS && rows.length < PNP_CERTIFICATIONS.length;
 
   function updateRow(key: number, name: string) {
     setRows((current) => current.map((row) => row.key === key ? { ...row, name } : row));
@@ -73,7 +76,7 @@ function CriterionForm({ rankOptions, takenRankIds }: { rankOptions: { value: st
         const key = String(issue.path[0] ?? "form");
         const row = key === "requirements" && typeof issue.path[1] === "number" ? rows[issue.path[1]] : undefined;
         if (row) {
-          nextRows[row.key] ??= "Choose a training or schooling.";
+          nextRows[row.key] ??= "Choose a certification / training.";
           continue;
         }
         next[key as keyof FieldErrors] ??= key === "targetRankId" ? "Choose the rank these criteria apply to." : issue.message;
@@ -96,7 +99,7 @@ function CriterionForm({ rankOptions, takenRankIds }: { rankOptions: { value: st
 
   return (
     <form className="grid gap-4 rounded-xl border bg-card p-5 sm:grid-cols-2" noValidate onSubmit={submit}>
-      <h2 className="font-heading text-xl font-semibold sm:col-span-2">Add promotion criteria</h2>
+      <h2 className="text-xl font-semibold tracking-tight sm:col-span-2">Add promotion criteria</h2>
       <FormField description="Each rank can have one set of criteria." error={errors.targetRankId} htmlFor="target-rank" label="Target rank" required>
         <Combobox
           emptyMessage="No rank without criteria matches that search."
@@ -117,16 +120,11 @@ function CriterionForm({ rankOptions, takenRankIds }: { rankOptions: { value: st
           Requirements
           <span aria-hidden="true" className="ml-0.5 text-destructive">*</span>
         </legend>
-        <FormField description="Employees meet a requirement when the same record is on their file." htmlFor="record-kind" label="Record type" required>
-          <select className={nativeSelectClassName} defaultValue={REQUIREMENT_RECORD_KIND} id="record-kind" name="recordKind" required>
-            <option value={REQUIREMENT_RECORD_KIND}>{recordKindLabels[REQUIREMENT_RECORD_KIND]}</option>
-          </select>
-        </FormField>
         <div className="space-y-3 sm:col-span-2">
           {rows.map((row, index) => (
             <div className="flex items-end gap-2" key={row.key}>
               <div className="min-w-0 flex-1">
-                <FormField error={rowErrors[row.key] || undefined} htmlFor={`requirement-${row.key}`} label={`Requirement ${index + 1}`} required>
+                <FormField error={rowErrors[row.key] || undefined} htmlFor={`requirement-${row.key}`} label={rows.length > 1 ? `Certification / Training ${index + 1}` : "Certification / Training"} required>
                   <select
                     className={nativeSelectClassName}
                     id={`requirement-${row.key}`}
@@ -135,8 +133,8 @@ function CriterionForm({ rankOptions, takenRankIds }: { rankOptions: { value: st
                     required
                     value={row.name}
                   >
-                    <option value="">Choose a training or schooling</option>
-                    {PNP_TRAININGS.filter((name) => name === row.name || !chosenNames.has(name)).map((name) => <option key={name} value={name}>{name}</option>)}
+                    <option value="">Choose a certification / training</option>
+                    {PNP_CERTIFICATIONS.filter((name) => name === row.name || !chosenNames.has(name)).map((name) => <option key={name} value={name}>{name}</option>)}
                   </select>
                 </FormField>
               </div>
@@ -146,7 +144,7 @@ function CriterionForm({ rankOptions, takenRankIds }: { rankOptions: { value: st
             </div>
           ))}
           {errors.requirements ? <p className="text-sm font-medium text-destructive" id="requirements-error" role="alert">{errors.requirements}</p> : null}
-          <Button disabled={!canAddRow} onClick={addRow} size="sm" type="button" variant="outline">Add requirement</Button>
+          <Button disabled={!canAddRow} onClick={addRow} size="sm" type="button" variant="outline">Add another certification / training</Button>
         </div>
       </fieldset>
       {errors.form ? <div className="sm:col-span-2"><ErrorState message={errors.form} /></div> : null}
@@ -191,8 +189,8 @@ export function PromotionCriteriaManager() {
       <CriterionForm rankOptions={rankOptions} takenRankIds={takenRankIds} />
 
       <section aria-labelledby="existing-criteria" className="space-y-3">
-        <h2 className="font-heading text-xl font-semibold" id="existing-criteria">Existing criteria</h2>
-        <p className="text-sm text-muted-foreground">
+        <h2 className="text-xl font-semibold tracking-tight" id="existing-criteria">Existing criteria</h2>
+        <p className="text-base text-muted-foreground">
           Deactivate criteria to stop using them for new evaluations. Criteria can only be deleted before any employee has been evaluated against them.
         </p>
         {actionError ? <ErrorState message={actionError} /> : null}
@@ -206,15 +204,15 @@ export function PromotionCriteriaManager() {
                 <li className="rounded-xl border bg-card p-4" key={criterion.id}>
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="space-y-1">
-                      <p className="flex flex-wrap items-center gap-2 text-lg font-semibold">
+                      <p className="flex flex-wrap items-center gap-2 text-base font-semibold">
                         {title}
                         <Badge variant={criterion.is_active ? "secondary" : "outline"}>{criterion.is_active ? "Active" : "Inactive"}</Badge>
                       </p>
-                      <p className="text-muted-foreground">
+                      <p className="text-sm text-muted-foreground">
                         At least {criterion.minimum_years_of_service} {criterion.minimum_years_of_service === 1 ? "year" : "years"} of service
                       </p>
                       {requirements.length ? (
-                        <ul className="list-disc pl-5 text-sm">
+                        <ul className="list-disc space-y-0.5 pl-5 text-sm">
                           {requirements.toSorted((a, b) => a.ordinal - b.ordinal).map((requirement) => (
                             <li key={requirement.id}>{recordKindLabels[requirement.record_kind]}: {requirement.label}</li>
                           ))}

@@ -33,7 +33,13 @@ it("connects visitors to live career openings and the application path", () => {
   expect(screen.getByText("Deadline of Application: October 31, 2026")).toBeInTheDocument();
   expect(
     screen.getByRole("link", { name: /explore job openings/i }),
-  ).toHaveAttribute("href", "/jobs");
+  ).toHaveAttribute("href", "#job-openings");
+  expect(screen.getByRole("heading", { level: 2, name: "Apply Now!" })).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Vision" })).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Mission" })).toBeVisible();
+  expect(screen.getByText("Serbisyo, Karangalan, Katarungan")).toBeVisible();
+  expect(screen.getAllByAltText("Bagong Pilipinas logo").length).toBeGreaterThan(0);
+  expect(screen.queryByRole("link", { name: "Careers" })).not.toBeInTheDocument();
   expect(
     screen.getByRole("link", { name: /create an applicant account/i }),
   ).toHaveAttribute("href", "/applicant/register");

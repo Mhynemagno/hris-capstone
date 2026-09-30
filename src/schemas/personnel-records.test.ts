@@ -15,11 +15,14 @@ const requiredPersonal = {
   placeOfBirth: "Quezon City",
   dateOfBirth: "1990-05-01",
   gender: "female",
+  civilStatus: "single",
   religion: "Roman Catholic",
   phone: "+639171234567",
   address: "12 Mabini St., Quezon City",
   emergencyContactName: "Jose Reyes",
   emergencyContactPhone: "+639181234567",
+  departmentId: "4",
+  rankId: "1",
 };
 
 describe("personnel record schemas", () => {
@@ -71,6 +74,9 @@ describe("personnel record schemas", () => {
       address: "Enter the home address.",
       emergencyContactName: "Enter the emergency contact.",
       emergencyContactPhone: "Enter the emergency contact phone.",
+      civilStatus: "Choose a civil status.",
+      departmentId: "Choose a unit / section.",
+      rankId: "Choose a rank.",
     };
     for (const [field, message] of Object.entries(messages)) {
       const blank = employeeSchema.safeParse({ ...base, [field]: "" });

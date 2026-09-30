@@ -76,6 +76,7 @@ describe("personnel-record queries", () => {
       placeOfBirth: "Quezon City",
       dateOfBirth: "1990-05-01",
       gender: "female" as const,
+      civilStatus: "single" as const,
       religion: "Roman Catholic",
       phone: "+639171234567",
       address: "12 Mabini St., Quezon City",
@@ -119,9 +120,9 @@ describe("personnel-record queries", () => {
     it("stores an explicit null link when creating an unlinked record", async () => {
       const table = mockTable();
 
-      await saveEmployee(baseInput);
+      await saveEmployee({ ...baseInput, departmentId: 3, rankId: 7 });
 
-      expect(table.insert.mock.calls[0]![0]).toMatchObject({ profile_id: null, department_id: null, rank_id: null });
+      expect(table.insert.mock.calls[0]![0]).toMatchObject({ profile_id: null, department_id: 3, rank_id: 7 });
     });
   });
 

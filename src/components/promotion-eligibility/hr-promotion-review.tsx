@@ -154,7 +154,7 @@ export function HrPromotionReview({ employeeId }: { employeeId: string }) {
       <section className="space-y-2">
         <h2 className="text-lg font-semibold">Existing evidence</h2>
         <p className="text-sm text-muted-foreground">
-          {data.qualifications.length} qualifications · {data.certifications.length} certifications · {data.training.length} training records
+          {data.qualifications.length} eligibility · {data.certifications.length + data.training.length} certification / training
         </p>
       </section>
       <section className="space-y-3">

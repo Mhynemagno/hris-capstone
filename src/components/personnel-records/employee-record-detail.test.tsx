@@ -38,32 +38,32 @@ const employeeId = "00000000-0000-4000-8000-000000000010";
 describe("EmployeeRecordDetail", () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    mocks.search = "tab=training";
+    mocks.search = "tab=certifications";
     mocks.deleteTraining.mockResolvedValue(undefined);
     mocks.useEmployee.mockReturnValue({ data: { id: employeeId, first_name: "Ada", last_name: "Dela Cruz", employee_number: "PAT-001", employment_status: "active", date_of_birth: "1990-09-23", gender: "female", place_of_birth: "Quezon City", phone: "+639171234567", employment_started_on: "2024-01-01" }, isLoading: false });
     mocks.useEntries.mockImplementation((kind: string) => ({
-      data: kind === "training" ? [{
+      data: kind === "certification" ? [{
         id: "00000000-0000-4000-8000-000000000020",
         employee_id: employeeId,
-        course_name: "Leadership Development",
-        provider: "Police Academy",
-        completed_on: "2026-01-01",
+        name: "Leadership and Management Course",
+        issuer: null,
+        credential_id: null,
+        issued_on: "2026-01-01",
         expires_on: null,
-        hours: 16,
-        notes: null,
+        notes: "Top of the class",
       }] : [],
       isLoading: false,
     }));
   });
 
-  it("requires confirmation before deleting a training record", async () => {
+  it("requires confirmation before deleting a certification / training entry", async () => {
     const user = userEvent.setup();
-    mocks.search = "tab=training&mode=edit";
+    mocks.search = "tab=certifications&mode=edit";
     render(<EmployeeRecordDetail employeeId={employeeId} />);
 
-    await user.click(screen.getByRole("button", { name: "Delete" }));
-    expect(screen.getByRole("dialog")).toHaveTextContent("Delete training record?");
-    await user.click(screen.getByRole("button", { name: "Delete training" }));
+    await user.click(screen.getByRole("button", { name: "Delete certification / training Leadership and Management Course" }));
+    expect(screen.getByRole("alertdialog")).toHaveTextContent("Delete this certification / training?");
+    await user.click(screen.getByRole("button", { name: "Delete certification / training" }));
 
     await waitFor(() => expect(mocks.deleteTraining).toHaveBeenCalledWith("00000000-0000-4000-8000-000000000020"));
   });
@@ -73,16 +73,17 @@ describe("EmployeeRecordDetail", () => {
     mocks.search = "tab=qualifications";
     render(<EmployeeRecordDetail employeeId={employeeId} />);
 
-    expect(screen.getByRole("tab", { name: "Qualifications" })).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByRole("heading", { name: "Qualifications" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Eligibility" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("heading", { name: "Eligibility" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Service history" })).not.toBeInTheDocument();
     // Other panels stay mounted but hidden.
     expect(screen.getByRole("heading", { name: "Official record", hidden: true })).not.toBeVisible();
     expect(screen.getByRole("tab", { name: "Official record" })).toHaveAttribute("aria-controls", "rec-panel-official");
     expect(document.getElementById("rec-panel-official")).toHaveAttribute("hidden");
 
-    await user.click(screen.getByRole("tab", { name: "Training" }));
-    expect(mocks.replace).toHaveBeenCalledWith("/hr/employees/00000000-0000-4000-8000-000000000010?tab=training", { scroll: false });
+    expect(screen.queryByRole("tab", { name: "Training" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("tab", { name: /Certification \/ Training/ }));
+    expect(mocks.replace).toHaveBeenCalledWith("/hr/employees/00000000-0000-4000-8000-000000000010?tab=certifications", { scroll: false });
   });
 
   it("shows a profile header, section counts, and a recent activity timeline", () => {
@@ -91,10 +92,11 @@ describe("EmployeeRecordDetail", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Ada Dela Cruz" })).toBeInTheDocument();
     expect(within(screen.getByRole("region", { name: "Employee summary" })).getByText("PAT-001")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Promotion review" })).toHaveAttribute("href", `/hr/promotions/${employeeId}`);
-    expect(screen.getByRole("tab", { name: "Training" })).toHaveTextContent("Training1");
+    expect(screen.getByRole("tab", { name: /Certification \/ Training/ })).toHaveTextContent("Certification / Training1");
     const activity = screen.getByRole("region", { name: "Recent activity" });
-    expect(activity).toHaveTextContent("Leadership Development");
-    expect(activity).toHaveTextContent("Police Academy · 16 hours");
+    expect(activity).toHaveTextContent("Certification / Training");
+    expect(activity).toHaveTextContent("Leadership and Management Course");
+    expect(activity).toHaveTextContent("Top of the class");
   });
 
   it("opens the official record when Edit details is chosen", async () => {
@@ -116,19 +118,21 @@ describe("EmployeeRecordDetail", () => {
     expect(official).toHaveTextContent("Date of birthSeptember 23, 1990");
     expect(official).toHaveTextContent("Employment start dateJanuary 1, 2024");
     expect(official).toHaveTextContent("Religion" + "Not provided");
+    for (const section of ["I. Personal Information", "II. Emergency Contact", "III. Employment"]) {
+      expect(within(official).getByRole("region", { name: section })).toBeInTheDocument();
+    }
+    expect(within(official).getByRole("region", { name: "III. Employment" })).toHaveTextContent("Unit / Section");
     expect(screen.getByText("Born").nextElementSibling).toHaveTextContent("September 23, 1990");
   });
 
   it("hides add, edit, and delete controls on every section in view mode", () => {
-    mocks.search = "tab=training";
+    mocks.search = "tab=certifications";
     render(<EmployeeRecordDetail employeeId={employeeId} />);
 
-    const training = screen.getByRole("region", { name: "Training" });
-    expect(training).toHaveTextContent("Police Academy · January 1, 2026 · 16 hours");
-    expect(screen.queryByRole("button", { name: "Edit" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Delete" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /add training/i, hidden: true })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /add qualification/i, hidden: true })).not.toBeInTheDocument();
+    const certifications = screen.getByRole("region", { name: "Certification / Training" });
+    expect(certifications).toHaveTextContent("Completed January 1, 2026 · Top of the class");
+    expect(screen.queryByRole("button", { name: /^Delete/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /add eligibility/i, hidden: true })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /add service history/i, hidden: true })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /add certification/i, hidden: true })).not.toBeInTheDocument();
   });
@@ -139,9 +143,8 @@ describe("EmployeeRecordDetail", () => {
     render(<EmployeeRecordDetail employeeId={employeeId} />);
 
     expect(screen.getByText("Employee editor")).toBeVisible();
-    expect(screen.getByRole("button", { name: "Edit", hidden: true })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /add training/i, hidden: true })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /add qualification/i, hidden: true })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /add certification \/ training/i, hidden: true })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /add eligibility/i, hidden: true })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Cancel" }));
     expect(mocks.replace).toHaveBeenLastCalledWith("/hr/employees/00000000-0000-4000-8000-000000000010?tab=official", { scroll: false });
@@ -154,7 +157,7 @@ describe("EmployeeRecordDetail", () => {
     mocks.search = "tab=official&mode=edit";
     render(<EmployeeRecordDetail employeeId={employeeId} />);
 
-    await user.click(screen.getByRole("tab", { name: "Qualifications" }));
+    await user.click(screen.getByRole("tab", { name: "Eligibility" }));
     expect(mocks.replace).toHaveBeenCalledWith("/hr/employees/00000000-0000-4000-8000-000000000010?tab=qualifications&mode=edit", { scroll: false });
   });
 
@@ -177,6 +180,6 @@ describe("EmployeeRecordDetail", () => {
 
     expect(screen.getByRole("tab", { name: "Official record" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("heading", { name: "Official record" })).toBeVisible();
-    expect(screen.queryByRole("heading", { name: "Training" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Eligibility" })).not.toBeInTheDocument();
   });
 });

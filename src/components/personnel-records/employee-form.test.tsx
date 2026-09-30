@@ -21,9 +21,9 @@ vi.mock("@/hooks/use-administration", () => ({
   }),
   useRankOptions: () => ({
     data: [
-      { id: 7, name: "Patrolman / Patrolwoman", code: "Pat", sort_order: 1, is_active: true, ...stamp },
+      { id: 7, name: "Patrolman / Patrolwoman", code: "PAT", sort_order: 1, is_active: true, ...stamp },
       { id: 8, name: "Retired Rank", code: "RET", sort_order: 2, is_active: false, ...stamp },
-      { id: 9, name: "Police Corporal", code: "PCpl", sort_order: 3, is_active: true, ...stamp },
+      { id: 9, name: "Police Corporal", code: "PCPL", sort_order: 3, is_active: true, ...stamp },
     ],
     isLoading: false,
     error: null,
@@ -65,6 +65,7 @@ const completeEmployee = {
   place_of_birth: "Quezon City",
   date_of_birth: "1990-05-01",
   gender: "female" as const,
+  civil_status: "single" as const,
   religion: "Roman Catholic",
   phone: "09171234567",
   address: "12 Mabini St., Quezon City",
@@ -72,15 +73,21 @@ const completeEmployee = {
   emergency_contact_phone: "+639181234567",
 };
 
+const personalPhone = () => screen.getByLabelText(/^phone number/i, { selector: "#phone" });
+const emergencyPhone = () => screen.getByLabelText(/^phone number/i, { selector: "#emergency-contact-phone" });
+
 async function fillPersonalFields(user: UserEvent) {
+  await user.selectOptions(screen.getByLabelText(/^rank/i), "7");
+  await user.selectOptions(screen.getByLabelText(/^unit \/ section/i), "4");
+  await user.selectOptions(screen.getByLabelText(/^civil status/i), "single");
   await user.type(screen.getByLabelText(/^place of birth/i), "Quezon City");
   await user.type(screen.getByLabelText(/^date of birth/i), "1990-05-01");
   await user.selectOptions(screen.getByLabelText(/^gender/i), "female");
   await user.type(screen.getByLabelText(/^religion/i), "Roman Catholic");
-  await user.type(screen.getByLabelText(/^phone/i), "09171234567");
+  await user.type(personalPhone(), "09171234567");
   await user.type(screen.getByLabelText(/^home address/i), "12 Mabini St.");
-  await user.type(screen.getByLabelText(/^emergency contact\*?$/i), "Jose Reyes");
-  await user.type(screen.getByLabelText(/^emergency contact phone/i), "+639181234567");
+  await user.type(screen.getByLabelText(/^name/i, { selector: "#emergency-contact-name" }), "Jose Reyes");
+  await user.type(emergencyPhone(), "+639181234567");
 }
 
 describe("EmployeeForm", () => {
@@ -94,7 +101,11 @@ describe("EmployeeForm", () => {
     expect(screen.getByLabelText(/first name/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^place of birth/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^date of birth/i)).toBeInTheDocument();
-    expect(screen.getByLabelText("Civil status")).toBeInTheDocument();
+    expect(screen.getByLabelText(/^civil status/i)).toBeRequired();
+    expect(screen.getByLabelText(/^unit \/ section/i)).toBeRequired();
+    for (const heading of ["I. Personal Details", "II. Emergency Contact", "III. Employment"]) {
+      expect(screen.getByRole("group", { name: heading })).toBeInTheDocument();
+    }
     expect(screen.getByLabelText(/^gender/i)).toBeInTheDocument();
     expect(screen.queryByLabelText("Sex")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Position")).not.toBeInTheDocument();
@@ -109,8 +120,8 @@ describe("EmployeeForm", () => {
 
     const marked = [...container.querySelectorAll("label")].filter((label) => label.querySelector(".text-destructive")).map((label) => label.textContent?.replace("*", ""));
     expect(marked).toEqual(expect.arrayContaining([
-      "Badge number", "Personal email", "First name", "Last name", "Place of birth", "Date of birth", "Gender", "Religion",
-      "Phone", "Home address", "Emergency contact", "Emergency contact phone", "Employment status", "Employment start date",
+      "Rank", "Badge number", "Personal email", "First name", "Last name", "Place of birth", "Date of birth", "Gender", "Civil status",
+      "Religion", "Phone number", "Home address", "Name", "Unit / Section", "Employment status", "Employment start date",
     ]));
     expect(marked).not.toContain("Middle name");
   });
@@ -124,7 +135,7 @@ describe("EmployeeForm", () => {
 
     expect(onSaved).not.toHaveBeenCalled();
     expect(screen.getByText("Complete the required fields marked with * before saving.")).toBeInTheDocument();
-    for (const message of ["Enter the place of birth.", "Enter the date of birth.", "Choose a gender.", "Enter the religion.", "Enter the phone number.", "Enter the home address.", "Enter the emergency contact.", "Enter the emergency contact phone."]) {
+    for (const message of ["Enter the place of birth.", "Enter the date of birth.", "Choose a gender.", "Enter the religion.", "Enter the phone number.", "Enter the home address.", "Enter the emergency contact.", "Enter the emergency contact phone.", "Choose a civil status."]) {
       expect(screen.getByText(message)).toBeInTheDocument();
     }
   });
@@ -134,14 +145,14 @@ describe("EmployeeForm", () => {
     const user = userEvent.setup();
     render(<EmployeeForm employee={completeEmployee} onSaved={onSaved} />);
 
-    const phone = screen.getByLabelText(/^phone/i);
+    const phone = personalPhone();
     expect(phone).toHaveAttribute("type", "tel");
     expect(phone).toHaveAttribute("inputmode", "tel");
     expect(phone).toHaveAttribute("maxlength", "13");
     expect(phone).toHaveAttribute("placeholder", "+639XXXXXXXXX");
     // A number saved in the old 09XXXXXXXXX form is shown as +639XXXXXXXXX.
     expect(phone).toHaveValue("+639171234567");
-    expect(screen.getByLabelText(/^emergency contact phone/i)).toHaveAttribute("maxlength", "13");
+    expect(emergencyPhone()).toHaveAttribute("maxlength", "13");
 
     await user.clear(phone);
     await user.type(phone, "0918-765 43210000");
@@ -159,14 +170,14 @@ describe("EmployeeForm", () => {
     const user = userEvent.setup();
     const { container } = render(<EmployeeForm employee={{ ...completeEmployee, employment_ended_on: "2030-01-01" }} onSaved={onSaved} />);
 
-    for (const label of [/badge number/i, /^date of birth/i, /^place of birth/i, /^religion/i, /employment start date/i]) {
+    for (const label of [/badge number/i, /^first name/i, /^middle name/i, /^last name/i, /^qualifier/i, /^date of birth/i, /^place of birth/i, /^religion/i, /employment start date/i]) {
       expect(screen.getByLabelText(label)).toHaveAttribute("readonly");
       expect(screen.getByLabelText(label)).toHaveClass("bg-muted");
     }
     expect(screen.getByLabelText(/^gender/i)).toBeDisabled();
     expect(container.querySelector('input[type="hidden"][name="gender"]')).toHaveValue("female");
-    expect(screen.getByLabelText(/^phone/i)).not.toHaveAttribute("readonly");
-    expect(screen.getByLabelText(/first name/i)).not.toHaveAttribute("readonly");
+    expect(personalPhone()).not.toHaveAttribute("readonly");
+    expect(screen.getByLabelText(/personal email/i)).not.toHaveAttribute("readonly");
 
     await user.type(screen.getByLabelText(/badge number/i), "999");
     expect(screen.getByLabelText(/badge number/i)).toHaveValue("1-00001");
@@ -196,7 +207,7 @@ describe("EmployeeForm", () => {
   it("lets every field be edited when creating a new employee", () => {
     render(<EmployeeForm onSaved={() => undefined} />);
 
-    for (const label of [/badge number/i, /^date of birth/i, /^place of birth/i, /^religion/i, /employment start date/i]) {
+    for (const label of [/badge number/i, /^first name/i, /^middle name/i, /^last name/i, /^qualifier/i, /^date of birth/i, /^place of birth/i, /^religion/i, /employment start date/i]) {
       expect(screen.getByLabelText(label)).not.toHaveAttribute("readonly");
     }
     expect(screen.getByLabelText(/^gender/i)).toBeEnabled();
@@ -259,17 +270,18 @@ describe("EmployeeForm", () => {
     const { container } = render(<EmployeeForm employee={completeEmployee} onSaved={onSaved} />);
 
     expect(container.querySelector('input[name="profileId"]')).toHaveValue(existingEmployee.profile_id);
-    expect(screen.getByLabelText("Department")).toHaveValue("3");
+    expect(screen.getByLabelText(/^unit \/ section/i)).toHaveValue("3");
     // The saved rank is inactive but remains visible and selected.
-    expect(screen.getByLabelText("Rank")).toHaveValue("8");
+    expect(screen.getByLabelText(/^rank/i)).toHaveValue("8");
     expect(screen.getByRole("option", { name: "RET — Retired Rank (inactive)" })).toBeInTheDocument();
 
-    await user.clear(screen.getByLabelText(/first name/i));
-    await user.type(screen.getByLabelText(/first name/i), "Anna");
+    await user.clear(screen.getByLabelText(/personal email/i));
+    await user.type(screen.getByLabelText(/personal email/i), "anna@example.test");
     await user.click(screen.getByRole("button", { name: /save employee/i }));
 
     expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({
-      firstName: "Anna",
+      firstName: "Ana",
+      personalEmail: "anna@example.test",
       profileId: existingEmployee.profile_id,
       departmentId: 3,
       rankId: 8,
@@ -280,15 +292,15 @@ describe("EmployeeForm", () => {
     const user = userEvent.setup();
     render(<EmployeeForm employee={existingEmployee} onSaved={() => undefined} />);
 
-    const rank = screen.getByLabelText("Rank");
-    expect(within(rank).getByRole("option", { name: "Pat — Patrolman / Patrolwoman" })).toBeInTheDocument();
-    expect(within(rank).getByRole("option", { name: "PCpl — Police Corporal" })).toBeInTheDocument();
+    const rank = screen.getByLabelText(/^rank/i);
+    expect(within(rank).getByRole("option", { name: "PAT — Patrolman / Patrolwoman" })).toBeInTheDocument();
+    expect(within(rank).getByRole("option", { name: "PCPL — Police Corporal" })).toBeInTheDocument();
     expect(screen.queryByRole("option", { name: /legacy unit/i })).not.toBeInTheDocument();
 
-    await user.selectOptions(screen.getByLabelText("Department"), "4");
+    await user.selectOptions(screen.getByLabelText(/^unit \/ section/i), "4");
 
     expect(rank).toHaveValue("8");
-    expect(within(rank).getByRole("option", { name: "PCpl — Police Corporal" })).toBeInTheDocument();
+    expect(within(rank).getByRole("option", { name: "PCPL — Police Corporal" })).toBeInTheDocument();
   });
 
   it("offers only the Active and On leave employment statuses", () => {
@@ -301,7 +313,7 @@ describe("EmployeeForm", () => {
   it("uses telephone inputs for phone numbers", () => {
     render(<EmployeeForm employee={existingEmployee} onSaved={() => undefined} />);
 
-    expect(screen.getByLabelText(/^phone/i)).toHaveAttribute("type", "tel");
-    expect(screen.getByLabelText(/^emergency contact phone/i)).toHaveAttribute("type", "tel");
+    expect(personalPhone()).toHaveAttribute("type", "tel");
+    expect(emergencyPhone()).toHaveAttribute("type", "tel");
   });
 });

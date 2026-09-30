@@ -84,7 +84,7 @@ export const employeeSchema = z
     placeOfBirth: requiredText(160, "Enter the place of birth."),
     dateOfBirth: z.iso.date({ error: (issue) => (issue.input === undefined || issue.input === "" ? "Enter the date of birth." : "Enter a valid date of birth.") }),
     gender: z.enum(genders, { error: "Choose a gender." }),
-    civilStatus: z.preprocess((value) => value === "" ? undefined : value, z.enum(civilStatuses).optional()),
+    civilStatus: z.enum(civilStatuses, { error: "Choose a civil status." }),
     religion: requiredText(120, "Enter the religion."),
     unitStation: optionalText(160),
     personalEmail: z.string().trim().toLowerCase().pipe(z.email()),
@@ -92,8 +92,8 @@ export const employeeSchema = z
     address: requiredText(500, "Enter the home address."),
     emergencyContactName: requiredText(160, "Enter the emergency contact."),
     emergencyContactPhone: requiredMobile("Enter the emergency contact phone."),
-    departmentId: z.coerce.number().int().positive().optional(),
-    rankId: z.coerce.number().int().positive().optional(),
+    departmentId: z.coerce.number({ error: "Choose a unit / section." }).int().positive("Choose a unit / section."),
+    rankId: z.coerce.number({ error: "Choose a rank." }).int().positive("Choose a rank."),
     employmentStatus: z.enum(employmentStatuses).default("active"),
     employmentStartedOn: z.iso.date({ error: (issue) => (issue.input === undefined || issue.input === "" ? "Enter the employment start date." : "Enter a valid date.") }),
     // Not shown on the form (only Active and On leave records are kept); an existing value is carried through unchanged.
@@ -124,7 +124,8 @@ export const qualificationSchema = z.object({
   id: uuidSchema.optional(),
   employeeId: uuidSchema,
   name: z.string().trim().min(2).max(160),
-  institution: z.string().trim().min(2).max(160),
+  // Eligibility no longer records where it was earned; kept optional for older entries.
+  institution: optionalText(160),
   qualificationLevel: optionalText(80),
   fieldOfStudy: optionalText(160),
   awardedOn: isoDateSchema,
@@ -136,14 +137,15 @@ export const certificationSchema = z
     id: uuidSchema.optional(),
     employeeId: uuidSchema,
     name: z.string().trim().min(2).max(160),
-    issuer: z.string().trim().min(2).max(160),
+    // Certification / Training no longer records an issuer; kept optional for older entries.
+    issuer: optionalText(160),
     credentialId: optionalText(160),
     issuedOn: isoDateSchema,
     expiresOn: optionalDate,
     notes: optionalText(2000),
   })
   .refine(hasValidDateRange("issuedOn", "expiresOn"), {
-    message: "Expiry date cannot be before the issued date.",
+    message: "Expiry date cannot be before the completion date.",
     path: ["expiresOn"],
   });
 

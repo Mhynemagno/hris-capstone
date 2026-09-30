@@ -44,7 +44,7 @@ describe("PublicJobDetail", () => {
     expect(agree).toBeDisabled();
     await user.click(screen.getByRole("checkbox", { name: /I have read and agree/ }));
     await user.click(agree);
-    expect(mocks.push).toHaveBeenCalledWith(`/login?next=${encodeURIComponent("/applicant/applications?jobId=9")}`);
+    expect(mocks.push).toHaveBeenCalledWith(`/login?as=applicant&next=${encodeURIComponent("/applicant/applications?jobId=9")}`);
   });
 
   it("does not continue when the privacy notice is cancelled", async () => {

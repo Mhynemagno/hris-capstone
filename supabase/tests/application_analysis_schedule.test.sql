@@ -17,7 +17,7 @@ select extensions.is(
 
 -- Fixture: three applications with a stale queued, a stale processing, and a fresh attempt.
 insert into public.job_openings (id, department_id, rank_id, title, description, status, created_by_user_id) overriding system value
-select opening_id, (select id from public.departments order by id limit 1), (select id from public.ranks where code = 'Pat'),
+select opening_id, (select id from public.departments order by id limit 1), (select id from public.ranks where code = 'PAT'),
   'Sweeper fixture opening ' || opening_id, 'An opening used only by the analysis sweeper tests.', 'draft',
   '00000000-0000-4000-8000-000000008102'
 from (values (990001), (990002), (990003)) fixture(opening_id);

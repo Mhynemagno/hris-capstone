@@ -11,8 +11,8 @@ select extensions.is(
     from public.departments
     where is_active
   ),
-  9::bigint,
-  'Only the nine client-provided departments are active'
+  7::bigint,
+  'Only the seven client-provided units / sections are active'
 );
 
 select extensions.is(
@@ -21,17 +21,16 @@ select extensions.is(
     from public.departments
     where is_active
   ),
-  'Drug Enforcement Unit | Intelligence Section | Police Community Precincts / Sub-Stations | '
-    || 'Station Administrative and Resource Management Section | Station Investigation and Detective Management Section | '
-    || 'Station Warrant and Subpoena Section | Tactical Operations Center | Traffic and Investigation Unit | '
-    || 'Women and Children Protection Desk',
-  'Active departments match the client department list exactly'
+  'Administrative and Resource Management Section (SARMS) | Deputy Chief of Police for Administration | '
+    || 'Deputy Chief of Police for Operations | Investigation and Detective Management Section (SIDMS) | '
+    || 'Office of the Chief of Police | Traffic and Investigation Section | Women and Children Protection Desk (WCPD)',
+  'Active units / sections match the client list exactly'
 );
 
 select extensions.is(
-  (select count(*) from public.departments),
-  9::bigint,
-  'No former departments remain after the reset'
+  (select count(*) from public.departments where not is_active),
+  5::bigint,
+  'Former departments that were not renamed are kept, inactive'
 );
 
 select * from extensions.finish();

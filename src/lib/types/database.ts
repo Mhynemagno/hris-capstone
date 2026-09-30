@@ -78,7 +78,7 @@ export type Notification = {
 export type ProfileChangeRequest = {
   id: string;
   employee_id: string;
-  submitted_by_user_id: string;
+  submitted_by_user_id: string | null;
   status: "pending" | "approved" | "rejected" | "cancelled";
   note: string | null;
   decision_reason: string | null;
@@ -108,7 +108,7 @@ export type ProfileChangeRequestDocument = {
   file_name: string;
   mime_type: string;
   size_bytes: number;
-  uploaded_by_user_id: string;
+  uploaded_by_user_id: string | null;
   created_at: string;
 };
 
@@ -173,7 +173,7 @@ export type Qualification = {
   id: string;
   employee_id: string;
   name: string;
-  institution: string;
+  institution: string | null;
   qualification_level: string | null;
   field_of_study: string | null;
   awarded_on: string;
@@ -184,7 +184,7 @@ export type Certification = {
   id: string;
   employee_id: string;
   name: string;
-  issuer: string;
+  issuer: string | null;
   credential_id: string | null;
   issued_on: string;
   expires_on: string | null;
@@ -213,7 +213,7 @@ export type JobOpening = {
   status: "draft" | "published" | "closed";
   published_at: string | null;
   image_path?: string | null;
-  created_by_user_id: string;
+  created_by_user_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -274,7 +274,7 @@ export type ApplicantProfileDocument = {
   file_name: string;
   mime_type: "application/pdf" | "image/png" | "image/jpeg";
   size_bytes: number;
-  uploaded_by_user_id: string;
+  uploaded_by_user_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -347,17 +347,17 @@ export type ApplicantDocument = {
   file_name: string;
   mime_type: string;
   size_bytes: number;
-  uploaded_by_user_id: string;
+  uploaded_by_user_id: string | null;
   created_at: string;
 };
 
 export type EmployeeActivationRequest = {
   id: string;
   employee_id: string;
-  profile_id: string;
+  profile_id: string | null;
   application_id: string;
   status: "pending" | "activated";
-  requested_by_user_id: string;
+  requested_by_user_id: string | null;
   activated_by_user_id: string | null;
   activated_at: string | null;
   created_at: string;
@@ -380,7 +380,7 @@ export type LeaveRequestStatus = "pending" | "approved" | "rejected" | "cancelle
 export type LeaveRequest = {
   id: string;
   employee_id: string;
-  submitted_by_user_id: string;
+  submitted_by_user_id: string | null;
   leave_type_id: string;
   leave_type_name: string;
   starts_on: string;
@@ -406,7 +406,7 @@ export type LeaveRequestAttachment = {
   file_name: string;
   mime_type: "application/pdf" | "image/png" | "image/jpeg" | "image/webp";
   size_bytes: number;
-  uploaded_by_user_id: string;
+  uploaded_by_user_id: string | null;
   created_at: string;
 };
 
@@ -433,8 +433,8 @@ export type Deployment = {
   ends_on: string | null;
   status: DeploymentStatus;
   notes: string | null;
-  created_by_user_id: string;
-  updated_by_user_id: string;
+  created_by_user_id: string | null;
+  updated_by_user_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -454,8 +454,8 @@ export type PromotionCriterion = {
   minimum_years_of_service: number;
   minimum_performance_rating: number | null;
   is_active: boolean;
-  created_by_user_id: string;
-  updated_by_user_id: string;
+  created_by_user_id: string | null;
+  updated_by_user_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -478,8 +478,8 @@ export type PerformanceRating = {
   review_period_starts_on: string;
   review_period_ends_on: string;
   notes: string | null;
-  created_by_user_id: string;
-  updated_by_user_id: string;
+  created_by_user_id: string | null;
+  updated_by_user_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -496,8 +496,8 @@ export type PromotionEvaluation = {
   missing_requirements: string[];
   recommendation: "recommended" | "not_recommended" | "deferred";
   notes: string | null;
-  created_by_user_id: string;
-  updated_by_user_id: string;
+  created_by_user_id: string | null;
+  updated_by_user_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -541,7 +541,7 @@ export type AttendanceIdentityMapping = {
   id: string;
   employee_id: string;
   external_employee_id: string;
-  created_by_user_id: string;
+  created_by_user_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -558,7 +558,7 @@ export type AttendanceImport = {
   unmatched_count: number;
   invalid_count: number;
   error_summary: string | null;
-  imported_by_user_id: string;
+  imported_by_user_id: string | null;
   created_at: string;
   completed_at: string | null;
 };

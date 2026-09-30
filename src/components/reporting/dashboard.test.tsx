@@ -28,7 +28,7 @@ it("shows only the five headline tiles, in order, under a plain Dashboard title"
   expect(screen.getByRole("heading", { level: 1, name: "Dashboard" })).toBeVisible();
   expect(screen.queryByText(/Reporting period/)).not.toBeInTheDocument();
   const tiles = within(screen.getByRole("region", { name: "Key figures" })).getAllByRole("article");
-  expect(tiles.map((tile) => tile.getAttribute("aria-label"))).toEqual(["Total Personnel", "Departments", "Deployments", "Applicants", "On-Leave"]);
+  expect(tiles.map((tile) => tile.getAttribute("aria-label"))).toEqual(["Total Personnel", "Units / Sections", "Deployments", "Applicants", "On-Leave"]);
   const metric = screen.getByRole("article", { name: "Total Personnel" });
   expect(metric).toHaveTextContent("42");
   expect(within(metric).getByText("42")).toHaveClass("tabular-nums");

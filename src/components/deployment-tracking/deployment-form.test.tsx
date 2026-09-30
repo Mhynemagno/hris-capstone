@@ -15,22 +15,18 @@ vi.mock("@/hooks/use-deployment-tracking", () => ({
   }),
 }));
 
-const unitStations = vi.hoisted(() => ({ data: [{ id: 1, name: "Station 1" }] as { id: number; name: string }[] | undefined }));
-vi.mock("@/hooks/use-personnel-records", () => ({
-  useUnitStations: () => ({ data: unitStations.data }),
-}));
-
 describe("DeploymentForm", () => {
-  it("keeps a saved unit selected after the catalogue finishes loading", () => {
-    unitStations.data = undefined;
-    const deployment = { id: "d1", employee_id: "123e4567-e89b-42d3-a456-426614174000", location: null, unit: "Station 1", project: null, assignment_role: "Patrol", starts_on: "2026-09-25", ends_on: null, status: "active", notes: null, updated_at: "2026-09-25T00:00:00Z" };
-    const view = render(<DeploymentForm deployment={deployment as never} onSaved={vi.fn()} />);
-    unitStations.data = [{ id: 1, name: "Station 1" }, { id: 2, name: "Station 2" }];
-    view.rerender(<DeploymentForm deployment={deployment as never} onSaved={vi.fn()} />);
-    expect(screen.getByLabelText("Unit / Assignment")).toHaveValue("Station 1");
+  it("no longer asks for a unit but keeps a saved unit when editing", async () => {
+    const onSaved = vi.fn();
+    const user = userEvent.setup();
+    const deployment = { id: "d1", employee_id: "123e4567-e89b-42d3-a456-426614174000", location: "San Juan", unit: "Station 1", project: null, assignment_role: "Patrol", starts_on: "2026-09-25", ends_on: null, status: "active", notes: "Relief duty", updated_at: "2026-09-25T00:00:00Z" };
+    render(<DeploymentForm deployment={deployment as never} onSaved={onSaved} />);
+    expect(screen.queryByLabelText(/unit/i)).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Save deployment" }));
+    await waitFor(() => expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({ unit: "Station 1" })));
   });
 
-  it("offers a searchable employee picker and a unit assignment without an end date input", async () => {
+  it("offers a searchable employee picker without a unit or an end date input", async () => {
     const user = userEvent.setup();
     render(<DeploymentForm onSaved={vi.fn()} />);
 
@@ -40,7 +36,7 @@ describe("DeploymentForm", () => {
 
     expect(await screen.findByRole("option", { name: /Ben Two/ })).toBeInTheDocument();
     expect(screen.queryByRole("option", { name: /Ana One/ })).not.toBeInTheDocument();
-    expect(screen.getByLabelText("Unit / Assignment")).toBeInTheDocument();
+    expect(screen.queryByLabelText(/unit/i)).not.toBeInTheDocument();
     expect(screen.queryByLabelText("End date")).not.toBeInTheDocument();
   });
 

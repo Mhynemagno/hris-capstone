@@ -200,9 +200,9 @@ export function ReportDetail({ role, reportKey }: { role: "hr_personnel" | "mana
           />
         </FormField>
         <FormField
-          description={departments.error ? "Department list unavailable; showing all departments." : undefined}
+          description={departments.error ? "Unit / section list unavailable; showing all units / sections." : undefined}
           htmlFor="report-department"
-          label="Department"
+          label="Unit / Section"
         >
           <select
             className={nativeSelectClassName}
@@ -211,7 +211,7 @@ export function ReportDetail({ role, reportKey }: { role: "hr_personnel" | "mana
             onChange={(event) => updateDraft({ departmentId: event.target.value })}
             value={draft.departmentId}
           >
-            <option value="">All departments</option>
+            <option value="">All units / sections</option>
             {departmentOptions.map((department) => (
               <option key={department.id} value={department.id}>
                 {department.name}
@@ -262,7 +262,7 @@ export function ReportDetail({ role, reportKey }: { role: "hr_personnel" | "mana
           <p aria-live="polite" className="text-sm text-muted-foreground" role="status">
             Showing {query.data.totalCount} matching record{query.data.totalCount === 1 ? "" : "s"} ·{" "}
             {applied.startsOn ?? "last 30 days"}
-            {applied.startsOn || applied.endsOn ? ` to ${applied.endsOn ?? "today"}` : ""} · {departmentName ?? "All departments"} ·{" "}
+            {applied.startsOn || applied.endsOn ? ` to ${applied.endsOn ?? "today"}` : ""} · {departmentName ?? "All units / sections"} ·{" "}
             {statusName ?? `All ${statusFilter.label.toLowerCase()} values`}
           </p>
           <div className="relative overflow-x-auto rounded-xl border">

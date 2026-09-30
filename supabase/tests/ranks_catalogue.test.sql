@@ -33,9 +33,9 @@ select is(
 
 select is((select count(*)::int from public.ranks), 12, 'twelve ranks seeded');
 select is((select string_agg(code, ',' order by sort_order) from public.ranks),
-  'Pat,PCpl,PSSg,PMSg,PSMSg,PCMSg,PEMSg,PLt,PCapt,PMAJ,PLTCOL,PCOL', 'rank codes in seniority order');
-select is((select name from public.ranks where code = 'Pat'), 'Patrolman / Patrolwoman', 'Pat is Patrolman / Patrolwoman');
-select is((select count(*)::int from public.departments), 9, 'nine departments seeded');
+  'PAT,PCPL,PSSG,PMSG,PSMS,PCMS,PEMS,PLT,PCPT,PMAJ,PLTCOL,PCOL', 'rank codes in seniority order');
+select is((select name from public.ranks where code = 'PAT'), 'Patrolman / Patrolwoman', 'PAT is Patrolman / Patrolwoman');
+select is((select count(*)::int from public.departments where is_active), 7, 'seven active units / sections');
 select is((select count(*)::int from public.job_openings), 0, 'job openings cleared');
 select ok((select count(*) from auth.users) > 0, 'accounts kept');
 

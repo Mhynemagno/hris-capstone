@@ -10,8 +10,9 @@ describe("leave presentation", () => {
     expect(screen.getByText("rejected")).toBeVisible();
   });
 
-  it("labels evidence-required leave types for HR", () => {
-    render(<LeaveTypeSummary name="Sick leave" requiresAttachment />);
-    expect(screen.getByText("Evidence required")).toBeVisible();
+  it("shows a leave type by name without an evidence label", () => {
+    render(<LeaveTypeSummary name="Sick leave" />);
+    expect(screen.getByText("Sick leave")).toBeVisible();
+    expect(screen.queryByText("Evidence required")).not.toBeInTheDocument();
   });
 });

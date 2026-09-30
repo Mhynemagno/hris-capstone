@@ -13,13 +13,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useCreateLeaveType, useLeaveTypes, useUpdateLeaveType } from "@/hooks/use-leave-management";
 import type { LeaveType } from "@/lib/types/database";
 
-export function LeaveTypeSummary({ name, requiresAttachment }: { name: string; requiresAttachment: boolean }) {
-  return (
-    <span>
-      {name}
-      {requiresAttachment ? <span className="ml-2 text-xs text-muted-foreground">Evidence required</span> : null}
-    </span>
-  );
+export function LeaveTypeSummary({ name }: { name: string }) {
+  return <span>{name}</span>;
 }
 
 function errorMessage(cause: unknown, fallback: string) {
@@ -39,7 +34,8 @@ function EditLeaveTypeForm({ onDone, type }: { onDone: (message: string) => void
         id: type.id,
         name: String(data.get("name")),
         description: String(data.get("description")),
-        requiresAttachment: data.get("requiresAttachment") === "on",
+        // Evidence is no longer asked for on leave types; an existing setting is kept as it was.
+        requiresAttachment: type.requires_attachment,
         isActive: type.is_active,
       });
       onDone(`${String(data.get("name"))} was updated.`);
@@ -56,10 +52,6 @@ function EditLeaveTypeForm({ onDone, type }: { onDone: (message: string) => void
       <FormField htmlFor={`type-description-${type.id}`} label="Description">
         <Textarea defaultValue={type.description ?? ""} id={`type-description-${type.id}`} name="description" rows={2} />
       </FormField>
-      <label className="flex min-h-11 items-center gap-3 text-sm font-medium sm:col-span-2">
-        <input className="size-5 accent-primary" defaultChecked={type.requires_attachment} name="requiresAttachment" type="checkbox" />
-        Employees must attach evidence
-      </label>
       {error ? <div className="sm:col-span-2"><ErrorState message={error} /></div> : null}
       <Button className="sm:w-fit" disabled={update.isPending} type="submit" variant="secondary">{update.isPending ? "Saving…" : "Save changes"}</Button>
     </form>
@@ -87,7 +79,7 @@ export function LeaveTypeManager() {
       return;
     }
     try {
-      await create.mutateAsync({ name, description: String(data.get("description")), requiresAttachment: data.get("requiresAttachment") === "on" });
+      await create.mutateAsync({ name, description: String(data.get("description")), requiresAttachment: false });
       formElement.reset();
       setNotice(`${name} was added.`);
     } catch (cause) {
@@ -116,7 +108,7 @@ export function LeaveTypeManager() {
   return (
     <section aria-labelledby="leave-types-heading" className="space-y-4 rounded-xl border bg-card p-5">
       <div className="space-y-1">
-        <h2 className="font-heading text-xl font-semibold" id="leave-types-heading">Leave types</h2>
+        <h2 className="text-xl font-semibold tracking-tight" id="leave-types-heading">Leave types</h2>
         <p className="text-sm text-muted-foreground">Deactivate a type to stop new requests while keeping past requests. Only unused types can be deleted.</p>
       </div>
       <form className="grid gap-3 sm:grid-cols-2" noValidate onSubmit={submit}>
@@ -126,11 +118,7 @@ export function LeaveTypeManager() {
         <FormField htmlFor="type-description" label="Description">
           <Input id="type-description" name="description" />
         </FormField>
-        <label className="flex min-h-11 items-center gap-3 text-sm font-medium">
-          <input className="size-5 accent-primary" name="requiresAttachment" type="checkbox" />
-          Employees must attach evidence
-        </label>
-        <Button className="sm:w-fit sm:justify-self-end" disabled={create.isPending} type="submit">{create.isPending ? "Adding…" : "Add leave type"}</Button>
+        <Button className="sm:col-span-2 sm:w-fit" disabled={create.isPending} type="submit">{create.isPending ? "Adding…" : "Add leave type"}</Button>
       </form>
       {error ? <ErrorState message={error} /> : null}
       <p aria-live="polite" className="text-sm font-medium text-emerald-700 dark:text-emerald-400" role="status">{notice ?? ""}</p>
@@ -142,7 +130,6 @@ export function LeaveTypeManager() {
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-semibold">{type.name}</span>
                   <Badge variant={type.is_active ? "secondary" : "outline"}>{type.is_active ? "Active" : "Inactive"}</Badge>
-                  {type.requires_attachment ? <Badge variant="outline">Evidence required</Badge> : null}
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Button

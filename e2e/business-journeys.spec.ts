@@ -38,21 +38,21 @@ test.describe("administrator master data", () => {
     await page.goto("/admin/departments");
 
     // Navigation shows the current location.
-    await expect(page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Departments" })).toHaveAttribute("aria-current", "page");
+    await expect(page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Units / Sections" })).toHaveAttribute("aria-current", "page");
 
-    await page.getByRole("button", { name: "Add department" }).click();
-    const panel = page.getByRole("dialog", { name: "Add department" });
-    await panel.getByRole("button", { name: "Save department" }).click();
+    await page.getByRole("button", { name: "Add unit / section" }).click();
+    const panel = page.getByRole("dialog", { name: "Add unit / section" });
+    await panel.getByRole("button", { name: "Save unit / section" }).click();
     await expect(panel.getByRole("alert").first()).toBeVisible();
 
     await panel.getByLabel(/^Name/).fill(name);
-    await panel.getByRole("button", { name: "Save department" }).click();
+    await panel.getByRole("button", { name: "Save unit / section" }).click();
     await expect(page.getByRole("status")).toContainText(`${name} was added`);
 
-    await page.getByLabel("Search departments").fill(name);
+    await page.getByLabel("Search units / sections").fill(name);
     await expect(page.getByRole("cell", { name, exact: true })).toBeVisible();
     await page.reload();
-    await page.getByLabel("Search departments").fill(name);
+    await page.getByLabel("Search units / sections").fill(name);
     await expect(page.getByRole("cell", { name, exact: true })).toBeVisible();
 
     await expect(page.getByRole("button", { name: `Delete ${name}` })).toHaveCount(0);
@@ -64,7 +64,7 @@ test.describe("administrator master data", () => {
     await signIn(page, "demo.admin@example.test", "/admin");
     await page.goto("/admin/ranks");
     await expect(page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Ranks" })).toHaveAttribute("aria-current", "page");
-    await expect(page.getByRole("cell", { name: "Pat", exact: true })).toBeVisible();
+    await expect(page.getByRole("cell", { name: "PAT", exact: true })).toBeVisible();
     await expect(page.getByRole("cell", { name: "Patrolman / Patrolwoman", exact: true })).toBeVisible();
     await expect(page.getByRole("cell", { name: "PCOL", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: /^Delete/ })).toHaveCount(0);
@@ -145,22 +145,38 @@ test.describe("personnel records and profile changes", () => {
     await page.goto(`${recordUrl}?tab=official&mode=edit`);
 
     await expect(page.getByRole("tab", { name: "Official record" })).toHaveAttribute("aria-selected", "true");
-    const department = page.getByLabel(/^Department/).first();
+    const department = page.getByLabel(/^Unit \/ Section/).first();
     const rank = page.getByLabel(/^Rank/).first();
-    await department.selectOption({ label: "Intelligence Section" });
-    await rank.selectOption({ label: "PCpl — Police Corporal" });
+    await department.selectOption({ label: "Traffic and Investigation Section" });
+    await rank.selectOption({ label: "PCPL — Police Corporal" });
     const departmentBefore = await department.inputValue();
     const rankBefore = await rank.inputValue();
     expect(departmentBefore).not.toBe("");
     expect(rankBefore).not.toBe("");
 
-    await page.getByLabel(/^Phone/).first().fill(phone);
+    // The demo record may predate the required personal details; complete any that are still blank.
+    const completeIfBlank = async (selector: string, value: string, kind: "fill" | "select" = "fill") => {
+      const field = page.locator(selector);
+      if (await field.count() === 0 || await field.inputValue() !== "") return;
+      if (kind === "select") await field.selectOption(value);
+      else await field.fill(value);
+    };
+    await completeIfBlank("#place-of-birth", "San Juan City");
+    await completeIfBlank("#date-of-birth", "1995-05-15");
+    await completeIfBlank("#gender", "female", "select");
+    await completeIfBlank("#civil-status", "single", "select");
+    await completeIfBlank("#religion", "Roman Catholic");
+    await completeIfBlank("#address", "1 Test St., San Juan City");
+    await completeIfBlank("#emergency-contact-name", "Test Contact");
+    await completeIfBlank("#emergency-contact-phone", "+639181234567");
+    await completeIfBlank("#employment-started-on", "2015-06-01");
+    await page.locator("#phone").fill(phone);
     await page.getByRole("button", { name: "Save employee" }).click();
     await page.waitForURL(`${recordUrl}?tab=official&saved=edited`);
     await page.goto(`${recordUrl}?tab=official&mode=edit`);
 
     await expect(page.getByLabel(/^Phone/).first()).toHaveValue(phone);
-    await expect(page.getByLabel(/^Department/).first()).toHaveValue(departmentBefore);
+    await expect(page.getByLabel(/^Unit \/ Section/).first()).toHaveValue(departmentBefore);
     await expect(page.getByLabel(/^Rank/).first()).toHaveValue(rankBefore);
     await signOut(page, "demo.hr@example.test");
 

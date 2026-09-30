@@ -22,20 +22,19 @@ describe("Home", () => {
     redirect.mockClear();
   });
 
-  it("links visitors to public careers and sign in", async () => {
+  it("offers employee and applicant sign-in, and the job openings, without a Careers button", async () => {
     getAuthenticatedUser.mockResolvedValue(null);
     render(await Home());
 
+    expect(screen.getByRole("button", { name: /^login$/i })).toBeVisible();
     expect(
-      screen
-        .getAllByRole("link", { name: /^login$/i })
-        .some((link) => link.getAttribute("href") === "/login"),
+      screen.getAllByRole("link", { name: /login as employee/i }).some((link) => link.getAttribute("href") === "/login?as=employee"),
     ).toBe(true);
     expect(
-      screen
-        .getAllByRole("link", { name: /^careers$/i })
-        .some((link) => link.getAttribute("href") === "/jobs"),
+      screen.getAllByRole("link", { name: /login as applicant/i }).some((link) => link.getAttribute("href") === "/login?as=applicant"),
     ).toBe(true);
+    expect(screen.getByRole("link", { name: /view all openings/i })).toHaveAttribute("href", "/jobs");
+    expect(screen.queryByRole("link", { name: /^careers$/i })).not.toBeInTheDocument();
   });
 
   it("redirects a verified administrator to the administration workspace", async () => {

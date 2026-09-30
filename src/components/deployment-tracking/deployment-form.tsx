@@ -10,7 +10,6 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { useEmployeeOptions } from "@/hooks/use-deployment-tracking";
-import { useUnitStations } from "@/hooks/use-personnel-records";
 import type { Deployment, DeploymentStatus } from "@/lib/types/database";
 import { deploymentInputSchema, type DeploymentInput } from "@/schemas/deployment-tracking";
 
@@ -31,7 +30,6 @@ export function DeploymentForm({ deployment, onSaved, pending = false }: Deploym
   const [employeeId, setEmployeeId] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const employees = useEmployeeOptions();
-  const unitStations = useUnitStations();
   const employeeOptions = useMemo<ComboboxOption[]>(
     () => (employees.data ?? []).map((employee) => ({ value: employee.id, label: employee.fullName, description: employee.employeeNumber })),
     [employees.data],
@@ -99,18 +97,8 @@ export function DeploymentForm({ deployment, onSaved, pending = false }: Deploym
       <FormField error={e.location} htmlFor="location" label="Location" required>
         <Input defaultValue={deployment?.location ?? ""} id="location" maxLength={200} name="location" required />
       </FormField>
-      <FormField
-        description={unitStations.error ? "Unit stations could not be loaded. Refresh the page to try again." : undefined}
-        error={e.unit}
-        htmlFor="unit"
-        label="Unit / Assignment"
-      >
-        <NativeSelect key={unitStations.data ? "catalogue" : "loading"} defaultValue={deployment?.unit ?? ""} id="unit" name="unit">
-          <option value="">Select a unit/station</option>
-          {deployment?.unit && !unitStations.data?.some((unit) => unit.name === deployment.unit) ? <option value={deployment.unit}>{deployment.unit}</option> : null}
-          {unitStations.data?.map((unit) => <option key={unit.id} value={unit.name}>{unit.name}</option>)}
-        </NativeSelect>
-      </FormField>
+      {/* Unit / Assignment is no longer asked for; an existing value is carried through unchanged. */}
+      {deployment?.unit ? <input name="unit" type="hidden" value={deployment.unit} /> : null}
       <FormField error={e.status} htmlFor="status" label="Status" required>
         <NativeSelect defaultValue={deployment?.status ?? "active"} id="status" name="status">
           {(Object.keys(statusLabels) as DeploymentStatus[]).map((status) => <option key={status} value={status}>{statusLabels[status]}</option>)}

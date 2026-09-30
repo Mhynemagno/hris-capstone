@@ -34,7 +34,7 @@ const iconClass = "size-5";
 /** The only headline tiles, in reading order. Keys the RPC does not return are skipped. */
 const KPIS: { key: string; label: string; hint: string; icon: ReactNode; tone?: "attention"; href?: Partial<Record<DashboardRole, `/${string}`>> }[] = [
   { key: "totalPersonnel", label: "Total Personnel", hint: "All personnel records", icon: <Users className={iconClass} /> },
-  { key: "departments", label: "Departments", hint: "Active departments", icon: <Building2 className={iconClass} /> },
+  { key: "departments", label: "Units / Sections", hint: "Active units / sections", icon: <Building2 className={iconClass} /> },
   { key: "activeDeployments", label: "Deployments", hint: "Personnel deployed now", icon: <MapPin className={iconClass} /> },
   { key: "applicants", label: "Applicants", hint: "Applicant accounts", icon: <UserRoundSearch className={iconClass} />, href: { hr_personnel: "/hr/applications?view=applicants" } },
   { key: "onLeave", label: "On-Leave", hint: "On approved leave today", icon: <CalendarOff className={iconClass} /> },
@@ -51,7 +51,7 @@ const ATTENTION_ITEMS: { key: string; label: (count: number) => string; href: Re
 /** Display names for metric keys whose generated label reads poorly. */
 const metricLabels: Record<string, string> = {
   activeWorkforce: "Active personnel",
-  workforceByDepartment: "Personnel by department",
+  workforceByDepartment: "Personnel by unit / section",
 };
 
 function formatMetricName(key: string) {
@@ -114,7 +114,7 @@ type ChartSpec = {
 const CHARTS: ChartSpec[] = [
   { key: "attendanceTrend", title: "Daily attendance", subtitle: "Personnel who timed in, by day (last 30 days of the period)", wide: true, format: formatDay, labelHeading: "Date", render: (rows) => <ColumnTrendChart data={rows} formatLabel={formatDay} unit="attendance" /> },
   { key: "attendanceStatus", title: "Attendance status", subtitle: "All attendance logs in the period", format: titleCase, labelHeading: "Status", render: (rows) => <DonutChart centerLabel="Logs" colorFor={statusColor} data={rows} formatLabel={titleCase} /> },
-  { key: "workforceByDepartment", title: "Personnel by department", subtitle: "Active personnel", labelHeading: "Department", render: (rows) => <HorizontalBarChart data={rows} /> },
+  { key: "workforceByDepartment", title: "Personnel by unit / section", subtitle: "Active personnel", labelHeading: "Unit / Section", render: (rows) => <HorizontalBarChart data={rows} /> },
   { key: "workforceByRank", title: "Personnel by rank", subtitle: "All personnel, lowest to highest rank", labelHeading: "Rank", render: (rows) => <HorizontalBarChart data={rows} /> },
   { key: "leaveStatus", title: "Leave status", subtitle: "Leave in the period, plus upcoming leave", format: titleCase, labelHeading: "Status", render: (rows) => <DonutChart centerLabel="Requests" colorFor={statusColor} data={rows} formatLabel={titleCase} /> },
   { key: "recruitmentPipeline", title: "Recruitment pipeline", subtitle: "Applications submitted in the period, by stage", labelHeading: "Stage", render: (rows) => <HorizontalBarChart data={byPipeline(rows)} /> },

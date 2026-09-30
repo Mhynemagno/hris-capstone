@@ -119,7 +119,7 @@ describe("HR recruitment workspace", () => {
     render(<HrApplicationList />);
     expect(screen.getByText("Juan Dela Cruz")).toBeInTheDocument();
     expect(screen.getByText("Applicant no. 0-00012")).toBeInTheDocument();
-    expect(screen.getByRole("cell", { name: "Pat — Patrolman / Patrolwoman" })).toBeInTheDocument();
+    expect(screen.getByRole("cell", { name: "PAT — Patrolman / Patrolwoman" })).toBeInTheDocument();
     expect(screen.queryByText("Patrol Officer")).not.toBeInTheDocument();
     expect(screen.getByRole("cell", { name: "September 25, 2026" })).toBeInTheDocument();
     expect(screen.getByRole("cell", { name: "82/100" })).toBeInTheDocument();

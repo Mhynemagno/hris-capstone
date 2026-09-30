@@ -8,7 +8,9 @@ describe("parseRecordTab", () => {
   it("falls back to the official record for missing or unknown tabs", () => {
     expect(parseRecordTab(null)).toBe("official");
     expect(parseRecordTab("nonsense")).toBe("official");
-    expect(parseRecordTab("training")).toBe("training");
+    // Training is part of Certification / Training now, so its old link opens the official record.
+    expect(parseRecordTab("training")).toBe("official");
+    expect(parseRecordTab("certifications")).toBe("certifications");
     expect(parseRecordTab("service-history")).toBe("service-history");
   });
 });
@@ -20,7 +22,7 @@ describe("RecordTabs", () => {
     render(<RecordTabs active="official" idPrefix="rec" onChange={onChange} />);
 
     expect(screen.getByRole("tablist", { name: "Personnel record sections" })).toBeInTheDocument();
-    expect(screen.getAllByRole("tab").map((tab) => tab.textContent)).toEqual(["Official record", "Service history", "Qualifications", "Certifications", "Training"]);
+    expect(screen.getAllByRole("tab").map((tab) => tab.textContent)).toEqual(["Official record", "Service history", "Eligibility", "Certification / Training"]);
     expect(screen.getByRole("tab", { name: "Official record" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("tab", { name: "Service history" })).toHaveAttribute("tabindex", "-1");
 
@@ -39,19 +41,19 @@ describe("RecordTabs", () => {
     await user.keyboard("{ArrowLeft}");
     expect(onChange).toHaveBeenLastCalledWith("official");
     await user.keyboard("{ArrowLeft}");
-    expect(onChange).toHaveBeenLastCalledWith("training");
+    expect(onChange).toHaveBeenLastCalledWith("certifications");
     await user.keyboard("{Home}");
     expect(onChange).toHaveBeenLastCalledWith("official");
     await user.keyboard("{End}");
-    expect(onChange).toHaveBeenLastCalledWith("training");
+    expect(onChange).toHaveBeenLastCalledWith("certifications");
   });
 
   it("supports vertical arrow keys and shows record counts without changing tab names", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
-    render(<RecordTabs active="official" counts={{ training: 3 }} idPrefix="rec" onChange={onChange} orientation="responsive" />);
+    render(<RecordTabs active="official" counts={{ certifications: 3 }} idPrefix="rec" onChange={onChange} orientation="responsive" />);
 
-    expect(screen.getByRole("tab", { name: "Training" })).toHaveTextContent("Training3");
+    expect(screen.getByRole("tab", { name: "Certification / Training" })).toHaveTextContent("Certification / Training3");
     screen.getByRole("tab", { name: "Official record" }).focus();
     await user.keyboard("{ArrowDown}");
     expect(onChange).toHaveBeenLastCalledWith("service-history");

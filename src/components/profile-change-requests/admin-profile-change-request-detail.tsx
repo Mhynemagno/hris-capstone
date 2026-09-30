@@ -52,7 +52,7 @@ export function DocumentLink({ document }: { document: ProfileChangeRequestDocum
 }
 
 export function ChangeCard({ change, originalLabel = "Current (when submitted)" }: { change: ProfileChangeRequestChange; originalLabel?: string }) {
-  const label = change.kind === "contact" ? humanize(change.field_key ?? "Contact detail") : `Qualification: ${change.operation ?? "change"}`;
+  const label = change.kind === "contact" ? humanize(change.field_key ?? "Contact detail") : `Eligibility: ${change.operation ?? "change"}`;
   return (
     <li className="rounded-xl border p-4">
       <h3 className="font-semibold capitalize">{label}</h3>
