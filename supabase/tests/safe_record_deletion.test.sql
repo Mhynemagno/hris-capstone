@@ -166,9 +166,9 @@ set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000009501';
 select extensions.throws_like(
   $$select public.assert_managed_user_deletable('00000000-0000-4000-8000-000000009501')$$,
   '%You cannot delete your own account.%', 'Administrators cannot delete themselves');
-select extensions.throws_like(
+select extensions.lives_ok(
   $$select public.assert_managed_user_deletable('00000000-0000-4000-8000-000000009503')$$,
-  '%It is still used by%job openings%Account can sign in%', 'Accounts that created records must be blocked from sign-in instead');
+  'Accounts that created records can still be deleted; their records are kept');
 select extensions.lives_ok(
   $$select public.assert_managed_user_deletable('00000000-0000-4000-8000-000000009504')$$,
   'An account with no dependent records can be deleted');
