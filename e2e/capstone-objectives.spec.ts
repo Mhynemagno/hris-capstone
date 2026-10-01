@@ -117,8 +117,16 @@ test.describe("Objective 1: centralized personnel records", () => {
     const history = page.getByRole("tabpanel", { name: "Service history" });
     await history.getByLabel(/^Start date/).fill("2015-06-01");
     await history.getByLabel(/^Remarks/).fill(`Initial assignment ${runId}`);
+    // Unit / Section and Rank are required; the end date is not.
+    await page.getByRole("button", { name: "Add service history" }).click();
+    await expect(history.getByText("Choose a unit / section.")).toBeVisible();
+    await expect(history.getByText("Choose a rank.")).toBeVisible();
+    await history.getByLabel(/^Unit \/ Section/).selectOption({ label: "Traffic and Investigation Section" });
+    await history.getByLabel(/^Rank/).selectOption({ label: "PCPL — Police Corporal" });
     await page.getByRole("button", { name: "Add service history" }).click();
     await expect(page.getByRole("status").filter({ hasText: "Service history added." })).toBeVisible();
+    // The new entry shows right away, without a reload.
+    await expect(history.getByText("June 1, 2015 to present")).toBeVisible();
 
     await sections.getByRole("tab", { name: "Eligibility" }).click();
     await page.locator("#qualification-primary").selectOption("NAPOLCOM PNP Entrance Examination");

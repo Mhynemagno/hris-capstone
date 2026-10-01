@@ -32,7 +32,7 @@ function isoDate(daysFromToday: number) {
 }
 
 test.describe("administrator master data", () => {
-  test("creates a department that survives reload and cannot be deleted", async ({ page }) => {
+  test("creates a department that survives reload, then deletes it", async ({ page }) => {
     const name = `E2E Department ${runId}`;
     await signIn(page, "demo.admin@example.test", "/admin");
     await page.goto("/admin/departments");
@@ -55,19 +55,26 @@ test.describe("administrator master data", () => {
     await page.getByLabel("Search units / sections").fill(name);
     await expect(page.getByRole("cell", { name, exact: true })).toBeVisible();
 
-    await expect(page.getByRole("button", { name: `Delete ${name}` })).toHaveCount(0);
     await expect(page.getByRole("button", { name: `Edit ${name}` })).toBeVisible();
     await expect(page.getByRole("button", { name: `Deactivate ${name}` })).toHaveCount(0);
+
+    // An unused unit / section is deleted straight away (no force needed).
+    await page.getByRole("button", { name: `Delete ${name}` }).click();
+    const dialog = page.getByRole("alertdialog");
+    await expect(dialog).toContainText(`Delete ${name}?`);
+    await dialog.getByRole("button", { name: "Delete unit / section" }).click();
+    await expect(page.getByRole("status")).toContainText("The unit / section was deleted successfully.");
+    await expect(page.getByRole("cell", { name, exact: true })).toHaveCount(0);
   });
 
-  test("lists the station ranks with their codes and offers no deletion", async ({ page }) => {
+  test("lists the station ranks with their codes and a delete action", async ({ page }) => {
     await signIn(page, "demo.admin@example.test", "/admin");
     await page.goto("/admin/ranks");
     await expect(page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Ranks" })).toHaveAttribute("aria-current", "page");
     await expect(page.getByRole("cell", { name: "PAT", exact: true })).toBeVisible();
     await expect(page.getByRole("cell", { name: "Patrolman / Patrolwoman", exact: true })).toBeVisible();
     await expect(page.getByRole("cell", { name: "PCOL", exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: /^Delete/ })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Delete Patrolman / Patrolwoman" })).toBeVisible();
   });
 });
 
