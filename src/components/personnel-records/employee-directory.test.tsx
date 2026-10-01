@@ -86,6 +86,12 @@ describe("EmployeeDirectory", () => {
     expect(screen.queryByRole("link", { name: /update to 0-00000/i })).not.toBeInTheDocument();
   });
 
+  it("does not show the badge number under the name", () => {
+    render(<EmployeeDirectory />);
+    expect(screen.getByRole("cell", { name: "Reyes" })).toBeInTheDocument();
+    expect(screen.queryByText("1-00001")).not.toBeInTheDocument();
+  });
+
   it("filters by department, rank, and employment status, then clears", async () => {
     const user = userEvent.setup();
     render(<EmployeeDirectory />);
