@@ -12,6 +12,7 @@ describe("parseRecordTab", () => {
     expect(parseRecordTab("training")).toBe("official");
     expect(parseRecordTab("certifications")).toBe("certifications");
     expect(parseRecordTab("service-history")).toBe("service-history");
+    expect(parseRecordTab("activity")).toBe("activity");
   });
 });
 
@@ -22,7 +23,7 @@ describe("RecordTabs", () => {
     render(<RecordTabs active="official" idPrefix="rec" onChange={onChange} />);
 
     expect(screen.getByRole("tablist", { name: "Personnel record sections" })).toBeInTheDocument();
-    expect(screen.getAllByRole("tab").map((tab) => tab.textContent)).toEqual(["Official record", "Service history", "Eligibility", "Certification / Training"]);
+    expect(screen.getAllByRole("tab").map((tab) => tab.textContent)).toEqual(["Official record", "Recent activity", "Service history", "Eligibility", "Certification / Training"]);
     expect(screen.getByRole("tab", { name: "Official record" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("tab", { name: "Service history" })).toHaveAttribute("tabindex", "-1");
 
@@ -37,7 +38,7 @@ describe("RecordTabs", () => {
 
     screen.getByRole("tab", { name: "Official record" }).focus();
     await user.keyboard("{ArrowRight}");
-    expect(onChange).toHaveBeenLastCalledWith("service-history");
+    expect(onChange).toHaveBeenLastCalledWith("activity");
     await user.keyboard("{ArrowLeft}");
     expect(onChange).toHaveBeenLastCalledWith("official");
     await user.keyboard("{ArrowLeft}");
@@ -56,7 +57,7 @@ describe("RecordTabs", () => {
     expect(screen.getByRole("tab", { name: "Certification / Training" })).toHaveTextContent("Certification / Training3");
     screen.getByRole("tab", { name: "Official record" }).focus();
     await user.keyboard("{ArrowDown}");
-    expect(onChange).toHaveBeenLastCalledWith("service-history");
+    expect(onChange).toHaveBeenLastCalledWith("activity");
     await user.keyboard("{ArrowUp}");
     expect(onChange).toHaveBeenLastCalledWith("official");
   });

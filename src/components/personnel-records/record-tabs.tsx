@@ -1,12 +1,13 @@
 "use client";
 
 import { useRef, useSyncExternalStore, type KeyboardEvent } from "react";
-import { Award, BookOpenCheck, GraduationCap, History, IdCard, type LucideIcon } from "lucide-react";
+import { Activity, Award, BookOpenCheck, GraduationCap, History, IdCard, type LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 const ALL_RECORD_TABS = [
   { key: "official", label: "Official record" },
+  { key: "activity", label: "Recent activity" },
   { key: "service-history", label: "Service history" },
   { key: "qualifications", label: "Eligibility" },
   { key: "certifications", label: "Certification / Training" },
@@ -23,6 +24,7 @@ export const RECORD_TABS: readonly (typeof ALL_RECORD_TABS)[number][] = ALL_RECO
 
 const tabIcons: Record<RecordTabKey, LucideIcon> = {
   official: IdCard,
+  activity: Activity,
   "service-history": History,
   qualifications: GraduationCap,
   certifications: Award,
