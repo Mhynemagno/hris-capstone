@@ -44,6 +44,7 @@ export function DeleteRecordDialog({ alternative, entityId, entityType, noun, on
   const remove = useDeleteRecord(entityType);
   const [alternativePending, setAlternativePending] = useState(false);
   const [alternativeError, setAlternativeError] = useState<string | null>(null);
+  const [forceConfirmed, setForceConfirmed] = useState(false);
   const data = impact.data;
   const busy = remove.isPending || alternativePending;
 
@@ -51,13 +52,15 @@ export function DeleteRecordDialog({ alternative, entityId, entityType, noun, on
     if (busy) return;
     remove.reset();
     setAlternativeError(null);
+    setForceConfirmed(false);
     onClose();
   }
 
-  async function confirmDelete() {
+  async function confirmDelete(force = false) {
     if (entityId === null) return;
     try {
-      await remove.mutateAsync(entityId);
+      await remove.mutateAsync({ entityId, force });
+      setForceConfirmed(false);
       onDeleted?.();
       onClose();
     } catch {
@@ -124,6 +127,12 @@ export function DeleteRecordDialog({ alternative, entityId, entityType, noun, on
                   {data.reasons.map((reason) => <p key={reason}>{reason}</p>)}
                   {data.alternative ? <p className="font-medium">{data.alternative}</p> : null}
                 </AlertDialog.Description>
+                {data.canForce ? (
+                  <label className="flex cursor-pointer items-start gap-2 border-t border-destructive/20 pt-3">
+                    <input checked={forceConfirmed} className="mt-1 size-4 accent-destructive" disabled={busy} onChange={(event) => setForceConfirmed(event.target.checked)} type="checkbox" />
+                    <span>Force delete anyway. The records listed above are removed too, or unlinked where the link is optional. This cannot be undone.</span>
+                  </label>
+                ) : null}
               </div>
             ) : null}
 
@@ -138,14 +147,20 @@ export function DeleteRecordDialog({ alternative, entityId, entityType, noun, on
                 {alternativePending ? "Working…" : alternative.label}
               </Button>
             ) : null}
-            <Button
-              disabled={!data?.canDelete || busy}
-              onClick={() => void confirmDelete()}
-              type="button"
-              variant="destructive"
-            >
-              {remove.isPending ? "Deleting…" : `Delete ${noun}`}
-            </Button>
+            {data?.canForce ? (
+              <Button disabled={!forceConfirmed || busy} onClick={() => void confirmDelete(true)} type="button" variant="destructive">
+                {remove.isPending ? "Deleting…" : "Force delete"}
+              </Button>
+            ) : (
+              <Button
+                disabled={!data?.canDelete || busy}
+                onClick={() => void confirmDelete()}
+                type="button"
+                variant="destructive"
+              >
+                {remove.isPending ? "Deleting…" : `Delete ${noun}`}
+              </Button>
+            )}
           </div>
         </AlertDialog.Popup>
       </AlertDialog.Portal>

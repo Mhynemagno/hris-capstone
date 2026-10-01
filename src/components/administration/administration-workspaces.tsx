@@ -361,7 +361,7 @@ function ManagedAccountsWorkspace({ invite }: { invite: boolean }) {
         entityType="managed_user"
         noun="account"
         onClose={() => setDeleting(null)}
-        onDeleted={() => setNotice("The account was permanently deleted.")}
+        onDeleted={() => setNotice("The account was deleted successfully.")}
       />
     </div>
   );
@@ -416,6 +416,7 @@ export function DepartmentsWorkspace() {
   const [status, setStatus] = useState<StatusFilter>("");
   const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<Department | null>(null);
+  const [deleting, setDeleting] = useState<Department | null>(null);
   const [creating, setCreating] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const searchTerm = useDebouncedValue(search.trim());
@@ -442,6 +443,7 @@ export function DepartmentsWorkspace() {
               <td className="px-4 py-3"><StatusBadge active={department.is_active} /></td>
               <RowActions>
                 <Button aria-label={`Edit ${department.name}`} onClick={() => setEditing(department)} size="sm" type="button" variant="outline">Edit</Button>
+                <Button aria-label={`Delete ${department.name}`} onClick={() => { setNotice(null); setDeleting(department); }} size="sm" type="button" variant="destructive">Delete</Button>
               </RowActions>
             </tr>
           )) : <tr><EmptyTableState colSpan={3} message="No units / sections match these filters." /></tr>}
@@ -457,6 +459,13 @@ export function DepartmentsWorkspace() {
           <DepartmentForm department={editing} key={editing.id} onSaved={async (input) => { await save.mutateAsync({ input: { ...input, isActive: editing.is_active }, departmentId: editing.id }); setEditing(null); setNotice("Unit / section saved."); }} pending={save.isPending} />
         </AdministrationFormPanel>
       ) : null}
+      <DeleteRecordDialog
+        entityId={deleting?.id ?? null}
+        entityType="department"
+        noun="unit / section"
+        onClose={() => setDeleting(null)}
+        onDeleted={() => setNotice("The unit / section was deleted successfully.")}
+      />
     </div>
   );
 }
@@ -497,6 +506,7 @@ export function UnitStationsWorkspace() {
   const [status, setStatus] = useState<StatusFilter>("");
   const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<UnitStation | null>(null);
+  const [deleting, setDeleting] = useState<UnitStation | null>(null);
   const [creating, setCreating] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const searchTerm = useDebouncedValue(search.trim());
@@ -526,6 +536,7 @@ export function UnitStationsWorkspace() {
               <td className="px-4 py-3"><StatusBadge active={unitStation.is_active} /></td>
               <RowActions>
                 <Button aria-label={`Edit ${unitStation.name}`} onClick={() => setEditing(unitStation)} size="sm" type="button" variant="outline">Edit</Button>
+                <Button aria-label={`Delete ${unitStation.name}`} onClick={() => { setNotice(null); setDeleting(unitStation); }} size="sm" type="button" variant="destructive">Delete</Button>
               </RowActions>
             </tr>
           )) : <tr><EmptyTableState colSpan={3} message={searchTerm || status ? "No units match these filters." : "No units yet. Add the station's precincts and units so they can be assigned."} /></tr>}
@@ -540,12 +551,19 @@ export function UnitStationsWorkspace() {
           <UnitStationForm key={editing.id} onSaved={async (input) => { await save.mutateAsync({ input: { ...input, isActive: editing.is_active }, unitStationId: editing.id }); setEditing(null); setNotice("Unit / station saved."); }} pending={save.isPending} unitStation={editing} />
         </AdministrationFormPanel>
       ) : null}
+      <DeleteRecordDialog
+        entityId={deleting?.id ?? null}
+        entityType="unit_station"
+        noun="unit / station"
+        onClose={() => setDeleting(null)}
+        onDeleted={() => setNotice("The unit / station was deleted successfully.")}
+      />
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Ranks (shared by every department; deactivated, never deleted)
+// Ranks (shared by every department)
 // ---------------------------------------------------------------------------
 
 function RankForm({ onSaved, pending, rank }: { onSaved: (input: RankInput) => Promise<void>; pending: boolean; rank?: Rank }) {
@@ -592,6 +610,7 @@ export function RanksWorkspace() {
   const [status, setStatus] = useState<StatusFilter>("");
   const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<Rank | null>(null);
+  const [deleting, setDeleting] = useState<Rank | null>(null);
   const [creating, setCreating] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const searchTerm = useDebouncedValue(search.trim());
@@ -623,6 +642,7 @@ export function RanksWorkspace() {
               <td className="px-4 py-3"><StatusBadge active={rank.is_active} /></td>
               <RowActions>
                 <Button aria-label={`Edit ${rank.name}`} onClick={() => setEditing(rank)} size="sm" type="button" variant="outline">Edit</Button>
+                <Button aria-label={`Delete ${rank.name}`} onClick={() => { setNotice(null); setDeleting(rank); }} size="sm" type="button" variant="destructive">Delete</Button>
               </RowActions>
             </tr>
           )) : <tr><EmptyTableState colSpan={5} message="No ranks match these filters." /></tr>}
@@ -637,6 +657,13 @@ export function RanksWorkspace() {
           <RankForm key={editing.id} onSaved={async (input) => { await save.mutateAsync({ input: { ...input, isActive: editing.is_active }, rankId: editing.id }); setEditing(null); setNotice("Rank saved."); }} pending={save.isPending} rank={editing} />
         </AdministrationFormPanel>
       ) : null}
+      <DeleteRecordDialog
+        entityId={deleting?.id ?? null}
+        entityType="rank"
+        noun="rank"
+        onClose={() => setDeleting(null)}
+        onDeleted={() => setNotice("The rank was deleted successfully.")}
+      />
     </div>
   );
 }

@@ -222,7 +222,7 @@ export function EmployeeDirectory() {
         entityType="employee"
         noun="personnel record"
         onClose={() => setDeleting(null)}
-        onDeleted={() => setNotice("The personnel record was permanently deleted.")}
+        onDeleted={() => setNotice("The personnel record was deleted successfully.")}
       />
     </div>
   );

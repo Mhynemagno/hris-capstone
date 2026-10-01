@@ -8,6 +8,13 @@ export const DELETABLE_ENTITY_TYPES = [
   "managed_user",
   "notification",
   "employee",
+  "department",
+  "rank",
+  "unit_station",
+  "service_history",
+  "qualification",
+  "certification",
+  "training_record",
 ] as const;
 
 export type DeletableEntityType = (typeof DELETABLE_ENTITY_TYPES)[number];
@@ -20,13 +27,16 @@ export type DeletionImpact = {
   entityId: string;
   label: string;
   canDelete: boolean;
+  /** A blocked delete that may still be forced, removing or unlinking what depends on the record. */
+  canForce: boolean;
   blockers: DeletionCount[];
   reasons: string[];
   removes: DeletionCount[];
   alternative: string | null;
 };
 
-const deleteRpc: Record<Exclude<DeletableEntityType, "managed_user">, { name: string; arg: string; numeric: boolean }> = {
+/** Record types with their own delete RPC; every other type (and any forced delete) goes through delete_record. */
+const deleteRpc: Partial<Record<DeletableEntityType, { name: string; arg: string; numeric: boolean }>> = {
   leave_type: { name: "delete_leave_type", arg: "target_leave_type_id", numeric: false },
   promotion_criterion: { name: "delete_promotion_criterion", arg: "target_criterion_id", numeric: false },
   job_opening: { name: "delete_draft_job_opening", arg: "target_job_id", numeric: true },
@@ -43,6 +53,7 @@ export async function getDeletionImpact(entityType: DeletableEntityType, entityI
   const impact = data as DeletionImpact;
   return {
     ...impact,
+    canForce: impact.canForce ?? false,
     blockers: impact.blockers ?? [],
     reasons: impact.reasons ?? [],
     removes: impact.removes ?? [],
@@ -50,14 +61,18 @@ export async function getDeletionImpact(entityType: DeletableEntityType, entityI
   };
 }
 
-/** Permanently deletes a record. Authorisation and dependency checks run in the database. */
-export async function deleteRecord(entityType: DeletableEntityType, entityId: string | number) {
+/**
+ * Permanently deletes a record. Authorisation and dependency checks run in the database.
+ * `force` also removes (or unlinks) the records that would otherwise block the delete.
+ */
+export async function deleteRecord(entityType: DeletableEntityType, entityId: string | number, force = false) {
   if (entityType === "managed_user") {
     await deleteManagedUser({ userId: String(entityId) });
     return;
   }
-  const rpc = deleteRpc[entityType];
-  const value = rpc.numeric ? Number(entityId) : String(entityId);
-  const { error } = await createBrowserSupabaseClient().rpc(rpc.name, { [rpc.arg]: value });
+  const rpc = force ? undefined : deleteRpc[entityType];
+  const { error } = rpc
+    ? await createBrowserSupabaseClient().rpc(rpc.name, { [rpc.arg]: rpc.numeric ? Number(entityId) : String(entityId) })
+    : await createBrowserSupabaseClient().rpc("delete_record", { entity_type: entityType, entity_id: String(entityId), force });
   if (error) throw new Error(error.message);
 }

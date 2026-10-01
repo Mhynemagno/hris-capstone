@@ -67,16 +67,17 @@ select extensions.throws_ok(
   '42501', null, 'Anonymous callers cannot reach deletion RPCs');
 
 -- ---------------------------------------------------------------------------
--- Departments and ranks are never deletable (client decision 2026-09-24)
+-- Units / sections and ranks are deleted through delete_record (client feedback 2026-10-01; see
+-- force_delete.test.sql). The retired "position" type stays unsupported.
 -- ---------------------------------------------------------------------------
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000009501';
-select extensions.throws_ok(
-  $$select public.get_deletion_impact('department', (select id::text from public.departments where name = 'Deletion unused department'))$$,
-  '22023', 'Deletion is not supported for this record type.', 'Departments are never deletable');
+select extensions.is(
+  (public.get_deletion_impact('department', (select id::text from public.departments where name = 'Deletion unused department')) ->> 'canDelete')::boolean,
+  true, 'An unused unit / section can be deleted');
 select extensions.throws_ok(
   $$select public.get_deletion_impact('position', (select id::text from public.ranks where code = 'DUR'))$$,
-  '22023', 'Deletion is not supported for this record type.', 'Ranks are never deletable');
+  '22023', 'Deletion is not supported for this record type.', 'The retired position type is not deletable');
 select extensions.throws_ok(
   $$delete from public.departments where name = 'Deletion unused department'$$,
   '42501', null, 'Administrators cannot delete department rows directly');

@@ -3,7 +3,8 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
-  deleteTraining: vi.fn(),
+  deleteEntry: vi.fn(),
+  impact: vi.fn(),
   useEmployee: vi.fn(),
   useEntries: vi.fn(),
   replace: vi.fn(),
@@ -16,8 +17,12 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(mocks.search),
 }));
 
+vi.mock("@/hooks/use-deletion", () => ({
+  useDeletionImpact: (_type: string, id: string | null) => ({ data: id ? mocks.impact() : undefined, isLoading: false, error: null, refetch: vi.fn() }),
+  useDeleteRecord: () => ({ isPending: false, mutateAsync: mocks.deleteEntry, reset: vi.fn(), error: null }),
+}));
+
 vi.mock("@/hooks/use-personnel-records", () => ({
-  useDeletePersonnelEntry: () => ({ isPending: false, mutateAsync: mocks.deleteTraining }),
   useEmployee: mocks.useEmployee,
   useEmployeeProfilePhotoUrl: () => ({ data: null }),
   useRemoveMyEmployeeProfilePhoto: () => ({ isPending: false, mutateAsync: vi.fn() }),
@@ -39,7 +44,8 @@ describe("EmployeeRecordDetail", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mocks.search = "tab=certifications";
-    mocks.deleteTraining.mockResolvedValue(undefined);
+    mocks.deleteEntry.mockResolvedValue(undefined);
+    mocks.impact.mockReturnValue({ entityType: "certification", entityId: "00000000-0000-4000-8000-000000000020", label: "Leadership and Management Course", canDelete: true, canForce: false, blockers: [], reasons: [], removes: [], alternative: null });
     mocks.useEmployee.mockReturnValue({ data: { id: employeeId, first_name: "Ada", last_name: "Dela Cruz", employee_number: "PAT-001", employment_status: "active", date_of_birth: "1990-09-23", gender: "female", place_of_birth: "Quezon City", phone: "+639171234567", employment_started_on: "2024-01-01" }, isLoading: false });
     mocks.useEntries.mockImplementation((kind: string) => ({
       data: kind === "certification" ? [{
@@ -62,10 +68,26 @@ describe("EmployeeRecordDetail", () => {
     render(<EmployeeRecordDetail employeeId={employeeId} />);
 
     await user.click(screen.getByRole("button", { name: "Delete certification / training Leadership and Management Course" }));
-    expect(screen.getByRole("alertdialog")).toHaveTextContent("Delete this certification / training?");
+    expect(await screen.findByRole("alertdialog")).toHaveTextContent("Delete Leadership and Management Course?");
     await user.click(screen.getByRole("button", { name: "Delete certification / training" }));
 
-    await waitFor(() => expect(mocks.deleteTraining).toHaveBeenCalledWith("00000000-0000-4000-8000-000000000020"));
+    await waitFor(() => expect(mocks.deleteEntry).toHaveBeenCalledWith({ entityId: "00000000-0000-4000-8000-000000000020", force: false }));
+    expect(await screen.findByRole("status")).toHaveTextContent("The certification / training was deleted successfully.");
+  });
+
+  it("offers a force delete once the blocking records are acknowledged", async () => {
+    const user = userEvent.setup();
+    mocks.search = "tab=certifications&mode=edit";
+    mocks.impact.mockReturnValue({ entityType: "certification", entityId: "00000000-0000-4000-8000-000000000020", label: "Leadership and Management Course", canDelete: false, canForce: true, blockers: [{ label: "promotion evidence", count: 1 }], reasons: [], removes: [], alternative: null });
+    render(<EmployeeRecordDetail employeeId={employeeId} />);
+
+    await user.click(screen.getByRole("button", { name: "Delete certification / training Leadership and Management Course" }));
+    const force = await screen.findByRole("button", { name: "Force delete" });
+    expect(force).toBeDisabled();
+    await user.click(screen.getByRole("checkbox", { name: /Force delete anyway/ }));
+    await user.click(force);
+
+    await waitFor(() => expect(mocks.deleteEntry).toHaveBeenCalledWith({ entityId: "00000000-0000-4000-8000-000000000020", force: true }));
   });
 
   it("shows only the section named in the URL and switches tabs through the URL", async () => {
