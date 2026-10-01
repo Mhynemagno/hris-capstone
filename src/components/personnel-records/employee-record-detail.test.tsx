@@ -108,7 +108,8 @@ describe("EmployeeRecordDetail", () => {
     expect(mocks.replace).toHaveBeenCalledWith("/hr/employees/00000000-0000-4000-8000-000000000010?tab=certifications", { scroll: false });
   });
 
-  it("shows a profile header, section counts, and a recent activity timeline", () => {
+  it("shows a profile header, section counts, and a recent activity timeline in its own tab", () => {
+    mocks.search = "tab=activity";
     render(<EmployeeRecordDetail employeeId={employeeId} />);
 
     expect(screen.getByRole("heading", { level: 1, name: "Ada Dela Cruz" })).toBeInTheDocument();
@@ -119,6 +120,8 @@ describe("EmployeeRecordDetail", () => {
     expect(activity).toHaveTextContent("Certification / Training");
     expect(activity).toHaveTextContent("Leadership and Management Course");
     expect(activity).toHaveTextContent("Top of the class");
+    expect(screen.getByRole("tab", { name: "Recent activity" })).toHaveAttribute("aria-selected", "true");
+    expect(document.getElementById("rec-panel-official")).toHaveAttribute("hidden");
   });
 
   it("opens the official record when Edit details is chosen", async () => {

@@ -13,7 +13,6 @@ import { useDepartmentOptions, useRankOptions } from "@/hooks/use-administration
 import { useEmployee, usePersonnelEntries, useSavePersonnelEntry } from "@/hooks/use-personnel-records";
 import { formatDate, formatDateRange } from "@/lib/format-date";
 import { rankLabel } from "@/lib/ranks";
-import { cn } from "@/lib/utils";
 import type { Certification, Employee, Qualification, ServiceHistory, TrainingRecord } from "@/lib/types/database";
 import type { DeletableEntityType } from "@/queries/deletion";
 import type { PersonnelKind } from "@/queries/personnel-records";
@@ -170,16 +169,18 @@ type DetailRow = { label: string; value: ReactNode; wide?: boolean };
 /** One numbered group of the official record, laid out like the edit form. */
 function DetailSection({ title, rows }: { title: string; rows: DetailRow[] }) {
   return (
-    <section aria-label={title} className="@container rounded-xl border bg-background/60 p-4">
-      <h3 className="border-b pb-2 font-heading text-base font-semibold">{title}</h3>
-      <dl className="mt-3 grid gap-x-6 gap-y-4 @lg:grid-cols-2 @2xl:grid-cols-3">
-        {rows.map(({ label, value, wide }) => (
-          <div className={wide ? "min-w-0 @lg:col-span-2 @2xl:col-span-3" : "min-w-0"} key={label}>
-            <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</dt>
-            <dd className="mt-1 font-medium break-words">{value || <span className="font-normal text-muted-foreground">Not provided</span>}</dd>
-          </div>
-        ))}
-      </dl>
+    <section aria-label={title} className="min-w-0">
+      <h3 className="mb-4 border-b pb-2 font-heading text-lg font-semibold">{title}</h3>
+      <div className="@container">
+        <dl className="grid gap-x-6 gap-y-4 @md:grid-cols-2 @xl:grid-cols-3">
+          {rows.map(({ label, value, wide }) => (
+            <div className={wide ? "min-w-0 @md:col-span-2 @xl:col-span-3" : "min-w-0"} key={label}>
+              <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</dt>
+              <dd className="mt-1 font-medium break-words">{value || <span className="font-normal text-muted-foreground">Not provided</span>}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
     </section>
   );
 }
@@ -187,7 +188,7 @@ function DetailSection({ title, rows }: { title: string; rows: DetailRow[] }) {
 /** The official record as a read-only view, shown in view mode instead of the form. */
 function OfficialDetails({ record, departmentName, rankName }: { record: Employee; departmentName?: string; rankName?: string }) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-8">
       <DetailSection title="I. Personal Information" rows={[
         { label: "Rank", value: rankName },
         { label: "Badge number", value: <span className="tabular-nums">{record.employee_number}</span> },
@@ -228,7 +229,6 @@ export function EmployeeRecordDetail({ employeeId }: { employeeId: string }) {
   const active = parseRecordTab(searchParams.get("tab"));
   // View mode is read-only; `?mode=edit` (the directory Edit link or "Edit details") unlocks every section.
   const editing = searchParams.get("mode") === "edit";
-  const editingOfficial = editing && active === "official";
   const saved = searchParams.get("saved");
   const savedMessage = saved === "created" || saved === "edited" ? savedMessages[saved] : null;
   const panelsRef = useRef<HTMLDivElement>(null);
@@ -277,6 +277,11 @@ export function EmployeeRecordDetail({ employeeId }: { employeeId: string }) {
         {editing ? <EmployeeEditor employee={record} /> : <OfficialDetails departmentName={departmentName} rankName={rank ? rankLabel(rank) : undefined} record={record} />}
       </InfoCard>
     ),
+    activity: (
+      <InfoCard icon={Activity} id="recent-activity" title="Recent activity">
+        {activity.loading ? <LoadingState label="Loading recent activity…" /> : <ActivityTimeline emptyMessage="No service history, eligibility, or certification / training entries yet." items={activity.items} />}
+      </InfoCard>
+    ),
     "service-history": <Records editable={editing} employeeId={employeeId} kind="serviceHistory" />,
     qualifications: <Records editable={editing} employeeId={employeeId} kind="qualification" />,
     certifications: <Records editable={editing} employeeId={employeeId} kind="certification" />,
@@ -314,8 +319,7 @@ export function EmployeeRecordDetail({ employeeId }: { employeeId: string }) {
       tags={activity.certificationNames}
     />
 
-    {/* While the official record is being edited the form takes the full width and Recent activity moves below it. */}
-    <div className={cn("grid gap-6 lg:grid-cols-[15rem_minmax(0,1fr)]", !editingOfficial && "2xl:grid-cols-[15rem_minmax(0,1fr)_21rem]")}>
+    <div className="grid gap-6 lg:grid-cols-[15rem_minmax(0,1fr)]">
       <aside className="min-w-0 lg:sticky lg:top-20 lg:self-start">
         <div className="lg:rounded-2xl lg:border lg:bg-card lg:p-3 lg:shadow-sm">
           <p className="hidden px-2 pt-1 pb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase lg:block">Modules</p>
@@ -328,9 +332,6 @@ export function EmployeeRecordDetail({ employeeId }: { employeeId: string }) {
           <div aria-labelledby={`rec-tab-${tab.key}`} hidden={tab.key !== active} id={`rec-panel-${tab.key}`} key={tab.key} role="tabpanel">{panels[tab.key]}</div>
         ))}
       </div>
-      <InfoCard className={cn("self-start lg:col-start-2", !editingOfficial && "2xl:col-start-3 2xl:row-start-1")} icon={Activity} id="recent-activity" title="Recent activity">
-        {activity.loading ? <LoadingState label="Loading recent activity…" /> : <ActivityTimeline emptyMessage="No service history, eligibility, or certification / training entries yet." items={activity.items} />}
-      </InfoCard>
     </div>
   </div>;
 }
