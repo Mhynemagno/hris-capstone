@@ -5,14 +5,17 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Activity, ArrowLeft, Award, BadgeCheck, BookOpenCheck, Building2, Cake, CheckCircle2, Clock, GraduationCap, History, MapPin, Pencil, ShieldCheck, TrendingUp, UserRound, X, type LucideIcon } from "lucide-react";
 
+import { DeleteRecordDialog } from "@/components/deletion/delete-record-dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useDepartmentOptions, useRankOptions } from "@/hooks/use-administration";
-import { useDeletePersonnelEntry, useEmployee, usePersonnelEntries, useSavePersonnelEntry } from "@/hooks/use-personnel-records";
+import { useEmployee, usePersonnelEntries, useSavePersonnelEntry } from "@/hooks/use-personnel-records";
 import { formatDate, formatDateRange } from "@/lib/format-date";
 import { rankLabel } from "@/lib/ranks";
+import { cn } from "@/lib/utils";
 import type { Certification, Employee, Qualification, ServiceHistory, TrainingRecord } from "@/lib/types/database";
+import type { DeletableEntityType } from "@/queries/deletion";
 import type { PersonnelKind } from "@/queries/personnel-records";
 
 import { EmployeeEditor } from "./employee-editor";
@@ -21,6 +24,9 @@ import { ActivityTimeline, formatDay, InfoCard, ProfileHeaderCard, serviceLength
 import { RecordEntryForm } from "./record-entry-form";
 import { parseRecordTab, RECORD_TABS, RecordTabs, type RecordTabKey } from "./record-tabs";
 
+/** Lower-case nouns for delete prompts, and the server-side record type each kind deletes as. */
+const nouns: Record<PersonnelKind, string> = { serviceHistory: "service history entry", qualification: "eligibility", certification: "certification / training", training: "training record" };
+const deletionTypes: Record<PersonnelKind, DeletableEntityType> = { serviceHistory: "service_history", qualification: "qualification", certification: "certification", training: "training_record" };
 const titles: Record<PersonnelKind, string> = { serviceHistory: "Service history", qualification: "Eligibility", certification: "Certification / Training", training: "Training" };
 const icons: Record<PersonnelKind, LucideIcon> = { serviceHistory: History, qualification: GraduationCap, certification: Award, training: BookOpenCheck };
 const listItemClassName = "flex flex-col gap-3 rounded-xl border bg-background/60 px-4 py-3 transition-colors hover:bg-muted/60 sm:flex-row sm:items-center sm:justify-between";
@@ -53,29 +59,15 @@ function titleCase(value: string | null | undefined) {
 function Records({ employeeId, kind, editable }: { employeeId: string; kind: PersonnelKind; editable: boolean }) {
   const entries = usePersonnelEntries(kind, employeeId);
   const save = useSavePersonnelEntry(kind, employeeId);
-  const remove = useDeletePersonnelEntry(kind, employeeId);
-  const [deleting, setDeleting] = useState<{ id: string; title: string } | null>(null);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
-  // Service history is the official employment record: it is added to, never deleted.
-  const deletable = editable && kind !== "serviceHistory";
-  const noun = kind === "qualification" ? "eligibility" : "certification / training";
-
-  async function confirmDelete() {
-    if (!deleting) return;
-    setDeleteError(null);
-    try {
-      await remove.mutateAsync(deleting.id);
-      setDeleting(null);
-    } catch (cause) {
-      setDeleteError(cause instanceof Error ? cause.message : `We could not delete this ${noun}.`);
-    }
-  }
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const noun = nouns[kind];
 
   if (entries.isLoading) return <LoadingState label={`Loading ${titles[kind].toLowerCase()}…`} />;
   if (entries.error) return <ErrorState message={entries.error.message} />;
   return (
     <InfoCard icon={icons[kind]} id={`records-${kind}`} title={titles[kind]}>
-      {kind === "serviceHistory" && editable ? <p className="text-sm text-muted-foreground">Service history is permanent. Add a new entry to record a change.</p> : null}
+      {notice ? <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400" role="status">{notice}</p> : null}
       <ul className="mt-3 space-y-2">
         {entries.data?.length ? entries.data.map((entry) => {
           const record = entry as unknown as { id: string } & Record<string, unknown>;
@@ -87,24 +79,20 @@ function Records({ employeeId, kind, editable }: { employeeId: string; kind: Per
                 <p className="font-semibold">{title}</p>
                 {detail ? <p className="text-sm text-muted-foreground">{detail}</p> : null}
               </div>
-              {deletable ? (
-                <Button aria-label={`Delete ${noun} ${title}`} onClick={() => { setDeleteError(null); setDeleting({ id: entry.id, title }); }} size="sm" type="button" variant="destructive">Delete</Button>
+              {editable ? (
+                <Button aria-label={`Delete ${noun} ${title}`} onClick={() => { setNotice(null); setDeleting(entry.id); }} size="sm" type="button" variant="destructive">Delete</Button>
               ) : null}
             </li>
           );
         }) : <li className={emptyItemClassName}>No {titles[kind].toLowerCase()} recorded.</li>}
       </ul>
-      {deleting && deletable ? (
-        <div aria-labelledby={`delete-${kind}-title`} className="mt-4 rounded-xl border border-destructive/30 bg-destructive/5 p-4" role="alertdialog">
-          <h3 className="font-semibold" id={`delete-${kind}-title`}>Delete this {noun}?</h3>
-          <p className="mt-1 text-sm text-muted-foreground">This permanently removes “{deleting.title}” from the employee record. A copy is kept in the record history for auditing. Entries used as promotion evidence cannot be deleted.</p>
-          {deleteError ? <p className="mt-2 text-sm font-medium text-destructive" role="alert">{deleteError}</p> : null}
-          <div className="mt-3 flex gap-2">
-            <Button disabled={remove.isPending} onClick={() => void confirmDelete()} size="sm" type="button" variant="destructive">{remove.isPending ? "Deleting…" : `Delete ${noun}`}</Button>
-            <Button disabled={remove.isPending} onClick={() => setDeleting(null)} size="sm" type="button" variant="outline">Cancel</Button>
-          </div>
-        </div>
-      ) : null}
+      <DeleteRecordDialog
+        entityId={deleting}
+        entityType={deletionTypes[kind]}
+        noun={noun}
+        onClose={() => setDeleting(null)}
+        onDeleted={() => setNotice(`The ${noun} was deleted successfully.`)}
+      />
       {editable ? <RecordEntryForm employeeId={employeeId} kind={kind} onSaved={async (input) => { await save.mutateAsync({ input: input as never }); }} pending={save.isPending} /> : null}
     </InfoCard>
   );
@@ -112,23 +100,11 @@ function Records({ employeeId, kind, editable }: { employeeId: string; kind: Per
 
 function TrainingRecords({ employeeId, editable }: { employeeId: string; editable: boolean }) {
   const [editing, setEditing] = useState<TrainingRecord | null>(null);
-  const [deleting, setDeleting] = useState<TrainingRecord | null>(null);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const entries = usePersonnelEntries("training", employeeId);
   const save = useSavePersonnelEntry("training", employeeId);
-  const remove = useDeletePersonnelEntry("training", employeeId);
   const trainings = (entries.data ?? []) as TrainingRecord[];
-
-  async function deleteTraining() {
-    if (!deleting) return;
-    setDeleteError(null);
-    try {
-      await remove.mutateAsync(deleting.id);
-      setDeleting(null);
-    } catch (cause) {
-      setDeleteError(cause instanceof Error ? cause.message : "We could not delete this training record.");
-    }
-  }
 
   if (entries.isLoading) return <LoadingState label="Loading training…" />;
   if (entries.error) return <ErrorState message={entries.error.message} />;
@@ -136,14 +112,11 @@ function TrainingRecords({ employeeId, editable }: { employeeId: string; editabl
     <ul className="space-y-2 text-sm">
       {trainings.length ? trainings.map((training) => <li className={listItemClassName} key={training.id}>
         <div><p className="font-semibold">{training.course_name}</p><p className="text-muted-foreground">{training.provider} · {formatDate(training.completed_on)}{training.hours === null ? "" : ` · ${training.hours} hours`}</p></div>
-        {editable ? <div className="flex gap-2"><Button onClick={() => setEditing(training)} size="sm" type="button" variant="outline">Edit</Button><Button onClick={() => { setDeleteError(null); setDeleting(training); }} size="sm" type="button" variant="destructive">Delete</Button></div> : null}
+        {editable ? <div className="flex gap-2"><Button onClick={() => setEditing(training)} size="sm" type="button" variant="outline">Edit</Button><Button aria-label={`Delete training record ${training.course_name}`} onClick={() => { setNotice(null); setDeleting(training.id); }} size="sm" type="button" variant="destructive">Delete</Button></div> : null}
       </li>) : <li className={emptyItemClassName}>No training recorded.</li>}
     </ul>
-    {!editable ? null : deleting ? <div aria-labelledby="delete-training-title" className="mt-4 rounded-xl border border-destructive/30 bg-destructive/5 p-4" role="dialog">
-      <h3 className="font-medium" id="delete-training-title">Delete training record?</h3><p className="mt-1 text-sm text-muted-foreground">This permanently removes “{deleting.course_name}”.</p>
-      {deleteError ? <p className="mt-2 text-sm text-destructive" role="alert">{deleteError}</p> : null}
-      <div className="mt-3 flex gap-2"><Button disabled={remove.isPending} onClick={() => void deleteTraining()} size="sm" type="button" variant="destructive">{remove.isPending ? "Deleting…" : "Delete training"}</Button><Button disabled={remove.isPending} onClick={() => setDeleting(null)} size="sm" type="button" variant="outline">Cancel</Button></div>
-    </div> : null}
+    {notice ? <p className="mt-3 text-sm font-medium text-emerald-700 dark:text-emerald-400" role="status">{notice}</p> : null}
+    <DeleteRecordDialog entityId={deleting} entityType="training_record" noun="training record" onClose={() => setDeleting(null)} onDeleted={() => setNotice("The training record was deleted successfully.")} />
     {!editable ? null : editing ? <div className="mt-4"><div className="flex items-center justify-between"><h3 className="font-medium">Edit training</h3><Button onClick={() => setEditing(null)} size="sm" type="button" variant="ghost">Cancel edit</Button></div><RecordEntryForm employeeId={employeeId} key={editing.id} kind="training" onSaved={async (input, id) => { await save.mutateAsync({ id, input: input as never }); setEditing(null); }} pending={save.isPending} training={editing} /></div> : <RecordEntryForm employeeId={employeeId} kind="training" onSaved={async (input) => { await save.mutateAsync({ input: input as never }); }} pending={save.isPending} />}
   </InfoCard>;
 }
@@ -255,6 +228,7 @@ export function EmployeeRecordDetail({ employeeId }: { employeeId: string }) {
   const active = parseRecordTab(searchParams.get("tab"));
   // View mode is read-only; `?mode=edit` (the directory Edit link or "Edit details") unlocks every section.
   const editing = searchParams.get("mode") === "edit";
+  const editingOfficial = editing && active === "official";
   const saved = searchParams.get("saved");
   const savedMessage = saved === "created" || saved === "edited" ? savedMessages[saved] : null;
   const panelsRef = useRef<HTMLDivElement>(null);
@@ -340,7 +314,8 @@ export function EmployeeRecordDetail({ employeeId }: { employeeId: string }) {
       tags={activity.certificationNames}
     />
 
-    <div className="grid gap-6 lg:grid-cols-[15rem_minmax(0,1fr)] 2xl:grid-cols-[15rem_minmax(0,1fr)_21rem]">
+    {/* While the official record is being edited the form takes the full width and Recent activity moves below it. */}
+    <div className={cn("grid gap-6 lg:grid-cols-[15rem_minmax(0,1fr)]", !editingOfficial && "2xl:grid-cols-[15rem_minmax(0,1fr)_21rem]")}>
       <aside className="min-w-0 lg:sticky lg:top-20 lg:self-start">
         <div className="lg:rounded-2xl lg:border lg:bg-card lg:p-3 lg:shadow-sm">
           <p className="hidden px-2 pt-1 pb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase lg:block">Modules</p>
@@ -353,7 +328,7 @@ export function EmployeeRecordDetail({ employeeId }: { employeeId: string }) {
           <div aria-labelledby={`rec-tab-${tab.key}`} hidden={tab.key !== active} id={`rec-panel-${tab.key}`} key={tab.key} role="tabpanel">{panels[tab.key]}</div>
         ))}
       </div>
-      <InfoCard className="self-start lg:col-start-2 2xl:col-start-3 2xl:row-start-1" icon={Activity} id="recent-activity" title="Recent activity">
+      <InfoCard className={cn("self-start lg:col-start-2", !editingOfficial && "2xl:col-start-3 2xl:row-start-1")} icon={Activity} id="recent-activity" title="Recent activity">
         {activity.loading ? <LoadingState label="Loading recent activity…" /> : <ActivityTimeline emptyMessage="No service history, eligibility, or certification / training entries yet." items={activity.items} />}
       </InfoCard>
     </div>

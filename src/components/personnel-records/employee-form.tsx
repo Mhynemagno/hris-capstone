@@ -24,9 +24,12 @@ const lockedNote = "This cannot be changed once saved.";
 /** A numbered group of fields: one column when narrow, two at medium widths, three when wide (sized to the container, not the viewport). */
 function FormSection({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <fieldset className="@container min-w-0">
+    <fieldset className="min-w-0">
       <legend className="mb-4 w-full border-b pb-2 font-heading text-lg font-semibold">{title}</legend>
-      <div className="grid gap-4 @lg:grid-cols-2 @2xl:grid-cols-3">{children}</div>
+      {/* The container sits on a plain div: fieldsets do not reliably act as query containers. */}
+      <div className="@container">
+        <div className="grid gap-4 @md:grid-cols-2 @xl:grid-cols-3">{children}</div>
+      </div>
     </fieldset>
   );
 }
@@ -148,7 +151,7 @@ export function EmployeeForm({ employee, account, onSaved, pending = false }: Em
         <FormField description="Format: +639XXXXXXXXX" error={e.phone} htmlFor="phone" label="Phone number" required>
           <PhoneInput defaultValue={employee?.phone} id="phone" name="phone" required />
         </FormField>
-        <div className="@lg:col-span-2 @2xl:col-span-3">
+        <div className="@md:col-span-2 @xl:col-span-3">
           <FormField error={e.address} htmlFor="address" label="Home address" required>
             <Input className="h-11" defaultValue={employee?.address ?? ""} id="address" name="address" autoComplete="street-address" required />
           </FormField>

@@ -260,7 +260,7 @@ describe("administration shared controls", () => {
     expect(dialog).not.toHaveTextContent("{");
   });
 
-  it("lists ranks by code and name without a delete action", () => {
+  it("lists ranks by code and name with a delete action", () => {
     hooks.useRanks.mockReturnValue({
       data: { rows: [{ id: 1, name: "Patrolman / Patrolwoman", code: "Pat", sort_order: 1, is_active: true, created_at: "", updated_at: "" }], count: 1 },
       error: null, isLoading: false, refetch: vi.fn(),
@@ -272,7 +272,7 @@ describe("administration shared controls", () => {
     expect(screen.getByRole("columnheader", { name: "Code" })).toBeInTheDocument();
     expect(screen.getByRole("cell", { name: "Pat" })).toBeInTheDocument();
     expect(screen.getByRole("cell", { name: "Patrolman / Patrolwoman" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /delete/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Delete Patrolman / Patrolwoman" })).toBeInTheDocument();
   });
 
   it("saves a rank with its name, code, and seniority order", async () => {

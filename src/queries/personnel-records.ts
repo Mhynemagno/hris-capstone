@@ -174,18 +174,5 @@ export async function savePersonnelEntry(kind: PersonnelKind, input: ServiceHist
   return result.data as PersonnelEntry;
 }
 
-/**
- * Deletes a qualification, certification, or training entry (HR-only via RLS;
- * the employee_record_history trigger keeps a copy). Entries used as promotion
- * evidence are protected by a foreign key; explain that instead of a raw error.
- */
-export async function deletePersonnelEntry(kind: PersonnelKind, id: string) {
-  if (kind === "serviceHistory") throw new Error("Service history is part of the official record and cannot be deleted.");
-  const { error } = await createBrowserSupabaseClient().from(childConfig[kind].table).delete().eq("id", id);
-  if (error && "code" in error && error.code === "23503") {
-    throw new Error("This entry is used as evidence in a promotion evaluation, so it cannot be deleted. Keep it so the evaluation stays verifiable.");
-  }
-  throwIfError(error);
-}
-
+// Personnel entries are deleted through delete_record (see queries/deletion.ts).
 export type { PersonnelKind };

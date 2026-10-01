@@ -162,7 +162,7 @@ export function LeaveTypeManager() {
         entityType="leave_type"
         noun="leave type"
         onClose={() => setDeleting(null)}
-        onDeleted={() => setNotice("The leave type was permanently deleted.")}
+        onDeleted={() => setNotice("The leave type was deleted successfully.")}
       />
     </section>
   );

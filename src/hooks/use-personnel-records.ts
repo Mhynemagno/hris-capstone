@@ -4,7 +4,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { queryKeys } from "@/lib/query-keys";
 import {
-  deletePersonnelEntry,
   getEmployee,
   getEmployeeForCurrentUser,
   getEmployeeForProfile,
@@ -65,9 +64,13 @@ export function useRemoveMyEmployeeProfilePhoto(employee: { id: string; profile_
   });
 }
 
+/** The cache key a kind's list is stored under, shared by the list query and the mutations that refresh it. */
+function personnelEntriesKey(kind: PersonnelKind, employeeId: string) {
+  return kind === "serviceHistory" ? queryKeys.personnelRecords.serviceHistory(employeeId) : kind === "qualification" ? queryKeys.personnelRecords.qualifications(employeeId) : kind === "certification" ? queryKeys.personnelRecords.certifications(employeeId) : queryKeys.personnelRecords.training(employeeId);
+}
+
 export function usePersonnelEntries(kind: PersonnelKind, employeeId: string) {
-  const key = kind === "serviceHistory" ? queryKeys.personnelRecords.serviceHistory(employeeId) : kind === "qualification" ? queryKeys.personnelRecords.qualifications(employeeId) : kind === "certification" ? queryKeys.personnelRecords.certifications(employeeId) : queryKeys.personnelRecords.training(employeeId);
-  return useQuery({ queryKey: key, queryFn: () => listPersonnelEntries(kind, employeeId), enabled: Boolean(employeeId) });
+  return useQuery({ queryKey: personnelEntriesKey(kind, employeeId), queryFn: () => listPersonnelEntries(kind, employeeId), enabled: Boolean(employeeId) });
 }
 
 export function useSaveEmployee() {
@@ -90,18 +93,7 @@ export function useSavePersonnelEntry(kind: PersonnelKind, employeeId: string) {
     mutationFn: ({ input, id }: { input: ChildInput; id?: string }) => savePersonnelEntry(kind, input, id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.personnelRecords.detail(employeeId) });
-      void queryClient.invalidateQueries({ queryKey: ["personnel-records", kind, employeeId] });
-    },
-  });
-}
-
-export function useDeletePersonnelEntry(kind: PersonnelKind, employeeId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => deletePersonnelEntry(kind, id),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.personnelRecords.detail(employeeId) });
-      void queryClient.invalidateQueries({ queryKey: ["personnel-records", kind, employeeId] });
+      void queryClient.invalidateQueries({ queryKey: personnelEntriesKey(kind, employeeId) });
     },
   });
 }

@@ -251,7 +251,7 @@ export function PromotionCriteriaManager() {
         entityType="promotion_criterion"
         noun="promotion criteria"
         onClose={() => setDeletingId(null)}
-        onDeleted={() => setNotice("The promotion criteria were permanently deleted.")}
+        onDeleted={() => setNotice("The promotion criteria were deleted successfully.")}
       />
     </div>
   );

@@ -56,9 +56,9 @@ describe("RecordEntryForm", () => {
     const onSaved = vi.fn().mockResolvedValue(undefined);
     render(<RecordEntryForm employeeId={employeeId} kind="serviceHistory" onSaved={onSaved} />);
 
-    await user.selectOptions(screen.getByLabelText("Unit / Section"), "4");
+    await user.selectOptions(screen.getByLabelText(/^Unit \/ Section/), "4");
     expect(screen.getByRole("option", { name: "PAT — Patrolman / Patrolwoman" })).toBeInTheDocument();
-    await user.selectOptions(screen.getByLabelText("Rank"), "9");
+    await user.selectOptions(screen.getByLabelText(/^Rank/), "9");
     await user.type(screen.getByLabelText(/start date/i), "2025-01-01");
     expect(screen.getByLabelText(/end date/i)).toHaveAttribute("min", "2025-01-01");
     await user.type(screen.getByLabelText("Remarks"), "Transferred");
@@ -73,6 +73,20 @@ describe("RecordEntryForm", () => {
     expect(onSaved.mock.calls[0]![0]).not.toHaveProperty("employmentTitle");
     expect(screen.queryByLabelText(/employment title/i)).not.toBeInTheDocument();
     expect(await screen.findByRole("status")).toHaveTextContent("Service history added.");
+  });
+
+  it("requires a unit / section and a rank for service history but not an end date", async () => {
+    const user = userEvent.setup();
+    const onSaved = vi.fn();
+    render(<RecordEntryForm employeeId={employeeId} kind="serviceHistory" onSaved={onSaved} />);
+
+    await user.type(screen.getByLabelText(/start date/i), "2025-01-01");
+    await user.click(screen.getByRole("button", { name: "Add service history" }));
+
+    expect(await screen.findByText("Choose a unit / section.")).toBeInTheDocument();
+    expect(screen.getByText("Choose a rank.")).toBeInTheDocument();
+    expect(screen.getByLabelText(/end date/i)).not.toBeRequired();
+    expect(onSaved).not.toHaveBeenCalled();
   });
 
   it("records a certification / training with a completion date and optional remarks only", async () => {

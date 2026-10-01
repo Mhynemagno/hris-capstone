@@ -86,7 +86,7 @@ export function HrJobList() {
         entityType="job_opening"
         noun="draft opening"
         onClose={() => setDeletingId(null)}
-        onDeleted={() => setNotice("The draft opening was permanently deleted.")}
+        onDeleted={() => setNotice("The draft opening was deleted successfully.")}
       />
     </div>
   );

@@ -74,15 +74,11 @@ describe("EmployeeDirectory", () => {
     expect(await screen.findByRole("alertdialog")).toBeInTheDocument();
   });
 
-  it("flags a badge number saved before the 0-00000 format with a link to fix it", () => {
+  it("shows neither the badge number nor a badge-number prompt under the name", () => {
     mocks.useEmployeeDirectory.mockReturnValue({ data: { rows: [{ ...employee, employee_number: "EMP-2026-123" }], count: 1 }, error: null, isLoading: false });
     render(<EmployeeDirectory />);
-
-    expect(screen.getByRole("link", { name: /update to 0-00000 for ana reyes/i })).toHaveAttribute("href", `/hr/employees/${employee.id}?tab=official&mode=edit`);
-  });
-
-  it("does not flag a badge number already in the 0-00000 format", () => {
-    render(<EmployeeDirectory />);
+    expect(screen.getByRole("cell", { name: "Reyes" })).toBeInTheDocument();
+    expect(screen.queryByText("EMP-2026-123")).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /update to 0-00000/i })).not.toBeInTheDocument();
   });
 

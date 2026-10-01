@@ -8,7 +8,7 @@ vi.mock("@/lib/supabase/client", () => ({
   createBrowserSupabaseClient: () => ({ from, rpc, storage: { from: storageFrom } }),
 }));
 
-import { deletePersonnelEntry, getEmployeeProfilePhotoUrl, listUnlinkedEmployeeAccounts, replaceMyEmployeeProfilePhoto, saveEmployee } from "./personnel-records";
+import { getEmployeeProfilePhotoUrl, listUnlinkedEmployeeAccounts, replaceMyEmployeeProfilePhoto, saveEmployee } from "./personnel-records";
 
 const employee = {
   id: "00000000-0000-0000-0000-000000000010",
@@ -124,18 +124,5 @@ describe("personnel-record queries", () => {
 
       expect(table.insert.mock.calls[0]![0]).toMatchObject({ profile_id: null, department_id: 3, rank_id: 7 });
     });
-  });
-
-  it("explains when a qualification cannot be deleted because promotion evidence uses it", async () => {
-    const eq = vi.fn().mockResolvedValue({ error: { code: "23503", message: "violates foreign key constraint" } });
-    from.mockReturnValue({ delete: () => ({ eq }) });
-
-    await expect(deletePersonnelEntry("qualification", "00000000-0000-4000-8000-000000000001")).rejects.toThrow(/used as evidence in a promotion evaluation/);
-    expect(from).toHaveBeenCalledWith("qualifications");
-  });
-
-  it("never deletes official service history", async () => {
-    await expect(deletePersonnelEntry("serviceHistory", "00000000-0000-4000-8000-000000000001")).rejects.toThrow(/cannot be deleted/);
-    expect(from).not.toHaveBeenCalled();
   });
 });

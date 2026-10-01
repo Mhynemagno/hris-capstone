@@ -136,6 +136,7 @@ export function RecordEntryForm({ employeeId, kind, onSaved, pending = false, tr
           rankError={e.rankId}
           rankId={rankId}
           rankName="rankId"
+          required
         />
       ) : null}
       {config.primary ? (

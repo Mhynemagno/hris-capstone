@@ -12,6 +12,13 @@ const invalidationKeys: Record<DeletableEntityType, readonly (readonly string[])
   managed_user: [["administration", "users"], ["administration", "roles"], ["administration", "audit-logs"], ["personnel-records"]],
   notification: [["notifications"]],
   employee: [["personnel-records"], ["reporting"], ["administration", "audit-logs"]],
+  department: [["administration", "departments"], ["personnel-records"], ["recruitment"], ["administration", "audit-logs"]],
+  rank: [["administration", "ranks"], ["personnel-records"], ["promotion-eligibility"], ["recruitment"], ["administration", "audit-logs"]],
+  unit_station: [["administration", "unit-stations"], ["personnel-records", "unit-stations"], ["deployment-tracking"], ["administration", "audit-logs"]],
+  service_history: [["personnel-records"], ["administration", "audit-logs"]],
+  qualification: [["personnel-records"], ["promotion-eligibility"], ["administration", "audit-logs"]],
+  certification: [["personnel-records"], ["promotion-eligibility"], ["administration", "audit-logs"]],
+  training_record: [["personnel-records"], ["promotion-eligibility"], ["administration", "audit-logs"]],
 };
 
 export function useDeletionImpact(entityType: DeletableEntityType, entityId: string | number | null) {
@@ -27,7 +34,7 @@ export function useDeletionImpact(entityType: DeletableEntityType, entityId: str
 export function useDeleteRecord(entityType: DeletableEntityType) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (entityId: string | number) => deleteRecord(entityType, entityId),
+    mutationFn: ({ entityId, force = false }: { entityId: string | number; force?: boolean }) => deleteRecord(entityType, entityId, force),
     onSuccess: () => {
       for (const key of invalidationKeys[entityType]) void client.invalidateQueries({ queryKey: [...key] });
     },

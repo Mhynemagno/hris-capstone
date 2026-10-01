@@ -11,8 +11,8 @@ select extensions.is(
     from public.departments
     where is_active
   ),
-  7::bigint,
-  'Only the seven client-provided units / sections are active'
+  8::bigint,
+  'Only the eight client-provided units / sections are active'
 );
 
 select extensions.is(
@@ -23,7 +23,7 @@ select extensions.is(
   ),
   'Administrative and Resource Management Section (SARMS) | Deputy Chief of Police for Administration | '
     || 'Deputy Chief of Police for Operations | Investigation and Detective Management Section (SIDMS) | '
-    || 'Office of the Chief of Police | Traffic and Investigation Section | Women and Children Protection Desk (WCPD)',
+    || 'Office of the Chief of Police | Police Community Precinct / Sub-Stations | Traffic and Investigation Section | Women and Children Protection Desk (WCPD)',
   'Active units / sections match the client list exactly'
 );
 
