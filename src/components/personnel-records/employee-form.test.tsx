@@ -288,6 +288,23 @@ describe("EmployeeForm", () => {
     }));
   });
 
+  it("hides a saved inactive unit / section and makes HR choose an active one", async () => {
+    const onSaved = vi.fn();
+    const user = userEvent.setup();
+    render(<EmployeeForm employee={{ ...completeEmployee, department_id: 5 }} onSaved={onSaved} />);
+
+    const unit = screen.getByLabelText(/^unit \/ section/i);
+    expect(within(unit).queryByRole("option", { name: /legacy unit/i })).not.toBeInTheDocument();
+    expect(unit).toHaveValue("");
+
+    await user.click(screen.getByRole("button", { name: /save employee/i }));
+    expect(onSaved).not.toHaveBeenCalled();
+
+    await user.selectOptions(unit, "4");
+    await user.click(screen.getByRole("button", { name: /save employee/i }));
+    expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({ departmentId: 4 }));
+  });
+
   it("offers every active rank in every department and keeps the rank when the department changes", async () => {
     const user = userEvent.setup();
     render(<EmployeeForm employee={existingEmployee} onSaved={() => undefined} />);

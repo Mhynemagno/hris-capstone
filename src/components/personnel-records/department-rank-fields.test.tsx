@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildRankChoices } from "./department-rank-fields";
+import { buildDepartmentChoices, buildRankChoices } from "./department-rank-fields";
 
 const stamp = { created_at: "", updated_at: "" };
 const ranks = [
@@ -22,5 +22,23 @@ describe("buildRankChoices", () => {
 
   it("keeps the saved rank submittable while ranks load", () => {
     expect(buildRankChoices(undefined, 5)).toEqual([{ value: "5", label: "Current rank (loading…)" }]);
+  });
+});
+
+const departments = [
+  { id: 1, name: "Traffic", is_active: true, ...stamp },
+  { id: 5, name: "Legacy Unit", is_active: false, ...stamp },
+];
+
+describe("buildDepartmentChoices", () => {
+  it("hides inactive units / sections, even the record's saved one", () => {
+    expect(buildDepartmentChoices(departments as never, 5)).toEqual([{ value: "1", label: "Traffic" }]);
+  });
+
+  it("lists inactive units / sections labelled when not limited to active", () => {
+    expect(buildDepartmentChoices(departments as never, null, { activeOnly: false })).toEqual([
+      { value: "1", label: "Traffic" },
+      { value: "5", label: "Legacy Unit (inactive)" },
+    ]);
   });
 });
