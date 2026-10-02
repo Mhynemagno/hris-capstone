@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+
 import { FormField } from "@/components/ui/form-field";
 import { NativeSelect } from "@/components/ui/native-select";
 import { useDepartmentOptions, useRankOptions } from "@/hooks/use-administration";
@@ -14,9 +16,9 @@ type ChoiceOptions = {
 };
 
 /**
- * Unit / Section (department) choices for a dropdown. Inactive departments are hidden unless
- * they are the record's saved value, which stays selectable and is labelled
- * "(inactive)" so editing never silently drops it.
+ * Unit / Section (department) choices for a dropdown. Inactive departments are always
+ * hidden when `activeOnly` is set, even if they are the record's saved value, so a
+ * record on an inactive unit / section must be moved to an active one when edited.
  */
 export function buildDepartmentChoices(
   departments: readonly Department[] | undefined,
@@ -25,7 +27,7 @@ export function buildDepartmentChoices(
 ): SelectChoice[] {
   const rows = departments ?? [];
   const choices = rows
-    .filter((department) => !activeOnly || department.is_active || department.id === savedDepartmentId)
+    .filter((department) => !activeOnly || department.is_active)
     .map((department) => ({
       value: String(department.id),
       label: department.is_active ? department.name : `${department.name} (inactive)`,
@@ -106,6 +108,11 @@ export function DepartmentField({
 }: DepartmentFieldProps) {
   const departments = useDepartmentOptions();
   const choices = buildDepartmentChoices(departments.data, savedId, { activeOnly });
+  const valueIsHidden = Boolean(value) && Boolean(departments.data) && !choices.some((choice) => choice.value === value);
+  useEffect(() => {
+    // A saved inactive unit / section is not offered, so clear it and make HR pick an active one.
+    if (valueIsHidden) onChange("");
+  }, [valueIsHidden, onChange]);
   const description = departments.isLoading
     ? "Loading units / sections…"
     : departments.error
