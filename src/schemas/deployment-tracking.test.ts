@@ -11,7 +11,9 @@ describe("deployment tracking schemas", () => {
       location: " San Juan ",
       unit: " ",
       startsOn: "2026-09-01",
-      status: "active",
+      status: "ongoing",
+      deploymentType: "Public Assembly",
+      eventOperation: "Rally",
       notes: " Relief duty ",
     })).toMatchObject({
       location: "San Juan",
@@ -22,7 +24,7 @@ describe("deployment tracking schemas", () => {
   });
 
   it("rejects a missing location, missing remarks, reversed dates, and unsupported statuses", () => {
-    const base = { employeeId, location: "San Juan", unit: "Operations", startsOn: "2026-09-01", status: "active", notes: "Relief duty" };
+    const base = { employeeId, location: "San Juan", unit: "Operations", startsOn: "2026-09-01", status: "ongoing", deploymentType: "Public Assembly", eventOperation: "Rally", notes: "Relief duty" };
     expect(deploymentInputSchema.safeParse(base).success).toBe(true);
     const noLocation = deploymentInputSchema.safeParse({ ...base, location: " " });
     expect(noLocation.error?.issues).toEqual([expect.objectContaining({ path: ["location"], message: "Location is required." })]);
@@ -31,22 +33,32 @@ describe("deployment tracking schemas", () => {
     expect(deploymentInputSchema.safeParse({ ...base, notes: undefined }).success).toBe(false);
     expect(deploymentInputSchema.safeParse({ ...base, startsOn: "2026-09-03", endsOn: "2026-09-01" }).success).toBe(false);
     expect(deploymentInputSchema.safeParse({ ...base, status: "planned" }).success).toBe(false);
+    expect(deploymentInputSchema.safeParse({ ...base, status: "active" }).success).toBe(false);
+  });
+
+  it("accepts the four statuses and requires a listed deployment type and event / operation", () => {
+    const base = { employeeId, location: "San Juan", startsOn: "2026-09-01", status: "scheduled", deploymentType: "Public Assembly", eventOperation: "Rally", notes: "Relief duty" };
+    for (const status of ["scheduled", "ongoing", "completed", "cancelled"]) expect(deploymentInputSchema.safeParse({ ...base, status }).success).toBe(true);
+    for (const deploymentType of ["Public Assembly", "Special Event", "Election Security", "Disaster Response"]) expect(deploymentInputSchema.safeParse({ ...base, deploymentType }).success).toBe(true);
+    for (const eventOperation of ["Rally", "Fiesta / Major Event", "Election Period", "Flood / Emergency", "Government Event"]) expect(deploymentInputSchema.safeParse({ ...base, eventOperation }).success).toBe(true);
+    expect(deploymentInputSchema.safeParse({ ...base, deploymentType: "" }).error?.issues).toEqual([expect.objectContaining({ path: ["deploymentType"], message: "Select a deployment type." })]);
+    expect(deploymentInputSchema.safeParse({ ...base, eventOperation: "Parade" }).error?.issues).toEqual([expect.objectContaining({ path: ["eventOperation"], message: "Select an event / operation." })]);
   });
 
   it("no longer takes an assignment role or project", () => {
-    const parsed = deploymentInputSchema.parse({ employeeId, location: "San Juan", assignmentRole: "Patrol", project: "Oplan", startsOn: "2026-09-25", status: "active", notes: "Relief" });
+    const parsed = deploymentInputSchema.parse({ employeeId, location: "San Juan", assignmentRole: "Patrol", project: "Oplan", startsOn: "2026-09-25", status: "ongoing", deploymentType: "Public Assembly", eventOperation: "Rally", notes: "Relief" });
     expect(parsed).not.toHaveProperty("assignmentRole");
     expect(parsed).not.toHaveProperty("project");
   });
 
   it("accepts its own parsed output, so the form and the query can both validate", () => {
-    const once = deploymentInputSchema.parse({ employeeId: "3f1e2d3c-4b5a-4968-8776-655443322110", location: "San Juan", unit: "", startsOn: "2026-09-25", status: "active", notes: "Relief" });
+    const once = deploymentInputSchema.parse({ employeeId: "3f1e2d3c-4b5a-4968-8776-655443322110", location: "San Juan", unit: "", startsOn: "2026-09-25", status: "ongoing", deploymentType: "Public Assembly", eventOperation: "Rally", notes: "Relief" });
     expect(once).toMatchObject({ unit: null, notes: "Relief" });
     expect(deploymentInputSchema.parse(once)).toEqual(once);
   });
 
   it("caps page size and rejects a reversed reporting range", () => {
-    expect(deploymentFiltersSchema.parse({ page: "2", pageSize: "200", status: "active" })).toMatchObject({ page: 2, pageSize: 100, status: "active" });
+    expect(deploymentFiltersSchema.parse({ page: "2", pageSize: "200", status: "ongoing" })).toMatchObject({ page: 2, pageSize: 100, status: "ongoing" });
     expect(deploymentFiltersSchema.safeParse({ startsOn: "2026-09-03", endsOn: "2026-09-01" }).success).toBe(false);
   });
 });

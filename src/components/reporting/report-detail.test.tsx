@@ -52,7 +52,7 @@ describe("ReportDetail filters", () => {
   it("changes the status options with the report", () => {
     const { rerender } = render(<ReportDetail reportKey="deployments" role="hr_personnel" />);
     expect(screen.getByLabelText("Deployment status")).toBeInTheDocument();
-    expect(optionValues(screen.getByLabelText("Deployment status"))).toEqual(["", "active", "rejected"]);
+    expect(optionValues(screen.getByLabelText("Deployment status"))).toEqual(["", "scheduled", "ongoing", "completed", "cancelled"]);
 
     rerender(<ReportDetail reportKey="employee-performance" role="hr_personnel" />);
     expect(optionValues(screen.getByLabelText("Employment status"))).toEqual(["", "active", "on_leave"]);
@@ -73,9 +73,9 @@ describe("ReportDetail filters", () => {
     expect(within(department).getAllByRole("option").map((option) => option.textContent)).toEqual(["All units / sections", "Criminal Police"]);
 
     await user.selectOptions(department, "1");
-    await user.selectOptions(screen.getByLabelText("Deployment status"), "active");
+    await user.selectOptions(screen.getByLabelText("Deployment status"), "ongoing");
 
-    expect(mocks.useReport).toHaveBeenLastCalledWith(expect.objectContaining({ reportKey: "deployments", departmentId: 1, status: "active", page: 1 }), "management");
+    expect(mocks.useReport).toHaveBeenLastCalledWith(expect.objectContaining({ reportKey: "deployments", departmentId: 1, status: "ongoing", page: 1 }), "management");
     await user.click(screen.getByRole("button", { name: "Clear filters" }));
     expect(mocks.useReport).toHaveBeenLastCalledWith(expect.objectContaining({ departmentId: undefined, status: undefined }), "management");
   });

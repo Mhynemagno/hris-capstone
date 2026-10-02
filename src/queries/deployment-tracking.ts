@@ -67,7 +67,7 @@ export async function listEmployeeOptions(): Promise<EmployeeOption[]> {
  * assignment role, so the location is stored there, and the project is cleared.
  */
 function rpcPayload(input: ReturnType<typeof deploymentInputSchema.parse>) {
-  return { target_location: input.location, target_unit: input.unit, target_project: null, target_assignment_role: input.location, target_starts_on: input.startsOn, target_ends_on: input.endsOn, target_status: input.status, target_notes: input.notes };
+  return { target_location: input.location, target_unit: input.unit, target_project: null, target_assignment_role: input.location, target_starts_on: input.startsOn, target_ends_on: input.endsOn, target_status: input.status, target_notes: input.notes, target_deployment_type: input.deploymentType, target_event_operation: input.eventOperation };
 }
 
 export async function createDeployment(input: unknown) {

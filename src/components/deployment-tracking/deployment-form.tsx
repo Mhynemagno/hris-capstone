@@ -10,13 +10,10 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { useEmployeeOptions } from "@/hooks/use-deployment-tracking";
-import type { Deployment, DeploymentStatus } from "@/lib/types/database";
-import { deploymentInputSchema, type DeploymentInput } from "@/schemas/deployment-tracking";
+import type { Deployment } from "@/lib/types/database";
+import { DEPLOYMENT_STATUSES, DEPLOYMENT_TYPES, deploymentInputSchema, EVENT_OPERATIONS, type DeploymentInput } from "@/schemas/deployment-tracking";
 
-const statusLabels: Record<DeploymentStatus, string> = {
-  active: "Active",
-  rejected: "Rejected",
-};
+import { deploymentStatusLabels } from "./deployment-status-badge";
 
 type DeploymentFormProps = {
   deployment?: Deployment;
@@ -99,9 +96,21 @@ export function DeploymentForm({ deployment, onSaved, pending = false }: Deploym
       </FormField>
       {/* Unit / Assignment is no longer asked for; an existing value is carried through unchanged. */}
       {deployment?.unit ? <input name="unit" type="hidden" value={deployment.unit} /> : null}
+      <FormField error={e.deploymentType} htmlFor="deployment-type" label="Deployment type" required>
+        <NativeSelect defaultValue={deployment?.deployment_type ?? ""} id="deployment-type" name="deploymentType" required>
+          <option value="">Select a deployment type</option>
+          {DEPLOYMENT_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}
+        </NativeSelect>
+      </FormField>
+      <FormField error={e.eventOperation} htmlFor="event-operation" label="Event / Operation" required>
+        <NativeSelect defaultValue={deployment?.event_operation ?? ""} id="event-operation" name="eventOperation" required>
+          <option value="">Select an event / operation</option>
+          {EVENT_OPERATIONS.map((event) => <option key={event} value={event}>{event}</option>)}
+        </NativeSelect>
+      </FormField>
       <FormField error={e.status} htmlFor="status" label="Status" required>
-        <NativeSelect defaultValue={deployment?.status ?? "active"} id="status" name="status">
-          {(Object.keys(statusLabels) as DeploymentStatus[]).map((status) => <option key={status} value={status}>{statusLabels[status]}</option>)}
+        <NativeSelect defaultValue={deployment?.status ?? "scheduled"} id="status" name="status">
+          {DEPLOYMENT_STATUSES.map((status) => <option key={status} value={status}>{deploymentStatusLabels[status]}</option>)}
         </NativeSelect>
       </FormField>
       <FormField error={e.startsOn} htmlFor="starts-on" label="Start date" required>

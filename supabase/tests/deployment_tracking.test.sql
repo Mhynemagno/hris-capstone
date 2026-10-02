@@ -3,13 +3,13 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(24);
+select extensions.plan(26);
 
 select extensions.has_table('public', 'deployments', 'Deployments table exists');
 select extensions.has_table('public', 'deployment_history', 'Deployment history table exists');
 select extensions.has_column('public', 'deployments', 'unit_station_id', 'Deployments retain the selected Unit/Station ID');
-select extensions.has_function('public', 'create_deployment', array['uuid', 'text', 'text', 'text', 'text', 'date', 'date', 'text', 'text'], 'Deployment creation RPC exists');
-select extensions.has_function('public', 'update_deployment', array['uuid', 'timestamp with time zone', 'text', 'text', 'text', 'text', 'date', 'date', 'text', 'text'], 'Deployment update RPC exists');
+select extensions.has_function('public', 'create_deployment', array['uuid', 'text', 'text', 'text', 'text', 'date', 'date', 'text', 'text', 'text', 'text'], 'Deployment creation RPC exists');
+select extensions.has_function('public', 'update_deployment', array['uuid', 'timestamp with time zone', 'text', 'text', 'text', 'text', 'date', 'date', 'text', 'text', 'text', 'text'], 'Deployment update RPC exists');
 select extensions.ok(coalesce((select relrowsecurity from pg_class where oid = to_regclass('public.deployments')), false), 'Deployments use RLS');
 select extensions.ok(coalesce((select relrowsecurity from pg_class where oid = to_regclass('public.deployment_history')), false), 'Deployment history uses RLS');
 
@@ -43,33 +43,47 @@ set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000601';
 select extensions.lives_ok(
   $$select public.create_deployment(
     '00000000-0000-4000-8000-000000000701'::uuid, 'Central station', null, null,
-    'Patrol officer', '2026-09-01', null, 'active', 'Primary assignment'
+    'Patrol officer', '2026-09-01', null, 'ongoing', 'Primary assignment', 'Public Assembly', 'Rally'
   )$$,
-  'HR creates an active deployment'
+  'HR creates an ongoing deployment'
 );
 select extensions.throws_ok(
   $$select public.create_deployment(
     '00000000-0000-4000-8000-000000000701'::uuid, null, 'Unknown unit', null,
-    'Invalid unit assignment', '2026-09-01', null, 'active', null
+    'Invalid unit assignment', '2026-09-01', null, 'ongoing', null, 'Public Assembly', 'Rally'
   )$$,
   '22023', 'Select an active Unit/Station from the catalogue.', 'Deployment RPC rejects a unit outside the catalogue'
 );
 select extensions.lives_ok(
   $$select public.create_deployment(
     '00000000-0000-4000-8000-000000000701'::uuid, null, 'Operations', 'Community project',
-    'Project liaison', '2026-09-01', null, 'rejected', null
+    'Project liaison', '2026-09-01', null, 'cancelled', null, 'Public Assembly', 'Rally'
   )$$,
-  'HR can create an overlapping rejected deployment'
+  'HR can create an overlapping cancelled deployment'
 );
 select extensions.is((select count(*) from public.deployments where employee_id = '00000000-0000-4000-8000-000000000701'::uuid), 2::bigint, 'Concurrent assignments are retained');
 select extensions.throws_ok(
   $$select public.create_deployment(
     '00000000-0000-4000-8000-000000000701'::uuid, 'Central station', null, null,
-    'Patrol officer', '2026-09-01', null, 'planned', null
+    'Patrol officer', '2026-09-01', null, 'planned', null, 'Public Assembly', 'Rally'
   )$$,
   '22023', 'Deployment status is invalid.', 'Retired deployment statuses are rejected'
 );
 
+select extensions.throws_ok(
+  $$select public.create_deployment(
+    '00000000-0000-4000-8000-000000000701'::uuid, 'Central station', null, null,
+    'Patrol officer', '2026-09-01', null, 'scheduled', null, 'Parade', 'Rally'
+  )$$,
+  '22023', 'Deployment type is invalid.', 'Deployment types outside the list are rejected'
+);
+select extensions.throws_ok(
+  $$select public.create_deployment(
+    '00000000-0000-4000-8000-000000000701'::uuid, 'Central station', null, null,
+    'Patrol officer', '2026-09-01', null, 'scheduled', null, 'Public Assembly', 'Parade'
+  )$$,
+  '22023', 'Event / operation is invalid.', 'Events / operations outside the list are rejected'
+);
 set local role postgres;
 select set_config('test.deployment_id', (select id::text from public.deployments where assignment_role = 'Patrol officer'), true);
 select set_config('test.expected_updated_at', (select updated_at::text from public.deployments where id::text = current_setting('test.deployment_id')), true);
@@ -81,7 +95,7 @@ select extensions.is((select count(*) from public.deployment_history), 2::bigint
 select extensions.throws_ok(
   $$select public.create_deployment(
     '00000000-0000-4000-8000-000000000701'::uuid, 'Central station', null, null,
-    'Unauthorised edit', '2026-09-01', null, 'active', null
+    'Unauthorised edit', '2026-09-01', null, 'ongoing', null, 'Public Assembly', 'Rally'
   )$$,
   '42501', null, 'Employee cannot create a deployment'
 );
@@ -94,17 +108,17 @@ set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000601';
 select extensions.lives_ok(
   $$select public.update_deployment(
     current_setting('test.deployment_id')::uuid, current_setting('test.expected_updated_at')::timestamptz,
-    'Central station', null, null, 'Patrol officer', '2026-09-01', '2026-09-30', 'rejected', 'Assignment rejected'
+    'Central station', null, null, 'Patrol officer', '2026-09-01', '2026-09-30', 'cancelled', 'Assignment cancelled', 'Public Assembly', 'Rally'
   )$$,
-  'HR can reject a deployment'
+  'HR can cancel a deployment'
 );
-select extensions.is((select status from public.deployments where id::text = current_setting('test.deployment_id')), 'rejected', 'Rejection updates the deployment status');
+select extensions.is((select status from public.deployments where id::text = current_setting('test.deployment_id')), 'cancelled', 'Cancelling updates the deployment status');
 select extensions.is((select count(*) from public.deployment_history where deployment_id::text = current_setting('test.deployment_id')), 2::bigint, 'Update appends immutable history');
 select set_config('test.current_updated_at', (select updated_at::text from public.deployments where id::text = current_setting('test.deployment_id')), true);
 select extensions.lives_ok(
   $$select public.update_deployment(
     current_setting('test.deployment_id')::uuid, current_setting('test.current_updated_at')::timestamptz,
-    'Central station', null, null, 'Patrol officer', '2026-09-01', null, 'rejected', 'Historic end-date check'
+    'Central station', null, null, 'Patrol officer', '2026-09-01', null, 'cancelled', 'Historic end-date check', 'Public Assembly', 'Rally'
   )$$,
   'A direct update cannot erase a historic end date'
 );
@@ -116,7 +130,7 @@ set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000601';
 select extensions.throws_ok(
   $$select public.update_deployment(
     current_setting('test.deployment_id')::uuid, current_setting('test.expected_updated_at')::timestamptz,
-    'Central station', null, null, 'Patrol officer', '2026-09-01', '2026-09-30', 'rejected', 'Stale update'
+    'Central station', null, null, 'Patrol officer', '2026-09-01', '2026-09-30', 'cancelled', 'Stale update', 'Public Assembly', 'Rally'
   )$$,
   'P0001', null, 'Stale update is refused'
 );
