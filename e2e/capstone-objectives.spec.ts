@@ -89,6 +89,9 @@ async function createDeployment(page: Page, location: string) {
   await page.getByLabel(/^Location/).fill(location);
   await page.getByLabel(/^Remarks/).fill("Initial assignment");
   await page.getByLabel(/^Start date/).fill(isoDate(0));
+  await page.getByLabel(/^Deployment type/).selectOption("Public Assembly");
+  await page.getByLabel(/^Event \/ Operation/).selectOption("Rally");
+  await page.getByLabel(/^Status/).selectOption("ongoing");
   await page.getByRole("button", { name: "Save deployment" }).click();
   await expect(page).toHaveURL(/\/hr\/deployments\/[0-9a-f-]{36}$/, { timeout: 30_000 });
 }

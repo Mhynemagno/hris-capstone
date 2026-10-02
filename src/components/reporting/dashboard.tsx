@@ -78,6 +78,8 @@ const STATUS_COLORS: Record<string, string> = {
   late: "var(--status-warning)",
   pending: "var(--status-warning)",
   upcoming: "var(--chart-1)",
+  scheduled: "var(--status-warning)",
+  ongoing: "var(--chart-1)",
   planned: "var(--status-warning)",
   incomplete: "var(--status-serious)",
   "not ready": "var(--status-serious)",

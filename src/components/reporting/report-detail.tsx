@@ -56,8 +56,10 @@ export const REPORT_STATUS_FILTERS: Record<ReportKey, { label: string; options: 
   deployments: {
     label: "Deployment status",
     options: [
-      { value: "active", label: "Active" },
-      { value: "rejected", label: "Rejected" },
+      { value: "scheduled", label: "Scheduled" },
+      { value: "ongoing", label: "Ongoing" },
+      { value: "completed", label: "Completed" },
+      { value: "cancelled", label: "Cancelled" },
     ],
   },
   "attendance-leave": {

@@ -419,7 +419,7 @@ export type LeaveRequestHistory = {
   created_at: string;
 };
 
-export type DeploymentStatus = "active" | "rejected";
+export type DeploymentStatus = "scheduled" | "ongoing" | "completed" | "cancelled";
 
 export type Deployment = {
   id: string;
@@ -433,6 +433,8 @@ export type Deployment = {
   ends_on: string | null;
   status: DeploymentStatus;
   notes: string | null;
+  deployment_type: string | null;
+  event_operation: string | null;
   created_by_user_id: string | null;
   updated_by_user_id: string | null;
   created_at: string;
