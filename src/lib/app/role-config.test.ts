@@ -28,6 +28,7 @@ describe("role configuration", () => {
         { href: "/hr/attendance", label: "Attendance Records", group: "Attendance Management" },
         { href: "/reports/attendance-leave", label: "Attendance Report", group: "Attendance Management" },
         { href: "/reports", label: "Reports", group: "Insights" },
+        { href: "/hr/public-site", label: "Public Announcements", group: "Public Portal" },
       ],
     });
   });
@@ -68,5 +69,9 @@ describe("role configuration", () => {
       { href: "/applicant/documents", label: "Documents", icon: "FileText" },
       { href: "/applicant/applications", label: "Application Status", icon: "Clock" },
     ]);
+  });
+
+  it("gives HR one place to manage the public portal", () => {
+    expect(getRoleConfig("hr_personnel").navigation).toContainEqual({ href: "/hr/public-site", label: "Public Announcements", icon: "ScrollText", group: "Public Portal" });
   });
 });

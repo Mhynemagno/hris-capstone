@@ -163,7 +163,7 @@ RLS is on for both tables:
   - `save_announcement`, `set_announcement_status`, `delete_announcement`
   - `save_public_contact`, `delete_public_contact`, `reorder_public_contacts`
 - Each write adds an `audit_logs` row, following the existing audit pattern.
-- No seed contacts are invented. The landing page hides the Contact section until HR adds at least one entry.
+- **Placeholder contacts are seeded (changed 2026-10-04 at the user's request):** Station hotline `(02) 0000-0000`, HR office email `hr-office@example.com`, Station address `Address to follow, San Juan City, Metro Manila`, Office hours `Monday to Friday, 8:00 AM to 5:00 PM (to be confirmed)`. HR replaces them from `/hr/public-site`. The landing page still hides the Contact section whenever no contact is visible.
 
 ### HR management page
 - **`/hr/public-site`**, added to the HR sidebar as "Public Announcements" (icon `ScrollText`, group "Public Portal").

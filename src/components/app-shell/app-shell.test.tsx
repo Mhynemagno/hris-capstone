@@ -75,7 +75,7 @@ describe("AppShell", () => {
     );
 
     const navigation = screen.getByRole("navigation", { name: /main navigation/i });
-    for (const heading of ["Overview", "Recruitment", "Personnel Management", "Attendance Management", "Insights"]) {
+    for (const heading of ["Overview", "Recruitment", "Personnel Management", "Attendance Management", "Insights", "Public Portal"]) {
       expect(within(navigation).getByText(heading)).toBeInTheDocument();
     }
     expect(within(navigation).getByRole("link", { name: "Daily Attendance" })).toHaveAttribute("aria-current", "page");

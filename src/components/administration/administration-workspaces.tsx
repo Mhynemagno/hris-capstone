@@ -756,9 +756,9 @@ export function SettingsWorkspace() {
 // ---------------------------------------------------------------------------
 
 const AUDIT_ENTITY_SUGGESTIONS = [
-  "applications", "attendance_imports", "attendance_integration_settings", "attendance_unmatched_events", "deployments",
+  "announcements", "applications", "attendance_imports", "attendance_integration_settings", "attendance_unmatched_events", "deployments",
   "departments", "employees", "job_openings", "leave_requests", "leave_types", "organization_settings", "performance_ratings",
-  "profile_change_requests", "ranks", "profiles", "promotion_criteria", "promotion_evaluations", "unit_stations", "user_roles",
+  "profile_change_requests", "ranks", "profiles", "promotion_criteria", "promotion_evaluations", "public_contacts", "unit_stations", "user_roles",
 ];
 
 export function AuditLogsWorkspace() {

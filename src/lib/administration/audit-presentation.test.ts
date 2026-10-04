@@ -131,4 +131,10 @@ describe("presentAuditLog", () => {
   it("formats the table date without a time", () => {
     expect(formatAuditDate("2026-09-15T12:00:00Z")).toBe("September 15, 2026");
   });
+
+  it("names announcements and public contacts from their audit metadata", () => {
+    expect(presentAuditLog(auditLog({ entity_type: "announcements", entity_id: targetId, action: "status_changed", metadata: { title: "Road closure", from: "draft", to: "published" } }), lookups).recordLabel).toBe("Announcement “Road closure”");
+    expect(presentAuditLog(auditLog({ entity_type: "public_contacts", entity_id: targetId, action: "created", metadata: { label: "HR Office" } }), lookups).summary).toBe("Public contact “HR Office” created");
+    expect(presentAuditLog(auditLog({ entity_type: "public_contacts", entity_id: "all", action: "updated", metadata: { reordered: true, count: 3 } }), lookups).recordLabel).toBe("Public contact order");
+  });
 });

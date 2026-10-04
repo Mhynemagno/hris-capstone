@@ -245,4 +245,32 @@ test.describe("read-only and public journeys", () => {
     await page.getByRole("link", { name: new RegExp(title) }).first().click();
     await expect(page.getByRole("heading", { name: new RegExp(title) })).toBeVisible();
   });
+
+  test("an announcement HR publishes appears on the public landing page", async ({ page }) => {
+    const title = `E2E Announcement ${runId}`;
+    await signIn(page, "demo.hr@example.test", "/hr");
+    await page.goto("/hr/public-site");
+    await expect(page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Public Announcements" })).toHaveAttribute("aria-current", "page");
+
+    await page.getByRole("button", { name: "New announcement" }).click();
+    const form = page.getByRole("form", { name: "New announcement" });
+    await form.getByLabel(/^Title/).fill(title);
+    await form.getByLabel(/^Category/).selectOption("advisory");
+    await form.getByLabel(/^Summary/).fill("Road works near the station this weekend.");
+    await form.getByLabel(/^Announcement text/).fill("First paragraph.\n\nSecond paragraph.");
+    await form.getByRole("button", { name: "Save draft" }).click();
+    await expect(page.getByText(`${title} was saved as a draft.`)).toBeVisible();
+
+    await page.getByRole("button", { name: `Publish ${title}` }).click();
+    await expect(page.getByText(`${title} is now published on the landing page.`)).toBeVisible();
+    await signOut(page, "demo.hr@example.test");
+
+    await page.goto("/");
+    const announcements = page.getByRole("region", { name: "Announcements" });
+    await expect(announcements.getByRole("heading", { name: title })).toBeVisible();
+    await announcements.getByRole("link", { name: `Read more about ${title}` }).click();
+    await expect(page).toHaveURL(/\/announcements\/[0-9a-f-]{36}$/);
+    await expect(page.getByRole("heading", { level: 1, name: title })).toBeVisible();
+    await expect(page.getByText("Second paragraph.")).toBeVisible();
+  });
 });

@@ -74,6 +74,7 @@ export const ROLE_CONFIG: Record<AppRole, RoleConfig> = {
       { href: "/hr/attendance", label: "Attendance Records", icon: "Clock", group: "Attendance Management" },
       { href: "/reports/attendance-leave", label: "Attendance Report", icon: "ChartColumn", group: "Attendance Management" },
       { href: "/reports", label: "Reports", icon: "ChartColumn", group: "Insights" },
+      { href: "/hr/public-site", label: "Public Announcements", icon: "ScrollText", group: "Public Portal" },
     ],
   },
   applicant: {

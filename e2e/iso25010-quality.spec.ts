@@ -68,7 +68,7 @@ test.describe("Performance efficiency: time behaviour", () => {
 test.describe("Interaction capability (usability): accessibility", () => {
   const pages: [keyof typeof accounts | "public", string[]][] = [
     ["public", ["/", "/login", "/jobs"]],
-    ["hr", ["/hr", "/hr/employees", "/hr/employees/new", "/hr/leave-requests", "/hr/attendance", "/reports"]],
+    ["hr", ["/hr", "/hr/employees", "/hr/employees/new", "/hr/leave-requests", "/hr/attendance", "/hr/public-site", "/reports"]],
     ["employee", ["/employee", "/employee/leave/new", "/employee/attendance"]],
     ["management", ["/management"]],
   ];

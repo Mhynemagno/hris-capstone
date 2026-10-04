@@ -598,3 +598,39 @@ export type AttendanceUnmatchedEvent = {
   resolved_log_id: string | null;
   created_at: string;
 };
+
+export type AnnouncementCategory = "news" | "advisory" | "event" | "recruitment";
+export type AnnouncementStatus = "draft" | "published" | "archived";
+
+export type Announcement = {
+  id: string;
+  title: string;
+  summary: string;
+  body: string;
+  category: AnnouncementCategory;
+  status: AnnouncementStatus;
+  published_at: string | null;
+  created_by: string | null;
+  updated_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+/** The columns the landing page's announcement cards read. */
+export type PublishedAnnouncementCard = Pick<Announcement, "id" | "title" | "summary" | "category" | "published_at">;
+
+export type PublicContactKind = "phone" | "email" | "address" | "hours" | "facebook";
+
+export type PublicContact = {
+  id: string;
+  label: string;
+  kind: PublicContactKind;
+  value: string;
+  sort_order: number;
+  is_visible: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+/** The columns the landing page's Contact section reads. */
+export type VisibleContact = Pick<PublicContact, "id" | "label" | "kind" | "value" | "sort_order">;

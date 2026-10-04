@@ -26,7 +26,7 @@
   - `title` 1–150 characters, `summary` 1–300, `body` 1–10,000, contact `value` 1–300.
 - `published_at` is set when an announcement is first published and is never moved after that.
 - Writes happen only through the RPCs `save_announcement`, `set_announcement_status`, `delete_announcement` (drafts only), `save_public_contact`, `delete_public_contact` and `reorder_public_contacts`. Each is gated by `private.require_active_hr()` and inserts a `public.audit_logs` row.
-- No contact entries are seeded. The landing page hides its Contact section, and the matching header link, until at least one visible contact exists.
+- **Placeholder contacts are seeded (changed 2026-10-04 at the user's request).** Task 1b's migration adds four visible placeholder entries (hotline, email, address, office hours) that HR replaces later from `/hr/public-site`. The landing page still hides its Contact section, and the matching header link, whenever no contact is visible.
 - Announcement bodies are plain text. Blank lines separate paragraphs and single newlines become line breaks. Never use `dangerouslySetInnerHTML`.
 - Landing sections, in this order:
   1. Top bar ("Republic of the Philippines • Philippine National Police" and a live PST clock)
@@ -140,6 +140,9 @@ values
   ('00000000-0000-4000-8000-00000000d101', 'Published notice', 'Visible summary', 'Visible body', 'news', 'published', now()),
   ('00000000-0000-4000-8000-00000000d102', 'Draft notice', 'Draft summary', 'Draft body', 'advisory', 'draft', null),
   ('00000000-0000-4000-8000-00000000d103', 'Archived notice', 'Old summary', 'Old body', 'event', 'archived', '2026-01-01 00:00:00+00');
+
+-- Task 1b seeds placeholder contacts; these assertions count only their own fixtures.
+delete from public.public_contacts;
 
 insert into public.public_contacts (id, label, kind, value, sort_order, is_visible)
 values
@@ -614,6 +617,104 @@ feat: add public announcements and contacts tables with audited HR RPCs
 Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
 EOF
 )"
+```
+
+---
+
+### Task 1b: Seed placeholder contacts that HR replaces later
+
+The user asked for placeholder contact details now, because the station's real hotline, email, address and office hours are not available yet. HR edits them later from `/hr/public-site`.
+
+**Files:**
+- Create: `supabase/migrations/20261005091000_public_contacts_placeholders.sql`
+- Create: `supabase/tests/public_contacts_placeholders.test.sql`
+
+**Interfaces:**
+- Consumes: `public.public_contacts` and `public.save_public_contact(...)` from Task 1.
+- Produces: four visible rows, in this order:
+
+| sort_order | label | kind | value |
+| --- | --- | --- | --- |
+| 1 | Station hotline | phone | (02) 0000-0000 |
+| 2 | HR office email | email | hr-office@example.com |
+| 3 | Station address | address | Address to follow, San Juan City, Metro Manila |
+| 4 | Office hours | hours | Monday to Friday, 8:00 AM to 5:00 PM (to be confirmed) |
+
+Each value passes the Task 1 format checks, so HR can re-save an entry (for example to hide it) without retyping it. The migration inserts only when the table is empty, so re-running it never duplicates or overwrites HR's entries.
+
+- [ ] **Step 1: Write the failing pgTAP test**
+
+Create `supabase/tests/public_contacts_placeholders.test.sql`:
+
+```sql
+begin;
+
+set local role postgres;
+set local search_path = extensions, public;
+
+select extensions.plan(4);
+
+select extensions.is(
+  (select array_agg(label order by sort_order) from public.public_contacts),
+  array['Station hotline', 'HR office email', 'Station address', 'Office hours'],
+  'Placeholder contacts are seeded in display order'
+);
+select extensions.ok((select bool_and(is_visible) from public.public_contacts), 'Placeholder contacts are visible on the landing page');
+
+insert into auth.users (id, aud, role, email, created_at, updated_at)
+values ('00000000-0000-4000-8000-00000000d301', 'authenticated', 'authenticated', 'placeholder-hr@example.test', now(), now());
+update public.user_roles set role = 'hr_personnel'::public.app_role where user_id = '00000000-0000-4000-8000-00000000d301';
+
+set local role authenticated;
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-00000000d301';
+
+-- Re-saving each placeholder unchanged must pass the format checks.
+select extensions.lives_ok(
+  $$select public.save_public_contact(contact.id, contact.kind, contact.label, contact.value, false) from public.public_contacts contact$$,
+  'HR can re-save every placeholder without retyping it'
+);
+select extensions.is((select count(*) from public.public_contacts where is_visible), 0::bigint, 'HR can hide the placeholders');
+
+select * from extensions.finish();
+rollback;
+```
+
+- [ ] **Step 2: Run it to verify it fails**
+
+Run: `npx supabase db reset && npx supabase test db`
+Expected: FAIL in `public_contacts_placeholders.test.sql` (the label array is NULL).
+
+- [ ] **Step 3: Write the migration**
+
+Create `supabase/migrations/20261005091000_public_contacts_placeholders.sql`:
+
+```sql
+-- Placeholder contact details for the landing page's Contact section, requested on 2026-10-04
+-- because the station's real details are not available yet. HR replaces them from
+-- /hr/public-site. Inserted only into an empty table, so HR's entries are never touched.
+insert into public.public_contacts (label, kind, value, sort_order, is_visible)
+select seed.label, seed.kind, seed.value, seed.sort_order, true
+from (values
+  ('Station hotline', 'phone', '(02) 0000-0000', 1),
+  ('HR office email', 'email', 'hr-office@example.com', 2),
+  ('Station address', 'address', 'Address to follow, San Juan City, Metro Manila', 3),
+  ('Office hours', 'hours', 'Monday to Friday, 8:00 AM to 5:00 PM (to be confirmed)', 4)
+) as seed(label, kind, value, sort_order)
+where not exists (select 1 from public.public_contacts);
+```
+
+- [ ] **Step 4: Run tests to verify they pass**
+
+Run: `npx supabase db reset && npx supabase test db`
+Expected: all files ok, including `public_site.test.sql`, which clears the table first.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add supabase/migrations/20261005091000_public_contacts_placeholders.sql supabase/tests/public_contacts_placeholders.test.sql
+git commit -m "feat: seed placeholder contact details for HR to replace
+
+Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
 ```
 
 ---

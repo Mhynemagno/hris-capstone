@@ -235,3 +235,26 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Public portal (landing page and announcements): Inter body, Montserrat headings. */
+@utility portal-type {
+  font-family: var(--font-inter), var(--font-source-sans), ui-sans-serif, system-ui, sans-serif;
+
+  & :where(h1, h2, h3, h4) {
+    font-family: var(--font-montserrat), var(--font-source-sans), ui-sans-serif, system-ui, sans-serif;
+  }
+}
+
+/* The portal design's faint gold grid. */
+@utility portal-grid {
+  background-image:
+    linear-gradient(color-mix(in oklch, var(--cta) 6%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in oklch, var(--cta) 6%, transparent) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* Frosted navy card. Borders are set per element so border-t-* accents still apply. */
+@utility glass-panel {
+  background-color: color-mix(in oklch, var(--card) 85%, transparent);
+  backdrop-filter: blur(16px);
+}
