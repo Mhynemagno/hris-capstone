@@ -352,6 +352,16 @@ describe("loadMyProfileDocumentFile", () => {
     expect(file.type).toBe("image/png");
   });
 
+  it("gives a saved file without an extension one that matches its type, so it can be attached", async () => {
+    mocks.download.mockResolvedValue({ data: new Blob(["cv"], { type: "application/pdf" }), error: null });
+    const file = await loadMyProfileDocumentFile({ object_path: `applicant-profiles/${userId}/a.pdf`, file_name: "Resume", mime_type: "application/pdf" });
+    expect(file.name).toBe("Resume.pdf");
+    const image = await loadMyProfileDocumentFile({ object_path: `applicant-profiles/${userId}/a.jpg`, file_name: "1000012345", mime_type: "image/jpeg" });
+    expect(image.name).toBe("1000012345.jpg");
+    const named = await loadMyProfileDocumentFile({ object_path: `applicant-profiles/${userId}/a.pdf`, file_name: "CV.PDF", mime_type: "application/pdf" });
+    expect(named.name).toBe("CV.PDF");
+  });
+
   it("explains a failed download in applicant terms", async () => {
     mocks.download.mockResolvedValue({ data: null, error: { message: "Object not found" } });
     await expect(loadMyProfileDocumentFile({ object_path: `applicant-profiles/${userId}/a.pdf`, file_name: "resume.pdf", mime_type: "application/pdf" })).rejects.toThrow("We could not attach your saved CV. Try again.");

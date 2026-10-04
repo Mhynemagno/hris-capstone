@@ -238,7 +238,10 @@ export async function getApplicantProfileDocumentUrl(objectPath: string) {
 export async function loadMyProfileDocumentFile(document: Pick<ApplicantProfileDocument, "object_path" | "file_name" | "mime_type">) {
   const { data, error } = await createBrowserSupabaseClient().storage.from(applicantProfileDocumentBucket).download(document.object_path);
   if (error || !data) throw new Error("We could not attach your saved CV. Try again.");
-  return new File([data], document.file_name, { type: document.mime_type });
+  // Attachments are named by extension, so a saved file named without one ("Resume") gets one from its type.
+  const extension = applicantProfileDocumentExtensions[document.mime_type];
+  const fileName = /\.(pdf|png|jpe?g)$/i.test(document.file_name) ? document.file_name : `${document.file_name}.${extension}`;
+  return new File([data], fileName, { type: document.mime_type });
 }
 
 export async function saveApplicantProfileDocuments(documents: PendingApplicantProfileDocument[]) {
