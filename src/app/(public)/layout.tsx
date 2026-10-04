@@ -1,10 +1,6 @@
-import { Inter, Montserrat } from "next/font/google";
 import type { ReactNode } from "react";
 
-// Loaded here, not in the root layout, so only the public portal downloads these two fonts.
-const portalBody = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
-const portalHeading = Montserrat({ subsets: ["latin"], variable: "--font-montserrat", display: "swap" });
-
+/** Public portal pages (landing and announcements) use the app's own theme and font. */
 export default function PublicLayout({ children }: { children: ReactNode }) {
-  return <div className={`${portalBody.variable} ${portalHeading.variable} portal-type flex flex-1 flex-col`}>{children}</div>;
+  return <div className="flex flex-1 flex-col">{children}</div>;
 }

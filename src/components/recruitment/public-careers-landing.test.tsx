@@ -115,6 +115,12 @@ describe("PublicCareersLanding", () => {
     expect(screen.queryByText("network down")).not.toBeInTheDocument();
   });
 
+  it("uses the app's own light theme and colours, not the mock's dark navy and gold", () => {
+    const { container } = render(<PublicCareersLanding />);
+    expect(container.querySelector(".dark")).toBeNull();
+    expect(container.innerHTML).not.toMatch(/portal-grid|portal-type|glass-panel|text-cta|bg-cta|border-cta|font-extrabold/);
+  });
+
   it("leaves out the mock's recruitment process, invented figures and small text", () => {
     const { container } = render(<PublicCareersLanding />);
     expect(screen.queryByText(/recruitment process/i)).not.toBeInTheDocument();

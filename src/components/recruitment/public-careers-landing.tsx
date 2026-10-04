@@ -38,12 +38,12 @@ const benefits = [
   { icon: ShieldCheck, title: "A stable public-service career", body: "Join a uniformed public service with the benefits the law provides to PNP personnel." },
 ];
 
-function FeatureList({ items, tone }: { items: readonly string[]; tone: "gold" | "teal" }) {
+function FeatureList({ items, tone }: { items: readonly string[]; tone: "navy" | "green" }) {
   return (
-    <ul className="mt-6 space-y-2.5 text-base text-slate-300">
+    <ul className="mt-6 space-y-2.5 text-base text-muted-foreground">
       {items.map((item) => (
         <li className="flex items-start gap-2.5" key={item}>
-          <CircleCheck aria-hidden="true" className={`mt-1 size-4 shrink-0 ${tone === "gold" ? "text-cta" : "text-primary"}`} />
+          <CircleCheck aria-hidden="true" className={`mt-1 size-4 shrink-0 ${tone === "navy" ? "text-sidebar" : "text-primary"}`} />
           {item}
         </li>
       ))}
@@ -58,35 +58,38 @@ export function PublicCareersLanding() {
   const showContact = visibleContacts.length > 0;
 
   return (
-    <div className="dark portal-grid min-h-dvh bg-background text-foreground">
+    <div className="min-h-dvh bg-background text-foreground">
       <PortalHeader showContact={showContact} />
       <main>
-        <section aria-labelledby="hero-heading" className="mx-auto max-w-4xl px-4 pt-14 pb-10 text-center sm:px-6 sm:pt-20">
-          <p className="inline-flex items-center gap-2 rounded-full border border-cta/30 bg-cta/10 px-4 py-1.5 text-sm font-semibold tracking-wide text-cta uppercase">
-            <Sparkles aria-hidden="true" className="size-4" />
-            Official portal of the San Juan City Police Station
-          </p>
-          <h1 className="mt-6 text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl" id="hero-heading">Serve San Juan with purpose.</h1>
-          <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-slate-300">
-            One portal for station personnel, job applicants, and everyone who wants to know what is happening at the station.
-          </p>
+        <section aria-labelledby="hero-heading" className="bg-sidebar text-sidebar-foreground">
+          <div className="mx-auto flex max-w-4xl flex-col items-center px-4 pt-14 pb-12 text-center sm:px-6 sm:pt-20">
+            <p className="inline-flex items-center gap-2 rounded-full border border-sidebar-border bg-sidebar-accent px-4 py-1.5 text-sm font-semibold tracking-wide text-sidebar-ring uppercase">
+              <Sparkles aria-hidden="true" className="size-4" />
+              Official portal of the San Juan City Police Station
+            </p>
+            <h1 className="mt-6 text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-6xl" id="hero-heading">Serve San Juan with purpose.</h1>
+            <div aria-hidden="true" className="mt-5 h-1 w-14 bg-brand-command-red" />
+            <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-slate-300">
+              One portal for station personnel, job applicants, and everyone who wants to know what is happening at the station.
+            </p>
+          </div>
         </section>
 
-        <section aria-labelledby="portals-heading" className="scroll-mt-24 px-4 pb-16 sm:px-6 lg:px-8" id="portals">
+        <section aria-labelledby="portals-heading" className="scroll-mt-24 bg-muted/50 px-4 py-14 sm:px-6 lg:px-8" id="portals">
           <h2 className="sr-only" id="portals-heading">Portals</h2>
           <div className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-2">
-            <article aria-labelledby="personnel-portal-heading" className={`glass-panel flex flex-col justify-between rounded-2xl border border-cta/15 border-t-4 border-t-cta p-6 sm:p-8 ${liftOnHover}`}>
+            <article aria-labelledby="personnel-portal-heading" className={`bg-card shadow-sm flex flex-col justify-between rounded-2xl border border-border border-t-4 border-t-sidebar p-6 sm:p-8 ${liftOnHover}`}>
               <div>
                 <div className="flex items-center justify-between gap-4">
-                  <span className="flex size-14 items-center justify-center rounded-2xl border border-cta/40 bg-background text-cta"><UserRoundCheck aria-hidden="true" className="size-7" /></span>
-                  <span className="rounded-full border border-cta/30 bg-cta/10 px-3 py-1 text-sm font-bold tracking-wide text-cta uppercase">Station personnel</span>
+                  <span className="flex size-14 items-center justify-center rounded-2xl bg-sidebar text-sidebar-foreground"><UserRoundCheck aria-hidden="true" className="size-7" /></span>
+                  <span className="rounded-full border border-border bg-muted px-3 py-1 text-sm font-semibold tracking-wide text-foreground uppercase">Station personnel</span>
                 </div>
-                <h3 className="mt-6 text-2xl font-extrabold tracking-tight text-white sm:text-3xl" id="personnel-portal-heading">Personnel Portal</h3>
-                <p className="mt-2 text-base leading-7 text-slate-300">Self-service for San Juan City Police Station personnel.</p>
-                <FeatureList items={personnelFeatures} tone="gold" />
+                <h3 className="mt-6 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl" id="personnel-portal-heading">Personnel Portal</h3>
+                <p className="mt-2 text-base leading-7 text-muted-foreground">Self-service for San Juan City Police Station personnel.</p>
+                <FeatureList items={personnelFeatures} tone="navy" />
               </div>
               <div className="mt-8 border-t border-border pt-5">
-                <Link className={`inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-cta px-6 text-base font-bold text-cta-foreground transition-colors hover:bg-cta/90 ${focusRing}`} href="/login?as=employee">
+                <Link className={`inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-sidebar px-6 text-base font-semibold text-sidebar-foreground transition-colors hover:bg-sidebar-accent ${focusRing}`} href="/login?as=employee">
                   <LockKeyhole aria-hidden="true" className="size-4" />
                   Sign in as personnel
                   <ArrowRight aria-hidden="true" className="size-4" />
@@ -94,22 +97,22 @@ export function PublicCareersLanding() {
               </div>
             </article>
 
-            <article aria-labelledby="applicant-portal-heading" className={`glass-panel flex flex-col justify-between rounded-2xl border border-primary/15 border-t-4 border-t-primary p-6 sm:p-8 ${liftOnHover}`}>
+            <article aria-labelledby="applicant-portal-heading" className={`bg-card shadow-sm flex flex-col justify-between rounded-2xl border border-border border-t-4 border-t-primary p-6 sm:p-8 ${liftOnHover}`}>
               <div>
                 <div className="flex items-center justify-between gap-4">
                   <span className="flex size-14 items-center justify-center rounded-2xl border border-primary/40 bg-background text-primary"><BriefcaseBusiness aria-hidden="true" className="size-7" /></span>
-                  <span className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-sm font-bold tracking-wide text-primary uppercase">Careers</span>
+                  <span className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-sm font-semibold tracking-wide text-primary uppercase">Careers</span>
                 </div>
-                <h3 className="mt-6 text-2xl font-extrabold tracking-tight text-white sm:text-3xl" id="applicant-portal-heading">Applicant &amp; Career Portal</h3>
-                <p className="mt-2 text-base leading-7 text-slate-300">Find an opening at the station and apply online.</p>
-                <FeatureList items={applicantFeatures} tone="teal" />
+                <h3 className="mt-6 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl" id="applicant-portal-heading">Applicant &amp; Career Portal</h3>
+                <p className="mt-2 text-base leading-7 text-muted-foreground">Find an opening at the station and apply online.</p>
+                <FeatureList items={applicantFeatures} tone="green" />
               </div>
               <div className="mt-8 grid gap-3 border-t border-border pt-5 sm:grid-cols-2">
-                <Link className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-base font-bold text-primary-foreground transition-colors hover:bg-primary/85 ${focusRing}`} href="/jobs">
+                <Link className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-base font-semibold text-primary-foreground transition-colors hover:bg-primary/85 ${focusRing}`} href="/jobs">
                   <Search aria-hidden="true" className="size-4" />
                   View job openings
                 </Link>
-                <Link className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 text-base font-bold text-white transition-colors hover:bg-muted ${focusRing}`} href="/login?as=applicant&next=/applicant/applications">
+                <Link className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 text-base font-semibold text-foreground transition-colors hover:bg-muted ${focusRing}`} href="/login?as=applicant&next=/applicant/applications">
                   Check application status
                 </Link>
               </div>
@@ -121,7 +124,7 @@ export function PublicCareersLanding() {
           <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <SectionIntro description="Open a posting to see its requirements, then sign up and apply online." eyebrow="Now hiring" id="job-openings-heading" title="Latest job openings" />
-              <Link className={`inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-semibold text-cta underline-offset-4 hover:underline ${focusRing}`} href="/jobs">
+              <Link className={`inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-semibold text-primary underline-offset-4 hover:underline ${focusRing}`} href="/jobs">
                 View all openings
                 <ArrowRight aria-hidden="true" className="size-4" />
               </Link>
@@ -129,9 +132,9 @@ export function PublicCareersLanding() {
             <div className="mt-8">
               <PublicJobList featured pageSize={3} />
             </div>
-            <p className="mt-6 text-sm text-slate-300">
+            <p className="mt-6 text-sm text-muted-foreground">
               New applicant?{" "}
-              <Link className="font-semibold text-cta underline-offset-4 hover:underline" href="/applicant/register">Create an applicant account</Link>
+              <Link className="font-semibold text-primary underline-offset-4 hover:underline" href="/applicant/register">Create an applicant account</Link>
             </p>
           </div>
         </section>
@@ -148,25 +151,25 @@ export function PublicCareersLanding() {
                 title="About the station"
               />
             </div>
-            <div className="glass-panel rounded-2xl border border-border p-6 lg:col-span-7">
-              <h3 className="flex items-center gap-2 text-lg font-bold text-white">
-                <ShieldCheck aria-hidden="true" className="size-5 text-cta" />
+            <div className="bg-card shadow-sm rounded-2xl border border-border p-6 lg:col-span-7">
+              <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+                <ShieldCheck aria-hidden="true" className="size-5 text-primary" />
                 Our vision, mission and motto
               </h3>
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 {pnpPrinciples.map(({ body, icon: Icon, note, title }) => (
                   <article className={`rounded-xl border border-border bg-background/80 p-4 ${title === "Vision" ? "sm:col-span-2" : ""}`} key={title}>
-                    <h4 className="flex items-center gap-2 text-base font-bold text-cta">
+                    <h4 className="flex items-center gap-2 text-base font-semibold text-primary">
                       <Icon aria-hidden="true" className="size-4" />
                       {title}
                     </h4>
                     {note ? (
                       <>
-                        <p className="mt-1 text-lg font-semibold text-white">{body}</p>
-                        <p className="text-sm text-slate-300">{note}</p>
+                        <p className="mt-1 text-lg font-semibold text-foreground">{body}</p>
+                        <p className="text-sm text-muted-foreground">{note}</p>
                       </>
                     ) : (
-                      <p className="mt-1 text-sm leading-6 text-slate-300">{body}</p>
+                      <p className="mt-1 text-sm leading-6 text-muted-foreground">{body}</p>
                     )}
                   </article>
                 ))}
@@ -175,15 +178,15 @@ export function PublicCareersLanding() {
           </div>
         </section>
 
-        <section aria-labelledby="why-join-heading" className="scroll-mt-24 border-t border-border/80" id="why-join">
+        <section aria-labelledby="why-join-heading" className="scroll-mt-24 border-t border-border/80 bg-muted/50" id="why-join">
           <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
             <SectionIntro align="center" eyebrow="A calling to serve" id="why-join-heading" title="Why join the station?" />
             <div className="mx-auto mt-10 grid max-w-6xl gap-6 md:grid-cols-3">
               {benefits.map(({ body, icon: Icon, title }) => (
-                <article className={`glass-panel rounded-2xl border border-border p-6 ${liftOnHover}`} key={title}>
-                  <span className="flex size-12 items-center justify-center rounded-xl bg-cta/10 text-cta"><Icon aria-hidden="true" className="size-6" /></span>
-                  <h3 className="mt-4 text-lg font-bold text-white">{title}</h3>
-                  <p className="mt-2 text-base leading-7 text-slate-300">{body}</p>
+                <article className={`bg-card shadow-sm rounded-2xl border border-border p-6 ${liftOnHover}`} key={title}>
+                  <span className="flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary"><Icon aria-hidden="true" className="size-6" /></span>
+                  <h3 className="mt-4 text-lg font-semibold text-foreground">{title}</h3>
+                  <p className="mt-2 text-base leading-7 text-muted-foreground">{body}</p>
                 </article>
               ))}
             </div>
@@ -204,8 +207,8 @@ export function PublicCareersLanding() {
             </div>
             <nav aria-label="Sign in">
               <ul className="flex flex-wrap gap-x-5 gap-y-1">
-                <li><Link className="inline-flex min-h-11 items-center font-medium hover:text-cta" href="/login?as=employee">Login as Employee</Link></li>
-                <li><Link className="inline-flex min-h-11 items-center font-medium hover:text-cta" href="/login?as=applicant">Login as Applicant</Link></li>
+                <li><Link className="inline-flex min-h-11 items-center font-medium hover:text-sidebar-ring" href="/login?as=employee">Login as Employee</Link></li>
+                <li><Link className="inline-flex min-h-11 items-center font-medium hover:text-sidebar-ring" href="/login?as=applicant">Login as Applicant</Link></li>
               </ul>
             </nav>
           </div>

@@ -20,15 +20,15 @@ export function LandingContacts({ contacts }: { contacts: readonly VisibleContac
             const href = contactHref(contact.kind, contact.value);
             const external = contact.kind === "facebook";
             return (
-              <li className="glass-panel flex gap-4 rounded-2xl border border-border p-5" key={contact.id}>
-                <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-cta/10 text-cta">
+              <li className="bg-card shadow-sm flex gap-4 rounded-2xl border border-border p-5" key={contact.id}>
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                   <Icon aria-hidden="true" className="size-5" />
                 </span>
                 <div className="min-w-0">
-                  <p className="font-semibold text-white">{contact.label}</p>
+                  <p className="font-semibold text-foreground">{contact.label}</p>
                   {href ? (
                     <a
-                      className="inline-flex min-h-11 items-center text-base text-cta underline-offset-4 [overflow-wrap:anywhere] hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                      className="inline-flex min-h-11 items-center text-base text-primary underline-offset-4 [overflow-wrap:anywhere] hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
                       href={href}
                       {...(external ? { rel: "noopener noreferrer", target: "_blank" } : {})}
                     >
@@ -36,7 +36,7 @@ export function LandingContacts({ contacts }: { contacts: readonly VisibleContac
                       {external ? <span className="sr-only"> (opens in a new tab)</span> : null}
                     </a>
                   ) : (
-                    <p className="text-base whitespace-pre-line text-slate-300 [overflow-wrap:anywhere]">{contact.value}</p>
+                    <p className="text-base whitespace-pre-line text-muted-foreground [overflow-wrap:anywhere]">{contact.value}</p>
                   )}
                 </div>
               </li>
