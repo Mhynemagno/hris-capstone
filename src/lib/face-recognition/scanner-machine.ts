@@ -1,5 +1,6 @@
 import type { FaceRecognitionConfig } from "./config";
 import type { FaceAttendanceResult } from "@/schemas/face-recognition";
+import type { CameraErrorKind } from "@/hooks/use-camera";
 
 /**
  * Kiosk state machine. Exactly one state is active; events that do not apply to the current
@@ -12,7 +13,7 @@ import type { FaceAttendanceResult } from "@/schemas/face-recognition";
  * directly. A photo or screen held up to the camera is therefore not rejected; the scanner is
  * meant for supervised use, and the employee self-scan also requires the employee's own login.
  */
-export type FatalErrorKind = "camera_denied" | "no_camera" | "camera_unavailable" | "models_failed";
+export type FatalErrorKind = CameraErrorKind | "models_failed";
 export type ScanErrorKind = "not_recognized" | "ambiguous" | "rule_rejected" | "network" | "service";
 
 export type ScannerState =

@@ -2,20 +2,42 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-export type CameraErrorKind = "camera_denied" | "no_camera" | "camera_unavailable";
+export type CameraErrorKind = "camera_denied" | "no_camera" | "camera_busy" | "insecure_context" | "camera_unavailable";
 export type CameraStatus = "idle" | "starting" | "active" | "error";
 
 export const CAMERA_ERROR_MESSAGES: Record<CameraErrorKind, string> = {
   camera_denied: "Camera access was denied. Allow camera access in the browser's site settings, then try again.",
   no_camera: "No camera was found. Connect a camera and try again.",
-  camera_unavailable: "The camera could not be started. Close other apps using it, use HTTPS, and try again.",
+  camera_busy: "The camera is in use or blocked. Close other apps and browser tabs using it (Camera app, Zoom, Meet, another kiosk tab), make sure Windows Settings → Privacy & security → Camera allows desktop apps, then try again.",
+  insecure_context: "The camera only works on a secure page. Open the system through https:// or http://localhost, not a plain http:// network address.",
+  camera_unavailable: "The camera could not be started. Reload the page and try again.",
 };
 
 export function cameraErrorKind(error: unknown): CameraErrorKind {
   const name = error instanceof Error || error instanceof DOMException ? error.name : "";
   if (name === "NotAllowedError" || name === "SecurityError" || name === "PermissionDeniedError") return "camera_denied";
   if (name === "NotFoundError" || name === "DevicesNotFoundError" || name === "OverconstrainedError") return "no_camera";
+  if (name === "NotReadableError" || name === "TrackStartError" || name === "AbortError") return "camera_busy";
   return "camera_unavailable";
+}
+
+const PREFERRED_CONSTRAINTS: MediaStreamConstraints = { audio: false, video: { facingMode: { ideal: "user" }, width: { ideal: 640 }, height: { ideal: 480 } } };
+const FALLBACK_CONSTRAINTS: MediaStreamConstraints = { audio: false, video: true };
+
+/**
+ * Some webcam drivers (common on Windows) reject the preferred size, or are still releasing a
+ * stream from a moment ago (e.g. React re-running effects in development). Retry once, after a
+ * short pause, with the plainest request before giving up.
+ */
+async function openCamera(): Promise<MediaStream> {
+  try {
+    return await navigator.mediaDevices.getUserMedia(PREFERRED_CONSTRAINTS);
+  } catch (cause) {
+    const kind = cameraErrorKind(cause);
+    if (kind !== "camera_busy" && !(cause instanceof DOMException && cause.name === "OverconstrainedError")) throw cause;
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    return navigator.mediaDevices.getUserMedia(FALLBACK_CONSTRAINTS);
+  }
 }
 
 /**
@@ -44,12 +66,14 @@ export function useCamera() {
     setError(null);
     setStatus("starting");
     if (!navigator.mediaDevices?.getUserMedia) {
-      setError("camera_unavailable");
+      // Browsers hide the camera API entirely on insecure (plain http, non-localhost) pages.
+      const kind: CameraErrorKind = window.isSecureContext === false ? "insecure_context" : "camera_unavailable";
+      setError(kind);
       setStatus("error");
-      return "camera_unavailable";
+      return kind;
     }
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: "user" }, width: { ideal: 640 }, height: { ideal: 480 } } });
+      const stream = await openCamera();
       // A later stop() or start() superseded this request: release the stream immediately.
       if (request !== requestRef.current) {
         stream.getTracks().forEach((track) => track.stop());
