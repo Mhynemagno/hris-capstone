@@ -16,7 +16,7 @@ export const faceAttendanceScanSchema = z.object({
   descriptor: faceDescriptorSchema,
 }).strict();
 
-export const faceAttendanceOutcomeSchema = z.enum(["time_in", "time_out", "already_recorded", "rejected", "not_recognized"]);
+export const faceAttendanceOutcomeSchema = z.enum(["time_in", "time_out", "already_recorded", "rejected", "not_recognized", "ambiguous"]);
 
 export const faceAttendanceResultSchema = z.object({
   scanId: uuidSchema,

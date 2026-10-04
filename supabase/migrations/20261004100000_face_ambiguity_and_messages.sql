@@ -70,3 +70,95 @@ begin
   return jsonb_build_object('employeeId', target_employee_id, 'status', case when was_enrolled then 're_registered' else 'enrolled' end);
 end;
 $$;
+
+-- A kiosk scan whose two best matches are too close is now its own outcome, so the person is told
+-- to see HR instead of "Face not recognized.". It still writes no attendance and names no employee.
+alter table private.face_attendance_scans
+  drop constraint face_attendance_scans_outcome_check,
+  add constraint face_attendance_scans_outcome_check
+    check (outcome in ('time_in', 'time_out', 'already_recorded', 'rejected', 'not_recognized', 'ambiguous')),
+  drop constraint face_attendance_scans_check,
+  add constraint face_attendance_scans_no_employee_check
+    check ((outcome in ('not_recognized', 'ambiguous')) = (employee_id is null));
+
+drop function private.reject_face_scan(uuid, double precision, uuid, jsonb);
+
+-- Records a scan that matched no one, or more than one employee. Writes no attendance.
+create function private.reject_face_scan(target_scan_id uuid, target_distance double precision, caller_id uuid, target_metadata jsonb, target_outcome text default 'not_recognized')
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare scan_row private.face_attendance_scans%rowtype;
+begin
+  if target_outcome not in ('not_recognized', 'ambiguous') then
+    raise exception 'Unsupported rejected scan outcome.' using errcode = '22023';
+  end if;
+  insert into private.face_attendance_scans (id, outcome, match_distance, message, recorded_by_user_id)
+  values (
+    target_scan_id,
+    target_outcome,
+    target_distance,
+    case target_outcome when 'ambiguous' then 'More than one employee matches this face. Please see HR.' else 'Face not recognized.' end,
+    caller_id
+  )
+  returning * into scan_row;
+  insert into public.audit_logs (actor_user_id, entity_type, entity_id, action, metadata)
+  values (caller_id, 'face_attendance_scans', target_scan_id::text, target_outcome, target_metadata);
+  return private.face_scan_result(scan_row);
+end;
+$$;
+
+revoke all on function private.reject_face_scan(uuid, double precision, uuid, jsonb, text) from public, anon, authenticated;
+
+-- HR kiosk: identify (1:N) among every enrollment.
+create or replace function private.record_face_attendance(target_scan_id uuid, target_descriptor real[])
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  caller_id uuid := private.require_active_hr();
+  previous jsonb := private.previous_face_scan(target_scan_id, caller_id);
+  settings_row private.face_recognition_settings%rowtype;
+  best_employee uuid;
+  best_distance double precision;
+  runner_up_distance double precision;
+begin
+  if previous is not null then
+    return previous;
+  end if;
+  if not private.is_valid_face_descriptor(target_descriptor) then
+    raise exception 'The face sample is invalid. Scan again.' using errcode = '22023';
+  end if;
+  settings_row := private.require_face_attendance_enabled();
+
+  select ranked.employee_id, ranked.distance into best_employee, best_distance
+  from (
+    select enrollment.employee_id, private.face_descriptor_distance(enrollment.descriptor, target_descriptor) as distance
+    from private.employee_face_enrollments enrollment
+  ) ranked
+  order by ranked.distance
+  limit 1;
+
+  select ranked.distance into runner_up_distance
+  from (
+    select private.face_descriptor_distance(enrollment.descriptor, target_descriptor) as distance
+    from private.employee_face_enrollments enrollment
+    where enrollment.employee_id <> best_employee
+  ) ranked
+  order by ranked.distance
+  limit 1;
+
+  if best_employee is null or best_distance > settings_row.match_threshold then
+    return private.reject_face_scan(target_scan_id, best_distance, caller_id, jsonb_build_object('mode', 'kiosk'));
+  end if;
+  if runner_up_distance is not null and runner_up_distance - best_distance < settings_row.ambiguity_margin then
+    return private.reject_face_scan(target_scan_id, best_distance, caller_id, jsonb_build_object('mode', 'kiosk'), 'ambiguous');
+  end if;
+
+  return private.write_face_attendance(target_scan_id, best_employee, best_distance, caller_id, 'kiosk');
+end;
+$$;

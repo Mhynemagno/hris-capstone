@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(56);
+select extensions.plan(59);
 
 select extensions.has_function('public', 'enroll_employee_face', array['uuid', 'real[]', 'integer', 'boolean'], 'Face enrollment RPC exists');
 select extensions.has_function('public', 'record_face_attendance', array['uuid', 'real[]'], 'Face attendance RPC exists');
@@ -96,7 +96,10 @@ set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000a01';
 
 -- Matching threshold.
 select extensions.is(public.record_face_attendance('00000000-0000-4000-8000-000000000c01', (select descriptor from face_fixture where key = 'stranger')) ->> 'outcome', 'not_recognized', 'A face beyond the threshold is not recognized');
-select extensions.is(public.record_face_attendance('00000000-0000-4000-8000-000000000c02', (select descriptor from face_fixture where key = 'between_alpha_charlie')) ->> 'outcome', 'not_recognized', 'An ambiguous match between two employees is rejected');
+select set_config('test.ambiguous_scan', public.record_face_attendance('00000000-0000-4000-8000-000000000c02', (select descriptor from face_fixture where key = 'between_alpha_charlie'))::text, true);
+select extensions.is(current_setting('test.ambiguous_scan')::jsonb ->> 'outcome', 'ambiguous', 'An ambiguous match between two employees is reported as ambiguous');
+select extensions.is(current_setting('test.ambiguous_scan')::jsonb ->> 'message', 'More than one employee matches this face. Please see HR.', 'An ambiguous match tells the person to see HR');
+select extensions.ok((current_setting('test.ambiguous_scan')::jsonb -> 'employee') = 'null'::jsonb, 'An ambiguous match reveals no employee');
 select extensions.is((select count(*) from public.attendance_logs where capture_method = 'face_recognition'), 0::bigint, 'Rejected scans create no attendance');
 
 select set_config('test.first_scan', public.record_face_attendance('00000000-0000-4000-8000-000000000c03', (select descriptor from face_fixture where key = 'alpha_probe'))::text, true);
@@ -107,6 +110,7 @@ select extensions.is(current_setting('test.first_scan')::jsonb -> 'distance', 'n
 
 -- Idempotency and duplicate prevention.
 select extensions.is(public.record_face_attendance('00000000-0000-4000-8000-000000000c03', (select descriptor from face_fixture where key = 'alpha_probe')) ->> 'outcome', 'time_in', 'A retried scan ID returns its original outcome');
+select extensions.is(public.record_face_attendance('00000000-0000-4000-8000-000000000c02', (select descriptor from face_fixture where key = 'alpha_probe')) ->> 'outcome', 'ambiguous', 'Replaying an ambiguous scan ID returns the stored outcome');
 select extensions.is(public.record_face_attendance('00000000-0000-4000-8000-000000000c04', (select descriptor from face_fixture where key = 'alpha_probe')) ->> 'outcome', 'already_recorded', 'An immediate rescan does not record time out');
 select extensions.is((select count(*) from public.attendance_logs where capture_method = 'face_recognition'), 1::bigint, 'Repeated scans keep one face log');
 

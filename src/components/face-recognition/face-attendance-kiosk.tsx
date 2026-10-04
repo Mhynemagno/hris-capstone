@@ -66,7 +66,7 @@ export function FaceScanner({ mode, onClose }: { mode: FaceScanMode; onClose: ()
         <div className="mx-auto flex max-w-xl items-start gap-3 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-destructive" role="alert">
           <CircleAlert aria-hidden="true" className="mt-0.5 size-5 shrink-0" />
           <div className="space-y-1">
-            <p className="font-semibold">{state.fatal ? "Scanner unavailable" : state.kind === "not_recognized" ? "Face not recognized" : state.kind === "network" ? "Connection problem" : state.kind === "service" ? "Attendance service rejected the scan" : "Attendance not recorded"}</p>
+            <p className="font-semibold">{state.fatal ? "Scanner unavailable" : state.kind === "not_recognized" ? "Face not recognized" : state.kind === "ambiguous" ? "Multiple possible matches" : state.kind === "network" ? "Connection problem" : state.kind === "service" ? "Attendance service rejected the scan" : "Attendance not recorded"}</p>
             <p className="text-sm">{state.message}</p>
             {showDiagnostics && !state.fatal && state.distance != null ? <p className="text-xs opacity-80">Dev: closest distance {state.distance.toFixed(3)}</p> : null}
           </div>

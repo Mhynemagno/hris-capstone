@@ -93,3 +93,21 @@ describe("scanner state machine", () => {
     expect(reduce(searching, { type: "STOP" }).status).toBe("ready");
   });
 });
+
+describe("scanner reducer: ambiguous match", () => {
+  it("shows the server's ambiguous message as its own error kind", () => {
+    const next = reduce({ status: "recording", scanId: "00000000-0000-4000-8000-000000000001" }, {
+      type: "RECORD_SUCCEEDED",
+      result: {
+        scanId: "00000000-0000-4000-8000-000000000001",
+        outcome: "ambiguous",
+        message: "More than one employee matches this face. Please see HR.",
+        distance: null,
+        employee: null,
+        log: null,
+        recordedAt: "2026-10-04T00:00:00Z",
+      },
+    });
+    expect(next).toEqual({ status: "error", kind: "ambiguous", message: "More than one employee matches this face. Please see HR.", fatal: false });
+  });
+});
