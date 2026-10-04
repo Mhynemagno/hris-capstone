@@ -25,7 +25,7 @@ function subscribeToSeconds(onTick: () => void) {
 export function PstClock() {
   const time = useSyncExternalStore(subscribeToSeconds, () => formatPst(new Date()), () => null);
   return (
-    <p className="inline-flex items-center gap-1.5 text-sm text-cta">
+    <p className="inline-flex items-center gap-1.5 text-sm text-sidebar-ring">
       <Clock aria-hidden="true" className="size-4" />
       <span>PST</span>
       <time className="tabular-nums">{time ?? "--:--:--"}</time>

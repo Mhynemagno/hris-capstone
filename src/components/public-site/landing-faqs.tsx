@@ -6,7 +6,7 @@ import { APPLICANT_PROFILE_DOCUMENT_KINDS } from "@/schemas/applicant-portal";
 
 import { SectionIntro } from "./section-intro";
 
-const linkClass = "font-semibold text-cta underline underline-offset-4 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50";
+const linkClass = "font-semibold text-primary underline underline-offset-4 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50";
 
 const faqs: { question: string; answer: ReactNode }[] = [
   {
@@ -49,12 +49,12 @@ export function LandingFaqs() {
         <SectionIntro align="center" eyebrow="Help" id="faqs-heading" title="Frequently asked questions" />
         <div className="mt-8 space-y-3">
           {faqs.map(({ answer, question }) => (
-            <details className="group glass-panel rounded-xl border border-border" key={question}>
-              <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 rounded-xl px-5 py-3 text-base font-semibold text-white hover:text-cta focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 [&::-webkit-details-marker]:hidden">
+            <details className="group bg-card shadow-sm rounded-xl border border-border" key={question}>
+              <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 rounded-xl px-5 py-3 text-base font-semibold text-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 [&::-webkit-details-marker]:hidden">
                 {question}
-                <ChevronDown aria-hidden="true" className="size-5 shrink-0 text-slate-300 group-open:rotate-180 motion-safe:transition-transform" />
+                <ChevronDown aria-hidden="true" className="size-5 shrink-0 text-muted-foreground group-open:rotate-180 motion-safe:transition-transform" />
               </summary>
-              <div className="space-y-3 border-t border-border px-5 py-4 text-base leading-7 text-slate-300">{answer}</div>
+              <div className="space-y-3 border-t border-border px-5 py-4 text-base leading-7 text-muted-foreground">{answer}</div>
             </details>
           ))}
         </div>
