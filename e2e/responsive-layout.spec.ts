@@ -5,7 +5,7 @@ import { test, expect } from "@playwright/test";
 // must not render visible text smaller than 14px.
 const sets: [string, string, string[]][] = [
   ["demo.admin@example.test", "/admin", ["/admin", "/admin/users", "/admin/departments", "/admin/ranks", "/admin/settings", "/admin/audit-logs", "/admin/profile-change-requests", "/admin/integrations/attendance"]],
-  ["demo.hr@example.test", "/hr", ["/hr", "/hr/employees", "/hr/jobs", "/hr/applications", "/hr/leave-requests", "/hr/deployments", "/hr/promotions", "/hr/promotions/criteria", "/hr/attendance", "/reports"]],
+  ["demo.hr@example.test", "/hr", ["/hr", "/hr/employees", "/hr/jobs", "/hr/applications", "/hr/leave-requests", "/hr/deployments", "/hr/promotions", "/hr/promotions/criteria", "/hr/attendance", "/hr/public-site", "/reports"]],
   ["demo.employee@example.test", "/employee", ["/employee", "/employee/profile", "/employee/leave", "/employee/deployments", "/employee/attendance", "/notifications"]],
   ["demo.applicant@example.test", "/applicant", ["/applicant", "/applicant/profile", "/applicant/applications", "/applicant/documents", "/jobs"]],
   ["demo.management@example.test", "/management", ["/management", "/reports"]],
@@ -31,3 +31,13 @@ for (const [email, home, paths] of sets) {
     expect(bad).toEqual([]);
   });
 }
+
+test("the public landing page fits a phone and keeps text readable", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await page.waitForLoadState("networkidle");
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  const small = await page.evaluate(() => [...document.querySelectorAll("body *")].filter((el) => el.childNodes.length && [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent!.trim()) && parseFloat(getComputedStyle(el).fontSize) < 14 && (el as HTMLElement).offsetParent !== null).map((el) => `${el.tagName}:${parseFloat(getComputedStyle(el).fontSize)}:${el.textContent!.trim().slice(0, 30)}`).slice(0, 3));
+  expect(overflow).toBeLessThanOrEqual(0);
+  expect(small).toEqual([]);
+});
