@@ -96,10 +96,9 @@ If the applicant already applied to this job, the page shows the existing "Appli
 
 ### No second CV upload
 - The form's CV field is removed.
-- On submit, the client copies the saved profile `resume` object from the `applicant-profile-documents` bucket into `applicant-documents` at the existing path pattern `applicants/{uid}/{applicationId}/{uuid}.pdf`, using `storage.copy` with `destinationBucket`. It then submits that copy as the `cv` document.
+- On submit, the client downloads the saved profile `resume` from the `applicant-profile-documents` bucket. The applicant already has read access there. The existing `submitApplication` path re-uploads it into `applicant-documents` as the `cv` document. No storage policy change is needed.
 - The application therefore keeps its own snapshot of the CV. The AI scoring function (`process-application-analysis`) and `submit_application`'s "a CV is present" rule stay unchanged.
 - If the copy fails, the submit fails with *"We could not attach your saved CV. Try again."*, and copied files are cleaned up as today.
-- The plan's first task verifies that the applicant's storage policies allow this cross-bucket copy. If they don't, the fallback is to download the saved resume and re-upload it the same way, with no server change.
 
 ### Navigation
 - The applicant sidebar becomes: Dashboard, **Job Openings** (`/jobs`, icon `BriefcaseBusiness`), Profile, Documents, Application Status.
