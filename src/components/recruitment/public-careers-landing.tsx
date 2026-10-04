@@ -1,11 +1,19 @@
 "use client";
 
-import { ArrowRight, Eye, Flag, Megaphone, ShieldCheck, Target } from "lucide-react";
+import { ArrowRight, BriefcaseBusiness, CircleCheck, Eye, Flag, GraduationCap, HandHeart, LockKeyhole, Search, ShieldCheck, Sparkles, Target, UserRoundCheck } from "lucide-react";
 import Link from "next/link";
 
 import { BrandLogos } from "@/components/public-site/brand-logos";
+import { LandingAnnouncements } from "@/components/public-site/landing-announcements";
+import { LandingContacts } from "@/components/public-site/landing-contacts";
+import { LandingFaqs } from "@/components/public-site/landing-faqs";
+import { PortalHeader } from "@/components/public-site/portal-header";
+import { SectionIntro } from "@/components/public-site/section-intro";
 import { PublicJobList } from "@/components/recruitment/public-job-list";
-import { PublicSiteHeader } from "@/components/recruitment/public-site-header";
+import { useVisibleContacts } from "@/hooks/use-public-site";
+
+const liftOnHover = "motion-safe:transition-transform motion-safe:duration-300 motion-safe:hover:-translate-y-1";
+const focusRing = "focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50";
 
 const pnpPrinciples = [
   {
@@ -18,151 +26,190 @@ const pnpPrinciples = [
     title: "Mission",
     body: "Enforce the law, prevent and control crimes, maintain peace and order, and ensure public safety and internal security with the active support of the community.",
   },
-  {
-    icon: Flag,
-    title: "Motto",
-    body: "Serbisyo, Karangalan, Katarungan",
-    note: "Service, Honor, Justice",
-  },
+  { icon: Flag, title: "Motto", body: "Serbisyo, Karangalan, Katarungan", note: "Service, Honor, Justice" },
 ];
 
-const portalServices = [
-  "Personnel records, deployments and promotions",
-  "Leave requests and attendance",
-  "Recruitment and online applications",
+const personnelFeatures = ["Personnel records and service history", "Leave requests", "Attendance", "Deployments", "Promotion eligibility"];
+const applicantFeatures = ["Browse open positions and their requirements", "Apply online with your saved documents", "Track the status of your application"];
+
+const benefits = [
+  { icon: HandHeart, title: "Serve your community", body: "Protect and serve the people of San Juan alongside a station that works closely with its community." },
+  { icon: GraduationCap, title: "Training and growth", body: "Build your skills through police training and grow your career through the PNP's promotion system." },
+  { icon: ShieldCheck, title: "A stable public-service career", body: "Join a uniformed public service with the benefits the law provides to PNP personnel." },
 ];
+
+function FeatureList({ items, tone }: { items: readonly string[]; tone: "gold" | "teal" }) {
+  return (
+    <ul className="mt-6 space-y-2.5 text-base text-slate-300">
+      {items.map((item) => (
+        <li className="flex items-start gap-2.5" key={item}>
+          <CircleCheck aria-hidden="true" className={`mt-1 size-4 shrink-0 ${tone === "gold" ? "text-cta" : "text-primary"}`} />
+          {item}
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 export function PublicCareersLanding() {
+  const contacts = useVisibleContacts();
+  // A failed or empty contact list hides the section and its header link instead of showing an error.
+  const visibleContacts = contacts.data ?? [];
+  const showContact = visibleContacts.length > 0;
+
   return (
-    <div className="min-h-dvh bg-background">
-      <PublicSiteHeader />
+    <div className="dark portal-grid min-h-dvh bg-background text-foreground">
+      <PortalHeader showContact={showContact} />
       <main>
-        <section className="bg-sidebar text-sidebar-foreground">
-          <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 sm:py-20 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-end lg:px-8">
-            <div className="max-w-3xl space-y-6">
-              <BrandLogos priority />
-              <div aria-hidden="true" className="h-1 w-14 bg-brand-command-red" />
-              <p className="text-sm font-semibold tracking-[0.18em] text-sidebar-ring uppercase">
-                Philippine National Police · San Juan City Police Station
-              </p>
-              <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-6xl">
-                Serve San Juan with purpose.
-              </h1>
-              <p className="max-w-2xl text-lg leading-8 text-slate-300">
-                The official portal of the San Juan City Police Station for its personnel and for everyone who wants
-                to join the service.
-              </p>
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <Link
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/85 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-                  href="#job-openings"
-                >
-                  Explore job openings
+        <section aria-labelledby="hero-heading" className="mx-auto max-w-4xl px-4 pt-14 pb-10 text-center sm:px-6 sm:pt-20">
+          <p className="inline-flex items-center gap-2 rounded-full border border-cta/30 bg-cta/10 px-4 py-1.5 text-sm font-semibold tracking-wide text-cta uppercase">
+            <Sparkles aria-hidden="true" className="size-4" />
+            Official portal of the San Juan City Police Station
+          </p>
+          <h1 className="mt-6 text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl" id="hero-heading">Serve San Juan with purpose.</h1>
+          <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-slate-300">
+            One portal for station personnel, job applicants, and everyone who wants to know what is happening at the station.
+          </p>
+        </section>
+
+        <section aria-labelledby="portals-heading" className="scroll-mt-24 px-4 pb-16 sm:px-6 lg:px-8" id="portals">
+          <h2 className="sr-only" id="portals-heading">Portals</h2>
+          <div className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-2">
+            <article aria-labelledby="personnel-portal-heading" className={`glass-panel flex flex-col justify-between rounded-2xl border border-cta/15 border-t-4 border-t-cta p-6 sm:p-8 ${liftOnHover}`}>
+              <div>
+                <div className="flex items-center justify-between gap-4">
+                  <span className="flex size-14 items-center justify-center rounded-2xl border border-cta/40 bg-background text-cta"><UserRoundCheck aria-hidden="true" className="size-7" /></span>
+                  <span className="rounded-full border border-cta/30 bg-cta/10 px-3 py-1 text-sm font-bold tracking-wide text-cta uppercase">Station personnel</span>
+                </div>
+                <h3 className="mt-6 text-2xl font-extrabold tracking-tight text-white sm:text-3xl" id="personnel-portal-heading">Personnel Portal</h3>
+                <p className="mt-2 text-base leading-7 text-slate-300">Self-service for San Juan City Police Station personnel.</p>
+                <FeatureList items={personnelFeatures} tone="gold" />
+              </div>
+              <div className="mt-8 border-t border-border pt-5">
+                <Link className={`inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-cta px-6 text-base font-bold text-cta-foreground transition-colors hover:bg-cta/90 ${focusRing}`} href="/login?as=employee">
+                  <LockKeyhole aria-hidden="true" className="size-4" />
+                  Sign in as personnel
                   <ArrowRight aria-hidden="true" className="size-4" />
                 </Link>
-                <Link
-                  className="inline-flex min-h-11 items-center justify-center rounded-lg border border-sidebar-border px-5 text-sm font-semibold transition-colors hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-                  href="/login?as=employee"
-                >
-                  Employee login
+              </div>
+            </article>
+
+            <article aria-labelledby="applicant-portal-heading" className={`glass-panel flex flex-col justify-between rounded-2xl border border-primary/15 border-t-4 border-t-primary p-6 sm:p-8 ${liftOnHover}`}>
+              <div>
+                <div className="flex items-center justify-between gap-4">
+                  <span className="flex size-14 items-center justify-center rounded-2xl border border-primary/40 bg-background text-primary"><BriefcaseBusiness aria-hidden="true" className="size-7" /></span>
+                  <span className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-sm font-bold tracking-wide text-primary uppercase">Careers</span>
+                </div>
+                <h3 className="mt-6 text-2xl font-extrabold tracking-tight text-white sm:text-3xl" id="applicant-portal-heading">Applicant &amp; Career Portal</h3>
+                <p className="mt-2 text-base leading-7 text-slate-300">Find an opening at the station and apply online.</p>
+                <FeatureList items={applicantFeatures} tone="teal" />
+              </div>
+              <div className="mt-8 grid gap-3 border-t border-border pt-5 sm:grid-cols-2">
+                <Link className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-base font-bold text-primary-foreground transition-colors hover:bg-primary/85 ${focusRing}`} href="/jobs">
+                  <Search aria-hidden="true" className="size-4" />
+                  View job openings
+                </Link>
+                <Link className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 text-base font-bold text-white transition-colors hover:bg-muted ${focusRing}`} href="/login?as=applicant&next=/applicant/applications">
+                  Check application status
                 </Link>
               </div>
-            </div>
-            <aside className="rounded-2xl border border-sidebar-border bg-sidebar-accent/70 p-6 shadow-lg">
-              <p className="flex items-center gap-2 text-sm font-semibold">
-                <ShieldCheck aria-hidden="true" className="size-4 text-sidebar-ring" />
-                One portal for the station
-              </p>
-              <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-300">
-                {portalServices.map((service) => (
-                  <li className="flex gap-2" key={service}>
-                    <span aria-hidden="true" className="mt-2.5 size-1.5 shrink-0 rounded-full bg-sidebar-ring" />
-                    {service}
-                  </li>
-                ))}
-              </ul>
-            </aside>
+            </article>
           </div>
         </section>
 
-        <section aria-labelledby="pnp-principles-heading" className="border-b border-border bg-muted/50">
+        <section aria-labelledby="job-openings-heading" className="scroll-mt-24 border-t border-border/80" id="job-openings">
           <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-            <div className="max-w-2xl space-y-2">
-              <p className="text-sm font-semibold tracking-[0.18em] text-primary uppercase">Philippine National Police</p>
-              <h2 className="text-3xl font-semibold tracking-tight" id="pnp-principles-heading">
-                Our vision, mission and motto
-              </h2>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <SectionIntro description="Open a posting to see its requirements, then sign up and apply online." eyebrow="Now hiring" id="job-openings-heading" title="Latest job openings" />
+              <Link className={`inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-semibold text-cta underline-offset-4 hover:underline ${focusRing}`} href="/jobs">
+                View all openings
+                <ArrowRight aria-hidden="true" className="size-4" />
+              </Link>
             </div>
-            <div className="mt-8 grid gap-4 md:grid-cols-3">
-              {pnpPrinciples.map(({ body, icon: Icon, note, title }) => (
-                <article className="rounded-xl border border-border bg-card p-6 shadow-sm" key={title}>
-                  <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <Icon aria-hidden="true" className="size-5" />
-                  </div>
-                  <h3 className="mt-5 text-lg font-semibold">{title}</h3>
-                  {note ? (
-                    <>
-                      <p className="mt-2 text-2xl font-semibold tracking-tight">{body}</p>
-                      <p className="mt-1 text-base text-muted-foreground">{note}</p>
-                    </>
-                  ) : (
-                    <p className="mt-2 text-base leading-7 text-muted-foreground">{body}</p>
-                  )}
+            <div className="mt-8">
+              <PublicJobList featured pageSize={3} />
+            </div>
+            <p className="mt-6 text-sm text-slate-300">
+              New applicant?{" "}
+              <Link className="font-semibold text-cta underline-offset-4 hover:underline" href="/applicant/register">Create an applicant account</Link>
+            </p>
+          </div>
+        </section>
+
+        <LandingAnnouncements />
+
+        <section aria-labelledby="about-heading" className="scroll-mt-24 border-t border-border/80" id="about">
+          <div className="mx-auto grid max-w-7xl gap-8 px-4 py-16 sm:px-6 lg:grid-cols-12 lg:items-center lg:px-8">
+            <div className="lg:col-span-5">
+              <SectionIntro
+                description="The San Juan City Police Station keeps the peace in San Juan City as part of the Philippine National Police. This portal brings its personnel services, recruitment, and public information together."
+                eyebrow="Philippine National Police"
+                id="about-heading"
+                title="About the station"
+              />
+            </div>
+            <div className="glass-panel rounded-2xl border border-border p-6 lg:col-span-7">
+              <h3 className="flex items-center gap-2 text-lg font-bold text-white">
+                <ShieldCheck aria-hidden="true" className="size-5 text-cta" />
+                Our vision, mission and motto
+              </h3>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                {pnpPrinciples.map(({ body, icon: Icon, note, title }) => (
+                  <article className={`rounded-xl border border-border bg-background/80 p-4 ${title === "Vision" ? "sm:col-span-2" : ""}`} key={title}>
+                    <h4 className="flex items-center gap-2 text-base font-bold text-cta">
+                      <Icon aria-hidden="true" className="size-4" />
+                      {title}
+                    </h4>
+                    {note ? (
+                      <>
+                        <p className="mt-1 text-lg font-semibold text-white">{body}</p>
+                        <p className="text-sm text-slate-300">{note}</p>
+                      </>
+                    ) : (
+                      <p className="mt-1 text-sm leading-6 text-slate-300">{body}</p>
+                    )}
+                  </article>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section aria-labelledby="why-join-heading" className="scroll-mt-24 border-t border-border/80" id="why-join">
+          <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+            <SectionIntro align="center" eyebrow="A calling to serve" id="why-join-heading" title="Why join the station?" />
+            <div className="mx-auto mt-10 grid max-w-6xl gap-6 md:grid-cols-3">
+              {benefits.map(({ body, icon: Icon, title }) => (
+                <article className={`glass-panel rounded-2xl border border-border p-6 ${liftOnHover}`} key={title}>
+                  <span className="flex size-12 items-center justify-center rounded-xl bg-cta/10 text-cta"><Icon aria-hidden="true" className="size-6" /></span>
+                  <h3 className="mt-4 text-lg font-bold text-white">{title}</h3>
+                  <p className="mt-2 text-base leading-7 text-slate-300">{body}</p>
                 </article>
               ))}
             </div>
           </div>
         </section>
 
-        <section aria-labelledby="job-openings-heading" className="scroll-mt-20" id="job-openings">
-          <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-            <div className="rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
-              <div className="flex flex-col gap-4 border-b border-border/80 pb-6 sm:flex-row sm:items-end sm:justify-between">
-                <div className="max-w-2xl space-y-2">
-                  <p className="flex items-center gap-2 text-sm font-semibold tracking-[0.18em] text-brand-command-red uppercase">
-                    <Megaphone aria-hidden="true" className="size-4" />
-                    Now hiring
-                  </p>
-                  <h2 className="text-3xl font-semibold tracking-tight" id="job-openings-heading">Apply Now!</h2>
-                  <p className="text-base leading-7 text-muted-foreground">
-                    Open a posting to see its requirements, then sign up and apply online.
-                  </p>
-                </div>
-                <Link
-                  className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-                  href="/jobs"
-                >
-                  View all openings
-                  <ArrowRight aria-hidden="true" className="size-4" />
-                </Link>
-              </div>
-              <div className="mt-6">
-                <PublicJobList featured pageSize={3} />
-              </div>
-              <p className="mt-6 text-sm text-muted-foreground">
-                New applicant?{" "}
-                <Link className="font-semibold text-primary underline-offset-4 hover:underline" href="/applicant/register">
-                  Create an applicant account
-                </Link>
-              </p>
-            </div>
-          </div>
-        </section>
+        <LandingFaqs />
+
+        {showContact ? <LandingContacts contacts={visibleContacts} /> : null}
       </main>
-      <footer className="bg-sidebar text-sidebar-foreground">
-        <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 text-sm sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
-          <div className="flex items-center gap-4">
-            <BrandLogos size={48} />
-            <p className="text-slate-300">San Juan City Police Station</p>
+
+      <footer className="border-t border-border bg-sidebar text-sidebar-foreground">
+        <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 text-sm sm:px-6 lg:px-8">
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-4">
+              <BrandLogos size={48} />
+              <p className="text-slate-300">San Juan City Police Station</p>
+            </div>
+            <nav aria-label="Sign in">
+              <ul className="flex flex-wrap gap-x-5 gap-y-1">
+                <li><Link className="inline-flex min-h-11 items-center font-medium hover:text-cta" href="/login?as=employee">Login as Employee</Link></li>
+                <li><Link className="inline-flex min-h-11 items-center font-medium hover:text-cta" href="/login?as=applicant">Login as Applicant</Link></li>
+              </ul>
+            </nav>
           </div>
-          <div className="flex flex-wrap gap-x-5 gap-y-1">
-            <Link className="inline-flex min-h-11 items-center font-medium hover:text-sidebar-ring" href="/login?as=employee">
-              Login as Employee
-            </Link>
-            <Link className="inline-flex min-h-11 items-center font-medium hover:text-sidebar-ring" href="/login?as=applicant">
-              Login as Applicant
-            </Link>
-          </div>
+          <p className="text-slate-300">Personal information submitted through this portal is protected under the Data Privacy Act of 2012 (Republic Act No. 10173).</p>
         </div>
       </footer>
     </div>
