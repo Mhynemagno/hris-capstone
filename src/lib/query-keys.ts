@@ -68,6 +68,12 @@ export const queryKeys = {
     myEducation: () => ["recruitment", "my-education"] as const,
     registeredApplicants: () => ["recruitment", "registered-applicants"] as const,
   },
+  publicSite: {
+    publishedAnnouncements: (limit: number) => ["public-site", "published-announcements", limit] as const,
+    visibleContacts: () => ["public-site", "visible-contacts"] as const,
+    hrAnnouncements: () => ["public-site", "hr-announcements"] as const,
+    hrContacts: () => ["public-site", "hr-contacts"] as const,
+  },
   leaveManagement: {
     types: () => ["leave-management", "types"] as const,
     mine: (filters: Record<string, unknown>) => ["leave-management", "mine", filters] as const,
