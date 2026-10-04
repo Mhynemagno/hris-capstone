@@ -50,6 +50,7 @@ const roleLabels: Record<AppRole, string> = {
 };
 
 const entityLabels: Record<string, string> = {
+  announcements: "Announcement",
   applications: "Job application",
   attendance_imports: "Attendance import",
   attendance_integration_settings: "Attendance integration settings",
@@ -65,6 +66,7 @@ const entityLabels: Record<string, string> = {
   profile_change_requests: "Profile change request",
   promotion_criteria: "Promotion criteria",
   promotion_evaluations: "Promotion evaluation",
+  public_contacts: "Public contact",
 };
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -113,6 +115,15 @@ function resourceLabel(log: AuditLog, lookups: AuditPresentationLookups) {
     case "applicants": {
       const applicantName = textValue(metadata.full_name) ?? lookups.profiles[textValue(metadata.user_id) ?? ""];
       return applicantName ? quoted("Applicant", applicantName) : `Applicant profile ${shortId(log.entity_id)}`;
+    }
+    case "announcements": {
+      const title = textValue(metadata.title);
+      return title ? quoted("Announcement", title) : `Announcement ${shortId(log.entity_id)}`;
+    }
+    case "public_contacts": {
+      if (metadata.reordered === true) return "Public contact order";
+      const contactLabel = textValue(metadata.label);
+      return contactLabel ? quoted("Public contact", contactLabel) : `Public contact ${shortId(log.entity_id)}`;
     }
     case "organization_settings":
       return "Organization settings";
