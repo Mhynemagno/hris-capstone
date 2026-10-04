@@ -100,9 +100,38 @@ describe("useCamera", () => {
     await act(async () => { expect(await result.current.start()).toBe("camera_unavailable"); });
   });
 
+  it("retries once with plain constraints when the camera is busy or rejects the preferred size", async () => {
+    const { stream } = fakeStream();
+    const getUserMedia = installGetUserMedia(() => Promise.resolve(stream));
+    getUserMedia.mockImplementationOnce(() => Promise.reject(new DOMException("Could not start video source", "NotReadableError")));
+    const { result } = renderCamera();
+
+    await act(async () => { expect(await result.current.start()).toBeNull(); });
+
+    expect(getUserMedia).toHaveBeenCalledTimes(2);
+    expect(getUserMedia).toHaveBeenLastCalledWith({ audio: false, video: true });
+    expect(result.current.status).toBe("active");
+  });
+
+  it("reports a busy camera when the retry also fails", async () => {
+    installGetUserMedia(() => Promise.reject(new DOMException("Could not start video source", "NotReadableError")));
+    const { result } = renderCamera();
+    await act(async () => { expect(await result.current.start()).toBe("camera_busy"); });
+  });
+
+  it("reports an insecure page instead of a generic failure", async () => {
+    removeMediaDevices();
+    Object.defineProperty(window, "isSecureContext", { configurable: true, value: false });
+    const { result } = renderCamera();
+    await act(async () => { expect(await result.current.start()).toBe("insecure_context"); });
+    Reflect.deleteProperty(window, "isSecureContext");
+  });
+
   it("maps browser errors to camera error kinds", () => {
     expect(cameraErrorKind(new DOMException("", "SecurityError"))).toBe("camera_denied");
     expect(cameraErrorKind(new DOMException("", "OverconstrainedError"))).toBe("no_camera");
-    expect(cameraErrorKind(new DOMException("", "NotReadableError"))).toBe("camera_unavailable");
+    expect(cameraErrorKind(new DOMException("", "NotReadableError"))).toBe("camera_busy");
+    expect(cameraErrorKind(new DOMException("", "AbortError"))).toBe("camera_busy");
+    expect(cameraErrorKind(new Error("weird"))).toBe("camera_unavailable");
   });
 });
