@@ -48,6 +48,12 @@ describe("ApplicantApplicationForm", () => {
     expect(screen.getByText("Save all 5 required documents to submit.")).toBeVisible();
   });
 
+  it("blocks Submit while a chosen replacement document is not saved yet", () => {
+    render(<ApplicantApplicationForm hasUnsavedDocuments jobId={7} />);
+    expect(screen.getByRole("button", { name: "Submit application" })).toBeDisabled();
+    expect(screen.getByText("Save or cancel the file you chose above before submitting.")).toBeVisible();
+  });
+
   it("attaches the saved CV, keeps optional credentials, and shows a tracking link", async () => {
     const user = userEvent.setup();
     const cv = new File(["CV"], "resume.pdf", { type: "application/pdf" });

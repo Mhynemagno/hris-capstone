@@ -26,7 +26,8 @@ function without<T extends object>(record: T, key: keyof T): T {
   return next;
 }
 
-export function ApplicantProfileDocuments() {
+/** `onPendingChange` reports whether a chosen file is still unsaved, so the apply form can wait for it. */
+export function ApplicantProfileDocuments({ onPendingChange }: { onPendingChange?: (pending: boolean) => void } = {}) {
   const documents = useApplicantProfileDocuments();
   const save = useSaveApplicantProfileDocuments();
   const remove = useRemoveMyApplicantProfileDocument();
@@ -37,6 +38,10 @@ export function ApplicantProfileDocuments() {
   const [notice, setNotice] = useState<string | null>(null);
   const busy = save.isPending || remove.isPending;
   const hasPending = Object.keys(pending).length > 0;
+
+  useEffect(() => {
+    onPendingChange?.(hasPending);
+  }, [hasPending, onPendingChange]);
 
   // A chosen but unsaved file would be lost on navigation, so ask the browser to warn first.
   useEffect(() => {

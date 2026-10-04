@@ -71,6 +71,17 @@ describe("ApplicantProfileDocuments", { timeout: 20_000 }, () => {
     expect(screen.queryByText(/Selected: diploma\.pdf/)).not.toBeInTheDocument();
   });
 
+  it("tells its parent whether a chosen file is still unsaved", async () => {
+    const user = userEvent.setup();
+    const onPendingChange = vi.fn();
+    mocks.documents = [];
+    render(<ApplicantProfileDocuments onPendingChange={onPendingChange} />);
+    await user.upload(screen.getByLabelText("Upload Diploma document"), new File(["pdf"], "diploma.pdf", { type: "application/pdf" }));
+    expect(onPendingChange).toHaveBeenLastCalledWith(true);
+    await user.click(screen.getByRole("button", { name: "Cancel Diploma upload" }));
+    expect(onPendingChange).toHaveBeenLastCalledWith(false);
+  });
+
   it("warns before leaving with an unsaved pick", async () => {
     const user = userEvent.setup();
     mocks.documents = [];
