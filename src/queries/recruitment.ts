@@ -220,6 +220,13 @@ export async function listApplicantProfileDocuments() {
   return (data ?? []) as ApplicantProfileDocument[];
 }
 
+/** HR: one applicant's saved required documents (RLS allows HR to read every applicant's). */
+export async function listApplicantProfileDocumentsFor(applicantId: string) {
+  const { data, error } = await createBrowserSupabaseClient().from("applicant_profile_documents").select("*").eq("applicant_id", applicantId).order("kind");
+  throwIfError(error);
+  return (data ?? []) as ApplicantProfileDocument[];
+}
+
 export async function getApplicantProfileDocumentUrl(objectPath: string) {
   const { data, error } = await createBrowserSupabaseClient().storage.from(applicantProfileDocumentBucket).createSignedUrl(objectPath, 600);
   throwIfError(error);
