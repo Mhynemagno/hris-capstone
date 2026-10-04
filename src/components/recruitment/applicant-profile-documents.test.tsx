@@ -35,7 +35,7 @@ describe("ApplicantProfileDocuments", { timeout: 20_000 }, () => {
     mocks.documents = [];
     render(<ApplicantProfileDocuments />);
     expect(screen.getByLabelText("Upload 2x2 picture document")).toHaveAttribute("accept", "image/png,image/jpeg");
-    expect(screen.getByLabelText("Upload PSA birth certificate document")).toHaveAttribute("accept", "application/pdf,image/png,image/jpeg");
+    expect(screen.getByLabelText("Upload PSA birth certificate document")).toHaveAttribute("accept", "application/pdf");
   });
 
   it("rejects a PDF for the 2x2 picture before uploading", async () => {

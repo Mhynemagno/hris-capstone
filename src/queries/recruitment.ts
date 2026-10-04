@@ -1,9 +1,9 @@
 import { RECRUITMENT_RANK } from "@/lib/pnp-catalogue";
 import { JOB_POSTING_IMAGE_BUCKET } from "@/lib/recruitment/job-posting-image";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { profileDocumentFileSchemaFor } from "@/schemas/applicant-portal";
 import {
   applicantDocumentSchema,
-  applicantProfileDocumentFileSchema,
   applicantProfilePhotoFileSchema,
   applicantProfileSchema,
   applicationAiFiltersSchema,
@@ -234,7 +234,7 @@ export async function saveApplicantProfileDocuments(documents: PendingApplicantP
   const uploadedPaths: string[] = [];
   try {
     for (const document of documents) {
-      const file = applicantProfileDocumentFileSchema.parse(document.file);
+      const file = profileDocumentFileSchemaFor(document.kind).parse(document.file);
       const extension = applicantProfileDocumentExtensions[file.type as keyof typeof applicantProfileDocumentExtensions];
       const objectPath = `applicant-profiles/${user.id}/${crypto.randomUUID()}.${extension}`;
       const { error: uploadError } = await bucket.upload(objectPath, file, { contentType: file.type, upsert: false });

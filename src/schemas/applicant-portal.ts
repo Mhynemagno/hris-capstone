@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import type { ApplicantProfileDocumentKind } from "@/lib/types/database";
+
 import "./error-messages";
 
 import { philippineMobileSchema } from "./auth";
@@ -16,13 +18,13 @@ export const APPLICANT_EDUCATION_LEVELS = [
   { level: "graduate", label: "Graduate Degree", required: false },
 ] as const;
 
-/** The documents an applicant uploads on the Documents page; all are required before applying. */
+/** The documents an applicant saves on the Documents page; all are required before applying. Only the 2x2 picture is an image. */
 export const APPLICANT_PROFILE_DOCUMENT_KINDS = [
-  { kind: "resume", label: "CV / Resume", accept: "application/pdf,image/png,image/jpeg", formats: "PDF, PNG, or JPEG" },
-  { kind: "psa", label: "PSA birth certificate", accept: "application/pdf,image/png,image/jpeg", formats: "PDF, PNG, or JPEG" },
+  { kind: "resume", label: "CV / Resume", accept: "application/pdf", formats: "PDF only" },
+  { kind: "psa", label: "PSA birth certificate", accept: "application/pdf", formats: "PDF only" },
   { kind: "photo", label: "2x2 picture", accept: "image/png,image/jpeg", formats: "PNG or JPEG image" },
-  { kind: "eligibility", label: "Eligibility", accept: "application/pdf,image/png,image/jpeg", formats: "PDF, PNG, or JPEG" },
-  { kind: "diploma", label: "Diploma", accept: "application/pdf,image/png,image/jpeg", formats: "PDF, PNG, or JPEG" },
+  { kind: "eligibility", label: "Eligibility", accept: "application/pdf", formats: "PDF only" },
+  { kind: "diploma", label: "Diploma", accept: "application/pdf", formats: "PDF only" },
 ] as const;
 
 const applicantPhotoDocumentMimeTypes = ["image/png", "image/jpeg"] as const;
@@ -39,6 +41,27 @@ export const applicantPhotoDocumentFileSchema = z.custom<File>(
     context.addIssue({ code: "custom", message: "Use an image up to 10 MiB." });
   }
 });
+
+function applicantPdfDocumentFileSchema(label: string) {
+  return z.custom<File>(
+    (value) => typeof File !== "undefined" && value instanceof File,
+    "Choose a PDF file.",
+  ).superRefine((file, context) => {
+    if (file.type !== "application/pdf") {
+      context.addIssue({ code: "custom", message: `Upload the ${label} as a PDF file.` });
+    }
+    if (file.size < 1 || file.size > 10 * 1024 * 1024) {
+      context.addIssue({ code: "custom", message: "Use a document up to 10 MiB." });
+    }
+  });
+}
+
+/** The file rule for one required document: the 2x2 picture is PNG/JPEG, every other document is a PDF. */
+export function profileDocumentFileSchemaFor(kind: ApplicantProfileDocumentKind) {
+  if (kind === "photo") return applicantPhotoDocumentFileSchema;
+  const { label } = APPLICANT_PROFILE_DOCUMENT_KINDS.find((item) => item.kind === kind)!;
+  return applicantPdfDocumentFileSchema(label);
+}
 
 const optionalText = (max: number) =>
   z.string().trim().max(max).transform((value) => value || undefined).optional();

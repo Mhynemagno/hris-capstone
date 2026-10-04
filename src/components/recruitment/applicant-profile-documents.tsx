@@ -11,8 +11,7 @@ import { useApplicantProfileDocuments, useSaveApplicantProfileDocuments } from "
 import { formatDate } from "@/lib/format-date";
 import type { ApplicantProfileDocumentKind } from "@/lib/types/database";
 import { getApplicantProfileDocumentUrl } from "@/queries/recruitment";
-import { APPLICANT_PROFILE_DOCUMENT_KINDS, applicantPhotoDocumentFileSchema } from "@/schemas/applicant-portal";
-import { applicantProfileDocumentFileSchema } from "@/schemas/recruitment";
+import { APPLICANT_PROFILE_DOCUMENT_KINDS, profileDocumentFileSchemaFor } from "@/schemas/applicant-portal";
 
 type DocumentKind = ApplicantProfileDocumentKind;
 
@@ -28,7 +27,7 @@ export function ApplicantProfileDocuments() {
     if (!file) return;
     setError(null);
     setNotice(null);
-    const validated = (kind === "photo" ? applicantPhotoDocumentFileSchema : applicantProfileDocumentFileSchema).safeParse(file);
+    const validated = profileDocumentFileSchemaFor(kind).safeParse(file);
     if (!validated.success) {
       setError(validated.error.issues[0]?.message ?? "Choose a valid document.");
       return;
@@ -67,7 +66,7 @@ export function ApplicantProfileDocuments() {
 
   return <section aria-labelledby="applicant-documents" className="rounded-2xl border bg-card p-5 sm:p-6">
     <h2 className="text-lg font-semibold" id="applicant-documents">Required documents</h2>
-    <p className="mt-1 text-sm text-muted-foreground">Upload all of these documents (up to 10 MiB each) before submitting an application. The 2x2 picture must be a PNG or JPEG image; the others may be PDF, PNG, or JPEG.</p>
+    <p className="mt-1 text-sm text-muted-foreground">Save all five documents (up to 10 MiB each) before submitting an application. The 2x2 picture must be a PNG or JPEG image; the other documents must be PDF files.</p>
     <ul className="mt-4 grid gap-4 sm:grid-cols-2">
       {APPLICANT_PROFILE_DOCUMENT_KINDS.map(({ kind, label, accept, formats }) => {
         const document = documents.data?.find((item) => item.kind === kind);
