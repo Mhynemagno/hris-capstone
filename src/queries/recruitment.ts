@@ -1,9 +1,9 @@
 import { RECRUITMENT_RANK } from "@/lib/pnp-catalogue";
 import { JOB_POSTING_IMAGE_BUCKET } from "@/lib/recruitment/job-posting-image";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { profileDocumentFileSchemaFor } from "@/schemas/applicant-portal";
 import {
   applicantDocumentSchema,
-  applicantProfileDocumentFileSchema,
   applicantProfilePhotoFileSchema,
   applicantProfileSchema,
   applicationAiFiltersSchema,
@@ -220,11 +220,28 @@ export async function listApplicantProfileDocuments() {
   return (data ?? []) as ApplicantProfileDocument[];
 }
 
+/** HR: one applicant's saved required documents (RLS allows HR to read every applicant's). */
+export async function listApplicantProfileDocumentsFor(applicantId: string) {
+  const { data, error } = await createBrowserSupabaseClient().from("applicant_profile_documents").select("*").eq("applicant_id", applicantId).order("kind");
+  throwIfError(error);
+  return (data ?? []) as ApplicantProfileDocument[];
+}
+
 export async function getApplicantProfileDocumentUrl(objectPath: string) {
   const { data, error } = await createBrowserSupabaseClient().storage.from(applicantProfileDocumentBucket).createSignedUrl(objectPath, 600);
   throwIfError(error);
   if (!data?.signedUrl) throw new Error("Unable to prepare the profile document.");
   return data.signedUrl;
+}
+
+/** The applicant's saved profile document as a File, so it can be attached to an application (the saved CV becomes the application's CV). */
+export async function loadMyProfileDocumentFile(document: Pick<ApplicantProfileDocument, "object_path" | "file_name" | "mime_type">) {
+  const { data, error } = await createBrowserSupabaseClient().storage.from(applicantProfileDocumentBucket).download(document.object_path);
+  if (error || !data) throw new Error("We could not attach your saved CV. Try again.");
+  // Attachments are named by extension, so a saved file named without one ("Resume") gets one from its type.
+  const extension = applicantProfileDocumentExtensions[document.mime_type];
+  const fileName = /\.(pdf|png|jpe?g)$/i.test(document.file_name) ? document.file_name : `${document.file_name}.${extension}`;
+  return new File([data], fileName, { type: document.mime_type });
 }
 
 export async function saveApplicantProfileDocuments(documents: PendingApplicantProfileDocument[]) {
@@ -234,7 +251,7 @@ export async function saveApplicantProfileDocuments(documents: PendingApplicantP
   const uploadedPaths: string[] = [];
   try {
     for (const document of documents) {
-      const file = applicantProfileDocumentFileSchema.parse(document.file);
+      const file = profileDocumentFileSchemaFor(document.kind).parse(document.file);
       const extension = applicantProfileDocumentExtensions[file.type as keyof typeof applicantProfileDocumentExtensions];
       const objectPath = `applicant-profiles/${user.id}/${crypto.randomUUID()}.${extension}`;
       const { error: uploadError } = await bucket.upload(objectPath, file, { contentType: file.type, upsert: false });

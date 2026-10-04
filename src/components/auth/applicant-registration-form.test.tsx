@@ -42,7 +42,7 @@ describe("ApplicantRegistrationForm", { timeout: 20_000 }, () => {
     expect(screen.queryByText("Show password")).not.toBeInTheDocument();
   });
 
-  it("normalizes the mobile number and sends structured account metadata", async () => {
+  it("normalizes the mobile number, sends structured account metadata, and opens job openings", async () => {
     const user = userEvent.setup();
     mocks.signUp.mockResolvedValue({ data: { session: { access_token: "test" } }, error: null });
 
@@ -66,7 +66,7 @@ describe("ApplicantRegistrationForm", { timeout: 20_000 }, () => {
       }),
     }));
     expect(mocks.signUp.mock.calls[0]?.[0].options).not.toHaveProperty("emailRedirectTo");
-    expect(mocks.replace).toHaveBeenCalledWith("/applicant");
+    expect(mocks.replace).toHaveBeenCalledWith("/jobs");
     expect(mocks.refresh).toHaveBeenCalledOnce();
   });
 

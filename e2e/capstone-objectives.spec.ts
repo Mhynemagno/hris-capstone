@@ -190,7 +190,7 @@ test.describe("Objective 2: recruitment management", () => {
     await page.locator("#registration-password").fill(demoPassword);
     await page.locator("#registration-confirm-password").fill(demoPassword);
     await page.getByRole("button", { name: "Register" }).click();
-    await expect(page).toHaveURL(/\/applicant$/, { timeout: 30_000 });
+    await expect(page).toHaveURL(/\/jobs$/, { timeout: 30_000 });
 
     // The personal data sheet requires the personal information and Primary, Secondary and
     // Bachelor's Degree education (qualifier, birthdate and mobile number come from registration;
@@ -215,16 +215,19 @@ test.describe("Objective 2: recruitment management", () => {
     const png = { name: "photo.png", mimeType: "image/png", buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64") };
     for (const [label, file] of [["CV / Resume", pdf("resume.pdf")], ["PSA birth certificate", pdf("psa.pdf")], ["2x2 picture", png], ["Eligibility", pdf("eligibility.pdf")], ["Diploma", pdf("diploma.pdf")]] as const) {
       await page.getByLabel(`Upload ${label} document`).setInputFiles(file);
+      await page.getByRole("button", { name: `Save ${label} document` }).click();
       await expect(page.getByRole("status").filter({ hasText: `${label} document saved.` })).toBeVisible();
     }
+    await expect(page.getByText("5 of 5 required documents saved")).toBeVisible();
 
     await page.goto("/jobs");
     await page.getByRole("link", { name: `View details for ${title}` }).click();
     await page.getByRole("button", { name: "Apply now" }).click();
     await page.getByRole("checkbox", { name: /I have read and agree/ }).check();
     await page.getByRole("button", { name: "I Agree & Continue" }).click();
-    await page.getByLabel("Cover note").fill("I am applying through the capstone objective tests.");
-    await page.getByLabel("CV (PDF)").setInputFiles(pdf("cv.pdf"));
+    await expect(page).toHaveURL(/\/applicant\/apply\/\d+$/);
+    await expect(page.getByLabel("CV (PDF)")).toHaveCount(0);
+    await page.getByLabel("Cover note (optional)").fill("I am applying through the capstone objective tests.");
     await page.getByRole("button", { name: "Submit application" }).click();
     await expect(page.getByRole("status").filter({ hasText: "Application submitted" })).toBeVisible({ timeout: 30_000 });
     const trackHref = await page.getByRole("link", { name: "Track application" }).getAttribute("href");
@@ -240,6 +243,8 @@ test.describe("Objective 2: recruitment management", () => {
     await expect(review).toBeVisible({ timeout: 15_000 });
     await expect(review).toHaveAttribute("href", `/hr/applications/${applicationId}`);
     await page.goto(`/hr/applications/${applicationId}`);
+    await expect(page.getByRole("heading", { name: "Required documents" })).toBeVisible();
+    await expect(page.getByRole("button", { name: /^Open CV \/ Resume: / })).toBeVisible();
     for (const status of ["Under Review", "Shortlisted"]) {
       await page.getByLabel("Next status").selectOption({ label: status });
       await page.getByRole("button", { name: "Update status" }).click();

@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(55);
+select extensions.plan(59);
 
 select extensions.has_function('public', 'enroll_employee_face', array['uuid', 'real[]', 'integer', 'boolean'], 'Face enrollment RPC exists');
 select extensions.has_function('public', 'record_face_attendance', array['uuid', 'real[]'], 'Face attendance RPC exists');
@@ -53,6 +53,7 @@ insert into face_fixture values
   ('alpha_retake', array_fill(0.11::real, array[128])),
   ('alpha_probe', array_fill(0.12::real, array[128])),
   ('alpha_lookalike', array_fill(0.13::real, array[128])),
+  ('alpha_margin', array_fill(0.156::real, array[128])),
   ('bravo', array_fill(-0.1::real, array[128])),
   ('charlie', array_fill(0.15::real, array[64]) || array_fill(0.05::real, array[64])),
   ('between_alpha_charlie', array_fill(0.125::real, array[64]) || array_fill(0.075::real, array[64])),
@@ -81,6 +82,12 @@ select extensions.is(public.enroll_employee_face('00000000-0000-4000-8000-000000
 select extensions.is(public.enroll_employee_face('00000000-0000-4000-8000-000000000b03', (select descriptor from face_fixture where key = 'charlie'), 5, true) ->> 'status', 'enrolled', 'A third distinct face enrolls');
 select extensions.is(public.enroll_employee_face('00000000-0000-4000-8000-000000000b01', (select descriptor from face_fixture where key = 'alpha_retake'), 5, true) ->> 'status', 're_registered', 'Re-registration replaces the enrollment');
 select extensions.is((select count(*) from public.list_face_enrollments()), 3::bigint, 'Re-registration keeps one enrollment per employee');
+select extensions.throws_ok(
+  $$ select public.enroll_employee_face('00000000-0000-4000-8000-000000000b02', (select descriptor from face_fixture where key = 'alpha_margin'), 5, true) $$,
+  '23505',
+  'This face is already registered to another employee. Each employee can register only their own face.',
+  'A face the kiosk could not tell apart from another employee cannot be enrolled'
+);
 
 set local role postgres;
 select extensions.is((select count(*) from public.audit_logs where entity_type = 'employee_face_enrollments' and action in ('enrolled', 're_registered')), 4::bigint, 'Every enrollment is audited');
@@ -89,7 +96,10 @@ set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000a01';
 
 -- Matching threshold.
 select extensions.is(public.record_face_attendance('00000000-0000-4000-8000-000000000c01', (select descriptor from face_fixture where key = 'stranger')) ->> 'outcome', 'not_recognized', 'A face beyond the threshold is not recognized');
-select extensions.is(public.record_face_attendance('00000000-0000-4000-8000-000000000c02', (select descriptor from face_fixture where key = 'between_alpha_charlie')) ->> 'outcome', 'not_recognized', 'An ambiguous match between two employees is rejected');
+select set_config('test.ambiguous_scan', public.record_face_attendance('00000000-0000-4000-8000-000000000c02', (select descriptor from face_fixture where key = 'between_alpha_charlie'))::text, true);
+select extensions.is(current_setting('test.ambiguous_scan')::jsonb ->> 'outcome', 'ambiguous', 'An ambiguous match between two employees is reported as ambiguous');
+select extensions.is(current_setting('test.ambiguous_scan')::jsonb ->> 'message', 'More than one employee matches this face. Please see HR.', 'An ambiguous match tells the person to see HR');
+select extensions.ok((current_setting('test.ambiguous_scan')::jsonb -> 'employee') = 'null'::jsonb, 'An ambiguous match reveals no employee');
 select extensions.is((select count(*) from public.attendance_logs where capture_method = 'face_recognition'), 0::bigint, 'Rejected scans create no attendance');
 
 select set_config('test.first_scan', public.record_face_attendance('00000000-0000-4000-8000-000000000c03', (select descriptor from face_fixture where key = 'alpha_probe'))::text, true);
@@ -100,6 +110,7 @@ select extensions.is(current_setting('test.first_scan')::jsonb -> 'distance', 'n
 
 -- Idempotency and duplicate prevention.
 select extensions.is(public.record_face_attendance('00000000-0000-4000-8000-000000000c03', (select descriptor from face_fixture where key = 'alpha_probe')) ->> 'outcome', 'time_in', 'A retried scan ID returns its original outcome');
+select extensions.is(public.record_face_attendance('00000000-0000-4000-8000-000000000c02', (select descriptor from face_fixture where key = 'alpha_probe')) ->> 'outcome', 'ambiguous', 'Replaying an ambiguous scan ID returns the stored outcome');
 select extensions.is(public.record_face_attendance('00000000-0000-4000-8000-000000000c04', (select descriptor from face_fixture where key = 'alpha_probe')) ->> 'outcome', 'already_recorded', 'An immediate rescan does not record time out');
 select extensions.is((select count(*) from public.attendance_logs where capture_method = 'face_recognition'), 1::bigint, 'Repeated scans keep one face log');
 

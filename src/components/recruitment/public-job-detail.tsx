@@ -42,7 +42,7 @@ export function PublicJobDetail({ jobId }: { jobId: number }) {
   if (job.isLoading) return <LoadingState label="Loading job opening…" />;
   if (job.error) return <ErrorState message={job.error.message} />;
   if (!job.data) return <ErrorState message="This job opening is unavailable or has closed." />;
-  const applyPath = `/applicant/applications?jobId=${job.data.id}`;
+  const applyPath = `/applicant/apply/${job.data.id}`;
   const imageUrl = jobPostingImageUrl(job.data.image_path);
   return <section className="mx-auto max-w-4xl space-y-6">
     <div><Link className="text-sm text-primary underline-offset-4 hover:underline" href="/jobs">All job openings</Link><h1 className="mt-4 text-3xl font-semibold tracking-tight">{job.data.title}</h1><p className="mt-2 text-sm text-muted-foreground">{[job.data.location, job.data.closes_on ? `Deadline of Application: ${formatDate(job.data.closes_on)}` : null].filter(Boolean).join(" · ")}</p></div>

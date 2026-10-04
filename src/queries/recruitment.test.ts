@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   rpc: vi.fn(),
   upload: vi.fn(),
   remove: vi.fn(),
+  download: vi.fn(),
 }));
 
 vi.mock("@/lib/supabase/client", () => ({
@@ -16,13 +17,13 @@ vi.mock("@/lib/supabase/client", () => ({
     auth: { getUser: mocks.getUser },
     from: mocks.from,
     rpc: mocks.rpc,
-    storage: { from: () => ({ upload: mocks.upload, remove: mocks.remove }) },
+    storage: { from: () => ({ upload: mocks.upload, remove: mocks.remove, download: mocks.download }) },
   }),
 }));
 
 import * as recruitmentQueries from "./recruitment";
 
-import { getPublishedJob, retryApplicationAnalysis, saveApplicantProfile, saveJobOpening, SESSION_ENDED_MESSAGE, submitApplication } from "./recruitment";
+import { getPublishedJob, loadMyProfileDocumentFile, retryApplicationAnalysis, saveApplicantProfile, saveJobOpening, SESSION_ENDED_MESSAGE, submitApplication } from "./recruitment";
 
 /** The Patrolman / Patrolwoman rank lookup every job-opening save makes. */
 function mockPatrolRank(id: number | null = 1) {
@@ -330,5 +331,39 @@ describe("applicant profile media", () => {
       target_file_name: "eligibility.pdf",
       target_mime_type: "application/pdf",
     }));
+  });
+});
+
+describe("loadMyProfileDocumentFile", () => {
+  beforeEach(() => vi.resetAllMocks());
+
+  it("downloads the saved profile document as a File with its name and type", async () => {
+    mocks.download.mockResolvedValue({ data: new Blob(["cv"], { type: "application/pdf" }), error: null });
+    const file = await loadMyProfileDocumentFile({ object_path: `applicant-profiles/${userId}/a.pdf`, file_name: "resume.pdf", mime_type: "application/pdf" });
+    expect(mocks.download).toHaveBeenCalledWith(`applicant-profiles/${userId}/a.pdf`);
+    expect(file).toBeInstanceOf(File);
+    expect(file.name).toBe("resume.pdf");
+    expect(file.type).toBe("application/pdf");
+  });
+
+  it("keeps a legacy image CV usable", async () => {
+    mocks.download.mockResolvedValue({ data: new Blob(["img"], { type: "image/png" }), error: null });
+    const file = await loadMyProfileDocumentFile({ object_path: `applicant-profiles/${userId}/a.png`, file_name: "resume.png", mime_type: "image/png" });
+    expect(file.type).toBe("image/png");
+  });
+
+  it("gives a saved file without an extension one that matches its type, so it can be attached", async () => {
+    mocks.download.mockResolvedValue({ data: new Blob(["cv"], { type: "application/pdf" }), error: null });
+    const file = await loadMyProfileDocumentFile({ object_path: `applicant-profiles/${userId}/a.pdf`, file_name: "Resume", mime_type: "application/pdf" });
+    expect(file.name).toBe("Resume.pdf");
+    const image = await loadMyProfileDocumentFile({ object_path: `applicant-profiles/${userId}/a.jpg`, file_name: "1000012345", mime_type: "image/jpeg" });
+    expect(image.name).toBe("1000012345.jpg");
+    const named = await loadMyProfileDocumentFile({ object_path: `applicant-profiles/${userId}/a.pdf`, file_name: "CV.PDF", mime_type: "application/pdf" });
+    expect(named.name).toBe("CV.PDF");
+  });
+
+  it("explains a failed download in applicant terms", async () => {
+    mocks.download.mockResolvedValue({ data: null, error: { message: "Object not found" } });
+    await expect(loadMyProfileDocumentFile({ object_path: `applicant-profiles/${userId}/a.pdf`, file_name: "resume.pdf", mime_type: "application/pdf" })).rejects.toThrow("We could not attach your saved CV. Try again.");
   });
 });

@@ -119,6 +119,15 @@ describe("FaceAttendanceKiosk", () => {
     await user.click(screen.getByRole("button", { name: /try again/i }));
     expect(scanner.retry).toHaveBeenCalled();
   });
+
+  it("titles an ambiguous match 'Multiple possible matches'", async () => {
+    scanner.state = { status: "error", kind: "ambiguous", message: "More than one employee matches this face. Please see HR.", fatal: false };
+    const user = userEvent.setup();
+    render(<FaceAttendanceKiosk />);
+    await user.click(screen.getByRole("button", { name: /open scanner/i }));
+    expect(screen.getByRole("alert")).toHaveTextContent("Multiple possible matches");
+    expect(screen.getByRole("alert")).toHaveTextContent("Please see HR.");
+  });
 });
 
 describe("FaceEnrollmentPanel", () => {

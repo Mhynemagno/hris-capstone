@@ -16,6 +16,8 @@ import { useApplicationAiScores, useHireApplication, useMyApplication, useRetryA
 import { getApplicantDocumentUrl } from "@/queries/recruitment";
 import { hiringDecisionSchema, type ApplicationStatus } from "@/schemas/recruitment";
 
+import { HrRequiredDocuments } from "./hr-required-documents";
+
 /**
  * Review transitions HR can choose. private.transition_application_status
  * (supabase/migrations/20260906185626_recruitment_workflow_feedback.sql) also
@@ -157,8 +159,9 @@ export function HrApplicationDetail({ applicationId }: { applicationId: string }
           <Button disabled={hire.isPending} type="submit">{hire.isPending ? "Hiring…" : "Confirm hire"}</Button>
         </form>
       ) : null}
+      <HrRequiredDocuments applicantId={application.applicant_id} />
       <section className="rounded-xl border p-5">
-        <h2 className="font-semibold">Documents</h2>
+        <h2 className="font-semibold">Submitted with this application</h2>
         {documents.length ? (
           <ul className="mt-3 space-y-2 text-sm">
             {documents.map((document) => (

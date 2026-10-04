@@ -25,7 +25,7 @@ vi.mock("@/hooks/use-recruitment", () => ({
   useMyApplication: () => ({
     isLoading: false,
     data: {
-      application: { id: "00000000-0000-0000-0000-000000000001", status: mocks.applicationStatus, submitted_at: "2026-08-20T00:00:00Z", cover_note: "Interested", applicants: { applicant_number: 12345 } },
+      application: { id: "00000000-0000-0000-0000-000000000001", applicant_id: "00000000-0000-0000-0000-0000000000a1", status: mocks.applicationStatus, submitted_at: "2026-08-20T00:00:00Z", cover_note: "Interested", applicants: { applicant_number: 12345 } },
       history: [{ id: "00000000-0000-0000-0000-000000000002", next_status: "Shortlisted", note: null }],
       documents: [],
     },
@@ -33,6 +33,7 @@ vi.mock("@/hooks/use-recruitment", () => ({
   useTransitionApplicationStatus: () => ({ isPending: false, mutateAsync: mocks.transition }),
   useHireApplication: () => ({ isPending: false, mutateAsync: mocks.hire }),
   useApplicationAiScores: () => ({ data: mocks.scores, error: mocks.scoreError }),
+  useApplicantProfileDocumentsFor: (applicantId: string) => ({ isLoading: false, error: null, data: applicantId ? [{ id: "d1", kind: "resume", file_name: "resume.pdf", object_path: "applicant-profiles/u/r.pdf", updated_at: "2026-10-01T00:00:00Z" }] : [] }),
   useRetryApplicationAnalysis: () => ({ isPending: false, mutateAsync: mocks.retry }),
   useHrApplications: () => ({ isLoading: false, error: null, data: { rows: mocks.applications } }),
 }));
@@ -153,6 +154,13 @@ describe("HR recruitment workspace", () => {
 
     const options = within(screen.getByLabelText("Next status")).getAllByRole("option").map((option) => option.textContent);
     expect(options).toEqual(["Choose next status", ...expected]);
+  });
+
+  it("shows the applicant's required documents apart from the files attached to the application", () => {
+    render(<HrApplicationDetail applicationId="00000000-0000-0000-0000-000000000001" />);
+    expect(screen.getByRole("heading", { name: "Required documents" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Open CV / Resume: resume.pdf" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Submitted with this application" })).toBeInTheDocument();
   });
 
   it("explains when no review transition is available", () => {

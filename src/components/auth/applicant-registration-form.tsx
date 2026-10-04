@@ -83,7 +83,7 @@ export function ApplicantRegistrationForm({ loginHref = "/login", nextPath = nul
         setConfirmationPending(true);
         return;
       }
-      router.replace(nextPath ?? "/applicant");
+      router.replace(nextPath ?? "/jobs");
       router.refresh();
     } catch {
       setError("We could not reach the server. Check your connection and try again.");

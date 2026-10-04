@@ -2,131 +2,101 @@ import userEvent from "@testing-library/user-event";
 import { render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+const mocks = vi.hoisted(() => ({ submit: vi.fn(), existingApplication: vi.fn(), documents: vi.fn(), loadFile: vi.fn() }));
+vi.mock("@/hooks/use-recruitment", () => ({
+  useMyApplicationForJob: mocks.existingApplication,
+  useSubmitApplication: () => ({ isPending: false, mutateAsync: mocks.submit }),
+  useApplicantProfileDocuments: mocks.documents,
+}));
+vi.mock("@/queries/recruitment", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/queries/recruitment")>()),
+  loadMyProfileDocumentFile: mocks.loadFile,
+}));
+
 import { ApplicantProfileRequiredError } from "@/queries/recruitment";
 import { ApplicantApplicationForm } from "./applicant-application-form";
 
-const { submit, existingApplication } = vi.hoisted(() => ({ submit: vi.fn(), existingApplication: vi.fn() }));
-vi.mock("@/hooks/use-recruitment", () => ({
-  useMyApplicationForJob: existingApplication,
-  useSubmitApplication: () => ({ isPending: false, mutateAsync: submit }),
-}));
+const saved = (kind: string) => ({ id: kind, kind, object_path: `applicant-profiles/u/${kind}.pdf`, file_name: `${kind}.pdf`, mime_type: "application/pdf", updated_at: "2026-10-01T00:00:00Z" });
+const allFive = ["resume", "psa", "photo", "eligibility", "diploma"].map(saved);
+
+function stubFormData(coverNote: string, credentials: File[]) {
+  vi.stubGlobal("FormData", class {
+    get(name: string) { return name === "coverNote" ? coverNote : null; }
+    getAll(name: string) { return name === "credentials" ? credentials : []; }
+  });
+}
 
 describe("ApplicantApplicationForm", () => {
   beforeEach(() => {
-    submit.mockReset();
-    existingApplication.mockReturnValue({ data: null, error: null, isLoading: false });
+    mocks.submit.mockReset();
+    mocks.loadFile.mockReset();
+    mocks.existingApplication.mockReturnValue({ data: null, error: null, isLoading: false });
+    mocks.documents.mockReturnValue({ data: allFive, error: null, isLoading: false });
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("has no CV upload; the saved CV is used", () => {
+    render(<ApplicantApplicationForm jobId={7} />);
+    expect(screen.queryByLabelText("CV (PDF)")).not.toBeInTheDocument();
+    expect(screen.getByText("Your saved CV / Resume and required documents are included.")).toBeVisible();
   });
 
-  afterEach(() => {
-    vi.unstubAllGlobals();
+  it("disables Submit until all five required documents are saved", () => {
+    mocks.documents.mockReturnValue({ data: allFive.slice(0, 4), error: null, isLoading: false });
+    render(<ApplicantApplicationForm jobId={7} />);
+    expect(screen.getByRole("button", { name: "Submit application" })).toBeDisabled();
+    expect(screen.getByText("Save all 5 required documents to submit.")).toBeVisible();
   });
 
-  it("requires a CV before it starts an upload or application submission", async () => {
+  it("blocks Submit while a chosen replacement document is not saved yet", () => {
+    render(<ApplicantApplicationForm hasUnsavedDocuments jobId={7} />);
+    expect(screen.getByRole("button", { name: "Submit application" })).toBeDisabled();
+    expect(screen.getByText("Save or cancel the file you chose above before submitting.")).toBeVisible();
+  });
+
+  it("attaches the saved CV, keeps optional credentials, and shows a tracking link", async () => {
     const user = userEvent.setup();
-    render(<ApplicantApplicationForm jobId={7} />);
-
-    await user.click(screen.getByRole("button", { name: "Submit application" }));
-
-    expect(screen.getByRole("alert")).toHaveTextContent("Attach your CV as a PDF before submitting.");
-    expect(submit).not.toHaveBeenCalled();
-  });
-
-  it("links legacy applicants to complete their profile before retrying", async () => {
-    const user = userEvent.setup({ applyAccept: false });
-    submit.mockRejectedValue(new ApplicantProfileRequiredError());
-    render(<ApplicantApplicationForm jobId={7} />);
-
-    const documentInput = screen.getByLabelText("CV (PDF)") as HTMLInputElement;
-    await user.upload(
-      documentInput,
-      new File(["CV"], "cv.pdf", { type: "application/pdf" }),
-    );
-    expect(documentInput.files).toHaveLength(1);
-    const submittedCv = new File(["CV"], "cv.pdf", { type: "application/pdf" });
-    vi.stubGlobal("FormData", class {
-      get(name: string) {
-        if (name === "coverNote") return "Ready to contribute.";
-        if (name === "cv") return submittedCv;
-        return null;
-      }
-
-      getAll(name: string) {
-        return name === "credentials" ? [] : [];
-      }
-    });
-    await user.click(screen.getByRole("button", { name: "Submit application" }));
-
-    expect(await screen.findByRole("link", { name: "Complete profile" })).toHaveAttribute("href", "/applicant/profile");
-  });
-
-  it("links applicants with missing required documents to the required documents section", async () => {
-    const user = userEvent.setup({ applyAccept: false });
-    submit.mockRejectedValue(new ApplicantProfileRequiredError(
-      "Upload all required documents (Eligibility, Diploma, CV / Resume, PSA birth certificate, and 2x2 picture) on the Documents page before applying.",
-      "/applicant/documents",
-      "Update required documents",
-    ));
-    render(<ApplicantApplicationForm jobId={7} />);
-
-    await user.upload(
-      screen.getByLabelText("CV (PDF)"),
-      new File(["CV"], "cv.pdf", { type: "application/pdf" }),
-    );
-    vi.stubGlobal("FormData", class {
-      get(name: string) {
-        if (name === "cv") return new File(["CV"], "cv.pdf", { type: "application/pdf" });
-        return null;
-      }
-
-      getAll() { return []; }
-    });
-    await user.click(screen.getByRole("button", { name: "Submit application" }));
-
-    expect(await screen.findByRole("alert")).toHaveTextContent("on the Documents page");
-    expect(await screen.findByRole("link", { name: "Update required documents" })).toHaveAttribute("href", "/applicant/documents");
-  });
-
-  it("keeps the PDF CV distinct from optional credentials and shows a tracking link", async () => {
-    const user = userEvent.setup({ applyAccept: false });
-    submit.mockResolvedValue("223e4567-e89b-42d3-a456-426614174000");
-    render(<ApplicantApplicationForm jobId={7} />);
-
     const cv = new File(["CV"], "resume.pdf", { type: "application/pdf" });
     const credential = new File(["certificate"], "certificate.png", { type: "image/png" });
-    await user.upload(screen.getByLabelText("CV (PDF)"), cv);
-    await user.upload(screen.getByLabelText("Credentials (optional)"), credential);
-    vi.stubGlobal("FormData", class {
-      get(name: string) {
-        if (name === "cv") return cv;
-        if (name === "coverNote") return "";
-        return null;
-      }
-
-      getAll(name: string) {
-        return name === "credentials" ? [credential] : [];
-      }
-    });
+    mocks.loadFile.mockResolvedValue(cv);
+    mocks.submit.mockResolvedValue("223e4567-e89b-42d3-a456-426614174000");
+    render(<ApplicantApplicationForm jobId={7} />);
+    stubFormData("Ready to serve.", [credential]);
     await user.click(screen.getByRole("button", { name: "Submit application" }));
 
-    await waitFor(() => expect(submit).toHaveBeenCalledWith(expect.objectContaining({
-      documents: [
-        { kind: "cv", file: cv },
-        { kind: "credential", file: credential },
-      ],
+    expect(mocks.loadFile).toHaveBeenCalledWith(expect.objectContaining({ object_path: "applicant-profiles/u/resume.pdf" }));
+    await waitFor(() => expect(mocks.submit).toHaveBeenCalledWith(expect.objectContaining({
+      jobId: 7,
+      coverNote: "Ready to serve.",
+      documents: [{ kind: "cv", file: cv }, { kind: "credential", file: credential }],
     })));
     expect(await screen.findByRole("status")).toHaveTextContent("Application submitted");
     expect(screen.getByRole("link", { name: "Track application" })).toHaveAttribute("href", "/applicant/applications/223e4567-e89b-42d3-a456-426614174000");
   });
 
-  it("links an applicant to their existing application instead of offering a duplicate submission", () => {
-    existingApplication.mockReturnValue({
-      data: { id: "223e4567-e89b-42d3-a456-426614174000", status: "Under Review" },
-      error: null,
-      isLoading: false,
-    });
-
+  it("shows the CV attach failure and does not submit", async () => {
+    const user = userEvent.setup();
+    mocks.loadFile.mockRejectedValue(new Error("We could not attach your saved CV. Try again."));
     render(<ApplicantApplicationForm jobId={7} />);
+    stubFormData("", []);
+    await user.click(screen.getByRole("button", { name: "Submit application" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("We could not attach your saved CV. Try again.");
+    expect(mocks.submit).not.toHaveBeenCalled();
+  });
 
+  it("links legacy applicants to complete their profile before retrying", async () => {
+    const user = userEvent.setup();
+    mocks.loadFile.mockResolvedValue(new File(["CV"], "resume.pdf", { type: "application/pdf" }));
+    mocks.submit.mockRejectedValue(new ApplicantProfileRequiredError());
+    render(<ApplicantApplicationForm jobId={7} />);
+    stubFormData("", []);
+    await user.click(screen.getByRole("button", { name: "Submit application" }));
+    expect(await screen.findByRole("link", { name: "Complete profile" })).toHaveAttribute("href", "/applicant/profile");
+  });
+
+  it("links to the existing application instead of offering a duplicate submission", () => {
+    mocks.existingApplication.mockReturnValue({ data: { id: "223e4567-e89b-42d3-a456-426614174000", status: "Under Review" }, error: null, isLoading: false });
+    render(<ApplicantApplicationForm jobId={7} />);
     expect(screen.getByRole("link", { name: "Open existing application" })).toHaveAttribute("href", "/applicant/applications/223e4567-e89b-42d3-a456-426614174000");
     expect(screen.queryByRole("button", { name: "Submit application" })).not.toBeInTheDocument();
   });

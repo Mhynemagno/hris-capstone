@@ -16,6 +16,7 @@ import {
   listHrApplications,
   listHrJobs,
   listApplicantProfileDocuments,
+  listApplicantProfileDocumentsFor,
   listMyApplications,
   listPublishedJobs,
   saveApplicantProfile,
@@ -88,6 +89,14 @@ export function useRemoveMyApplicantProfilePhoto(applicant: { id: string; profil
 
 export function useApplicantProfileDocuments() {
   return useQuery({ queryKey: queryKeys.recruitment.profileDocuments(), queryFn: listApplicantProfileDocuments });
+}
+
+export function useApplicantProfileDocumentsFor(applicantId: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.recruitment.applicantProfileDocuments(applicantId ?? ""),
+    queryFn: () => listApplicantProfileDocumentsFor(applicantId as string),
+    enabled: Boolean(applicantId),
+  });
 }
 
 export function useSaveApplicantProfileDocuments() {

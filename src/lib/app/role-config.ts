@@ -85,9 +85,10 @@ export const ROLE_CONFIG: Record<AppRole, RoleConfig> = {
       "Explore opportunities and follow the progress of your applications.",
     navigation: [
       { href: "/applicant", label: "Dashboard", icon: "LayoutDashboard" },
+      { href: "/jobs", label: "Job Openings", icon: "BriefcaseBusiness" },
       { href: "/applicant/profile", label: "Profile", icon: "ContactRound" },
-      { href: "/applicant/applications", label: "Application Status", icon: "Clock" },
       { href: "/applicant/documents", label: "Documents", icon: "FileText" },
+      { href: "/applicant/applications", label: "Application Status", icon: "Clock" },
     ],
   },
   employee: {

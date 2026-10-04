@@ -13,7 +13,7 @@ import type { FaceAttendanceResult } from "@/schemas/face-recognition";
  * meant for supervised use, and the employee self-scan also requires the employee's own login.
  */
 export type FatalErrorKind = "camera_denied" | "no_camera" | "camera_unavailable" | "models_failed";
-export type ScanErrorKind = "not_recognized" | "rule_rejected" | "network" | "service";
+export type ScanErrorKind = "not_recognized" | "ambiguous" | "rule_rejected" | "network" | "service";
 
 export type ScannerState =
   | { status: "initializing" }
@@ -94,6 +94,8 @@ function resultState(result: FaceAttendanceResult): ScannerState {
       return { status: "success", result };
     case "not_recognized":
       return { status: "error", kind: "not_recognized", message: "Face not recognized.", fatal: false, distance: result.distance };
+    case "ambiguous":
+      return { status: "error", kind: "ambiguous", message: result.message ?? "More than one employee matches this face. Please see HR.", fatal: false };
     case "already_recorded":
     case "rejected":
       return { status: "error", kind: "rule_rejected", message: result.message ?? "Attendance could not be recorded.", fatal: false };

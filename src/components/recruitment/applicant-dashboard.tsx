@@ -37,7 +37,9 @@ export function ApplicantDashboard() {
           <div className="flex items-center gap-2"><ListChecks aria-hidden="true" className="size-5 text-primary" /><h2 className="font-semibold" id="dashboard-latest">Latest application</h2></div>
           {latest ? <><p className="mt-3 text-sm text-muted-foreground">{latest.job_openings?.title ?? "Application"}</p><p className="mt-1 text-2xl font-semibold tracking-tight">{latest.status}</p></> : <p className="mt-3 text-sm text-muted-foreground">No application submitted yet.</p>}
         </div>
-        <Link className={linkClassName} href="/applicant/applications">View application status</Link>
+        {latest
+          ? <Link className={linkClassName} href="/applicant/applications">View application status</Link>
+          : <Link className={linkClassName} href="/jobs">Start an application</Link>}
       </article>
       <article aria-labelledby="dashboard-documents" className={cardClassName}>
         <div>
