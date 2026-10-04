@@ -227,6 +227,13 @@ export async function getApplicantProfileDocumentUrl(objectPath: string) {
   return data.signedUrl;
 }
 
+/** The applicant's saved profile document as a File, so it can be attached to an application (the saved CV becomes the application's CV). */
+export async function loadMyProfileDocumentFile(document: Pick<ApplicantProfileDocument, "object_path" | "file_name" | "mime_type">) {
+  const { data, error } = await createBrowserSupabaseClient().storage.from(applicantProfileDocumentBucket).download(document.object_path);
+  if (error || !data) throw new Error("We could not attach your saved CV. Try again.");
+  return new File([data], document.file_name, { type: document.mime_type });
+}
+
 export async function saveApplicantProfileDocuments(documents: PendingApplicantProfileDocument[]) {
   const user = await requireCurrentUser();
   const client = createBrowserSupabaseClient();

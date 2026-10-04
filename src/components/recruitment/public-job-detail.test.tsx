@@ -44,7 +44,7 @@ describe("PublicJobDetail", () => {
     expect(agree).toBeDisabled();
     await user.click(screen.getByRole("checkbox", { name: /I have read and agree/ }));
     await user.click(agree);
-    expect(mocks.push).toHaveBeenCalledWith(`/login?as=applicant&next=${encodeURIComponent("/applicant/applications?jobId=9")}`);
+    expect(mocks.push).toHaveBeenCalledWith(`/login?as=applicant&next=${encodeURIComponent("/applicant/apply/9")}`);
   });
 
   it("does not continue when the privacy notice is cancelled", async () => {
@@ -67,7 +67,7 @@ describe("PublicJobDetail", () => {
     await user.click(screen.getByRole("button", { name: "Apply now" }));
     await user.click(await screen.findByRole("checkbox", { name: /I have read and agree/ }));
     await user.click(screen.getByRole("button", { name: "I Agree & Continue" }));
-    await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/applicant/applications?jobId=9"));
+    await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/applicant/apply/9"));
   });
 
   it("lists the General Requirements, including older criteria", () => {
