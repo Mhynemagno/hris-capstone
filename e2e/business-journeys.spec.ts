@@ -118,7 +118,7 @@ test.describe("leave journey", () => {
 
     await page.goto("/employee/leave");
     const request = page.getByRole("article").filter({ hasText: reason });
-    await expect(request).toContainText(/pending/i);
+    await expect(request).toContainText("For Approval");
     await signOut(page, "demo.employee@example.test");
 
     await signIn(page, "demo.hr@example.test", "/hr");
