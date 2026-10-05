@@ -26,6 +26,9 @@ export const statusStyles: Record<ApplicationStatus, string> = {
   Shortlisted: "bg-teal-50 text-teal-800 ring-teal-600/20 dark:bg-teal-950/40 dark:text-teal-200 dark:ring-teal-400/30",
   Interview: "bg-violet-50 text-violet-800 ring-violet-600/20 dark:bg-violet-950/40 dark:text-violet-200 dark:ring-violet-400/30",
   "Needs Revision": "bg-amber-50 text-amber-900 ring-amber-600/20 dark:bg-amber-950/40 dark:text-amber-200 dark:ring-amber-400/30",
+  "Endorsed to Crame": "bg-blue-50 text-blue-800 ring-blue-600/20 dark:bg-blue-950/40 dark:text-blue-200 dark:ring-blue-400/30",
+  "Neuro Exam": "bg-purple-50 text-purple-800 ring-purple-600/20 dark:bg-purple-950/40 dark:text-purple-200 dark:ring-purple-400/30",
+  "For Training": "bg-cyan-50 text-cyan-800 ring-cyan-600/20 dark:bg-cyan-950/40 dark:text-cyan-200 dark:ring-cyan-400/30",
   Hired: "bg-emerald-50 text-emerald-800 ring-emerald-600/20 dark:bg-emerald-950/40 dark:text-emerald-200 dark:ring-emerald-400/30",
   "Not Selected": "bg-muted text-muted-foreground ring-border",
 };

@@ -10,11 +10,19 @@ import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { LoadingState } from "@/components/ui/loading-state";
 import { Textarea } from "@/components/ui/textarea";
-import { useCreateLeaveType, useLeaveTypes, useUpdateLeaveType } from "@/hooks/use-leave-management";
+import { useCreateLeaveType, useLeaveTypes, useSetLeaveTypeAllotment, useUpdateLeaveType } from "@/hooks/use-leave-management";
 import type { LeaveType } from "@/lib/types/database";
+import { leaveTypeAllotmentSchema } from "@/schemas/leave-management";
 
 export function LeaveTypeSummary({ name }: { name: string }) {
   return <span>{name}</span>;
+}
+
+/** "2 days a year", "7 days a year · extra days deducted from retirement benefits", or "No yearly limit". */
+export function allotmentLabel(type: Pick<LeaveType, "days_per_year" | "excess_deducted_from_retirement">) {
+  if (type.days_per_year === null) return "No yearly limit";
+  const days = `${type.days_per_year} ${type.days_per_year === 1 ? "day" : "days"} a year`;
+  return type.excess_deducted_from_retirement ? `${days} · extra days deducted from retirement benefits` : days;
 }
 
 function errorMessage(cause: unknown, fallback: string) {
@@ -23,12 +31,24 @@ function errorMessage(cause: unknown, fallback: string) {
 
 function EditLeaveTypeForm({ onDone, type }: { onDone: (message: string) => void; type: LeaveType }) {
   const update = useUpdateLeaveType();
+  const setAllotment = useSetLeaveTypeAllotment();
   const [error, setError] = useState<string | null>(null);
+  const saving = update.isPending || setAllotment.isPending;
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
     const data = new FormData(event.currentTarget);
+    const daysText = String(data.get("daysPerYear") ?? "").trim();
+    const allotment = leaveTypeAllotmentSchema.safeParse({
+      id: type.id,
+      daysPerYear: daysText ? Number(daysText) : null,
+      excessDeductedFromRetirement: data.get("excessDeducted") === "on",
+    });
+    if (!allotment.success) {
+      setError(allotment.error.issues[0]?.message ?? "Enter valid days per year.");
+      return;
+    }
     try {
       await update.mutateAsync({
         id: type.id,
@@ -38,6 +58,7 @@ function EditLeaveTypeForm({ onDone, type }: { onDone: (message: string) => void
         requiresAttachment: type.requires_attachment,
         isActive: type.is_active,
       });
+      await setAllotment.mutateAsync(allotment.data);
       onDone(`${String(data.get("name"))} was updated.`);
     } catch (cause) {
       setError(errorMessage(cause, "Unable to update the leave type."));
@@ -52,8 +73,15 @@ function EditLeaveTypeForm({ onDone, type }: { onDone: (message: string) => void
       <FormField htmlFor={`type-description-${type.id}`} label="Description">
         <Textarea defaultValue={type.description ?? ""} id={`type-description-${type.id}`} name="description" rows={2} />
       </FormField>
+      <FormField description="Leave blank for no limit. Employees cannot request more once these days are used." htmlFor={`type-days-${type.id}`} label="Days per year">
+        <Input defaultValue={type.days_per_year ?? ""} id={`type-days-${type.id}`} inputMode="numeric" max={366} min={1} name="daysPerYear" type="number" />
+      </FormField>
+      <label className="flex min-h-11 items-start gap-2 text-sm sm:pt-7" htmlFor={`type-excess-${type.id}`}>
+        <input className="mt-0.5 size-4" defaultChecked={type.excess_deducted_from_retirement} id={`type-excess-${type.id}`} name="excessDeducted" type="checkbox" />
+        <span>Allow extra days beyond the limit, deducted from retirement benefits</span>
+      </label>
       {error ? <div className="sm:col-span-2"><ErrorState message={error} /></div> : null}
-      <Button className="sm:w-fit" disabled={update.isPending} type="submit" variant="secondary">{update.isPending ? "Saving…" : "Save changes"}</Button>
+      <Button className="sm:w-fit" disabled={saving} type="submit" variant="secondary">{saving ? "Saving…" : "Save changes"}</Button>
     </form>
   );
 }
@@ -145,6 +173,7 @@ export function LeaveTypeManager() {
                   <Button aria-label={`Delete ${type.name}`} onClick={() => setDeleting(type)} size="sm" type="button" variant="destructive">Delete</Button>
                 </div>
               </div>
+              <p className="mt-1 text-sm">{allotmentLabel(type)}</p>
               {type.description ? <p className="mt-1 text-sm text-muted-foreground">{type.description}</p> : null}
               <details className="mt-2">
                 <summary className="inline-flex min-h-10 cursor-pointer items-center text-sm font-semibold text-primary underline-offset-4 hover:underline">Edit type</summary>

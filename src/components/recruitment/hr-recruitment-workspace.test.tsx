@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   transition: vi.fn(),
   hire: vi.fn(),
   retry: vi.fn(),
+  remark: vi.fn(),
   scores: [] as Array<{ id: string; status: "queued" | "processing" | "completed" | "failed"; score: number | null; explanation: string | null; failure_code?: string | null }>,
   scoreError: null as Error | null,
   applications: [] as Array<Record<string, unknown>>,
@@ -35,6 +36,7 @@ vi.mock("@/hooks/use-recruitment", () => ({
   useApplicationAiScores: () => ({ data: mocks.scores, error: mocks.scoreError }),
   useApplicantProfileDocumentsFor: (applicantId: string) => ({ isLoading: false, error: null, data: applicantId ? [{ id: "d1", kind: "resume", file_name: "resume.pdf", object_path: "applicant-profiles/u/r.pdf", updated_at: "2026-10-01T00:00:00Z" }] : [] }),
   useRetryApplicationAnalysis: () => ({ isPending: false, mutateAsync: mocks.retry }),
+  useAddApplicationRemark: () => ({ isPending: false, mutateAsync: mocks.remark }),
   useHrApplications: () => ({ isLoading: false, error: null, data: { rows: mocks.applications } }),
 }));
 
@@ -80,8 +82,15 @@ describe("HR recruitment workspace", () => {
     await user.click(screen.getByRole("button", { name: "Update status" }));
     expect(mocks.transition).toHaveBeenCalledWith({ applicationId: "00000000-0000-0000-0000-000000000001", nextStatus: "Interview", note: undefined });
     expect(await screen.findByRole("status")).toHaveTextContent("Status updated to Interview.");
-
     expect(screen.queryByRole("option", { name: "Hired" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Hire applicant" })).not.toBeInTheDocument();
+  });
+
+  it("opens the hire decision only once the applicant is endorsed for training", async () => {
+    mocks.applicationStatus = "For Training";
+    const user = userEvent.setup();
+    render(<HrApplicationDetail applicationId="00000000-0000-0000-0000-000000000001" />);
+
     await user.click(screen.getByRole("button", { name: "Hire applicant" }));
     expect(screen.getByRole("heading", { name: "Hire applicant" })).toBeInTheDocument();
     expect(screen.getByLabelText("Applicant number")).toHaveValue("0-12345");
@@ -147,7 +156,10 @@ describe("HR recruitment workspace", () => {
     ["Submitted", ["Under Review"]],
     ["Under Review", ["Shortlisted", "Interview", "Not Selected"]],
     ["Shortlisted", ["Interview", "Not Selected"]],
-    ["Interview", ["Shortlisted", "Not Selected"]],
+    ["Interview", ["Endorsed to Crame", "Shortlisted", "Not Selected"]],
+    ["Endorsed to Crame", ["Neuro Exam", "Not Selected"]],
+    ["Neuro Exam", ["For Training", "Not Selected"]],
+    ["For Training", ["Not Selected"]],
   ])("offers only the allowed next statuses, never Needs Revision, from %s", (status, expected) => {
     mocks.applicationStatus = status;
     render(<HrApplicationDetail applicationId="00000000-0000-0000-0000-000000000001" />);
@@ -186,5 +198,27 @@ describe("HR recruitment workspace", () => {
     await user.click(screen.getByRole("button", { name: "Update status" }));
     expect(mocks.transition).toHaveBeenCalledWith(expect.objectContaining({ nextStatus: "Not Selected", note: "Vacancy filled" }));
     expect(await screen.findByText("Invalid application status transition.")).toBeInTheDocument();
+  });
+
+  it("adds a progress remark the applicant is notified of", async () => {
+    mocks.remark.mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    render(<HrApplicationDetail applicationId="00000000-0000-0000-0000-000000000001" />);
+
+    await user.click(screen.getByRole("button", { name: "Add remark" }));
+    expect(screen.getByText("Enter a remark.")).toBeVisible();
+    expect(mocks.remark).not.toHaveBeenCalled();
+    await user.type(screen.getByLabelText("Remark"), "Passed the BMI at Crame.");
+    await user.click(screen.getByRole("button", { name: "Add remark" }));
+
+    expect(mocks.remark).toHaveBeenCalledWith({ applicationId: "00000000-0000-0000-0000-000000000001", remark: "Passed the BMI at Crame." });
+    expect(await screen.findByText("Remark added. The applicant was notified.")).toBeVisible();
+  });
+
+  it("tells HR the neuro exam waits for the applicant's BMI proof", () => {
+    mocks.applicationStatus = "Endorsed to Crame";
+    render(<HrApplicationDetail applicationId="00000000-0000-0000-0000-000000000001" />);
+
+    expect(screen.getByRole("note")).toHaveTextContent("Waiting for the applicant to upload proof of passing the BMI.");
   });
 });

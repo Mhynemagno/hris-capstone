@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   rows: [] as Array<Record<string, unknown>>,
   types: [] as Array<Record<string, unknown>>,
+  balances: [] as Array<Record<string, unknown>>,
   cancel: vi.fn(),
   submit: vi.fn(),
 }));
@@ -14,6 +15,7 @@ vi.mock("@/hooks/use-leave-management", () => ({
   useCancelLeaveRequest: () => ({ isPending: false, mutateAsync: mocks.cancel }),
   useRequestableLeaveTypes: () => ({ isLoading: false, error: null, data: mocks.types }),
   useSubmitLeaveRequest: () => ({ isPending: false, mutateAsync: mocks.submit }),
+  useMyLeaveBalances: () => ({ isLoading: false, error: null, data: mocks.balances }),
 }));
 
 import { EmployeeLeaveList, EmployeeLeaveRequestForm } from "./employee-leave";
@@ -58,6 +60,14 @@ describe("EmployeeLeaveList", () => {
     expect(screen.getByText("Annual leave · September 1, 2026 to September 2, 2026")).toBeVisible();
     expect(screen.getByText("Notes from HR: Short staffed.")).toBeVisible();
   });
+
+  it("tells the employee about paternity days deducted from retirement benefits", () => {
+    mocks.rows = [{ id: "123e4567-e89b-42d3-a456-426614174000", leave_type_name: "Paternity Leave", starts_on: "2026-11-01", ends_on: "2026-11-10", reason: null, status: "pending", decision_note: null, excess_days: 3 }];
+    render(<EmployeeLeaveList />);
+
+    expect(screen.getByText("For Approval")).toBeVisible();
+    expect(screen.getByText("3 days beyond the yearly limit, deducted from your retirement benefits.")).toBeVisible();
+  });
 });
 
 describe("EmployeeLeaveRequestForm", () => {
@@ -68,6 +78,35 @@ describe("EmployeeLeaveRequestForm", () => {
       { id: "22222222-2222-4222-8222-222222222222", name: "Retired leave", requires_attachment: false, is_active: false },
       { id: "33333333-3333-4333-8333-333333333333", name: "Sick leave", requires_attachment: true, is_active: true },
     ];
+    mocks.balances = [];
+  });
+
+  it("shows the days left and blocks a request longer than what is left", async () => {
+    mocks.balances = [{ leave_type_id: "11111111-1111-4111-8111-111111111111", days_per_year: 2, excess_deducted_from_retirement: false, used_days: 1 }];
+    const user = userEvent.setup();
+    render(<EmployeeLeaveRequestForm />);
+    await user.selectOptions(screen.getByRole("combobox", { name: /Leave type/ }), "11111111-1111-4111-8111-111111111111");
+    expect(screen.getByText(/^1 day of 2 left for \d{4}\.$/)).toBeVisible();
+    await user.type(screen.getByLabelText(/Start date/), isoDate(1));
+    await user.type(screen.getByLabelText(/End date/), isoDate(2));
+    await user.click(screen.getByRole("button", { name: "Submit request" }));
+
+    expect(await screen.findByText(/You have 1 day of this leave left for \d{4}\. Shorten the request to fit\./)).toBeVisible();
+    expect(mocks.submit).not.toHaveBeenCalled();
+  });
+
+  it("lets a request go past a limit whose extra days are deducted from retirement benefits", async () => {
+    mocks.submit.mockResolvedValue(undefined);
+    mocks.balances = [{ leave_type_id: "11111111-1111-4111-8111-111111111111", days_per_year: 7, excess_deducted_from_retirement: true, used_days: 7 }];
+    const user = userEvent.setup();
+    render(<EmployeeLeaveRequestForm />);
+    await user.selectOptions(screen.getByRole("combobox", { name: /Leave type/ }), "11111111-1111-4111-8111-111111111111");
+    expect(screen.getByText(/0 days of 7 left for \d{4}\. Days beyond this are allowed but deducted from your retirement benefits\./)).toBeVisible();
+    await user.type(screen.getByLabelText(/Start date/), isoDate(1));
+    await user.type(screen.getByLabelText(/End date/), isoDate(2));
+    await user.click(screen.getByRole("button", { name: "Submit request" }));
+
+    expect(mocks.submit).toHaveBeenCalled();
   });
 
   it("offers only active leave types without evidence hints or an upload field", () => {

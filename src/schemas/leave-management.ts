@@ -31,6 +31,16 @@ export const leaveTypeUpdateSchema = leaveTypeSchema.extend({
   isActive: z.boolean(),
 });
 
+export const leaveTypeAllotmentSchema = z.object({
+  id: uuidSchema,
+  daysPerYear: z.number().int().min(1, "Days per year must be at least 1.").max(366, "Days per year must be 366 or fewer.").nullable(),
+  excessDeductedFromRetirement: z.boolean(),
+}).superRefine((value, context) => {
+  if (value.daysPerYear === null && value.excessDeductedFromRetirement) {
+    context.addIssue({ code: "custom", path: ["daysPerYear"], message: "Set the days per year before allowing extra days." });
+  }
+});
+
 export const leaveAttachmentSchema = z.object({
   objectPath: z.string().regex(
     /^leave-requests\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/[A-Za-z0-9][A-Za-z0-9._-]{0,239}$/i,
@@ -81,6 +91,7 @@ export const leaveRequestFiltersSchema = paginationSchema.extend({
 export type LeaveRequestStatus = z.infer<typeof leaveStatusSchema>;
 export type LeaveTypeInput = z.infer<typeof leaveTypeSchema>;
 export type LeaveTypeUpdateInput = z.infer<typeof leaveTypeUpdateSchema>;
+export type LeaveTypeAllotmentInput = z.infer<typeof leaveTypeAllotmentSchema>;
 export type LeaveAttachmentInput = z.infer<typeof leaveAttachmentSchema>;
 export type LeaveRequestDraftInput = z.infer<typeof leaveRequestDraftSchema>;
 export type LeaveRequestSubmissionInput = z.infer<typeof leaveRequestSubmissionSchema>;

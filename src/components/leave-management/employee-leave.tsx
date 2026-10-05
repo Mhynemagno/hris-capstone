@@ -12,16 +12,38 @@ import { nativeSelectClassName } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import {
   useCancelLeaveRequest,
+  useMyLeaveBalances,
   useMyLeaveRequests,
   useRequestableLeaveTypes,
   useSubmitLeaveRequest,
 } from "@/hooks/use-leave-management";
 import { formatDateRange } from "@/lib/format-date";
+import type { LeaveBalance } from "@/lib/types/database";
 import { leaveRequestDraftSchema } from "@/schemas/leave-management";
 
 import { LeaveStatusBadge } from "./leave-status-badge";
 
 const today = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+
+const dayCount = (days: number) => `${days} ${days === 1 ? "day" : "days"}`;
+
+/** Inclusive calendar days between two ISO dates, the way submit_leave_request counts them. */
+export function leaveDays(startsOn: string, endsOn: string) {
+  return Math.round((Date.parse(`${endsOn}T00:00:00Z`) - Date.parse(`${startsOn}T00:00:00Z`)) / 86_400_000) + 1;
+}
+
+/** Days still available of a limited leave type, or null when the type has no yearly limit. */
+export function remainingLeaveDays(balance: LeaveBalance | undefined) {
+  if (!balance || balance.days_per_year === null) return null;
+  return Math.max(balance.days_per_year - balance.used_days, 0);
+}
+
+function balanceHint(balance: LeaveBalance | undefined, year: number) {
+  const remaining = remainingLeaveDays(balance);
+  if (!balance || remaining === null || balance.days_per_year === null) return undefined;
+  const left = `${dayCount(remaining)} of ${balance.days_per_year} left for ${year}.`;
+  return balance.excess_deducted_from_retirement ? `${left} Days beyond this are allowed but deducted from your retirement benefits.` : left;
+}
 
 export function EmployeeLeaveList() {
   const result = useMyLeaveRequests({ page: 1, pageSize: 25 });
@@ -69,6 +91,7 @@ export function EmployeeLeaveList() {
               </p>
               <LeaveStatusBadge status={request.status} />
             </div>
+            {request.excess_days > 0 ? <p className="mt-2 text-sm">{dayCount(request.excess_days)} beyond the yearly limit, deducted from your retirement benefits.</p> : null}
             {request.reason ? <p className="mt-2 text-sm whitespace-pre-line text-muted-foreground">{request.reason}</p> : null}
             {request.decision_note ? <p className="mt-2 text-sm">Notes from HR: {request.decision_note}</p> : null}
             {request.status === "pending" ? (
@@ -129,6 +152,9 @@ export function EmployeeLeaveRequestForm() {
   const [fieldErrors, setFieldErrors] = useState<LeaveFieldErrors>({});
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const year = Number((startsOn || today()).slice(0, 4));
+  const balances = useMyLeaveBalances(year);
+  const balance = balances.data?.find((entry) => entry.leave_type_id === leaveTypeId);
 
   if (types.isLoading) return <LoadingState label="Loading leave types…" />;
   if (types.error) return <ErrorState message={types.error.message} />;
@@ -148,6 +174,10 @@ export function EmployeeLeaveRequestForm() {
         if (key && !nextErrors[key]) nextErrors[key] = key === "leaveTypeId" ? "Choose a leave type." : issue.message;
       }
     }
+    const remaining = remainingLeaveDays(balance);
+    if (parsed.success && remaining !== null && !balance?.excess_deducted_from_retirement && leaveDays(startsOn, endsOn) > remaining) {
+      nextErrors.endsOn = remaining === 0 ? `You have already used all your days of this leave for ${year}.` : `You have ${dayCount(remaining)} of this leave left for ${year}. Shorten the request to fit.`;
+    }
     setFieldErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
     try {
@@ -165,7 +195,7 @@ export function EmployeeLeaveRequestForm() {
   return (
     <form className="max-w-3xl space-y-5" noValidate onSubmit={onSubmit}>
       <FormField
-        description={activeTypes.length ? undefined : "No leave types are available right now. Contact HR."}
+        description={activeTypes.length ? balanceHint(balance, year) : "No leave types are available right now. Contact HR."}
         error={fieldErrors.leaveTypeId}
         htmlFor="leave-type"
         label="Leave type"

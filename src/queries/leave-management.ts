@@ -1,6 +1,6 @@
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
-import type { LeaveRequest, LeaveRequestAttachment, LeaveRequestWithEmployee, LeaveType, PaginatedResult } from "@/lib/types/database";
-import { leaveAttachmentSchema, leaveCancellationSchema, leaveDecisionSchema, leaveRequestDraftSchema, leaveRequestFiltersSchema, leaveRequestSubmissionSchema, leaveTypeSchema, leaveTypeUpdateSchema, type LeaveRequestFilters } from "@/schemas/leave-management";
+import type { LeaveBalance, LeaveRequest, LeaveRequestAttachment, LeaveRequestWithEmployee, LeaveType, PaginatedResult } from "@/lib/types/database";
+import { leaveAttachmentSchema, leaveCancellationSchema, leaveDecisionSchema, leaveRequestDraftSchema, leaveRequestFiltersSchema, leaveRequestSubmissionSchema, leaveTypeAllotmentSchema, leaveTypeSchema, leaveTypeUpdateSchema, type LeaveRequestFilters } from "@/schemas/leave-management";
 import { uuidSchema } from "@/schemas/common";
 
 function throwIfError(error: { message: string } | null) { if (error) throw new Error(error.message); }
@@ -54,3 +54,7 @@ export async function cancelLeaveRequest(input:unknown){const parsed=leaveCancel
 export async function decideLeaveRequest(input:unknown){const parsed=leaveDecisionSchema.parse(input);const{error}=await createBrowserSupabaseClient().rpc("decide_leave_request",{target_request_id:parsed.requestId,requested_decision:parsed.decision,requested_note:parsed.note??null});throwIfError(error);}
 export async function createLeaveType(input:unknown){const parsed=leaveTypeSchema.parse(input);const{error}=await createBrowserSupabaseClient().rpc("create_leave_type",{type_name:parsed.name,type_description:parsed.description??null,type_requires_attachment:parsed.requiresAttachment});throwIfError(error);}
 export async function updateLeaveType(input:unknown){const parsed=leaveTypeUpdateSchema.parse(input);const{error}=await createBrowserSupabaseClient().rpc("update_leave_type",{target_type_id:parsed.id,type_name:parsed.name,type_description:parsed.description??null,type_requires_attachment:parsed.requiresAttachment,type_is_active:parsed.isActive});throwIfError(error);}
+/** Sets a leave type's yearly allotment; null days means no limit. */
+export async function setLeaveTypeAllotment(input:unknown){const parsed=leaveTypeAllotmentSchema.parse(input);const{error}=await createBrowserSupabaseClient().rpc("set_leave_type_allotment",{target_type_id:parsed.id,type_days_per_year:parsed.daysPerYear,type_excess_deducted:parsed.excessDeductedFromRetirement});throwIfError(error);}
+/** The caller's used days per active leave type in a calendar year. */
+export async function getMyLeaveBalances(year:number){const{data,error}=await createBrowserSupabaseClient().rpc("get_my_leave_balances",{target_year:year});throwIfError(error);return (data??[]) as LeaveBalance[];}

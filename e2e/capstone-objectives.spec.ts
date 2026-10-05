@@ -245,11 +245,28 @@ test.describe("Objective 2: recruitment management", () => {
     await page.goto(`/hr/applications/${applicationId}`);
     await expect(page.getByRole("heading", { name: "Required documents" })).toBeVisible();
     await expect(page.getByRole("button", { name: /^Open CV \/ Resume: / })).toBeVisible();
-    for (const status of ["Under Review", "Shortlisted"]) {
-      await page.getByLabel("Next status").selectOption({ label: status });
-      await page.getByRole("button", { name: "Update status" }).click();
-      await expect(page.getByRole("status").filter({ hasText: `Status updated to ${status}.` })).toBeVisible();
-    }
+    const advance = async (statuses: string[]) => {
+      for (const status of statuses) {
+        await page.getByLabel("Next status").selectOption({ label: status });
+        await page.getByRole("button", { name: "Update status" }).click();
+        await expect(page.getByRole("status").filter({ hasText: `Status updated to ${status}.` })).toBeVisible();
+      }
+    };
+    // The whole cycle runs in the system: interview in San Juan, endorsement to Crame, BMI proof, neuro exam, training.
+    await advance(["Under Review", "Interview", "Endorsed to Crame"]);
+    await expect(page.getByRole("note")).toContainText("Waiting for the applicant to upload proof of passing the BMI.");
+    await signOut(page, HR.email);
+
+    await signIn(page, applicantEmail, "/applicant");
+    await page.goto(`/applicant/applications/${applicationId}`);
+    await page.getByLabel("BMI proof (PDF, PNG or JPEG)").setInputFiles(pdf("bmi.pdf"));
+    await page.getByRole("button", { name: "Upload BMI proof" }).click();
+    await expect(page.getByText("BMI proof uploaded. HR will check it and update your progress.")).toBeVisible();
+    await signOut(page, applicantEmail);
+
+    await signIn(page, HR.email, HR.home);
+    await page.goto(`/hr/applications/${applicationId}`);
+    await advance(["Neuro Exam", "For Training"]);
     await page.getByRole("button", { name: "Hire applicant" }).click();
     await page.getByLabel(/^Badge number/).fill(badge);
     await page.getByRole("button", { name: "Confirm hire" }).click();
