@@ -6,10 +6,11 @@ import { ErrorState } from "@/components/ui/error-state";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { LoadingState } from "@/components/ui/loading-state";
-import { useMyApplication, useResubmitApplication } from "@/hooks/use-recruitment";
+import { useMyApplication, useResubmitApplication, useSubmitBmiProof } from "@/hooks/use-recruitment";
 import { formatDate, formatDateTime } from "@/lib/format-date";
 import { getApplicantDocumentUrl } from "@/queries/recruitment";
 
+import { documentKindLabels, historyEntryLabel } from "./application-status-tracker";
 import { AppliedJobSummary } from "./applied-job-summary";
 
 function isNonEmptyFile(value: FormDataEntryValue | null): value is File {
@@ -19,6 +20,9 @@ function isNonEmptyFile(value: FormDataEntryValue | null): value is File {
 export function ApplicantApplicationDetail({ applicationId }: { applicationId: string }) {
   const result = useMyApplication(applicationId);
   const resubmit = useResubmitApplication();
+  const bmiProof = useSubmitBmiProof();
+  const [bmiError, setBmiError] = useState<string | null>(null);
+  const [bmiNotice, setBmiNotice] = useState<string | null>(null);
   const [urls, setUrls] = useState<Record<string, string>>({});
   const [revisionError, setRevisionError] = useState<string | null>(null);
   const [revisionNotice, setRevisionNotice] = useState<string | null>(null);
@@ -36,6 +40,25 @@ export function ApplicantApplicationDetail({ applicationId }: { applicationId: s
   if (!result.data) return <ErrorState message="This application is unavailable." />;
   const { application, history, documents } = result.data;
   const canResubmit = application.status === "Needs Revision";
+  const canUploadBmiProof = application.status === "Endorsed to Crame";
+  const currentBmiProof = documents.find((document) => document.kind === "bmi_proof");
+
+  async function submitBmiProof(form: HTMLFormElement) {
+    setBmiError(null);
+    setBmiNotice(null);
+    const file = new FormData(form).get("bmiProof");
+    if (!isNonEmptyFile(file)) {
+      setBmiError("Choose your BMI proof file first.");
+      return;
+    }
+    try {
+      await bmiProof.mutateAsync({ applicationId, file });
+      form.reset();
+      setBmiNotice("BMI proof uploaded. HR will check it and update your progress.");
+    } catch (cause) {
+      setBmiError(cause instanceof Error ? cause.message : "We could not upload your BMI proof.");
+    }
+  }
 
   async function submitRevision(form: HTMLFormElement) {
     setRevisionError(null);
@@ -67,7 +90,14 @@ export function ApplicantApplicationDetail({ applicationId }: { applicationId: s
       {revisionNotice ? <p className="text-sm text-emerald-700" role="status">{revisionNotice}</p> : null}
       <button className="min-h-11 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60" disabled={resubmit.isPending} type="submit">{resubmit.isPending ? "Resubmitting…" : "Resubmit application"}</button>
     </form> : null}
-    <div className="rounded-xl border p-5"><h2 className="font-semibold" id="application-history-heading">Status history</h2><ol aria-labelledby="application-history-heading" className="mt-3 space-y-2 text-sm">{history.map((entry) => <li key={entry.id}><span className="text-muted-foreground">{formatDate(entry.created_at)}</span> · <span className="font-medium">{entry.next_status}</span>{entry.note ? ` — ${entry.note}` : ""}</li>)}</ol></div>
-    <div className="rounded-xl border p-5"><h2 className="font-semibold" id="application-documents-heading">Documents</h2><ul aria-labelledby="application-documents-heading" className="mt-3 space-y-2 text-sm">{documents.map((document) => <li key={document.id}><span className="text-muted-foreground">{document.kind === "cv" ? "CV" : "Credential"}</span> · {urls[document.id] ? <a className="text-primary underline" href={urls[document.id]} rel="noreferrer" target="_blank">{document.file_name}</a> : document.file_name}</li>)}</ul></div>
+    {canUploadBmiProof ? <form className="space-y-4 rounded-xl border border-primary/30 bg-primary/5 p-5" noValidate onSubmit={(event) => { event.preventDefault(); void submitBmiProof(event.currentTarget); }}>
+      <div><h2 className="font-semibold">Proof of passing the BMI</h2><p className="mt-1 text-sm text-muted-foreground">You are endorsed to Crame. Upload proof that you passed the BMI so HR can move you to the neuro-psychiatric exam.{currentBmiProof ? ` You already uploaded ${currentBmiProof.file_name}; a new file replaces it.` : ""}</p></div>
+      <FormField htmlFor="bmi-proof" label="BMI proof (PDF, PNG or JPEG)"><Input accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg" id="bmi-proof" name="bmiProof" required type="file" /></FormField>
+      {bmiError ? <ErrorState message={bmiError} /> : null}
+      {bmiNotice ? <p className="text-sm text-emerald-700 dark:text-emerald-400" role="status">{bmiNotice}</p> : null}
+      <button className="min-h-11 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60" disabled={bmiProof.isPending} type="submit">{bmiProof.isPending ? "Uploading…" : "Upload BMI proof"}</button>
+    </form> : null}
+    <div className="rounded-xl border p-5"><h2 className="font-semibold" id="application-history-heading">Status history</h2><ol aria-labelledby="application-history-heading" className="mt-3 space-y-2 text-sm">{history.map((entry) => <li key={entry.id}><span className="text-muted-foreground">{formatDate(entry.created_at)}</span> · <span className="font-medium">{historyEntryLabel(entry)}</span>{entry.note ? ` — ${entry.note}` : ""}</li>)}</ol></div>
+    <div className="rounded-xl border p-5"><h2 className="font-semibold" id="application-documents-heading">Documents</h2><ul aria-labelledby="application-documents-heading" className="mt-3 space-y-2 text-sm">{documents.map((document) => <li key={document.id}><span className="text-muted-foreground">{documentKindLabels[document.kind]}</span> · {urls[document.id] ? <a className="text-primary underline" href={urls[document.id]} rel="noreferrer" target="_blank">{document.file_name}</a> : document.file_name}</li>)}</ul></div>
   </section>;
 }

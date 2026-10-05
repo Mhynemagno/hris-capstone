@@ -29,11 +29,14 @@ import {
   submitApplication,
   transitionApplicationStatus,
   withdrawJobOpening,
+  addApplicationRemark,
+  submitBmiProof,
 } from "@/queries/recruitment";
 import type {
   ApplicantProfileInput,
   ApplicationAiFilters,
   ApplicationFilters,
+  ApplicationRemarkInput,
   ApplicationStatusTransitionInput,
   HiringDecisionInput,
   JobFilters,
@@ -236,5 +239,21 @@ export function useHireApplication() {
       void queryClient.invalidateQueries({ queryKey: ["administration", "users"] });
       void queryClient.invalidateQueries({ queryKey: ["administration", "audit-logs"] });
     },
+  });
+}
+
+export function useAddApplicationRemark() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: ApplicationRemarkInput) => addApplicationRemark(input),
+    onSuccess: (_, input) => void queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.application(input.applicationId) }),
+  });
+}
+
+export function useSubmitBmiProof() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ applicationId, file }: { applicationId: string; file: File }) => submitBmiProof(applicationId, file),
+    onSuccess: (_, input) => void queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.application(input.applicationId) }),
   });
 }

@@ -97,7 +97,7 @@ it("gives HR shortcuts, open work notifications, and an attendance gauge", () =>
   expect(screen.getByRole("link", { name: "New Employee" })).toHaveAttribute("href", "/hr/employees/new");
   const attention = screen.getByRole("region", { name: "Notification" });
   expect(within(attention).getByText("1 of 2 clear")).toBeInTheDocument();
-  expect(within(attention).getByRole("link", { name: /^3 leave requests awaiting a decision\s*\(open\)$/ })).toHaveAttribute("href", "/hr/leave-requests");
+  expect(within(attention).getByRole("link", { name: /^3 leave requests for approval\s*\(open\)$/ })).toHaveAttribute("href", "/hr/leave-requests");
   expect(within(attention).getByRole("link", { name: /^0 attendance exceptions to review\s*\(clear\)$/ })).toHaveAttribute("href", "/hr/attendance");
   expect(screen.getByRole("img", { name: "Present: 94% (47 of 50)" })).toBeInTheDocument();
 });

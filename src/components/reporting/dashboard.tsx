@@ -42,7 +42,7 @@ const KPIS: { key: string; label: string; hint: string; icon: ReactNode; tone?: 
 
 /** Work that is waiting on someone; each item is "clear" when its count is zero. */
 const ATTENTION_ITEMS: { key: string; label: (count: number) => string; href: Record<DashboardRole, `/${string}`> }[] = [
-  { key: "pendingLeave", label: (count) => `${count} leave ${count === 1 ? "request" : "requests"} awaiting a decision`, href: { hr_personnel: "/hr/leave-requests", management: "/reports/attendance-leave" } },
+  { key: "pendingLeave", label: (count) => `${count} leave ${count === 1 ? "request" : "requests"} for approval`, href: { hr_personnel: "/hr/leave-requests", management: "/reports/attendance-leave" } },
   { key: "attendanceExceptions", label: (count) => `${count} attendance ${count === 1 ? "exception" : "exceptions"} to review`, href: { hr_personnel: "/hr/attendance", management: "/reports/attendance-leave" } },
   { key: "recruitmentApplications", label: (count) => `${count} ${count === 1 ? "application" : "applications"} received this period`, href: { hr_personnel: "/hr/applications", management: "/reports" } },
   { key: "trainingNeeds", label: (count) => `${count} personnel missing a promotion requirement`, href: { hr_personnel: "/hr/promotions", management: "/reports" } },
@@ -61,6 +61,11 @@ function formatMetricName(key: string) {
 
 function titleCase(label: string) {
   return label.replaceAll("_", " ").replace(/^./, (value) => value.toUpperCase());
+}
+
+/** Leave statuses as the leave pages show them; a request awaiting HR reads "For approval". */
+function leaveLabel(label: string) {
+  return label === "pending" ? "For approval" : titleCase(label);
 }
 
 const shortDate = new Intl.DateTimeFormat("en-PH", { month: "short", day: "numeric", timeZone: "UTC" });
@@ -94,7 +99,7 @@ function statusColor(label: string, index: number) {
   return STATUS_COLORS[label.toLowerCase()] ?? CATEGORICAL[index % CATEGORICAL.length]!;
 }
 
-const PIPELINE_ORDER = ["Submitted", "Under Review", "Shortlisted", "Interview", "Needs Revision", "Hired", "Not Selected"];
+const PIPELINE_ORDER = ["Submitted", "Under Review", "Shortlisted", "Interview", "Needs Revision", "Endorsed to Crame", "Neuro Exam", "For Training", "Hired", "Not Selected"];
 function byPipeline(rows: ChartDatum[]) {
   const rank = (label: string) => {
     const index = PIPELINE_ORDER.indexOf(label);
@@ -118,11 +123,11 @@ const CHARTS: ChartSpec[] = [
   { key: "attendanceStatus", title: "Attendance status", subtitle: "All attendance logs in the period", format: titleCase, labelHeading: "Status", render: (rows) => <DonutChart centerLabel="Logs" colorFor={statusColor} data={rows} formatLabel={titleCase} /> },
   { key: "workforceByDepartment", title: "Personnel by unit / section", subtitle: "Active personnel", labelHeading: "Unit / Section", render: (rows) => <HorizontalBarChart data={rows} /> },
   { key: "workforceByRank", title: "Personnel by rank", subtitle: "All personnel, lowest to highest rank", labelHeading: "Rank", render: (rows) => <HorizontalBarChart data={rows} /> },
-  { key: "leaveStatus", title: "Leave status", subtitle: "Leave in the period, plus upcoming leave", format: titleCase, labelHeading: "Status", render: (rows) => <DonutChart centerLabel="Requests" colorFor={statusColor} data={rows} formatLabel={titleCase} /> },
+  { key: "leaveStatus", title: "Leave status", subtitle: "Leave in the period, plus upcoming leave", format: leaveLabel, labelHeading: "Status", render: (rows) => <DonutChart centerLabel="Requests" colorFor={statusColor} data={rows} formatLabel={leaveLabel} /> },
   { key: "recruitmentPipeline", title: "Recruitment pipeline", subtitle: "Applications submitted in the period, by stage", labelHeading: "Stage", render: (rows) => <HorizontalBarChart data={byPipeline(rows)} /> },
   { key: "deploymentStatus", title: "Deployment status", subtitle: "All deployments by status", format: titleCase, labelHeading: "Status", render: (rows) => <DonutChart centerLabel="Deployments" colorFor={statusColor} data={rows} formatLabel={titleCase} /> },
   { key: "promotionReadiness", title: "Promotion Status", subtitle: "Evaluations in the period", labelHeading: "Result", render: (rows) => <DonutChart centerLabel="Evaluated" colorFor={statusColor} data={rows} /> },
-  { key: "attendanceLeaveExceptions", title: "Attendance and leave exceptions", subtitle: "Late, absent, incomplete and pending leave", format: titleCase, labelHeading: "Exception", render: (rows) => <HorizontalBarChart colorFor={(label) => statusColor(label, 0)} data={rows} formatLabel={titleCase} /> },
+  { key: "attendanceLeaveExceptions", title: "Attendance and leave exceptions", subtitle: "Late, absent, incomplete and leave for approval", format: leaveLabel, labelHeading: "Exception", render: (rows) => <HorizontalBarChart colorFor={(label) => statusColor(label, 0)} data={rows} formatLabel={leaveLabel} /> },
 ];
 /** Breakdowns the RPC still returns but the dashboard no longer charts. */
 const HIDDEN_CHARTS = new Set(["leaveByType"]);

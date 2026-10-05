@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(14);
+select extensions.plan(16);
 
 select extensions.has_table('public', 'leave_types', 'Leave types table exists');
 select extensions.has_table('public', 'leave_requests', 'Leave requests table exists');
@@ -14,6 +14,8 @@ select extensions.has_function('public', 'cancel_leave_request', array['uuid'], 
 select extensions.has_function('public', 'decide_leave_request', array['uuid', 'text', 'text'], 'Leave decision RPC exists');
 select extensions.has_function('public', 'create_leave_type', array['text', 'text', 'boolean'], 'Leave type creation RPC exists');
 select extensions.has_function('public', 'update_leave_type', array['uuid', 'text', 'text', 'boolean', 'boolean'], 'Leave type update RPC exists');
+select extensions.has_function('public', 'set_leave_type_allotment', array['uuid', 'integer', 'boolean'], 'Leave allotment RPC exists');
+select extensions.is((select days_per_year from public.leave_types where lower(name) = 'mandatory leave' and is_active), 2, 'Mandatory Leave is limited to 2 days a year');
 select extensions.ok(coalesce((select relrowsecurity from pg_class where oid = to_regclass('public.leave_requests')), false), 'Leave requests use RLS');
 
 insert into auth.users (id, aud, role, email, created_at, updated_at)
@@ -40,9 +42,9 @@ values (
 );
 
 select extensions.is(
-  (select count(*)::integer from public.leave_types where is_active and name in ('Vacation Leave', 'Sick Leave', 'Mandatory Leave', 'Maternity Leave', 'Paternity Leave')),
-  5,
-  'Default leave types are available'
+  (select count(*)::integer from public.leave_types where is_active and name in ('Sick Leave', 'Mandatory Leave', 'Maternity Leave', 'Paternity Leave')),
+  4,
+  'Default leave types are available, without the removed Vacation Leave'
 );
 
 set local role authenticated;

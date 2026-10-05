@@ -8,6 +8,7 @@ import {
   applicantProfileSchema,
   applicationAiFiltersSchema,
   applicationFiltersSchema,
+  applicationRemarkSchema,
   applicationStatusTransitionSchema,
   applicationSubmissionSchema,
   hiringDecisionSchema,
@@ -19,6 +20,7 @@ import {
   type ApplicantProfileInput,
   type ApplicationAiFilters,
   type ApplicationFilters,
+  type ApplicationRemarkInput,
   type ApplicationStatusTransitionInput,
   type HiringDecisionInput,
   type JobFilters,
@@ -549,3 +551,32 @@ export async function getApplicantDocumentUrl(objectPath: string) {
 }
 
 export type { PendingApplicantDocument, PendingApplicantProfileDocument, ResubmitApplicationInput, SubmitApplicationInput };
+
+/** HR remark on an application's progress (e.g. "Passed the BMI, for neuro exam"); the applicant is notified. */
+export async function addApplicationRemark(input: ApplicationRemarkInput) {
+  const values = applicationRemarkSchema.parse(input);
+  const { error } = await createBrowserSupabaseClient().rpc("add_application_remark", { target_application_id: values.applicationId, remark: values.remark });
+  throwIfError(error);
+}
+
+/** Uploads the applicant's proof of passing the BMI; a new upload replaces the previous one. */
+export async function submitBmiProof(applicationId: string, file: File) {
+  const id = applicationStatusTransitionSchema.shape.applicationId.parse(applicationId);
+  if (!["application/pdf", "image/png", "image/jpeg"].includes(file.type) || file.size < 1 || file.size > 10 * 1024 * 1024) {
+    throw new Error("Upload the BMI proof as a PDF, PNG or JPEG file up to 10 MB.");
+  }
+  const user = await requireCurrentUser();
+  const client = createBrowserSupabaseClient();
+  const bucket = client.storage.from("applicant-documents");
+  const objectPath = `applicants/${user.id}/${id}/${crypto.randomUUID()}.${extensionFor(file)}`;
+  const { error: uploadError } = await bucket.upload(objectPath, file, { contentType: file.type, upsert: false });
+  throwIfError(uploadError);
+  const { error } = await client.rpc("submit_bmi_proof", {
+    target_application_id: id,
+    submitted_document: { objectPath, fileName: file.name, mimeType: file.type, sizeBytes: file.size },
+  });
+  if (error) {
+    await bucket.remove([objectPath]).catch(() => undefined);
+    throwIfError(error);
+  }
+}

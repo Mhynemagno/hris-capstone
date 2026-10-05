@@ -56,7 +56,15 @@ Profile-change request statuses: `Pending`, `Approved`, `Rejected`, and optional
 - HR creates and publishes job openings with job-specific qualification criteria.
 - Applicants register, complete their profile, upload a résumé/CV and supporting credentials, and submit applications.
 - HR views applicants, documents, qualifications, application progress, and hiring decisions.
-- Application statuses include: `Submitted`, `Under Review`, `Shortlisted`, `Interview`, `Hired`, and `Not Selected`.
+- Application statuses include: `Submitted`, `Under Review`, `Shortlisted`, `Interview`, `Needs Revision`, `Endorsed to Crame`, `Neuro Exam`, `For Training`, `Hired`, and `Not Selected`.
+- The whole recruitment cycle runs in the system, not just up to the interview:
+  1. Once the requirements are complete, HR sets the application to `Interview` and the applicant is told they are for interview.
+  2. After the interview in San Juan, HR endorses the applicant to Camp Crame (`Endorsed to Crame`), where the BMI and neuro-psychiatric exam take place.
+  3. The applicant uploads proof of passing the BMI on their application page. HR cannot move the applicant to `Neuro Exam` until this proof is uploaded.
+  4. After the neuro exam, HR endorses the applicant for training (`For Training`).
+  5. HR hires the applicant only from `For Training`.
+- At any stage HR can add progress remarks without changing the status. The applicant sees every remark in their status history and is notified.
+- The applicant is notified of every status change, and the status tracker shows every stage of the cycle.
 - When an applicant is hired, HR creates or activates the corresponding employee personnel record.
 
 ### 4.5 AI-Assisted Applicant Shortlisting
@@ -91,6 +99,19 @@ Profile-change request statuses: `Pending`, `Approved`, `Rejected`, and optional
 ### 4.9 Leave Management
 
 - Employees submit leave requests with leave type, date range, reason, and supporting attachment when required.
+- A request awaiting HR's decision is shown as **For Approval** (the label used to be "Pending").
+- Leave types and yearly allotments (calendar days, counted from the year the leave starts):
+
+  | Leave type | Days per year | When the days run out |
+  | --- | --- | --- |
+  | Sick Leave | 20 | The employee cannot apply for more that year. |
+  | Mandatory Leave | 2 | The employee cannot apply for more that year. |
+  | Maternity Leave | 105 (RA 11210) | The employee cannot apply for more that year. |
+  | Paternity Leave | 7 | Extra days are allowed. They are recorded on the request and deducted from the employee's retirement benefits. |
+
+- Vacation Leave was removed at the client's request. Past Vacation Leave requests are kept.
+- Requests that are For Approval or Approved both count toward the allotment. The request form shows how many days are left.
+- HR can change a leave type's allotment, or allow extra days, from the leave types page.
 - Authorized HR users review, approve, or reject leave requests.
 - The employee receives the decision and reason where provided.
 - Maintain leave request history and summaries.

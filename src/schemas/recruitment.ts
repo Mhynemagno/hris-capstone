@@ -18,6 +18,9 @@ export const applicationStatusSchema = z.enum([
   "Shortlisted",
   "Interview",
   "Needs Revision",
+  "Endorsed to Crame",
+  "Neuro Exam",
+  "For Training",
   "Hired",
   "Not Selected",
 ]);
@@ -161,6 +164,11 @@ export const applicationStatusTransitionSchema = z.object({
   note: optionalText(2_000),
 });
 
+export const applicationRemarkSchema = z.object({
+  applicationId: uuidSchema,
+  remark: z.string().trim().min(1, "Enter a remark.").max(2_000, "Remarks must be 2000 characters or fewer."),
+});
+
 export const hiringDecisionSchema = z.object({
   applicationId: uuidSchema,
   badgeNumber: employeeNumberSchema,
@@ -191,6 +199,7 @@ export type ApplicantDocumentInput = z.infer<typeof applicantDocumentSchema>;
 export type ApplicationSubmissionInput = z.infer<typeof applicationSubmissionSchema>;
 export type ApplicationStatusTransitionInput = z.infer<typeof applicationStatusTransitionSchema>;
 export type HiringDecisionInput = z.infer<typeof hiringDecisionSchema>;
+export type ApplicationRemarkInput = z.infer<typeof applicationRemarkSchema>;
 export type JobFilters = z.infer<typeof jobFiltersSchema>;
 export type ApplicationFilters = z.infer<typeof applicationFiltersSchema>;
 export type ApplicationAiFilters = z.infer<typeof applicationAiFiltersSchema>;

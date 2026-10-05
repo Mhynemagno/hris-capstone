@@ -106,6 +106,6 @@ describe("HrLeaveQueue", () => {
     await user.selectOptions(screen.getByLabelText("Status"), "pending");
 
     expect(mocks.hrQueueInput).toHaveBeenLastCalledWith(expect.objectContaining({ status: "pending" }));
-    expect(screen.getByText("No pending leave requests. Try another status.")).toBeVisible();
+    expect(screen.getByText("No leave requests are for approval. Try another status.")).toBeVisible();
   });
 });

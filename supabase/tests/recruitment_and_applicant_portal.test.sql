@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(80);
+select extensions.plan(87);
 
 delete from public.applications;
 delete from public.job_openings;
@@ -420,6 +420,38 @@ select extensions.lives_ok(
   'HR can shortlist an application under review'
 );
 select extensions.is((select status from public.applications where id = '00000000-0000-4000-8000-000000009401'::uuid), 'Shortlisted', 'Shortlist transition persists');
+select extensions.throws_ok(
+  $$select public.hire_application('00000000-0000-4000-8000-000000009401'::uuid, 'EMP-2026-001', null)$$,
+  '22023', 'Only applicants endorsed for training can be hired.', 'Hiring waits until the end of the cycle'
+);
+select extensions.lives_ok(
+  $$select public.transition_application_status('00000000-0000-4000-8000-000000009401'::uuid, 'Interview', null)$$,
+  'HR can set an application for interview'
+);
+select extensions.lives_ok(
+  $$select public.transition_application_status('00000000-0000-4000-8000-000000009401'::uuid, 'Endorsed to Crame', null)$$,
+  'HR can endorse an interviewed applicant to Crame'
+);
+select extensions.throws_ok(
+  $$select public.transition_application_status('00000000-0000-4000-8000-000000009401'::uuid, 'Neuro Exam', null)$$,
+  '22023', 'The applicant has not uploaded proof of passing the BMI yet.', 'The neuro exam waits for the BMI proof'
+);
+select extensions.lives_ok(
+  $$select public.add_application_remark('00000000-0000-4000-8000-000000009401'::uuid, 'Passed the BMI at Crame.')$$,
+  'HR can add a progress remark'
+);
+-- Stand in for the applicant's uploaded BMI proof, then finish the cycle.
+insert into public.applicant_documents (application_id, kind, object_path, file_name, mime_type, size_bytes, uploaded_by_user_id)
+select '00000000-0000-4000-8000-000000009401'::uuid, 'bmi_proof', 'applicants/test/bmi.pdf', 'bmi.pdf', 'application/pdf', 10, uploaded_by_user_id
+from public.applicant_documents where application_id = '00000000-0000-4000-8000-000000009401'::uuid limit 1;
+select extensions.lives_ok(
+  $$select public.transition_application_status('00000000-0000-4000-8000-000000009401'::uuid, 'Neuro Exam', null)$$,
+  'HR can move an applicant with BMI proof to the neuro exam'
+);
+select extensions.lives_ok(
+  $$select public.transition_application_status('00000000-0000-4000-8000-000000009401'::uuid, 'For Training', null)$$,
+  'HR can endorse an applicant for training'
+);
 
 select extensions.lives_ok(
   $$select public.hire_application(

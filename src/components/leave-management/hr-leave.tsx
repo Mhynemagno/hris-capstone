@@ -18,7 +18,7 @@ import { getLeaveAttachmentUrl } from "@/queries/leave-management";
 import { LeaveStatusBadge } from "./leave-status-badge";
 
 const statusOptions: Array<{ value: LeaveRequestStatus; label: string }> = [
-  { value: "pending", label: "Pending" },
+  { value: "pending", label: "For Approval" },
   { value: "approved", label: "Approved" },
   { value: "rejected", label: "Rejected" },
   { value: "cancelled", label: "Cancelled" },
@@ -110,7 +110,7 @@ export function HrLeaveQueue() {
                 <tr>
                   <EmptyTableState
                     colSpan={6}
-                    message={statusLabel ? `No ${statusLabel} leave requests. Try another status.` : "No leave requests have been submitted yet."}
+                    message={statusLabel ? `No leave requests are ${statusLabel}. Try another status.` : "No leave requests have been submitted yet."}
                   />
                 </tr>
               )}
@@ -206,6 +206,12 @@ export function HrLeaveDetail({ requestId }: { requestId: string }) {
           <dt className="font-semibold text-muted-foreground">Submitted</dt>
           <dd>{formatDate(data.created_at)}</dd>
         </div>
+        {data.excess_days > 0 ? (
+          <div className="sm:col-span-2">
+            <dt className="font-semibold text-muted-foreground">Beyond the yearly limit</dt>
+            <dd>{data.excess_days} {data.excess_days === 1 ? "day" : "days"}, deducted from the employee&apos;s retirement benefits</dd>
+          </div>
+        ) : null}
         <div className="sm:col-span-2">
           <dt className="font-semibold text-muted-foreground">Notes</dt>
           <dd className="mt-1 rounded-lg bg-muted p-3 whitespace-pre-line">{data.reason || "No notes provided."}</dd>

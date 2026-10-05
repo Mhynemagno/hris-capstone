@@ -80,6 +80,7 @@ export const queryKeys = {
     request: (requestId: string) => ["leave-management", "request", requestId] as const,
     hrQueue: (filters: Record<string, unknown>) => ["leave-management", "hr-queue", filters] as const,
     attachment: (objectPath: string) => ["leave-management", "attachment", objectPath] as const,
+    balances: (year: number) => ["leave-management", "balances", year] as const,
   },
   deploymentTracking: {
     hrDirectory: (filters: Record<string, unknown>) => ["deployment-tracking", "hr-directory", filters] as const,

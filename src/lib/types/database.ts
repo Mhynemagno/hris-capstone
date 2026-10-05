@@ -318,7 +318,7 @@ export type Application = {
   id: string;
   applicant_id: string;
   job_opening_id: number;
-  status: "Submitted" | "Under Review" | "Shortlisted" | "Interview" | "Needs Revision" | "Hired" | "Not Selected";
+  status: "Submitted" | "Under Review" | "Shortlisted" | "Interview" | "Needs Revision" | "Endorsed to Crame" | "Neuro Exam" | "For Training" | "Hired" | "Not Selected";
   cover_note: string | null;
   submitted_at: string;
   reviewed_at: string | null;
@@ -332,6 +332,7 @@ export type ApplicationStatusHistory = {
   application_id: string;
   actor_user_id: string | null;
   previous_status: Application["status"] | null;
+  /** Equal to previous_status for a remark, which records progress without changing the status. */
   next_status: Application["status"];
   note: string | null;
   created_at: string;
@@ -342,7 +343,8 @@ export type HrShortlistApplication = Application & { ai_score_id: string | null;
 export type ApplicantDocument = {
   id: string;
   application_id: string;
-  kind: "cv" | "credential";
+  /** bmi_proof: the applicant's proof of passing the BMI, uploaded once endorsed to Crame. */
+  kind: "cv" | "credential" | "bmi_proof";
   object_path: string;
   file_name: string;
   mime_type: string;
@@ -369,6 +371,10 @@ export type LeaveType = {
   description: string | null;
   requires_attachment: boolean;
   is_active: boolean;
+  /** Yearly allotment in calendar days; null means no limit. */
+  days_per_year: number | null;
+  /** Days beyond the allotment are allowed and deducted from retirement benefits (Paternity Leave). */
+  excess_deducted_from_retirement: boolean;
   created_by_user_id: string | null;
   updated_by_user_id: string | null;
   created_at: string;
@@ -387,11 +393,21 @@ export type LeaveRequest = {
   ends_on: string;
   reason: string | null;
   status: LeaveRequestStatus;
+  /** Days of this request beyond the type's yearly allotment, deducted from retirement benefits. */
+  excess_days: number;
   decision_note: string | null;
   decided_by_user_id: string | null;
   decided_at: string | null;
   created_at: string;
   updated_at: string;
+};
+
+/** The caller's used days of an active leave type in a year (get_my_leave_balances). */
+export type LeaveBalance = {
+  leave_type_id: string;
+  days_per_year: number | null;
+  excess_deducted_from_retirement: boolean;
+  used_days: number;
 };
 
 /** A leave request with the submitting employee's name, as HR sees it in the queue and detail page. */

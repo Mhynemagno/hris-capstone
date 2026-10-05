@@ -12,10 +12,12 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { PageHeader } from "@/components/ui/page-header";
 import { Textarea } from "@/components/ui/textarea";
 import type { ApplicationAiScore } from "@/lib/types/database";
-import { useApplicationAiScores, useHireApplication, useMyApplication, useRetryApplicationAnalysis, useTransitionApplicationStatus } from "@/hooks/use-recruitment";
+import { formatDate } from "@/lib/format-date";
+import { useAddApplicationRemark, useApplicationAiScores, useHireApplication, useMyApplication, useRetryApplicationAnalysis, useTransitionApplicationStatus } from "@/hooks/use-recruitment";
 import { getApplicantDocumentUrl } from "@/queries/recruitment";
 import { hiringDecisionSchema, type ApplicationStatus } from "@/schemas/recruitment";
 
+import { documentKindLabels, historyEntryLabel } from "./application-status-tracker";
 import { HrRequiredDocuments } from "./hr-required-documents";
 
 /**
@@ -23,14 +25,19 @@ import { HrRequiredDocuments } from "./hr-required-documents";
  * (supabase/migrations/20260906185626_recruitment_workflow_feedback.sql) also
  * accepts Needs Revision, but HR no longer offers it (tester feedback); an
  * application already in Needs Revision keeps and shows that status. Hiring is
- * a separate flow; Needs Revision, Hired, and Not Selected have no HR review
- * transitions.
+ * a separate flow, open only once the applicant is For Training; Needs Revision,
+ * Hired, and Not Selected have no HR review transitions. After the interview in
+ * San Juan the cycle continues: Endorsed to Crame (BMI) → Neuro Exam → For
+ * Training (supabase/migrations/20261006091000_applicant_post_interview_flow.sql).
  */
 export const allowedNextStatuses: Record<ApplicationStatus, readonly ApplicationStatus[]> = {
   Submitted: ["Under Review"],
   "Under Review": ["Shortlisted", "Interview", "Not Selected"],
   Shortlisted: ["Interview", "Not Selected"],
-  Interview: ["Shortlisted", "Not Selected"],
+  Interview: ["Endorsed to Crame", "Shortlisted", "Not Selected"],
+  "Endorsed to Crame": ["Neuro Exam", "Not Selected"],
+  "Neuro Exam": ["For Training", "Not Selected"],
+  "For Training": ["Not Selected"],
   "Needs Revision": [],
   Hired: [],
   "Not Selected": [],
@@ -53,6 +60,7 @@ export function HrApplicationDetail({ applicationId }: { applicationId: string }
   const result = useMyApplication(applicationId);
   const transition = useTransitionApplicationStatus();
   const hire = useHireApplication();
+  const addRemark = useAddApplicationRemark();
   const aiScores = useApplicationAiScores(applicationId);
   const [nextStatus, setNextStatus] = useState<ApplicationStatus | "">("");
   const [note, setNote] = useState("");
@@ -62,13 +70,32 @@ export function HrApplicationDetail({ applicationId }: { applicationId: string }
   const [error, setError] = useState<string | null>(null);
   const [documentUrls, setDocumentUrls] = useState<Record<string, string>>({});
   const [hireOpen, setHireOpen] = useState(false);
+  const [remark, setRemark] = useState("");
+  const [remarkError, setRemarkError] = useState<string | null>(null);
+  const [remarkSuccess, setRemarkSuccess] = useState<string | null>(null);
   if (result.isLoading) return <LoadingState label="Loading application…" />;
   if (result.error) return <ErrorState message={result.error.message} />;
   if (!result.data) return <ErrorState message="This application is unavailable." />;
   const { application, history, documents } = result.data;
   const applicantNumber = (application as typeof application & { applicants?: { applicant_number?: number } }).applicants?.applicant_number;
-  const canHire = application.status === "Shortlisted" || application.status === "Interview";
+  const canHire = application.status === "For Training";
   const nextOptions = allowedNextStatuses[application.status] ?? [];
+  const hasBmiProof = documents.some((document) => document.kind === "bmi_proof");
+  async function saveRemark() {
+    setRemarkError(null);
+    setRemarkSuccess(null);
+    if (!remark.trim()) {
+      setRemarkError("Enter a remark.");
+      return;
+    }
+    try {
+      await addRemark.mutateAsync({ applicationId, remark: remark.trim() });
+      setRemark("");
+      setRemarkSuccess("Remark added. The applicant was notified.");
+    } catch (cause) {
+      setRemarkError(cause instanceof Error ? cause.message : "We could not add this remark.");
+    }
+  }
   async function updateStatus() {
     setError(null);
     setStatusError(null);
@@ -129,6 +156,9 @@ export function HrApplicationDetail({ applicationId }: { applicationId: string }
         ) : (
           <p className="mt-3 text-sm text-muted-foreground">No review status changes are available from {application.status}.</p>
         )}
+        {application.status === "Endorsed to Crame" ? (
+          <p className="mt-3 text-sm" role="note">{hasBmiProof ? "The applicant uploaded proof of passing the BMI. Check it below before moving them to Neuro Exam." : "Waiting for the applicant to upload proof of passing the BMI. Neuro Exam opens once it is uploaded."}</p>
+        ) : null}
         <div className="mt-4 flex flex-wrap items-center gap-3">
           {nextOptions.length ? (
             <Button disabled={transition.isPending} onClick={() => void updateStatus()} type="button" variant="outline">
@@ -159,6 +189,19 @@ export function HrApplicationDetail({ applicationId }: { applicationId: string }
           <Button disabled={hire.isPending} type="submit">{hire.isPending ? "Hiring…" : "Confirm hire"}</Button>
         </form>
       ) : null}
+      <section aria-labelledby="remarks-heading" className="rounded-xl border p-5">
+        <h2 className="font-semibold" id="remarks-heading">Progress remarks</h2>
+        <p className="mt-1 text-sm text-muted-foreground">Record progress without changing the status, e.g. &ldquo;Passed the BMI at Crame.&rdquo; The applicant sees each remark and is notified.</p>
+        <div className="mt-3 space-y-3">
+          <FormField error={remarkError ?? undefined} htmlFor="application-remark" label="Remark">
+            <Textarea id="application-remark" maxLength={2000} onChange={(event) => { setRemarkError(null); setRemark(event.target.value); }} rows={3} value={remark} />
+          </FormField>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button disabled={addRemark.isPending} onClick={() => void saveRemark()} type="button" variant="outline">{addRemark.isPending ? "Adding remark…" : "Add remark"}</Button>
+            {remarkSuccess && !addRemark.isPending ? <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400" role="status">{remarkSuccess}</p> : null}
+          </div>
+        </div>
+      </section>
       <HrRequiredDocuments applicantId={application.applicant_id} />
       <section className="rounded-xl border p-5">
         <h2 className="font-semibold">Submitted with this application</h2>
@@ -166,6 +209,7 @@ export function HrApplicationDetail({ applicationId }: { applicationId: string }
           <ul className="mt-3 space-y-2 text-sm">
             {documents.map((document) => (
               <li key={document.id}>
+                <span className="text-muted-foreground">{documentKindLabels[document.kind]}</span> ·{" "}
                 {documentUrls[document.id]
                   ? <a className="inline-flex min-h-10 items-center text-primary underline" href={documentUrls[document.id]} rel="noreferrer" target="_blank">{document.file_name}</a>
                   : <button className="inline-flex min-h-10 items-center text-primary underline" onClick={() => void openDocument(document.id, document.object_path)} type="button">Open {document.file_name}</button>}
@@ -176,7 +220,7 @@ export function HrApplicationDetail({ applicationId }: { applicationId: string }
       </section>
       <section className="rounded-xl border p-5">
         <h2 className="font-semibold">History</h2>
-        <ol className="mt-3 space-y-2 text-sm">{history.map((entry) => <li key={entry.id}>{entry.next_status}{entry.note ? ` — ${entry.note}` : ""}</li>)}</ol>
+        <ol className="mt-3 space-y-2 text-sm">{history.map((entry) => <li key={entry.id}><span className="text-muted-foreground">{formatDate(entry.created_at)}</span> · <span className="font-medium">{historyEntryLabel(entry)}</span>{entry.note ? ` — ${entry.note}` : ""}</li>)}</ol>
       </section>
       {error ? <ErrorState message={error} /> : null}
     </section>

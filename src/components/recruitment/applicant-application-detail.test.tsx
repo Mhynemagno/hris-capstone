@@ -1,5 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const state = vi.hoisted(() => ({ status: "Needs Revision" }));
 
 const application = {
   id: "223e4567-e89b-42d3-a456-426614174000",
@@ -13,18 +15,37 @@ const application = {
 
 vi.mock("@/hooks/use-recruitment", () => ({
   useMyApplication: () => ({
-    data: { application, history: [{ id: "h1", next_status: "Needs Revision", note: "Please upload a clearer CV.", created_at: "2026-09-08T00:00:00.000Z" }],
+    data: { application: { ...application, status: state.status }, history: [{ id: "h1", next_status: "Needs Revision", note: "Please upload a clearer CV.", created_at: "2026-09-08T00:00:00.000Z" }],
       documents: [{ id: "d1", kind: "cv", file_name: "cv.pdf", object_path: "applicants/a/b/cv.pdf" }] },
     error: null,
     isLoading: false,
   }),
   useResubmitApplication: () => ({ isPending: false, mutateAsync: vi.fn() }),
+  useSubmitBmiProof: () => ({ isPending: false, mutateAsync: vi.fn() }),
 }));
 vi.mock("@/queries/recruitment", () => ({ getApplicantDocumentUrl: vi.fn().mockResolvedValue(null) }));
 
 import { ApplicantApplicationDetail } from "./applicant-application-detail";
 
 describe("ApplicantApplicationDetail", () => {
+  beforeEach(() => {
+    state.status = "Needs Revision";
+  });
+
+  it("asks for the BMI proof only while endorsed to Crame", () => {
+    state.status = "Endorsed to Crame";
+    render(<ApplicantApplicationDetail applicationId={application.id} />);
+
+    expect(screen.getByRole("heading", { name: "Proof of passing the BMI" })).toBeInTheDocument();
+    expect(screen.getByLabelText("BMI proof (PDF, PNG or JPEG)")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Resubmit application" })).not.toBeInTheDocument();
+  });
+
+  it("does not ask for the BMI proof at other stages", () => {
+    render(<ApplicantApplicationDetail applicationId={application.id} />);
+    expect(screen.queryByRole("button", { name: "Upload BMI proof" })).not.toBeInTheDocument();
+  });
+
   it("offers document re-upload only while HR has marked the application Needs Revision", async () => {
     render(<ApplicantApplicationDetail applicationId={application.id} />);
 
