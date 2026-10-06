@@ -80,7 +80,7 @@ export function HrContactsPanel() {
                     <Badge variant={contact.is_visible ? "default" : "outline"}>{contact.is_visible ? "Visible" : "Hidden"}</Badge>
                     <span className="text-sm text-muted-foreground">{contactKindLabel(contact.kind)}</span>
                   </div>
-                  <h3 className="text-lg font-semibold" id={`hr-contact-${contact.id}`}>{contact.label}</h3>
+                  <h3 className="text-lg font-bold" id={`hr-contact-${contact.id}`}>{contact.label}</h3>
                   <p className="text-base whitespace-pre-line text-muted-foreground [overflow-wrap:anywhere]">{contact.value}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">

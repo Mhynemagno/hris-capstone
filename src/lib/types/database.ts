@@ -541,6 +541,33 @@ export type EmployeePromotionEligibilitySummary = {
   missing_requirements: string[];
 };
 
+/** Promotion readiness worked out live from the employee's current records (private.promotion_readiness). */
+export type PromotionReadiness = {
+  yearsOfService: number;
+  minimumYearsOfService: number;
+  isReady: boolean;
+  missingRequirements: string[];
+  requirements: { label: string; met: boolean }[];
+};
+
+/** One row per reviewed employee: their latest review, with readiness as of today. */
+export type PromotionReadinessRow = {
+  employee_id: string;
+  employee_name: string;
+  evaluation_id: string;
+  target_rank_id: number;
+  target_rank_name: string;
+  evaluated_on: string;
+  recommendation: PromotionEvaluation["recommendation"];
+  readiness: PromotionReadiness;
+};
+
+export type MyPromotionReadiness = {
+  targetRankName: string;
+  evaluatedOn: string;
+  readiness: PromotionReadiness;
+};
+
 export type AttendanceStatus = "present" | "late" | "absent" | "incomplete";
 
 export type AttendanceIntegrationSettings = {

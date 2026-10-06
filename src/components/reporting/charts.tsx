@@ -61,7 +61,7 @@ export function ChartCard({ id, title, subtitle, children, className, data, form
   return (
     <section aria-labelledby={`chart-${id}`} className={cn("flex flex-col gap-4 rounded-2xl border border-border bg-card p-5 shadow-sm", className)}>
       <div>
-        <h2 className="font-heading text-lg font-semibold" id={`chart-${id}`}>{title}</h2>
+        <h2 className="font-heading text-lg font-bold" id={`chart-${id}`}>{title}</h2>
         {subtitle ? <p className="text-xs text-muted-foreground">{subtitle}</p> : null}
       </div>
       {data.length && total(data) > 0 ? children : (

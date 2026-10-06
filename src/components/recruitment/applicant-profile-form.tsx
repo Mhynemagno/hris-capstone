@@ -90,7 +90,7 @@ export function ApplicantProfileForm() {
       } catch (cause) { setError(cause instanceof Error ? cause.message : "We could not save your profile."); }
     })}>
       <section aria-labelledby="pds-personal" className="rounded-2xl border bg-card p-5 sm:p-6">
-        <h2 className="text-lg font-semibold" id="pds-personal">I. Personal Information</h2>
+        <h2 className="text-lg font-bold" id="pds-personal">I. Personal Information</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <FormField error={errors.lastName?.message} htmlFor="applicant-last-name" label="Last name" required><Input autoComplete="family-name" id="applicant-last-name" {...form.register("lastName")} required /></FormField>
           <FormField error={errors.firstName?.message} htmlFor="applicant-first-name" label="First name" required><Input autoComplete="given-name" id="applicant-first-name" {...form.register("firstName")} required /></FormField>
@@ -109,7 +109,7 @@ export function ApplicantProfileForm() {
       </section>
 
       <section aria-labelledby="pds-education" className="rounded-2xl border bg-card p-5 sm:p-6">
-        <h2 className="text-lg font-semibold" id="pds-education">II. Educational Background</h2>
+        <h2 className="text-lg font-bold" id="pds-education">II. Educational Background</h2>
         <div className="mt-4 space-y-5">
           {APPLICANT_EDUCATION_LEVELS.map(({ level, label, required }) => {
             const levelErrors = errors.education?.[level];

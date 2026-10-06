@@ -80,7 +80,8 @@ export function EmployeeProfilePhotoControl({
         tabIndex={-1}
         type="file"
       />
-      <div className="flex flex-wrap gap-2">
+      {/* Remove sits under Change photo, as the client asked. */}
+      <div className="flex flex-col items-start gap-2">
         <Button aria-controls={inputId} disabled={busy} onClick={() => inputRef.current?.click()} size="sm" type="button" variant="outline">
           <Camera aria-hidden="true" /> {replace.isPending ? "Uploading…" : hasPhoto ? "Change photo" : "Upload photo"}
         </Button>

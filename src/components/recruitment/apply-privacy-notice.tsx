@@ -56,7 +56,7 @@ export function ApplyPrivacyNotice({ children, className, href }: { children: Re
             <p>The San Juan City Police Station respects your privacy and is committed to protecting your personal data in accordance with the Data Privacy Act of 2012 (Republic Act No. 10173). By applying, you agree to the collection and use of your information as described below.</p>
             {SECTIONS.map((section) => (
               <section key={section.title}>
-                <h3 className="text-base font-semibold">{section.title}</h3>
+                <h3 className="text-base font-bold">{section.title}</h3>
                 <div className="mt-1">{section.body}</div>
               </section>
             ))}

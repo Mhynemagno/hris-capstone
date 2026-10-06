@@ -822,7 +822,7 @@ export function AuditLogsWorkspace() {
             </dl>
             {selected.detailEntries.length ? (
               <div className="space-y-2">
-                <h3 className="font-semibold">Recorded values</h3>
+                <h3 className="font-bold">Recorded values</h3>
                 <dl className="grid gap-x-4 gap-y-2 rounded-lg border p-4 text-sm sm:grid-cols-[auto_minmax(0,1fr)]">
                   {selected.detailEntries.map((item) => (
                     <div className="contents" key={item.label}>

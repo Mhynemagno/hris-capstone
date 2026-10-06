@@ -67,7 +67,7 @@ export function PublicCareersLanding() {
               <Sparkles aria-hidden="true" className="size-4" />
               Official portal of the San Juan City Police Station
             </p>
-            <h1 className="mt-6 text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-6xl" id="hero-heading">Serve San Juan with purpose.</h1>
+            <h1 className="mt-6 text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl" id="hero-heading">Serve San Juan with purpose.</h1>
             <div aria-hidden="true" className="mt-5 h-1 w-14 bg-brand-command-red" />
             <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-slate-300">
               One portal for station personnel, job applicants, and everyone who wants to know what is happening at the station.
@@ -84,7 +84,7 @@ export function PublicCareersLanding() {
                   <span className="flex size-14 items-center justify-center rounded-2xl bg-sidebar text-sidebar-foreground"><UserRoundCheck aria-hidden="true" className="size-7" /></span>
                   <span className="rounded-full border border-border bg-muted px-3 py-1 text-sm font-semibold tracking-wide text-foreground uppercase">Station personnel</span>
                 </div>
-                <h3 className="mt-6 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl" id="personnel-portal-heading">Personnel Portal</h3>
+                <h3 className="mt-6 text-2xl font-bold tracking-tight text-foreground sm:text-3xl" id="personnel-portal-heading">Personnel Portal</h3>
                 <p className="mt-2 text-base leading-7 text-muted-foreground">Self-service for San Juan City Police Station personnel.</p>
                 <FeatureList items={personnelFeatures} tone="navy" />
               </div>
@@ -103,7 +103,7 @@ export function PublicCareersLanding() {
                   <span className="flex size-14 items-center justify-center rounded-2xl border border-primary/40 bg-background text-primary"><BriefcaseBusiness aria-hidden="true" className="size-7" /></span>
                   <span className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-sm font-semibold tracking-wide text-primary uppercase">Careers</span>
                 </div>
-                <h3 className="mt-6 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl" id="applicant-portal-heading">Applicant &amp; Career Portal</h3>
+                <h3 className="mt-6 text-2xl font-bold tracking-tight text-foreground sm:text-3xl" id="applicant-portal-heading">Applicant &amp; Career Portal</h3>
                 <p className="mt-2 text-base leading-7 text-muted-foreground">Find an opening at the station and apply online.</p>
                 <FeatureList items={applicantFeatures} tone="green" />
               </div>
@@ -152,14 +152,14 @@ export function PublicCareersLanding() {
               />
             </div>
             <div className="bg-card shadow-sm rounded-2xl border border-border p-6 lg:col-span-7">
-              <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+              <h3 className="flex items-center gap-2 text-lg font-bold text-foreground">
                 <ShieldCheck aria-hidden="true" className="size-5 text-primary" />
                 Our vision, mission and motto
               </h3>
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 {pnpPrinciples.map(({ body, icon: Icon, note, title }) => (
                   <article className={`rounded-xl border border-border bg-background/80 p-4 ${title === "Vision" ? "sm:col-span-2" : ""}`} key={title}>
-                    <h4 className="flex items-center gap-2 text-base font-semibold text-primary">
+                    <h4 className="flex items-center gap-2 text-base font-bold text-primary">
                       <Icon aria-hidden="true" className="size-4" />
                       {title}
                     </h4>
@@ -185,7 +185,7 @@ export function PublicCareersLanding() {
               {benefits.map(({ body, icon: Icon, title }) => (
                 <article className={`bg-card shadow-sm rounded-2xl border border-border p-6 ${liftOnHover}`} key={title}>
                   <span className="flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary"><Icon aria-hidden="true" className="size-6" /></span>
-                  <h3 className="mt-4 text-lg font-semibold text-foreground">{title}</h3>
+                  <h3 className="mt-4 text-lg font-bold text-foreground">{title}</h3>
                   <p className="mt-2 text-base leading-7 text-muted-foreground">{body}</p>
                 </article>
               ))}

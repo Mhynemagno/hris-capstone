@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { Source_Sans_3 } from "next/font/google";
+import { Inter } from "next/font/google";
 import type { ReactNode } from "react";
 
 import "./globals.css";
 
-const sourceSans = Source_Sans_3({
-  variable: "--font-source-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
   display: "swap",
 });
@@ -20,7 +20,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html
       data-scroll-behavior="smooth"
       lang="en"
-      className={`${sourceSans.variable} h-full antialiased`}
+      className={`${inter.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

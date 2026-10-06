@@ -53,7 +53,7 @@ function AnalysisRecommendation({ applicationId, score, onError }: { application
   const retry = useRetryApplicationAnalysis();
   const isAnalyzing = score?.status === "queued" || score?.status === "processing";
   async function retryAnalysis() { onError(""); try { await retry.mutateAsync(applicationId); } catch (cause) { onError(cause instanceof Error ? cause.message : "Unable to retry analysis."); } }
-  return <section aria-live="polite" className="rounded-xl border border-primary/30 bg-muted p-5"><h2 className="font-semibold">AI recommendation</h2><p className="mt-2 text-sm text-muted-foreground">HR makes the final decision. Recommendations never change an application status.</p>{isAnalyzing ? <p className="mt-4 text-sm font-medium">Analyzing application…</p> : null}{score?.status === "completed" ? <p className="mt-4 text-sm"><span className="font-medium">Score: {score.score}/100</span>{score.explanation ? ` — ${score.explanation}` : ""}</p> : null}{score?.status === "failed" ? <div className="mt-4 space-y-3"><p className="text-sm">{score.failure_code === "timed_out" ? <><span className="font-medium">Analysis timed out.</span> The analysis service did not finish in time. You can retry now.</> : <><span className="font-medium">Analysis failed.</span> You can retry when the service is available.</>}</p><button className="min-h-11 rounded-lg border px-4 py-2 text-sm font-medium disabled:opacity-60" disabled={retry.isPending} onClick={() => void retryAnalysis()} type="button">{retry.isPending ? "Retrying analysis…" : "Retry analysis"}</button></div> : null}{!score ? <p className="mt-4 text-sm text-muted-foreground">Not analyzed. This may be an application submitted before automatic analysis was enabled.</p> : null}</section>;
+  return <section aria-live="polite" className="rounded-xl border border-primary/30 bg-muted p-5"><h2 className="font-bold">AI recommendation</h2><p className="mt-2 text-sm text-muted-foreground">HR makes the final decision. Recommendations never change an application status.</p>{isAnalyzing ? <p className="mt-4 text-sm font-medium">Analyzing application…</p> : null}{score?.status === "completed" ? <p className="mt-4 text-sm"><span className="font-medium">Score: {score.score}/100</span>{score.explanation ? ` — ${score.explanation}` : ""}</p> : null}{score?.status === "failed" ? <div className="mt-4 space-y-3"><p className="text-sm">{score.failure_code === "timed_out" ? <><span className="font-medium">Analysis timed out.</span> The analysis service did not finish in time. You can retry now.</> : <><span className="font-medium">Analysis failed.</span> You can retry when the service is available.</>}</p><button className="min-h-11 rounded-lg border px-4 py-2 text-sm font-medium disabled:opacity-60" disabled={retry.isPending} onClick={() => void retryAnalysis()} type="button">{retry.isPending ? "Retrying analysis…" : "Retry analysis"}</button></div> : null}{!score ? <p className="mt-4 text-sm text-muted-foreground">Not analyzed. This may be an application submitted before automatic analysis was enabled.</p> : null}</section>;
 }
 
 export function HrApplicationDetail({ applicationId }: { applicationId: string }) {
@@ -140,7 +140,7 @@ export function HrApplicationDetail({ applicationId }: { applicationId: string }
       />
       {aiScores.error ? <ErrorState message={aiScores.error.message} /> : <AnalysisRecommendation applicationId={applicationId} onError={(message) => setError(message || null)} score={aiScores.data?.[0]} />}
       <section aria-labelledby="review-workflow-heading" className="rounded-xl border p-5">
-        <h2 className="font-semibold" id="review-workflow-heading">Review workflow</h2>
+        <h2 className="font-bold" id="review-workflow-heading">Review workflow</h2>
         {nextOptions.length ? (
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <FormField description="Only the steps allowed from the current status are listed." error={statusError ?? undefined} htmlFor="next-status" label="Next status">
@@ -174,7 +174,7 @@ export function HrApplicationDetail({ applicationId }: { applicationId: string }
       </section>
       {hireOpen && canHire ? (
         <form className="space-y-3 rounded-xl border p-5" noValidate onSubmit={(event) => { event.preventDefault(); void submitHire(event.currentTarget); }}>
-          <h2 className="text-lg font-semibold">Hire applicant</h2>
+          <h2 className="text-lg font-bold">Hire applicant</h2>
           <div className="grid gap-3 sm:grid-cols-2">
             <FormField htmlFor="hire-applicant-number" label="Applicant number">
               <Input id="hire-applicant-number" readOnly value={formatApplicantNumber(applicantNumber)} />
@@ -190,7 +190,7 @@ export function HrApplicationDetail({ applicationId }: { applicationId: string }
         </form>
       ) : null}
       <section aria-labelledby="remarks-heading" className="rounded-xl border p-5">
-        <h2 className="font-semibold" id="remarks-heading">Progress remarks</h2>
+        <h2 className="font-bold" id="remarks-heading">Progress remarks</h2>
         <p className="mt-1 text-sm text-muted-foreground">Record progress without changing the status, e.g. &ldquo;Passed the BMI at Crame.&rdquo; The applicant sees each remark and is notified.</p>
         <div className="mt-3 space-y-3">
           <FormField error={remarkError ?? undefined} htmlFor="application-remark" label="Remark">
@@ -204,7 +204,7 @@ export function HrApplicationDetail({ applicationId }: { applicationId: string }
       </section>
       <HrRequiredDocuments applicantId={application.applicant_id} />
       <section className="rounded-xl border p-5">
-        <h2 className="font-semibold">Submitted with this application</h2>
+        <h2 className="font-bold">Submitted with this application</h2>
         {documents.length ? (
           <ul className="mt-3 space-y-2 text-sm">
             {documents.map((document) => (
@@ -219,7 +219,7 @@ export function HrApplicationDetail({ applicationId }: { applicationId: string }
         ) : <p className="mt-3 text-sm text-muted-foreground">No documents were attached.</p>}
       </section>
       <section className="rounded-xl border p-5">
-        <h2 className="font-semibold">History</h2>
+        <h2 className="font-bold">History</h2>
         <ol className="mt-3 space-y-2 text-sm">{history.map((entry) => <li key={entry.id}><span className="text-muted-foreground">{formatDate(entry.created_at)}</span> · <span className="font-medium">{historyEntryLabel(entry)}</span>{entry.note ? ` — ${entry.note}` : ""}</li>)}</ol>
       </section>
       {error ? <ErrorState message={error} /> : null}

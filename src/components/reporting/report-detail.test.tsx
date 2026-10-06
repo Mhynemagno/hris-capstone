@@ -41,6 +41,10 @@ describe("formatCell", () => {
     expect(formatCell("PNP-2026-09")).toBe("PNP-2026-09");
     expect(formatCell(null)).toBe("—");
   });
+
+  it("shows an incomplete attendance record as Partial", () => {
+    expect(formatCell("incomplete")).toBe("Partial");
+  });
 });
 
 describe("ReportDetail filters", () => {

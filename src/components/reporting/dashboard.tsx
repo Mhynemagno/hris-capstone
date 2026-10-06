@@ -21,6 +21,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { StatusPanel } from "@/components/ui/status-panel";
 import { useHrDashboard, useManagementDashboard } from "@/hooks/use-reporting";
+import { attendanceStatusLabel } from "@/lib/attendance-status";
 import { cn } from "@/lib/utils";
 import { REPORT_KEYS, type DashboardSummary } from "@/schemas/reporting";
 
@@ -66,6 +67,11 @@ function titleCase(label: string) {
 /** Leave statuses as the leave pages show them; a request awaiting HR reads "For approval". */
 function leaveLabel(label: string) {
   return label === "pending" ? "For approval" : titleCase(label);
+}
+
+/** The exceptions chart mixes attendance and leave statuses. */
+function exceptionLabel(label: string) {
+  return label === "pending" ? leaveLabel(label) : attendanceStatusLabel(label);
 }
 
 const shortDate = new Intl.DateTimeFormat("en-PH", { month: "short", day: "numeric", timeZone: "UTC" });
@@ -120,14 +126,14 @@ type ChartSpec = {
 
 const CHARTS: ChartSpec[] = [
   { key: "attendanceTrend", title: "Daily attendance", subtitle: "Personnel who timed in, by day (last 30 days of the period)", wide: true, format: formatDay, labelHeading: "Date", render: (rows) => <ColumnTrendChart data={rows} formatLabel={formatDay} unit="attendance" /> },
-  { key: "attendanceStatus", title: "Attendance status", subtitle: "All attendance logs in the period", format: titleCase, labelHeading: "Status", render: (rows) => <DonutChart centerLabel="Logs" colorFor={statusColor} data={rows} formatLabel={titleCase} /> },
+  { key: "attendanceStatus", title: "Attendance status", subtitle: "Attendance in the period, including absences", format: attendanceStatusLabel, labelHeading: "Status", render: (rows) => <DonutChart centerLabel="Records" colorFor={statusColor} data={rows} formatLabel={attendanceStatusLabel} /> },
   { key: "workforceByDepartment", title: "Personnel by unit / section", subtitle: "Active personnel", labelHeading: "Unit / Section", render: (rows) => <HorizontalBarChart data={rows} /> },
   { key: "workforceByRank", title: "Personnel by rank", subtitle: "All personnel, lowest to highest rank", labelHeading: "Rank", render: (rows) => <HorizontalBarChart data={rows} /> },
   { key: "leaveStatus", title: "Leave status", subtitle: "Leave in the period, plus upcoming leave", format: leaveLabel, labelHeading: "Status", render: (rows) => <DonutChart centerLabel="Requests" colorFor={statusColor} data={rows} formatLabel={leaveLabel} /> },
   { key: "recruitmentPipeline", title: "Recruitment pipeline", subtitle: "Applications submitted in the period, by stage", labelHeading: "Stage", render: (rows) => <HorizontalBarChart data={byPipeline(rows)} /> },
   { key: "deploymentStatus", title: "Deployment status", subtitle: "All deployments by status", format: titleCase, labelHeading: "Status", render: (rows) => <DonutChart centerLabel="Deployments" colorFor={statusColor} data={rows} formatLabel={titleCase} /> },
   { key: "promotionReadiness", title: "Promotion Status", subtitle: "Evaluations in the period", labelHeading: "Result", render: (rows) => <DonutChart centerLabel="Evaluated" colorFor={statusColor} data={rows} /> },
-  { key: "attendanceLeaveExceptions", title: "Attendance and leave exceptions", subtitle: "Late, absent, incomplete and leave for approval", format: leaveLabel, labelHeading: "Exception", render: (rows) => <HorizontalBarChart colorFor={(label) => statusColor(label, 0)} data={rows} formatLabel={leaveLabel} /> },
+  { key: "attendanceLeaveExceptions", title: "Attendance and leave exceptions", subtitle: "Late, absent, partial and leave for approval", format: exceptionLabel, labelHeading: "Exception", render: (rows) => <HorizontalBarChart colorFor={(label) => statusColor(label, 0)} data={rows} formatLabel={exceptionLabel} /> },
 ];
 /** Breakdowns the RPC still returns but the dashboard no longer charts. */
 const HIDDEN_CHARTS = new Set(["leaveByType"]);
@@ -181,7 +187,7 @@ function DashboardContent({ role, query }: { role: DashboardRole; query: { isLoa
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,var(--color-cta)_0%,transparent_55%)] opacity-25" />
       <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight" id="page-title">Dashboard</h1>
+          <h1 className="text-3xl font-bold tracking-tight" id="page-title">Dashboard</h1>
         </div>
         <div className="flex flex-wrap gap-2">
           <Link className={buttonVariants({ className: "min-h-11 rounded-full", variant: "outline" })} href="/reports">
@@ -226,7 +232,7 @@ function DashboardContent({ role, query }: { role: DashboardRole; query: { isLoa
     <section aria-labelledby="dashboard-reports" className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
-          <h2 className="font-heading text-xl font-semibold" id="dashboard-reports">Detailed reports</h2>
+          <h2 className="font-heading text-xl font-bold" id="dashboard-reports">Detailed reports</h2>
           <p className="text-sm text-muted-foreground">Filter, export to CSV, or print.</p>
         </div>
         <Link className="inline-flex min-h-11 items-center text-sm font-medium text-primary underline-offset-4 hover:underline" href="/reports">All reports</Link>
@@ -259,7 +265,7 @@ function AttentionRow({ data, role }: { data: DashboardSummary; role: DashboardR
       {items.length ? (
         <section aria-labelledby="needs-attention" className={cn("rounded-2xl border bg-card p-5 shadow-sm", showGauge ? "lg:col-span-2" : "lg:col-span-3")}>
           <div className="flex items-center justify-between gap-3">
-            <h2 className="font-heading text-xl font-semibold" id="needs-attention">Notification</h2>
+            <h2 className="font-heading text-xl font-bold" id="needs-attention">Notification</h2>
             <p className="text-sm font-semibold text-primary tabular-nums">{clear} of {items.length} clear</p>
           </div>
           <ul className="mt-4 space-y-1">
@@ -285,7 +291,7 @@ function AttentionRow({ data, role }: { data: DashboardSummary; role: DashboardR
       ) : null}
       {showGauge ? (
         <section aria-labelledby="attendance-pulse" className={cn("rounded-2xl border bg-card p-5 shadow-sm", !items.length && "lg:col-span-3")}>
-          <h2 className="font-heading text-xl font-semibold" id="attendance-pulse">Attendance pulse</h2>
+          <h2 className="font-heading text-xl font-bold" id="attendance-pulse">Attendance pulse</h2>
           <div className="mt-3">
             <GaugeChart label="Present" value={data.metrics.attendanceToday ?? 0} whole={data.metrics.activeWorkforce ?? 0} />
           </div>

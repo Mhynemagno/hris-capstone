@@ -7,10 +7,10 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-source-sans), ui-sans-serif, system-ui, sans-serif;
-  /* One typeface everywhere: headings, body, figures, and code all use Source Sans 3. */
-  --font-mono: var(--font-source-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-heading: var(--font-source-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  /* One typeface everywhere: headings, body, figures, and code all use Inter (the client's choice). */
+  --font-mono: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 
   /*
    * Readability-first type scale (UI/UX Pro Max "Corporate Trust" pairing).
@@ -133,6 +133,22 @@
   --sidebar-ring: oklch(0.7 0.12 165);
 }
 
+/*
+ * The app sidebar is white with navy text and a navy "you are here" pill (client request);
+ * only the top bar stays navy. Scoped here because the login and portal panels still use the
+ * navy --sidebar tokens.
+ */
+.app-sidebar {
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: oklch(0.32 0.05 258);
+  --sidebar-primary: oklch(0.33 0.1 258);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.95 0.015 258);
+  --sidebar-accent-foreground: oklch(0.28 0.08 258);
+  --sidebar-border: oklch(0.91 0.01 258);
+  --sidebar-ring: oklch(0.33 0.1 258);
+}
+
 .dark {
   --background: oklch(0.19 0.02 258);
   --foreground: oklch(0.94 0.008 255);
@@ -201,7 +217,7 @@
   h4,
   h5,
   h6 {
-    @apply font-heading tracking-tight text-balance;
+    @apply font-heading font-bold tracking-tight text-balance;
   }
   p {
     text-wrap: pretty;

@@ -71,7 +71,7 @@ export function EmployeeLeaveList() {
   return (
     <section className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-xl font-semibold">Leave history</h2>
+        <h2 className="text-xl font-bold">Leave history</h2>
         <Link className={buttonVariants()} href="/employee/leave/new">
           Request leave
         </Link>

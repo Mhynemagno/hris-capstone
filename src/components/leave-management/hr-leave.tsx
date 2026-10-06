@@ -40,7 +40,7 @@ export function HrLeaveQueue() {
   return (
     <section aria-labelledby="hr-leave-queue-heading" className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <h2 className="text-xl font-semibold" id="hr-leave-queue-heading">
+        <h2 className="text-xl font-bold" id="hr-leave-queue-heading">
           Leave request queue
         </h2>
         <div className="w-full sm:w-60">
@@ -187,7 +187,7 @@ export function HrLeaveDetail({ requestId }: { requestId: string }) {
         Back to leave requests
       </Link>
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-3xl font-semibold tracking-tight">{data.leave_type_name}</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{data.leave_type_name}</h1>
         <LeaveStatusBadge status={data.status} />
       </div>
       <dl className="grid gap-3 text-sm sm:grid-cols-2">
@@ -246,7 +246,7 @@ export function HrLeaveDetail({ requestId }: { requestId: string }) {
       ) : null}
       {data.status === "pending" ? (
         <div className="space-y-4 rounded-xl border p-4">
-          <h2 className="text-lg font-semibold" id="decision-notes-heading">
+          <h2 className="text-lg font-bold" id="decision-notes-heading">
             Notes
           </h2>
           <div className="space-y-2">

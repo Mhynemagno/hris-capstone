@@ -26,9 +26,9 @@ function GeneralRequirements({ criteria }: { criteria: JobQualificationCriterion
   ].filter((group) => group.criteria.length);
   if (!numbered.length && !requirements.others.length) return null;
   return <section aria-labelledby="general-requirements-heading" className="rounded-xl border p-5">
-    <h2 className="font-semibold" id="general-requirements-heading">General Requirements</h2>
+    <h2 className="font-bold" id="general-requirements-heading">General Requirements</h2>
     {numbered.length ? <dl className="mt-3 space-y-2 text-sm">{numbered.map((group, index) => <div key={group.label}><dt className="font-medium">Requirement {index + 1}: {group.label}</dt>{group.criteria.map((criterion) => <dd className="text-muted-foreground" key={criterion.id}>{criterion.requirement}{preferred(criterion)}</dd>)}</div>)}</dl> : null}
-    {requirements.others.length ? <><h3 className="mt-4 text-sm font-medium">Other requirements</h3><ul className="mt-2 list-disc space-y-1 pl-5 text-sm">{requirements.others.map(({ criterion, label }) => <li key={criterion.id}>{label}{preferred(criterion)}</li>)}</ul></> : null}
+    {requirements.others.length ? <><h3 className="mt-4 text-sm font-bold">Other requirements</h3><ul className="mt-2 list-disc space-y-1 pl-5 text-sm">{requirements.others.map(({ criterion, label }) => <li key={criterion.id}>{label}{preferred(criterion)}</li>)}</ul></> : null}
   </section>;
 }
 
@@ -45,7 +45,7 @@ export function PublicJobDetail({ jobId }: { jobId: number }) {
   const applyPath = `/applicant/apply/${job.data.id}`;
   const imageUrl = jobPostingImageUrl(job.data.image_path);
   return <section className="mx-auto max-w-4xl space-y-6">
-    <div><Link className="text-sm text-primary underline-offset-4 hover:underline" href="/jobs">All job openings</Link><h1 className="mt-4 text-3xl font-semibold tracking-tight">{job.data.title}</h1><p className="mt-2 text-sm text-muted-foreground">{[job.data.location, job.data.closes_on ? `Deadline of Application: ${formatDate(job.data.closes_on)}` : null].filter(Boolean).join(" · ")}</p></div>
+    <div><Link className="text-sm text-primary underline-offset-4 hover:underline" href="/jobs">All job openings</Link><h1 className="mt-4 text-3xl font-bold tracking-tight">{job.data.title}</h1><p className="mt-2 text-sm text-muted-foreground">{[job.data.location, job.data.closes_on ? `Deadline of Application: ${formatDate(job.data.closes_on)}` : null].filter(Boolean).join(" · ")}</p></div>
     {imageUrl ? <Image alt={`${job.data.title} job posting`} className="h-auto w-full rounded-xl border object-contain" height={900} priority src={imageUrl} unoptimized width={1600} /> : null}
     <p className="whitespace-pre-wrap leading-7">{job.data.description}</p>
     <GeneralRequirements criteria={job.data.job_qualification_criteria ?? []} />

@@ -62,7 +62,7 @@ function SettingsForm({ settings }: { settings: AttendanceIntegrationSettingsRow
   return (
     <section aria-labelledby="attendance-settings-heading" className="max-w-2xl space-y-4 rounded-xl border p-5">
       <div>
-        <h2 className="font-semibold" id="attendance-settings-heading">
+        <h2 className="font-bold" id="attendance-settings-heading">
           CSV/XLSX integration
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">

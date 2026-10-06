@@ -108,7 +108,7 @@ export function ApplicantProfileDocuments({ onPendingChange }: { onPendingChange
   const status = requiredDocumentStatus(documents.data);
 
   return <section aria-labelledby="applicant-documents" className="rounded-2xl border bg-card p-5 sm:p-6">
-    <h2 className="text-lg font-semibold" id="applicant-documents">Required documents</h2>
+    <h2 className="text-lg font-bold" id="applicant-documents">Required documents</h2>
     <p className="mt-1 text-sm text-muted-foreground">Save all five documents (up to 10 MiB each) before submitting an application. The 2x2 picture must be a PNG or JPEG image; the other documents must be PDF files.</p>
     <div className="mt-4 rounded-lg border bg-muted/50 p-3">
       <p className="font-medium">{status.saved} of {status.total} required documents saved</p>

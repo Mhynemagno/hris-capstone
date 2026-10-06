@@ -17,6 +17,7 @@ import {
   useCreatePromotionEvaluation,
   useHrPromotionEmployee,
   usePromotionCriteria,
+  usePromotionReadiness,
 } from "@/hooks/use-promotion-eligibility";
 import { performanceRatingSchema } from "@/schemas/promotion-eligibility";
 
@@ -45,6 +46,7 @@ type RatingFieldErrors = Partial<Record<"rating" | "reviewPeriodStartsOn" | "rev
 export function HrPromotionReview({ employeeId }: { employeeId: string }) {
   const detail = useHrPromotionEmployee(employeeId);
   const criteria = usePromotionCriteria({ isActive: true });
+  const readiness = usePromotionReadiness(employeeId);
   const ranks = useRankOptions();
   const createRating = useCreatePerformanceRating();
   const createEvaluation = useCreatePromotionEvaluation();
@@ -61,6 +63,7 @@ export function HrPromotionReview({ employeeId }: { employeeId: string }) {
     return <ErrorState message={detail.error?.message ?? criteria.error?.message ?? "Employee record was not found."} />;
   }
   const data = detail.data;
+  const latestReadiness = readiness.data?.[0];
   const rankTitle = (rankId: number) => {
     const rank = ranks.data?.find((row) => row.id === rankId);
     return rank ? rankLabel(rank) : ranks.isLoading ? "Loading rank…" : `Rank #${rankId}`;
@@ -151,14 +154,32 @@ export function HrPromotionReview({ employeeId }: { employeeId: string }) {
           <dd className="font-medium">{formatDate(data.employee.employment_started_on) ?? "—"}</dd>
         </div>
       </dl>
+      {latestReadiness ? (
+        <section aria-labelledby="readiness-today" className="space-y-2">
+          <h2 className="text-lg font-bold" id="readiness-today">Requirements as of today</h2>
+          <p className="text-sm text-muted-foreground">
+            For {latestReadiness.target_rank_name}, from the review on {formatDate(latestReadiness.evaluated_on)}, checked against current records.
+          </p>
+          <ul aria-label="Requirements as of today" className="divide-y rounded-xl border text-sm">
+            {latestReadiness.readiness.requirements.map((requirement) => (
+              <li className="flex items-center justify-between gap-3 px-4 py-2" key={requirement.label}>
+                <span>{requirement.label}</span>
+                <span className={requirement.met ? "font-semibold text-emerald-700 dark:text-emerald-400" : "font-semibold text-destructive"}>
+                  {requirement.met ? "Met" : "Missing"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
       <section className="space-y-2">
-        <h2 className="text-lg font-semibold">Existing evidence</h2>
+        <h2 className="text-lg font-bold">Existing evidence</h2>
         <p className="text-sm text-muted-foreground">
           {data.qualifications.length} eligibility · {data.certifications.length + data.training.length} certification / training
         </p>
       </section>
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold">Performance ratings</h2>
+        <h2 className="text-lg font-bold">Performance ratings</h2>
         {data.ratings.length ? (
           <ul className="space-y-2">
             {data.ratings.map((rating) => (
@@ -172,7 +193,7 @@ export function HrPromotionReview({ employeeId }: { employeeId: string }) {
           <p className="text-sm text-muted-foreground">No performance ratings have been recorded.</p>
         )}
         <form className="grid gap-4 rounded-xl border p-4 sm:grid-cols-2" noValidate onSubmit={submitRating}>
-          <h3 className="font-semibold sm:col-span-2">Record a performance rating</h3>
+          <h3 className="font-bold sm:col-span-2">Record a performance rating</h3>
           <FormField error={ratingErrors.rating} htmlFor="rating" label="Overall rating" required>
             <select className={nativeSelectClassName} defaultValue="" id="rating" name="rating" required>
               <option value="">Choose a rating</option>
@@ -215,7 +236,7 @@ export function HrPromotionReview({ employeeId }: { employeeId: string }) {
         </form>
       </section>
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold">Promotion recommendation</h2>
+        <h2 className="text-lg font-bold">Promotion recommendation</h2>
         <form className="grid gap-4 rounded-xl border p-4 sm:grid-cols-2" onSubmit={submitEvaluation}>
           <FormField
             description={criteria.data?.length ? "Each option is the target rank for an active criteria set." : "No active criteria exist. Create criteria first."}

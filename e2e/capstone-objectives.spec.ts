@@ -387,7 +387,10 @@ test.describe("Objective 4: promotion eligibility tracker", () => {
     await expect(page.getByRole("status").filter({ hasText: /Advisory review saved for PCPL/ })).toBeVisible();
 
     await page.goto("/hr/promotions");
-    await expect(page.getByRole("link", { name: new RegExp(`Open review for PCPL.*evaluated ${formatDate(isoDate(0))}`) }).first()).toBeVisible({ timeout: 15_000 });
+    // One row per employee, from their latest review, with readiness checked against today's records.
+    const promotionRow = page.getByRole("row").filter({ has: page.getByRole("link", { name: /Open review for .*PCPL/ }) }).filter({ hasText: formatDate(isoDate(0)) ?? isoDate(0) }).first();
+    await expect(promotionRow).toBeVisible({ timeout: 15_000 });
+    await expect(promotionRow).toContainText("Ready");
     await signOut(page, HR.email);
 
     await signIn(page, EMPLOYEE.email, EMPLOYEE.home);
@@ -467,7 +470,7 @@ test.describe("Objective 6: attendance monitoring and reporting", () => {
     const row = page.getByRole("row").filter({ hasText: deviceId });
     await expect(row).toContainText("08:30");
     await expect(row).toContainText("17:00");
-    await expect(row).toContainText("late");
+    await expect(row).toContainText("Late");
     await expect(row).toContainText("Import");
     // Biometric login/logout (face) entry points; the camera journey is e2e/face-attendance.spec.ts.
     await expect(page.getByRole("link", { name: "Attendance kiosk" })).toBeVisible();

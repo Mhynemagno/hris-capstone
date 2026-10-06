@@ -81,7 +81,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
               <Image alt="" className="h-11 w-auto object-contain" height={44} src="/bagong-pilipinas-logo.png" width={47} />
             </div>
             <p className="mt-6 text-sm font-semibold tracking-[0.18em] text-primary uppercase lg:mt-0">{eyebrow}</p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight">{title}</h1>
+            <h1 className="mt-2 text-3xl font-bold tracking-tight">{title}</h1>
             <div className="mt-8"><LoginForm error={errorMessage} mode={mode} nextPath={nextPath} /></div>
             {mode === "employee" ? (
               <p className="mt-6 text-center text-sm text-muted-foreground">

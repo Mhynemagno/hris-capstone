@@ -64,7 +64,7 @@ export function ProfileHeaderCard({ photo, name, subtitle, actions, meta, tags =
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
           {photo ? <div className="shrink-0">{photo}</div> : null}
           <div className="min-w-0 flex-1">
-            <h1 className="text-3xl font-semibold tracking-tight break-words">{name}</h1>
+            <h1 className="text-3xl font-bold tracking-tight break-words">{name}</h1>
             <p className="mt-1 text-sm font-medium text-muted-foreground">{subtitle}</p>
             {actions ? <div className="mt-4 flex flex-wrap gap-2">{actions}</div> : null}
           </div>
@@ -107,7 +107,7 @@ export function InfoCard({ icon: Icon, title, id, children, className, action }:
     <section aria-labelledby={id} className={cn("rounded-2xl border bg-card p-5 shadow-sm", className)}>
       <div className="flex items-center gap-3">
         <span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><Icon className="size-4.5" /></span>
-        <h2 className="font-heading text-lg font-semibold" id={id}>{title}</h2>
+        <h2 className="font-heading text-lg font-bold" id={id}>{title}</h2>
         {action ? <div className="ml-auto">{action}</div> : null}
       </div>
       <div className="mt-3">{children}</div>

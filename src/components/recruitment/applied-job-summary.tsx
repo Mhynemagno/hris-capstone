@@ -25,7 +25,7 @@ export function AppliedJobSummary({ job, status, submittedAt }: AppliedJobSummar
   return (
     <section aria-labelledby="applied-job-heading" className="space-y-4 rounded-xl border p-5">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-lg font-semibold" id="applied-job-heading">What you applied for</h2>
+        <h2 className="text-lg font-bold" id="applied-job-heading">What you applied for</h2>
         <Badge variant="secondary">{status}</Badge>
       </div>
       {job ? (
@@ -39,12 +39,12 @@ export function AppliedJobSummary({ job, status, submittedAt }: AppliedJobSummar
             <Detail label="Submitted" value={formatDateTime(submittedAt) ?? ""} />
           </dl>
           <div>
-            <h3 className="text-sm font-semibold">About the job</h3>
+            <h3 className="text-sm font-bold">About the job</h3>
             <p className="mt-1 whitespace-pre-line text-sm text-muted-foreground">{job.description}</p>
           </div>
           {criteria.length ? (
             <div>
-              <h3 className="text-sm font-semibold" id="applied-job-criteria">Qualifications</h3>
+              <h3 className="text-sm font-bold" id="applied-job-criteria">Qualifications</h3>
               <ul aria-labelledby="applied-job-criteria" className="mt-2 list-disc space-y-1 pl-5 text-sm">
                 {criteria.map((criterion) => (
                   <li key={criterion.id}>{criterion.requirement}{criterion.is_required ? " (required)" : ""}</li>

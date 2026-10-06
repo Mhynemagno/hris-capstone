@@ -39,7 +39,7 @@ export function StatusPanel({
           />
         </div>
         <div className="space-y-1">
-          <h2 className="font-semibold" id={titleId}>{title}</h2>
+          <h2 className="font-bold" id={titleId}>{title}</h2>
           <p className="text-sm leading-6 text-muted-foreground">
             {description}
           </p>

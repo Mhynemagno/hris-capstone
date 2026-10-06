@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(18);
+select extensions.plan(21);
 
 select extensions.has_schema('reporting', 'Private reporting schema exists');
 select extensions.has_function('public', 'get_hr_dashboard_summary', array['date', 'date'], 'HR dashboard RPC exists');
@@ -95,6 +95,48 @@ select extensions.is(
   (select count(*)::integer from jsonb_array_elements((select data from leave_dashboard_after) -> 'breakdowns' -> 'leaveStatus') item where item ->> 'label' = 'cancelled'),
   0, 'Cancelled leave is left out of the Leave status chart'
 );
+-- Attendance status donut (client feedback): Absent is counted, not only logged. On every day the
+-- scanner was used, active personnel already in service with no log and no approved leave are absent.
+-- The fixtures sit in 1960 so no other local data shares those days.
+insert into public.employees (id, employee_number, first_name, last_name, personal_email, employment_started_on)
+values
+  ('00000000-0000-4000-8000-000000001541', 'DASH-AB-1', 'Scanned', 'Daily', 'dash-ab-1@example.test', '1960-01-01'),
+  ('00000000-0000-4000-8000-000000001542', 'DASH-AB-2', 'Missed', 'Once', 'dash-ab-2@example.test', '1960-01-01'),
+  ('00000000-0000-4000-8000-000000001543', 'DASH-AB-3', 'Away', 'Leave', 'dash-ab-3@example.test', '1960-01-01'),
+  ('00000000-0000-4000-8000-000000001544', 'DASH-AB-4', 'Joined', 'Later', 'dash-ab-4@example.test', '1960-01-03');
+
+-- New leave cannot start in the past; this test transaction (rolled back) lifts that rule to backdate one.
+alter table public.leave_requests drop constraint leave_requests_starts_on_check;
+insert into public.leave_requests (id, employee_id, submitted_by_user_id, leave_type_id, leave_type_name, starts_on, ends_on, reason, status, decided_by_user_id, decided_at)
+values ('00000000-0000-4000-8000-000000001545', '00000000-0000-4000-8000-000000001543', '00000000-0000-4000-8000-000000001503', '00000000-0000-4000-8000-000000001521', 'Dashboard leave test', '1960-01-02', '1960-01-02', null, 'approved', '00000000-0000-4000-8000-000000001501', now());
+
+-- Day 1: one scan, one missed, one on leave, one not yet in service. Day 2: nobody scanned (skipped).
+-- Day 3: one scan, one absence recorded by hand, two missed.
+insert into public.attendance_logs (employee_id, integration_id, source_event_id, external_employee_id, attendance_date, time_in, time_out, status, capture_method)
+select log.employee_id, (select id from public.attendance_integration_settings where adapter_key = 'face_recognition'), log.source_event_id, log.external_id, log.attendance_date, log.time_in, log.time_out, log.status, 'face_recognition'
+from (values
+  ('00000000-0000-4000-8000-000000001541'::uuid, 'dash-ab:1', 'DASH-AB-1', date '1960-01-02', timestamptz '1960-01-02 00:00:00+00', timestamptz '1960-01-02 09:00:00+00', 'present'),
+  ('00000000-0000-4000-8000-000000001541'::uuid, 'dash-ab:2', 'DASH-AB-1', date '1960-01-04', null, null, 'absent'),
+  ('00000000-0000-4000-8000-000000001542'::uuid, 'dash-ab:3', 'DASH-AB-2', date '1960-01-04', timestamptz '1960-01-04 00:00:00+00', timestamptz '1960-01-04 09:00:00+00', 'present')
+) as log(employee_id, source_event_id, external_id, attendance_date, time_in, time_out, status);
+
+create function pg_temp.attendance_bucket(chart jsonb, bucket text) returns integer language sql as $$
+  select (select (item ->> 'count')::integer from jsonb_array_elements(chart -> 'breakdowns' -> 'attendanceStatus') item where item ->> 'label' = bucket);
+$$;
+
+select extensions.is(
+  pg_temp.attendance_bucket(private.get_dashboard_chart_data('1960-01-02', '1960-01-04'), 'absent'),
+  4, 'Absent counts personnel with no log or approved leave on scanned days, plus recorded absences'
+);
+select extensions.is(
+  pg_temp.attendance_bucket(private.get_dashboard_chart_data('1960-01-02', '1960-01-04'), 'present'),
+  2, 'Present still counts attendance logs'
+);
+select extensions.is(
+  pg_temp.attendance_bucket(private.get_dashboard_chart_data('1950-01-01', '1950-01-02'), 'absent'),
+  0, 'Absent is always listed, even when there is nothing to count'
+);
+
 grant select on leave_dashboard_dates to authenticated;
 
 set local role authenticated;

@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 const hooks = vi.hoisted(() => ({
   useMyPromotionEligibility: vi.fn(),
-  usePromotionEvaluations: vi.fn(),
+  usePromotionReadiness: vi.fn(),
   useHrPromotionEmployee: vi.fn(),
   usePromotionCriteria: vi.fn(),
   useCreatePerformanceRating: vi.fn(),
@@ -24,20 +24,33 @@ const ranks = [
 ];
 
 describe("promotion eligibility presentation", () => {
-  it("renders only the employee-safe readiness summary", () => {
-    hooks.useMyPromotionEligibility.mockReturnValue({ isLoading: false, data: { target_rank_name: "Senior Officer", years_of_service: 3, is_ready: false, missing_requirements: ["First-aid certification"] } });
+  it("renders only the employee-safe readiness summary, live from current records", () => {
+    hooks.useMyPromotionEligibility.mockReturnValue({ isLoading: false, data: { targetRankName: "Senior Officer", evaluatedOn: "2026-09-01", readiness: { yearsOfService: 3, minimumYearsOfService: 2, isReady: false, missingRequirements: ["First-aid certification"], requirements: [{ label: "Basic Course", met: true }, { label: "First-aid certification", met: false }] } } });
     render(<EmployeePromotionEligibility />);
     expect(screen.getByText("First-aid certification")).toBeInTheDocument();
+    expect(screen.getByText("Requirements pending")).toBeInTheDocument();
     expect(screen.queryByText(/recommendation|performance rating|HR notes/i)).not.toBeInTheDocument();
   });
 
   it("labels the HR directory as an advisory review without a promotion action", () => {
-    hooks.usePromotionEvaluations.mockReturnValue({ isLoading: false, data: { rows: [], count: 0 } });
+    hooks.usePromotionReadiness.mockReturnValue({ isLoading: false, data: [] });
     adminHooks.useRankOptions.mockReturnValue({ isLoading: false, data: ranks });
     render(<HrPromotionDirectory />);
     expect(screen.getByText(/never change an employee.?s rank automatically/i)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /promote/i })).not.toBeInTheDocument();
     expect(screen.getByText("No promotion reviews have been recorded yet.")).toBeVisible();
+  });
+
+  it("lists one row per employee with readiness as of today", () => {
+    hooks.usePromotionReadiness.mockReturnValue({ isLoading: false, data: [
+      { employee_id: "e1", employee_name: "Peters, Tyson", evaluation_id: "v1", target_rank_id: 9, target_rank_name: "Police Chief Inspector", evaluated_on: "2026-09-01", recommendation: "deferred", readiness: { yearsOfService: 2, minimumYearsOfService: 2, isReady: false, missingRequirements: ["Scuba Diving"], requirements: [] } },
+    ] });
+    adminHooks.useRankOptions.mockReturnValue({ isLoading: false, data: ranks });
+    render(<HrPromotionDirectory />);
+    const row = screen.getByText("Peters, Tyson").closest("tr")!;
+    expect(within(row).getByText("PCI — Police Chief Inspector")).toBeInTheDocument();
+    expect(within(row).getByText("Missing 1 requirement")).toBeInTheDocument();
+    expect(within(row).getByText("September 1, 2026")).toBeInTheDocument();
   });
 });
 
@@ -63,10 +76,20 @@ describe("HrPromotionReview", () => {
     });
     hooks.useCreatePerformanceRating.mockReturnValue({ isPending: false, mutateAsync: createRating });
     hooks.useCreatePromotionEvaluation.mockReturnValue({ isPending: false, mutateAsync: vi.fn() });
+    hooks.usePromotionReadiness.mockReturnValue({ isLoading: false, data: [
+      { employee_id: "e1", employee_name: "Erdene, Bat", evaluation_id: "v1", target_rank_id: 9, target_rank_name: "Police Chief Inspector", evaluated_on: "2026-09-01", recommendation: "deferred", readiness: { yearsOfService: 6, minimumYearsOfService: 5, isReady: false, missingRequirements: ["Scuba Diving"], requirements: [{ label: "Basic Course", met: true }, { label: "Scuba Diving", met: false }] } },
+    ] });
     adminHooks.useRankOptions.mockReturnValue({ isLoading: false, data: ranks });
     render(<HrPromotionReview employeeId="00000000-0000-4000-8000-000000000201" />);
     return { createRating };
   }
+
+  it("shows each requirement of the latest review as met or missing today", () => {
+    setup();
+    const list = screen.getByRole("list", { name: "Requirements as of today" });
+    expect(within(list).getByText("Basic Course").closest("li")).toHaveTextContent("Met");
+    expect(within(list).getByText("Scuba Diving").closest("li")).toHaveTextContent("Missing");
+  });
 
   it("labels criteria options with the target rank title", () => {
     setup();
@@ -87,13 +110,13 @@ describe("HrPromotionReview", () => {
       "4 – Very satisfactory",
       "5 – Outstanding",
     ]);
-    expect(screen.getByRole("listitem")).toHaveTextContent("4 – Very satisfactory");
+    expect(screen.getByText("4 – Very satisfactory", { selector: "li span" })).toBeVisible();
   });
 
   it("shows dates in words and criteria options without a rating minimum", () => {
     setup();
     expect(screen.getByText("January 1, 2020")).toBeVisible();
-    expect(screen.getByRole("listitem")).toHaveTextContent("January 1, 2025 to December 31, 2025");
+    expect(screen.getByText(/January 1, 2025 to December 31, 2025/)).toBeVisible();
     expect(screen.queryByText(/2025-01-01|2020-01-01/)).not.toBeInTheDocument();
     const criterion = screen.getByRole("combobox", { name: /Target rank/ });
     expect(within(criterion).getAllByRole("option")[1]?.textContent).not.toMatch(/rating/);

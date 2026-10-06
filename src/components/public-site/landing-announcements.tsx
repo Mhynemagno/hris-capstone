@@ -34,7 +34,7 @@ export function LandingAnnouncements() {
                       <span className="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 font-semibold text-primary">{announcementCategoryLabel(announcement.category)}</span>
                       {announcement.published_at ? <time dateTime={announcement.published_at}>{formatDate(announcement.published_at)}</time> : null}
                     </p>
-                    <h3 className="mt-3 text-lg font-semibold text-foreground [overflow-wrap:anywhere]" id={`announcement-${announcement.id}-title`}>{announcement.title}</h3>
+                    <h3 className="mt-3 text-lg font-bold text-foreground [overflow-wrap:anywhere]" id={`announcement-${announcement.id}-title`}>{announcement.title}</h3>
                     <p className="mt-2 flex-1 text-base leading-7 text-muted-foreground [overflow-wrap:anywhere]">{announcement.summary}</p>
                     <Link
                       aria-label={`Read more about ${announcement.title}`}
