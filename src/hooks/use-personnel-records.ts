@@ -94,6 +94,8 @@ export function useSavePersonnelEntry(kind: PersonnelKind, employeeId: string) {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.personnelRecords.detail(employeeId) });
       void queryClient.invalidateQueries({ queryKey: personnelEntriesKey(kind, employeeId) });
+      // Eligibility and certification / training records decide promotion readiness.
+      void queryClient.invalidateQueries({ queryKey: ["promotion-eligibility"] });
     },
   });
 }

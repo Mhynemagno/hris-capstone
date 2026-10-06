@@ -17,6 +17,7 @@ import {
   useCreatePromotionEvaluation,
   useHrPromotionEmployee,
   usePromotionCriteria,
+  usePromotionReadiness,
 } from "@/hooks/use-promotion-eligibility";
 import { performanceRatingSchema } from "@/schemas/promotion-eligibility";
 
@@ -45,6 +46,7 @@ type RatingFieldErrors = Partial<Record<"rating" | "reviewPeriodStartsOn" | "rev
 export function HrPromotionReview({ employeeId }: { employeeId: string }) {
   const detail = useHrPromotionEmployee(employeeId);
   const criteria = usePromotionCriteria({ isActive: true });
+  const readiness = usePromotionReadiness(employeeId);
   const ranks = useRankOptions();
   const createRating = useCreatePerformanceRating();
   const createEvaluation = useCreatePromotionEvaluation();
@@ -61,6 +63,7 @@ export function HrPromotionReview({ employeeId }: { employeeId: string }) {
     return <ErrorState message={detail.error?.message ?? criteria.error?.message ?? "Employee record was not found."} />;
   }
   const data = detail.data;
+  const latestReadiness = readiness.data?.[0];
   const rankTitle = (rankId: number) => {
     const rank = ranks.data?.find((row) => row.id === rankId);
     return rank ? rankLabel(rank) : ranks.isLoading ? "Loading rank…" : `Rank #${rankId}`;
@@ -151,6 +154,24 @@ export function HrPromotionReview({ employeeId }: { employeeId: string }) {
           <dd className="font-medium">{formatDate(data.employee.employment_started_on) ?? "—"}</dd>
         </div>
       </dl>
+      {latestReadiness ? (
+        <section aria-labelledby="readiness-today" className="space-y-2">
+          <h2 className="text-lg font-bold" id="readiness-today">Requirements as of today</h2>
+          <p className="text-sm text-muted-foreground">
+            For {latestReadiness.target_rank_name}, from the review on {formatDate(latestReadiness.evaluated_on)}, checked against current records.
+          </p>
+          <ul aria-label="Requirements as of today" className="divide-y rounded-xl border text-sm">
+            {latestReadiness.readiness.requirements.map((requirement) => (
+              <li className="flex items-center justify-between gap-3 px-4 py-2" key={requirement.label}>
+                <span>{requirement.label}</span>
+                <span className={requirement.met ? "font-semibold text-emerald-700 dark:text-emerald-400" : "font-semibold text-destructive"}>
+                  {requirement.met ? "Met" : "Missing"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
       <section className="space-y-2">
         <h2 className="text-lg font-bold">Existing evidence</h2>
         <p className="text-sm text-muted-foreground">
