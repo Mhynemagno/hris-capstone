@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge";
+import { attendanceStatusLabel } from "@/lib/attendance-status";
 import type { AttendanceStatus } from "@/lib/types/database";
 
-export function AttendanceStatusBadge({ status }: { status: AttendanceStatus }) { return <Badge variant={status === "absent" ? "destructive" : status === "late" || status === "incomplete" ? "secondary" : "default"}>{status}</Badge>; }
+export function AttendanceStatusBadge({ status }: { status: AttendanceStatus }) { return <Badge variant={status === "absent" ? "destructive" : status === "late" || status === "incomplete" ? "secondary" : "default"}>{attendanceStatusLabel(status)}</Badge>; }

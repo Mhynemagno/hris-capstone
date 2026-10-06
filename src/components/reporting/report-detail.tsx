@@ -68,7 +68,7 @@ export const REPORT_STATUS_FILTERS: Record<ReportKey, { label: string; options: 
       { value: "present", label: "Present", group: "Attendance" },
       { value: "late", label: "Late", group: "Attendance" },
       { value: "absent", label: "Absent", group: "Attendance" },
-      { value: "incomplete", label: "Incomplete", group: "Attendance" },
+      { value: "incomplete", label: "Partial", group: "Attendance" },
       { value: "pending", label: "For approval", group: "Leave" },
       { value: "approved", label: "Approved", group: "Leave" },
       { value: "rejected", label: "Rejected", group: "Leave" },
@@ -97,6 +97,8 @@ export function formatCell(value: unknown) {
   if (typeof value === "boolean") return value ? "Yes" : "No";
   // Only leave requests report a "pending" status, and the leave pages call it "For approval".
   if (value === "pending") return "For approval";
+  // Only attendance reports an "incomplete" status, and the client calls it "Partial".
+  if (value === "incomplete") return "Partial";
   if (typeof value === "string" && DATE_ONLY.test(value)) return formatDate(value) ?? value;
   if (typeof value === "string" && TIMESTAMP.test(value)) return formatDateTime(value) ?? value;
   if (typeof value === "number" && !Number.isInteger(value)) return value.toFixed(2);

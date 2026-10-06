@@ -21,6 +21,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { StatusPanel } from "@/components/ui/status-panel";
 import { useHrDashboard, useManagementDashboard } from "@/hooks/use-reporting";
+import { attendanceStatusLabel } from "@/lib/attendance-status";
 import { cn } from "@/lib/utils";
 import { REPORT_KEYS, type DashboardSummary } from "@/schemas/reporting";
 
@@ -66,6 +67,11 @@ function titleCase(label: string) {
 /** Leave statuses as the leave pages show them; a request awaiting HR reads "For approval". */
 function leaveLabel(label: string) {
   return label === "pending" ? "For approval" : titleCase(label);
+}
+
+/** The exceptions chart mixes attendance and leave statuses. */
+function exceptionLabel(label: string) {
+  return label === "pending" ? leaveLabel(label) : attendanceStatusLabel(label);
 }
 
 const shortDate = new Intl.DateTimeFormat("en-PH", { month: "short", day: "numeric", timeZone: "UTC" });
@@ -120,14 +126,14 @@ type ChartSpec = {
 
 const CHARTS: ChartSpec[] = [
   { key: "attendanceTrend", title: "Daily attendance", subtitle: "Personnel who timed in, by day (last 30 days of the period)", wide: true, format: formatDay, labelHeading: "Date", render: (rows) => <ColumnTrendChart data={rows} formatLabel={formatDay} unit="attendance" /> },
-  { key: "attendanceStatus", title: "Attendance status", subtitle: "All attendance logs in the period", format: titleCase, labelHeading: "Status", render: (rows) => <DonutChart centerLabel="Logs" colorFor={statusColor} data={rows} formatLabel={titleCase} /> },
+  { key: "attendanceStatus", title: "Attendance status", subtitle: "Attendance in the period, including absences", format: attendanceStatusLabel, labelHeading: "Status", render: (rows) => <DonutChart centerLabel="Records" colorFor={statusColor} data={rows} formatLabel={attendanceStatusLabel} /> },
   { key: "workforceByDepartment", title: "Personnel by unit / section", subtitle: "Active personnel", labelHeading: "Unit / Section", render: (rows) => <HorizontalBarChart data={rows} /> },
   { key: "workforceByRank", title: "Personnel by rank", subtitle: "All personnel, lowest to highest rank", labelHeading: "Rank", render: (rows) => <HorizontalBarChart data={rows} /> },
   { key: "leaveStatus", title: "Leave status", subtitle: "Leave in the period, plus upcoming leave", format: leaveLabel, labelHeading: "Status", render: (rows) => <DonutChart centerLabel="Requests" colorFor={statusColor} data={rows} formatLabel={leaveLabel} /> },
   { key: "recruitmentPipeline", title: "Recruitment pipeline", subtitle: "Applications submitted in the period, by stage", labelHeading: "Stage", render: (rows) => <HorizontalBarChart data={byPipeline(rows)} /> },
   { key: "deploymentStatus", title: "Deployment status", subtitle: "All deployments by status", format: titleCase, labelHeading: "Status", render: (rows) => <DonutChart centerLabel="Deployments" colorFor={statusColor} data={rows} formatLabel={titleCase} /> },
   { key: "promotionReadiness", title: "Promotion Status", subtitle: "Evaluations in the period", labelHeading: "Result", render: (rows) => <DonutChart centerLabel="Evaluated" colorFor={statusColor} data={rows} /> },
-  { key: "attendanceLeaveExceptions", title: "Attendance and leave exceptions", subtitle: "Late, absent, incomplete and leave for approval", format: leaveLabel, labelHeading: "Exception", render: (rows) => <HorizontalBarChart colorFor={(label) => statusColor(label, 0)} data={rows} formatLabel={leaveLabel} /> },
+  { key: "attendanceLeaveExceptions", title: "Attendance and leave exceptions", subtitle: "Late, absent, partial and leave for approval", format: exceptionLabel, labelHeading: "Exception", render: (rows) => <HorizontalBarChart colorFor={(label) => statusColor(label, 0)} data={rows} formatLabel={exceptionLabel} /> },
 ];
 /** Breakdowns the RPC still returns but the dashboard no longer charts. */
 const HIDDEN_CHARTS = new Set(["leaveByType"]);
