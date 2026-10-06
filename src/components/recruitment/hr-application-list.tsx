@@ -10,6 +10,8 @@ import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { LoadingState } from "@/components/ui/loading-state";
 import { NativeSelect } from "@/components/ui/native-select";
+import { applicantDisplayName } from "@/components/recruitment/hr-registered-applicant-list";
+import { useHrRegisteredApplicants } from "@/hooks/use-applicant-portal";
 import { useHrApplications } from "@/hooks/use-recruitment";
 import { formatDate } from "@/lib/format-date";
 import { RECRUITMENT_RANK } from "@/lib/pnp-catalogue";
@@ -72,8 +74,13 @@ export function HrApplicationList() {
     aiStatus: aiStatus || undefined,
     minimumScore: Number.isFinite(scoreValue) ? scoreValue : undefined,
   });
+  const registered = useHrRegisteredApplicants();
   const activeFilterCount = [status, aiStatus, minimumScore].filter(Boolean).length;
   const rows = applications.data?.rows ?? [];
+  // A new sign-up has no application until they apply to an opening; list them too so HR sees them.
+  // The filters are about applications, so these rows only show while no filter is applied.
+  const notYetApplied = activeFilterCount ? [] : (registered.data ?? []).filter((applicant) => applicant.application_count === 0);
+  const countText = `${rows.length === 1 ? "1 application" : `${rows.length} applications`}${notYetApplied.length ? ` · ${notYetApplied.length} registered, not yet applied` : ""}`;
 
   function clearFilters() {
     setStatus("");
@@ -85,7 +92,7 @@ export function HrApplicationList() {
     <section aria-label="Application list" className="overflow-hidden rounded-2xl border bg-card shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b p-4">
         <p aria-live="polite" className="text-sm text-muted-foreground">
-          {applications.isLoading ? "Loading…" : rows.length === 1 ? "1 application" : `${rows.length} applications`}
+          {applications.isLoading ? "Loading…" : countText}
         </p>
         <Button aria-controls="application-filters" aria-expanded={filtersOpen} className="min-h-11" onClick={() => setFiltersOpen((open) => !open)} type="button" variant="outline">
           <SlidersHorizontal aria-hidden="true" />
@@ -120,7 +127,7 @@ export function HrApplicationList() {
       {applications.isLoading ? <div className="p-4"><LoadingState label="Loading applications…" /></div> : applications.error ? <div className="p-4"><ErrorState message={applications.error.message} /></div> : (
         <div className="relative overflow-x-auto">
           <table className="w-full min-w-[760px] text-left text-sm">
-            <caption className="sr-only">Applications awaiting HR review</caption>
+            <caption className="sr-only">Applications awaiting HR review, then applicants who have registered but not applied yet</caption>
             <thead className="border-b bg-muted/50 text-xs tracking-wide text-muted-foreground uppercase">
               <tr>
                 <th className="px-4 py-3 font-semibold" scope="col">Applicant</th>
@@ -164,7 +171,39 @@ export function HrApplicationList() {
                     </td>
                   </tr>
                 );
-              }) : (
+              }) : null}
+              {notYetApplied.map((applicant) => {
+                const name = applicantDisplayName(applicant);
+                const number = formatApplicantNumber(applicant.applicant_number);
+                return (
+                  <tr className="transition-colors hover:bg-muted/40" key={applicant.user_id}>
+                    <td className="px-4 py-3 align-middle">
+                      <div className="flex items-center gap-3">
+                        <span aria-hidden="true" className="grid size-10 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground">
+                          <UserRound className="size-5" />
+                        </span>
+                        <div className="min-w-0">
+                          <p className="font-semibold">{name}</p>
+                          {number ? <p className="text-xs text-muted-foreground tabular-nums">Applicant no. {number}</p> : null}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 align-middle whitespace-nowrap text-muted-foreground">—</td>
+                    <td className="px-4 py-3 align-middle">
+                      <span className="inline-flex items-center whitespace-nowrap rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-900 ring-1 ring-amber-600/20 ring-inset dark:bg-amber-950/40 dark:text-amber-200 dark:ring-amber-400/30">Registered</span>
+                    </td>
+                    <td className="px-4 py-3 align-middle whitespace-nowrap tabular-nums">{formatDate(applicant.registered_at)}</td>
+                    <td className="px-4 py-3 align-middle text-muted-foreground">No application yet</td>
+                    <td className="px-4 py-3 text-right align-middle">
+                      <Link className={buttonVariants({ className: "min-h-10", size: "sm", variant: "outline" })} href="/hr/applications?view=applicants">
+                        <Eye aria-hidden="true" />
+                        View{" "}<span className="sr-only">applicant {name}</span>
+                      </Link>
+                    </td>
+                  </tr>
+                );
+              })}
+              {rows.length || notYetApplied.length ? null : (
                 <tr>
                   <td className="px-4 py-12 text-center text-muted-foreground" colSpan={6}>
                     {activeFilterCount ? "No applications match these filters. Clear the filters to see every application." : "There are no applications to review."}
