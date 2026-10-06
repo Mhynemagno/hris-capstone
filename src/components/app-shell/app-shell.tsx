@@ -1,6 +1,25 @@
 "use client";
 
-import { PanelLeft } from "lucide-react";
+import {
+  BriefcaseBusiness,
+  Building2,
+  CalendarDays,
+  ChartColumn,
+  Clock,
+  ContactRound,
+  FileText,
+  Fingerprint,
+  LayoutDashboard,
+  MapPin,
+  PanelLeft,
+  ScrollText,
+  Settings,
+  ShieldCheck,
+  TrendingUp,
+  UserPen,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -18,7 +37,6 @@ import {
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -31,12 +49,31 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import type { RoleConfig, RoleNavigationItem } from "@/lib/app/role-config";
+import type { RoleConfig, RoleNavigationIcon, RoleNavigationItem } from "@/lib/app/role-config";
 
 type AppShellProps = {
   children: ReactNode;
   config: RoleConfig;
   email: string | null;
+};
+
+const NAVIGATION_ICONS: Record<RoleNavigationIcon, LucideIcon> = {
+  BriefcaseBusiness,
+  Building2,
+  CalendarDays,
+  ChartColumn,
+  Clock,
+  ContactRound,
+  FileText,
+  Fingerprint,
+  LayoutDashboard,
+  MapPin,
+  ScrollText,
+  Settings,
+  ShieldCheck,
+  TrendingUp,
+  UserPen,
+  Users,
 };
 
 /** Keeps configured order while grouping adjacent items under one heading. */
@@ -60,7 +97,7 @@ export function AppShell({ children, config, email }: AppShellProps) {
 
   return (
     <TooltipProvider>
-      {/* Classic HRIS frame: a full-height navy sidebar beside a navy top bar and a light work area. */}
+      {/* HRIS frame: a white sidebar with a navy "you are here" pill, beside the navy top bar and a light work area. */}
       <SidebarProvider className="h-svh overflow-hidden">
         <a
           href="#main-content"
@@ -68,7 +105,7 @@ export function AppShell({ children, config, email }: AppShellProps) {
         >
           Skip to main content
         </a>
-        <Sidebar className="border-r-0" collapsible="offcanvas">
+        <Sidebar className="app-sidebar border-sidebar-border" collapsible="offcanvas">
           <SidebarHeader className="items-center gap-3 px-4 pt-6 pb-4 text-center">
             <Link className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring" href={config.homeHref}>
               <Image
@@ -80,22 +117,23 @@ export function AppShell({ children, config, email }: AppShellProps) {
                 width={96}
               />
             </Link>
-            <p className="text-base text-sidebar-foreground">San Juan City Police Station</p>
+            <p className="text-base font-semibold text-sidebar-foreground">San Juan City Police Station</p>
           </SidebarHeader>
           <SidebarContent className="pb-6">
             <nav aria-label="Main navigation">
               {groupNavigation(config.navigation).map((group) => (
                 <SidebarGroup className="px-3 py-2" key={group.label}>
-                  <SidebarGroupLabel className="h-auto px-2 pb-1 text-sm font-bold tracking-wide text-sidebar-foreground/60 uppercase">{group.label}</SidebarGroupLabel>
+                  <SidebarGroupLabel className="h-auto px-2 pb-1 text-sm font-bold tracking-wide text-muted-foreground uppercase">{group.label}</SidebarGroupLabel>
                   <SidebarGroupContent>
                     <SidebarMenu className="gap-0.5">
                       {group.items.map((item) => {
                         const isActive = activeNavigationItem?.href === item.href;
+                        const Icon = NAVIGATION_ICONS[item.icon];
 
                         return (
                           <SidebarMenuItem key={item.href}>
                             <SidebarMenuButton
-                              className="min-h-10 px-4 text-base font-semibold text-white hover:bg-white/10 hover:text-white data-active:bg-white/12 data-active:text-white data-active:shadow-[inset_4px_0_0_var(--sidebar-ring)]"
+                              className="min-h-11 gap-3 rounded-lg px-4 text-base font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-active:bg-sidebar-primary data-active:font-semibold data-active:text-sidebar-primary-foreground data-active:shadow-md data-active:hover:bg-sidebar-primary data-active:hover:text-sidebar-primary-foreground"
                               isActive={isActive}
                               render={
                                 <Link
@@ -104,6 +142,7 @@ export function AppShell({ children, config, email }: AppShellProps) {
                                 />
                               }
                             >
+                              <Icon aria-hidden="true" />
                               <span>{item.label}</span>
                             </SidebarMenuButton>
                           </SidebarMenuItem>
@@ -115,18 +154,6 @@ export function AppShell({ children, config, email }: AppShellProps) {
               ))}
             </nav>
           </SidebarContent>
-          <SidebarFooter className="items-center border-t border-white/10 px-4 py-4">
-            {/* The wordmark is dark blue, so it sits on a light chip to stay legible on the navy sidebar. */}
-            <div className="rounded-xl bg-white px-4 py-2 shadow-sm">
-              <Image
-                alt="Bagong Pilipinas logo"
-                className="h-14 w-auto object-contain"
-                height={56}
-                src="/bagong-pilipinas-logo.png"
-                width={60}
-              />
-            </div>
-          </SidebarFooter>
         </Sidebar>
         <SidebarInset className="min-w-0 overflow-y-auto overscroll-contain bg-background" id="main-content">
           <header className="dark sticky top-0 z-20 flex h-16 shrink-0 items-center gap-3 border-b border-white/10 bg-topbar px-3 text-foreground sm:px-4">

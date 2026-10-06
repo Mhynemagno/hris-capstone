@@ -116,7 +116,7 @@ function TrainingRecords({ employeeId, editable }: { employeeId: string; editabl
     </ul>
     {notice ? <p className="mt-3 text-sm font-medium text-emerald-700 dark:text-emerald-400" role="status">{notice}</p> : null}
     <DeleteRecordDialog entityId={deleting} entityType="training_record" noun="training record" onClose={() => setDeleting(null)} onDeleted={() => setNotice("The training record was deleted successfully.")} />
-    {!editable ? null : editing ? <div className="mt-4"><div className="flex items-center justify-between"><h3 className="font-medium">Edit training</h3><Button onClick={() => setEditing(null)} size="sm" type="button" variant="ghost">Cancel edit</Button></div><RecordEntryForm employeeId={employeeId} key={editing.id} kind="training" onSaved={async (input, id) => { await save.mutateAsync({ id, input: input as never }); setEditing(null); }} pending={save.isPending} training={editing} /></div> : <RecordEntryForm employeeId={employeeId} kind="training" onSaved={async (input) => { await save.mutateAsync({ input: input as never }); }} pending={save.isPending} />}
+    {!editable ? null : editing ? <div className="mt-4"><div className="flex items-center justify-between"><h3 className="font-bold">Edit training</h3><Button onClick={() => setEditing(null)} size="sm" type="button" variant="ghost">Cancel edit</Button></div><RecordEntryForm employeeId={employeeId} key={editing.id} kind="training" onSaved={async (input, id) => { await save.mutateAsync({ id, input: input as never }); setEditing(null); }} pending={save.isPending} training={editing} /></div> : <RecordEntryForm employeeId={employeeId} kind="training" onSaved={async (input) => { await save.mutateAsync({ input: input as never }); }} pending={save.isPending} />}
   </InfoCard>;
 }
 
@@ -170,7 +170,7 @@ type DetailRow = { label: string; value: ReactNode; wide?: boolean };
 function DetailSection({ title, rows }: { title: string; rows: DetailRow[] }) {
   return (
     <section aria-label={title} className="min-w-0">
-      <h3 className="mb-4 border-b pb-2 font-heading text-lg font-semibold">{title}</h3>
+      <h3 className="mb-4 border-b pb-2 font-heading text-lg font-bold">{title}</h3>
       <div className="@container">
         <dl className="grid gap-x-6 gap-y-4 @md:grid-cols-2 @xl:grid-cols-3">
           {rows.map(({ label, value, wide }) => (

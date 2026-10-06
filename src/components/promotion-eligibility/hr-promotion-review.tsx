@@ -152,13 +152,13 @@ export function HrPromotionReview({ employeeId }: { employeeId: string }) {
         </div>
       </dl>
       <section className="space-y-2">
-        <h2 className="text-lg font-semibold">Existing evidence</h2>
+        <h2 className="text-lg font-bold">Existing evidence</h2>
         <p className="text-sm text-muted-foreground">
           {data.qualifications.length} eligibility · {data.certifications.length + data.training.length} certification / training
         </p>
       </section>
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold">Performance ratings</h2>
+        <h2 className="text-lg font-bold">Performance ratings</h2>
         {data.ratings.length ? (
           <ul className="space-y-2">
             {data.ratings.map((rating) => (
@@ -172,7 +172,7 @@ export function HrPromotionReview({ employeeId }: { employeeId: string }) {
           <p className="text-sm text-muted-foreground">No performance ratings have been recorded.</p>
         )}
         <form className="grid gap-4 rounded-xl border p-4 sm:grid-cols-2" noValidate onSubmit={submitRating}>
-          <h3 className="font-semibold sm:col-span-2">Record a performance rating</h3>
+          <h3 className="font-bold sm:col-span-2">Record a performance rating</h3>
           <FormField error={ratingErrors.rating} htmlFor="rating" label="Overall rating" required>
             <select className={nativeSelectClassName} defaultValue="" id="rating" name="rating" required>
               <option value="">Choose a rating</option>
@@ -215,7 +215,7 @@ export function HrPromotionReview({ employeeId }: { employeeId: string }) {
         </form>
       </section>
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold">Promotion recommendation</h2>
+        <h2 className="text-lg font-bold">Promotion recommendation</h2>
         <form className="grid gap-4 rounded-xl border p-4 sm:grid-cols-2" onSubmit={submitEvaluation}>
           <FormField
             description={criteria.data?.length ? "Each option is the target rank for an active criteria set." : "No active criteria exist. Create criteria first."}

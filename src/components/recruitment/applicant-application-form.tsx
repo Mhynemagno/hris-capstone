@@ -69,7 +69,7 @@ export function ApplicantApplicationForm({ jobId, hasUnsavedDocuments = false }:
 
   if (existing.isLoading || documents.isLoading) return <p className="text-sm text-muted-foreground">Checking for an existing application…</p>;
   if (existing.error) return <ErrorState message={existing.error.message} />;
-  if (existing.data) return <section className="rounded-xl border bg-card p-5 shadow-sm"><h2 className="font-heading text-lg font-semibold">Application already submitted</h2><p className="mt-1 text-sm text-muted-foreground">Your current application status is {existing.data.status}.</p><Link className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-primary underline-offset-4 hover:underline" href={`/applicant/applications/${existing.data.id}`}>Open existing application</Link></section>;
+  if (existing.data) return <section className="rounded-xl border bg-card p-5 shadow-sm"><h2 className="font-heading text-lg font-bold">Application already submitted</h2><p className="mt-1 text-sm text-muted-foreground">Your current application status is {existing.data.status}.</p><Link className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-primary underline-offset-4 hover:underline" href={`/applicant/applications/${existing.data.id}`}>Open existing application</Link></section>;
 
   const submitting = preparing || submit.isPending;
   // A chosen replacement that is not saved yet would otherwise be skipped in favour of the older saved file.
@@ -85,7 +85,7 @@ export function ApplicantApplicationForm({ jobId, hasUnsavedDocuments = false }:
       }}
     >
       <div>
-        <h2 className="font-heading text-lg font-semibold">Submit application</h2>
+        <h2 className="font-heading text-lg font-bold">Submit application</h2>
         <p className="mt-1 text-sm text-muted-foreground">Your saved CV / Resume and required documents are included.</p>
       </div>
       <FormField htmlFor="application-credentials" label="Additional credentials (optional)">

@@ -24,7 +24,7 @@ export function HrRequiredDocuments({ applicantId }: { applicantId: string }) {
   }
 
   return <section aria-labelledby="hr-required-documents" className="rounded-xl border p-5">
-    <h2 className="font-semibold" id="hr-required-documents">Required documents</h2>
+    <h2 className="font-bold" id="hr-required-documents">Required documents</h2>
     {documents.isLoading ? <LoadingState label="Loading required documents…" /> : documents.error ? <ErrorState message={documents.error.message} /> : (
       <ul className="mt-3 divide-y text-sm">
         {APPLICANT_PROFILE_DOCUMENT_KINDS.map(({ kind, label }) => {

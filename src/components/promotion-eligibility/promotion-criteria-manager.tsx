@@ -99,7 +99,7 @@ function CriterionForm({ rankOptions, takenRankIds }: { rankOptions: { value: st
 
   return (
     <form className="grid gap-4 rounded-xl border bg-card p-5 sm:grid-cols-2" noValidate onSubmit={submit}>
-      <h2 className="text-xl font-semibold tracking-tight sm:col-span-2">Add promotion criteria</h2>
+      <h2 className="text-xl font-bold tracking-tight sm:col-span-2">Add promotion criteria</h2>
       <FormField description="Each rank can have one set of criteria." error={errors.targetRankId} htmlFor="target-rank" label="Target rank" required>
         <Combobox
           emptyMessage="No rank without criteria matches that search."
@@ -189,7 +189,7 @@ export function PromotionCriteriaManager() {
       <CriterionForm rankOptions={rankOptions} takenRankIds={takenRankIds} />
 
       <section aria-labelledby="existing-criteria" className="space-y-3">
-        <h2 className="text-xl font-semibold tracking-tight" id="existing-criteria">Existing criteria</h2>
+        <h2 className="text-xl font-bold tracking-tight" id="existing-criteria">Existing criteria</h2>
         <p className="text-base text-muted-foreground">
           Deactivate criteria to stop using them for new evaluations. Criteria can only be deleted before any employee has been evaluated against them.
         </p>

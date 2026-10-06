@@ -110,4 +110,18 @@ describe("AppShell", () => {
     expect(screen.getByText("Applications", { selector: "[data-slot='breadcrumb-page']" })).toBeVisible();
     expect(within(navigation).getByRole("link", { name: "Dashboard" })).not.toHaveAttribute("aria-current");
   });
+
+  it("shows an icon beside every menu item on the white sidebar, without the Bagong Pilipinas logo", () => {
+    render(
+      <AppShell config={ROLE_CONFIG.hr_personnel} email="hr@example.com">
+        <p>HR content</p>
+      </AppShell>,
+    );
+
+    const navigation = screen.getByRole("navigation", { name: /main navigation/i });
+    for (const link of within(navigation).getAllByRole("link")) {
+      expect(link.querySelector("svg[aria-hidden='true']")).not.toBeNull();
+    }
+    expect(screen.queryByRole("img", { name: "Bagong Pilipinas logo" })).not.toBeInTheDocument();
+  });
 });

@@ -187,7 +187,7 @@ function DashboardContent({ role, query }: { role: DashboardRole; query: { isLoa
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,var(--color-cta)_0%,transparent_55%)] opacity-25" />
       <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight" id="page-title">Dashboard</h1>
+          <h1 className="text-3xl font-bold tracking-tight" id="page-title">Dashboard</h1>
         </div>
         <div className="flex flex-wrap gap-2">
           <Link className={buttonVariants({ className: "min-h-11 rounded-full", variant: "outline" })} href="/reports">
@@ -232,7 +232,7 @@ function DashboardContent({ role, query }: { role: DashboardRole; query: { isLoa
     <section aria-labelledby="dashboard-reports" className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
-          <h2 className="font-heading text-xl font-semibold" id="dashboard-reports">Detailed reports</h2>
+          <h2 className="font-heading text-xl font-bold" id="dashboard-reports">Detailed reports</h2>
           <p className="text-sm text-muted-foreground">Filter, export to CSV, or print.</p>
         </div>
         <Link className="inline-flex min-h-11 items-center text-sm font-medium text-primary underline-offset-4 hover:underline" href="/reports">All reports</Link>
@@ -265,7 +265,7 @@ function AttentionRow({ data, role }: { data: DashboardSummary; role: DashboardR
       {items.length ? (
         <section aria-labelledby="needs-attention" className={cn("rounded-2xl border bg-card p-5 shadow-sm", showGauge ? "lg:col-span-2" : "lg:col-span-3")}>
           <div className="flex items-center justify-between gap-3">
-            <h2 className="font-heading text-xl font-semibold" id="needs-attention">Notification</h2>
+            <h2 className="font-heading text-xl font-bold" id="needs-attention">Notification</h2>
             <p className="text-sm font-semibold text-primary tabular-nums">{clear} of {items.length} clear</p>
           </div>
           <ul className="mt-4 space-y-1">
@@ -291,7 +291,7 @@ function AttentionRow({ data, role }: { data: DashboardSummary; role: DashboardR
       ) : null}
       {showGauge ? (
         <section aria-labelledby="attendance-pulse" className={cn("rounded-2xl border bg-card p-5 shadow-sm", !items.length && "lg:col-span-3")}>
-          <h2 className="font-heading text-xl font-semibold" id="attendance-pulse">Attendance pulse</h2>
+          <h2 className="font-heading text-xl font-bold" id="attendance-pulse">Attendance pulse</h2>
           <div className="mt-3">
             <GaugeChart label="Present" value={data.metrics.attendanceToday ?? 0} whole={data.metrics.activeWorkforce ?? 0} />
           </div>

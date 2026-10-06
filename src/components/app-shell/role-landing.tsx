@@ -20,7 +20,7 @@ export function RoleLanding({ config }: RoleLandingProps) {
       />
       <section aria-labelledby="available-workflows" className="space-y-4">
         <div>
-          <h2 className="text-xl font-semibold" id="available-workflows">What you can do here</h2>
+          <h2 className="text-xl font-bold" id="available-workflows">What you can do here</h2>
           <p className="mt-1 text-sm text-muted-foreground">Choose a workflow to continue.</p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

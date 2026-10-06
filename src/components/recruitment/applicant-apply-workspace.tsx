@@ -21,7 +21,7 @@ export function ApplicantApplyWorkspace({ jobId }: { jobId: number }) {
   return <div className="space-y-6">
     <section aria-labelledby="apply-job-title" className="rounded-xl border bg-card p-5 shadow-sm">
       <p className="text-sm font-medium text-muted-foreground">Applying for</p>
-      <h2 className="mt-1 text-xl font-semibold" id="apply-job-title">{job.data.title}</h2>
+      <h2 className="mt-1 text-xl font-bold" id="apply-job-title">{job.data.title}</h2>
       <p className="mt-1 text-sm text-muted-foreground">{[job.data.location, job.data.closes_on ? `Deadline of Application: ${formatDate(job.data.closes_on)}` : "Open until filled"].filter(Boolean).join(" · ")}</p>
       <Link className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-primary underline-offset-4 hover:underline" href={`/jobs/${job.data.id}`}>View job details</Link>
     </section>

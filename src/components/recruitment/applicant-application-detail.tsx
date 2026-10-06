@@ -80,10 +80,10 @@ export function ApplicantApplicationDetail({ applicationId }: { applicationId: s
   }
 
   return <section className="max-w-3xl space-y-5">
-    <div className="rounded-xl border p-5"><h1 className="text-3xl font-semibold tracking-tight">Application status: {application.status}</h1><p className="mt-2 text-sm text-muted-foreground">Submitted {formatDateTime(application.submitted_at)}</p></div>
+    <div className="rounded-xl border p-5"><h1 className="text-3xl font-bold tracking-tight">Application status: {application.status}</h1><p className="mt-2 text-sm text-muted-foreground">Submitted {formatDateTime(application.submitted_at)}</p></div>
     <AppliedJobSummary job={application.job_openings} status={application.status} submittedAt={application.submitted_at} />
     {canResubmit ? <form className="space-y-4 rounded-xl border border-primary/30 bg-primary/5 p-5" noValidate onSubmit={(event) => { event.preventDefault(); void submitRevision(event.currentTarget); }}>
-      <div><h2 className="font-semibold">Update and resubmit</h2><p className="mt-1 text-sm text-muted-foreground">HR requested revisions. Upload a replacement CV and any supporting credentials.</p></div>
+      <div><h2 className="font-bold">Update and resubmit</h2><p className="mt-1 text-sm text-muted-foreground">HR requested revisions. Upload a replacement CV and any supporting credentials.</p></div>
       <FormField htmlFor="revision-cv" label="Replacement CV (PDF)"><Input accept=".pdf,application/pdf" id="revision-cv" name="cv" required type="file" /></FormField>
       <FormField htmlFor="revision-credentials" label="Replacement credentials (optional)"><Input accept=".pdf,.png,.jpg,.jpeg" id="revision-credentials" multiple name="credentials" type="file" /></FormField>
       {revisionError ? <ErrorState message={revisionError} /> : null}
@@ -91,13 +91,13 @@ export function ApplicantApplicationDetail({ applicationId }: { applicationId: s
       <button className="min-h-11 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60" disabled={resubmit.isPending} type="submit">{resubmit.isPending ? "Resubmitting…" : "Resubmit application"}</button>
     </form> : null}
     {canUploadBmiProof ? <form className="space-y-4 rounded-xl border border-primary/30 bg-primary/5 p-5" noValidate onSubmit={(event) => { event.preventDefault(); void submitBmiProof(event.currentTarget); }}>
-      <div><h2 className="font-semibold">Proof of passing the BMI</h2><p className="mt-1 text-sm text-muted-foreground">You are endorsed to Crame. Upload proof that you passed the BMI so HR can move you to the neuro-psychiatric exam.{currentBmiProof ? ` You already uploaded ${currentBmiProof.file_name}; a new file replaces it.` : ""}</p></div>
+      <div><h2 className="font-bold">Proof of passing the BMI</h2><p className="mt-1 text-sm text-muted-foreground">You are endorsed to Crame. Upload proof that you passed the BMI so HR can move you to the neuro-psychiatric exam.{currentBmiProof ? ` You already uploaded ${currentBmiProof.file_name}; a new file replaces it.` : ""}</p></div>
       <FormField htmlFor="bmi-proof" label="BMI proof (PDF, PNG or JPEG)"><Input accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg" id="bmi-proof" name="bmiProof" required type="file" /></FormField>
       {bmiError ? <ErrorState message={bmiError} /> : null}
       {bmiNotice ? <p className="text-sm text-emerald-700 dark:text-emerald-400" role="status">{bmiNotice}</p> : null}
       <button className="min-h-11 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60" disabled={bmiProof.isPending} type="submit">{bmiProof.isPending ? "Uploading…" : "Upload BMI proof"}</button>
     </form> : null}
-    <div className="rounded-xl border p-5"><h2 className="font-semibold" id="application-history-heading">Status history</h2><ol aria-labelledby="application-history-heading" className="mt-3 space-y-2 text-sm">{history.map((entry) => <li key={entry.id}><span className="text-muted-foreground">{formatDate(entry.created_at)}</span> · <span className="font-medium">{historyEntryLabel(entry)}</span>{entry.note ? ` — ${entry.note}` : ""}</li>)}</ol></div>
-    <div className="rounded-xl border p-5"><h2 className="font-semibold" id="application-documents-heading">Documents</h2><ul aria-labelledby="application-documents-heading" className="mt-3 space-y-2 text-sm">{documents.map((document) => <li key={document.id}><span className="text-muted-foreground">{documentKindLabels[document.kind]}</span> · {urls[document.id] ? <a className="text-primary underline" href={urls[document.id]} rel="noreferrer" target="_blank">{document.file_name}</a> : document.file_name}</li>)}</ul></div>
+    <div className="rounded-xl border p-5"><h2 className="font-bold" id="application-history-heading">Status history</h2><ol aria-labelledby="application-history-heading" className="mt-3 space-y-2 text-sm">{history.map((entry) => <li key={entry.id}><span className="text-muted-foreground">{formatDate(entry.created_at)}</span> · <span className="font-medium">{historyEntryLabel(entry)}</span>{entry.note ? ` — ${entry.note}` : ""}</li>)}</ol></div>
+    <div className="rounded-xl border p-5"><h2 className="font-bold" id="application-documents-heading">Documents</h2><ul aria-labelledby="application-documents-heading" className="mt-3 space-y-2 text-sm">{documents.map((document) => <li key={document.id}><span className="text-muted-foreground">{documentKindLabels[document.kind]}</span> · {urls[document.id] ? <a className="text-primary underline" href={urls[document.id]} rel="noreferrer" target="_blank">{document.file_name}</a> : document.file_name}</li>)}</ul></div>
   </section>;
 }

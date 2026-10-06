@@ -34,7 +34,7 @@ export function EmployeePromotionEligibility() {
         </div>
       </dl>
       <section className="space-y-2">
-        <h2 className="text-lg font-semibold">Missing requirements</h2>
+        <h2 className="text-lg font-bold">Missing requirements</h2>
         {summary.missing_requirements.length ? (
           <ul className="list-disc space-y-1 pl-5 text-sm leading-relaxed">
             {summary.missing_requirements.map((requirement) => (

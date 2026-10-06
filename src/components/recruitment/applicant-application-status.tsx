@@ -28,7 +28,7 @@ export function ApplicantApplicationStatus() {
         <article aria-label={application.job_openings?.title ?? "Application"} className="rounded-2xl border bg-card p-5 shadow-sm sm:p-6" key={application.id}>
           <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
             <div>
-              <h3 className="font-semibold">{application.job_openings?.title ?? `Application ${application.id.slice(0, 8)}`}</h3>
+              <h3 className="font-bold">{application.job_openings?.title ?? `Application ${application.id.slice(0, 8)}`}</h3>
               <p className="text-sm text-muted-foreground">Submitted {formatDate(application.submitted_at)}</p>
             </div>
             <Link className="inline-flex min-h-11 items-center text-sm font-medium text-primary underline-offset-4 hover:underline" href={`/applicant/applications/${application.id}`}>View application</Link>

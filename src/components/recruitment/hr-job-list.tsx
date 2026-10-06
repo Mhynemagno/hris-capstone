@@ -50,7 +50,7 @@ export function HrJobList() {
           <article className="rounded-xl border border-border bg-card p-5 shadow-sm" key={job.id}>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="space-y-1">
-                <h2 className="text-lg font-semibold">
+                <h2 className="text-lg font-bold">
                   <Link className="rounded-sm underline-offset-4 hover:underline" href={`/hr/jobs/${job.id}`}>{job.title}</Link>
                 </h2>
                 <p className="text-muted-foreground">{job.location || "Location to be confirmed"}</p>

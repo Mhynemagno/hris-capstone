@@ -136,7 +136,7 @@ export function LeaveTypeManager() {
   return (
     <section aria-labelledby="leave-types-heading" className="space-y-4 rounded-xl border bg-card p-5">
       <div className="space-y-1">
-        <h2 className="text-xl font-semibold tracking-tight" id="leave-types-heading">Leave types</h2>
+        <h2 className="text-xl font-bold tracking-tight" id="leave-types-heading">Leave types</h2>
         <p className="text-sm text-muted-foreground">Deactivate a type to stop new requests while keeping past requests. Only unused types can be deleted.</p>
       </div>
       <form className="grid gap-3 sm:grid-cols-2" noValidate onSubmit={submit}>

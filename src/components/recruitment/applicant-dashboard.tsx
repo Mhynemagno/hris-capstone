@@ -34,7 +34,7 @@ export function ApplicantDashboard() {
     <div className="grid gap-4 md:grid-cols-3">
       <article aria-labelledby="dashboard-latest" className={cardClassName}>
         <div>
-          <div className="flex items-center gap-2"><ListChecks aria-hidden="true" className="size-5 text-primary" /><h2 className="font-semibold" id="dashboard-latest">Latest application</h2></div>
+          <div className="flex items-center gap-2"><ListChecks aria-hidden="true" className="size-5 text-primary" /><h2 className="font-bold" id="dashboard-latest">Latest application</h2></div>
           {latest ? <><p className="mt-3 text-sm text-muted-foreground">{latest.job_openings?.title ?? "Application"}</p><p className="mt-1 text-2xl font-semibold tracking-tight">{latest.status}</p></> : <p className="mt-3 text-sm text-muted-foreground">No application submitted yet.</p>}
         </div>
         {latest
@@ -43,7 +43,7 @@ export function ApplicantDashboard() {
       </article>
       <article aria-labelledby="dashboard-documents" className={cardClassName}>
         <div>
-          <div className="flex items-center gap-2"><FileText aria-hidden="true" className="size-5 text-primary" /><h2 className="font-semibold" id="dashboard-documents">Documents</h2></div>
+          <div className="flex items-center gap-2"><FileText aria-hidden="true" className="size-5 text-primary" /><h2 className="font-bold" id="dashboard-documents">Documents</h2></div>
           <p className="mt-3 text-2xl font-semibold tracking-tight">{uploaded} of {required}</p>
           <p className="mt-1 text-sm text-muted-foreground">{uploaded === required ? "Required documents uploaded." : "Upload your CV / Resume, PSA birth certificate, 2x2 picture, Eligibility, and Diploma."}</p>
         </div>
@@ -51,7 +51,7 @@ export function ApplicantDashboard() {
       </article>
       <article aria-labelledby="dashboard-jobs" className={cardClassName}>
         <div>
-          <div className="flex items-center gap-2"><BriefcaseBusiness aria-hidden="true" className="size-5 text-primary" /><h2 className="font-semibold" id="dashboard-jobs">Job openings</h2></div>
+          <div className="flex items-center gap-2"><BriefcaseBusiness aria-hidden="true" className="size-5 text-primary" /><h2 className="font-bold" id="dashboard-jobs">Job openings</h2></div>
           <p className="mt-3 text-sm text-muted-foreground">See the positions currently accepting applications.</p>
         </div>
         <Link className={linkClassName} href="/jobs">Browse job openings</Link>

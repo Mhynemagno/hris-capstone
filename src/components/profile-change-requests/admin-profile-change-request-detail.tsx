@@ -55,7 +55,7 @@ export function ChangeCard({ change, originalLabel = "Current (when submitted)" 
   const label = change.kind === "contact" ? humanize(change.field_key ?? "Contact detail") : `Eligibility: ${change.operation ?? "change"}`;
   return (
     <li className="rounded-xl border p-4">
-      <h3 className="font-semibold capitalize">{label}</h3>
+      <h3 className="font-bold capitalize">{label}</h3>
       <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
         <div>
           <dt className="font-semibold text-muted-foreground">{originalLabel}</dt>
@@ -144,7 +144,7 @@ export function AdminProfileChangeRequestDetail({ requestId }: { requestId: stri
       </Link>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-semibold">Review request</h2>
+          <h2 className="text-xl font-bold">Review request</h2>
           <p className="text-sm text-muted-foreground">Submitted {formatDateTime(data.created_at)}</p>
         </div>
         <Badge className="capitalize" variant={data.status === "approved" ? "secondary" : data.status === "rejected" ? "destructive" : "outline"}>
@@ -153,12 +153,12 @@ export function AdminProfileChangeRequestDetail({ requestId }: { requestId: stri
       </div>
       {data.note ? (
         <section className="space-y-2">
-          <h3 className="font-semibold">Employee note</h3>
+          <h3 className="font-bold">Employee note</h3>
           <p className="rounded-lg bg-muted p-3 text-sm whitespace-pre-line">{data.note}</p>
         </section>
       ) : null}
       <section className="space-y-3">
-        <h3 className="font-semibold">Requested changes ({changes.length})</h3>
+        <h3 className="font-bold">Requested changes ({changes.length})</h3>
         <ul className="space-y-3">
           {changes.map((change) => (
             <ChangeCard change={change} key={change.id} />
@@ -166,7 +166,7 @@ export function AdminProfileChangeRequestDetail({ requestId }: { requestId: stri
         </ul>
       </section>
       <section className="space-y-3">
-        <h3 className="font-semibold">Supporting documents</h3>
+        <h3 className="font-bold">Supporting documents</h3>
         {data.profile_change_request_documents.length ? (
           <ul className="space-y-2">
             {data.profile_change_request_documents.map((document) => (
@@ -180,7 +180,7 @@ export function AdminProfileChangeRequestDetail({ requestId }: { requestId: stri
         )}
       </section>
       <section className="space-y-3">
-        <h3 className="font-semibold">Request history</h3>
+        <h3 className="font-bold">Request history</h3>
         <div className="rounded-xl border p-4">
           <History entries={data.profile_change_request_history} />
         </div>
@@ -192,7 +192,7 @@ export function AdminProfileChangeRequestDetail({ requestId }: { requestId: stri
       ) : null}
       {data.status === "pending" ? (
         <section aria-labelledby="decision-heading" className="space-y-4 rounded-xl border p-4">
-          <h3 className="font-semibold" id="decision-heading">
+          <h3 className="font-bold" id="decision-heading">
             Decision
           </h3>
           <FormField

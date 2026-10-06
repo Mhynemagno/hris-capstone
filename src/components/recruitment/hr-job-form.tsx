@@ -142,7 +142,7 @@ export function HrJobForm({ job }: HrJobFormProps) {
         </div>
       </FormField>
       <section aria-labelledby="job-requirements-heading" className="space-y-4 rounded-xl border p-4">
-        <h2 className="font-semibold" id="job-requirements-heading">General Requirements</h2>
+        <h2 className="font-bold" id="job-requirements-heading">General Requirements</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           {(["education", "eligibility"] as const).map((kind, index) => {
             const label = kind === "education" ? "Education" : "Eligibility";

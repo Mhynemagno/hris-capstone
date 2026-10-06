@@ -74,7 +74,7 @@ export function HrAnnouncementsPanel() {
                     <Badge variant={announcement.status === "published" ? "default" : "outline"}>{ANNOUNCEMENT_STATUS_LABELS[announcement.status]}</Badge>
                     <span className="text-sm text-muted-foreground">{announcementCategoryLabel(announcement.category)}</span>
                   </div>
-                  <h3 className="text-lg font-semibold [overflow-wrap:anywhere]" id={`hr-announcement-${announcement.id}`}>{announcement.title}</h3>
+                  <h3 className="text-lg font-bold [overflow-wrap:anywhere]" id={`hr-announcement-${announcement.id}`}>{announcement.title}</h3>
                   <p className="text-sm text-muted-foreground [overflow-wrap:anywhere]">{announcement.summary}</p>
                   <p className="text-sm text-muted-foreground">
                     {announcement.published_at ? `First published ${formatDate(announcement.published_at)}` : `Last updated ${formatDate(announcement.updated_at)}`}
