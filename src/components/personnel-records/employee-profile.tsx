@@ -6,6 +6,7 @@ import { rankLabel } from "@/lib/ranks";
 import type { Certification, Employee, Qualification, ServiceHistory, TrainingRecord } from "@/lib/types/database";
 
 import { EmployeeProfilePhotoControl } from "./employee-profile-photo-control";
+import { GovernmentIdsCard } from "./government-ids-card";
 import { formatDay, InfoCard, InfoList, ProfileHeaderCard, serviceLength } from "./profile-layout";
 
 type EmployeeProfileProps = {
@@ -17,6 +18,8 @@ type EmployeeProfileProps = {
   serviceHistory?: ServiceHistory[];
   certifications?: Certification[];
   canManagePhoto?: boolean;
+  /** The employee viewing their own profile may save their SSS and PhilHealth numbers. */
+  canEditGovernmentIds?: boolean;
   /** Optional header actions, such as links to request a profile change. */
   actions?: ReactNode;
   /** `summary` shows only the name, rank, and key service facts (the employee dashboard); `full` is the complete profile. */
@@ -41,7 +44,7 @@ function RecordList({ items, emptyMessage }: { items: RecordItem[]; emptyMessage
 
 const byNewest = <T,>(rows: T[], date: (row: T) => string) => rows.toSorted((a, b) => date(b).localeCompare(date(a)));
 
-export function EmployeeProfile({ employee, trainings, qualifications, serviceHistory = [], certifications = [], canManagePhoto = false, actions, variant = "full" }: EmployeeProfileProps) {
+export function EmployeeProfile({ employee, trainings, qualifications, serviceHistory = [], certifications = [], canManagePhoto = false, canEditGovernmentIds = false, actions, variant = "full" }: EmployeeProfileProps) {
   const fullName = [employee.first_name, employee.middle_name, employee.last_name].filter(Boolean).join(" ");
   const ranks = useRankOptions();
   const departments = useDepartmentOptions();
@@ -104,6 +107,7 @@ export function EmployeeProfile({ employee, trainings, qualifications, serviceHi
             { label: "Religion", value: valueOrNotProvided(employee.religion), icon: Church },
           ]} />
         </InfoCard>
+        <GovernmentIdsCard canEdit={canEditGovernmentIds} employee={employee} />
         {qualifications ? <InfoCard className="md:col-span-2" icon={GraduationCap} id="profile-eligibility" title="Eligibility">
           <RecordList emptyMessage="No eligibility recorded." items={byNewest(qualifications, (row) => row.awarded_on).map((row) => ({ id: row.id, title: row.name, detail: [formatDay(row.awarded_on), row.notes].filter(Boolean).join(" · ") }))} />
         </InfoCard> : null}

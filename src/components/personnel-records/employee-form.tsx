@@ -11,6 +11,7 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { useUnitStations } from "@/hooks/use-personnel-records";
 import type { Employee, UnlinkedEmployeeAccount } from "@/lib/types/database";
+import { formatPhilHealthNumber, formatSssNumber } from "@/lib/government-ids";
 import { cn } from "@/lib/utils";
 import { BADGE_NUMBER_PATTERN } from "@/schemas/common";
 import { employeeSchema, type EmployeeInput } from "@/schemas/personnel-records";
@@ -150,6 +151,12 @@ export function EmployeeForm({ employee, account, onSaved, pending = false }: Em
         </FormField>
         <FormField description="Format: +639XXXXXXXXX" error={e.phone} htmlFor="phone" label="Phone number" required>
           <PhoneInput defaultValue={employee?.phone} id="phone" name="phone" required />
+        </FormField>
+        <FormField description="Optional. 10 digits, e.g. 34-1234567-8" error={e.sssNumber} htmlFor="sss-number" label="SSS number">
+          <Input className="h-11" defaultValue={formatSssNumber(employee?.sss_number)} id="sss-number" inputMode="numeric" name="sssNumber" />
+        </FormField>
+        <FormField description="Optional. 12 digits, e.g. 12-345678901-2" error={e.philhealthNumber} htmlFor="philhealth-number" label="PhilHealth number">
+          <Input className="h-11" defaultValue={formatPhilHealthNumber(employee?.philhealth_number)} id="philhealth-number" inputMode="numeric" name="philhealthNumber" />
         </FormField>
         <div className="@md:col-span-2 @xl:col-span-3">
           <FormField error={e.address} htmlFor="address" label="Home address" required>

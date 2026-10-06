@@ -6,6 +6,7 @@ import { queryKeys } from "@/lib/query-keys";
 import {
   getEmployee,
   getEmployeeForCurrentUser,
+  updateMyGovernmentIds,
   getEmployeeForProfile,
   getEmployeeProfilePhotoUrl,
   listEmployees,
@@ -95,5 +96,13 @@ export function useSavePersonnelEntry(kind: PersonnelKind, employeeId: string) {
       void queryClient.invalidateQueries({ queryKey: queryKeys.personnelRecords.detail(employeeId) });
       void queryClient.invalidateQueries({ queryKey: personnelEntriesKey(kind, employeeId) });
     },
+  });
+}
+
+export function useUpdateMyGovernmentIds() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updateMyGovernmentIds,
+    onSuccess: () => { void queryClient.invalidateQueries({ queryKey: ["personnel-records", "current-user"] }); },
   });
 }

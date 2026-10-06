@@ -141,6 +141,10 @@ export type Employee = {
   address: string | null;
   emergency_contact_name: string | null;
   emergency_contact_phone: string | null;
+  /** Digits only (10); shown as 12-3456789-0. */
+  sss_number: string | null;
+  /** Digits only (12); shown as 12-345678901-2. */
+  philhealth_number: string | null;
   department_id: number | null;
   rank_id: number | null;
   employment_status: "active" | "on_leave";

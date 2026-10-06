@@ -50,6 +50,8 @@ const existingEmployee = {
   address: null,
   emergency_contact_name: null,
   emergency_contact_phone: null,
+  sss_number: null,
+  philhealth_number: null,
   department_id: 3,
   rank_id: 8,
   employment_status: "active" as const,
@@ -192,6 +194,30 @@ describe("EmployeeForm", () => {
       // The hidden end date field keeps the saved value untouched.
       employmentEndedOn: "2030-01-01",
     }));
+  });
+
+  it("lets HR record the SSS and PhilHealth numbers, saved as digits", async () => {
+    const onSaved = vi.fn();
+    const user = userEvent.setup();
+    render(<EmployeeForm employee={{ ...completeEmployee, philhealth_number: "123456789012" }} onSaved={onSaved} />);
+
+    expect(screen.getByLabelText(/^PhilHealth number/i)).toHaveValue("12-345678901-2");
+    await user.type(screen.getByLabelText(/^SSS number/i), "34-1234567-8");
+    await user.click(screen.getByRole("button", { name: /save employee/i }));
+
+    expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({ sssNumber: "3412345678", philhealthNumber: "123456789012" }));
+  });
+
+  it("explains an SSS number with the wrong number of digits", async () => {
+    const onSaved = vi.fn();
+    const user = userEvent.setup();
+    render(<EmployeeForm employee={completeEmployee} onSaved={onSaved} />);
+
+    await user.type(screen.getByLabelText(/^SSS number/i), "12345");
+    await user.click(screen.getByRole("button", { name: /save employee/i }));
+
+    expect(screen.getByText("Enter a 10-digit SSS number.")).toBeVisible();
+    expect(onSaved).not.toHaveBeenCalled();
   });
 
   it("leaves identity fields editable when the existing record has no saved value yet", () => {
