@@ -7,6 +7,7 @@ vi.mock("@/hooks/use-personnel-records", () => ({
   useEmployeeProfilePhotoUrl: () => ({ data: null }),
   useRemoveMyEmployeeProfilePhoto: () => ({ isPending: false, mutateAsync: vi.fn() }),
   useReplaceMyEmployeeProfilePhoto: () => ({ isPending: false, mutateAsync: vi.fn() }),
+  useUpdateMyGovernmentIds: () => ({ isPending: false, mutateAsync: vi.fn() }),
 }));
 
 vi.mock("@/hooks/use-administration", () => ({
@@ -36,6 +37,8 @@ const employee = {
   address: null,
   emergency_contact_name: null,
   emergency_contact_phone: null,
+  sss_number: null,
+  philhealth_number: null,
   department_id: null,
   rank_id: 9,
   employment_status: "active" as const,
@@ -53,7 +56,7 @@ describe("EmployeeProfile", () => {
     expect(screen.getByAltText("Default profile avatar")).toBeInTheDocument();
     expect(screen.getByText("Badge number")).toBeInTheDocument();
     expect(screen.getByText("PCPT — Police Captain")).toBeInTheDocument();
-    expect(screen.getAllByText("Not provided")).toHaveLength(9);
+    expect(screen.getAllByText("Not provided")).toHaveLength(11); // includes the SSS and PhilHealth numbers
     expect(screen.getByText("Not assigned")).toBeInTheDocument();
   });
 

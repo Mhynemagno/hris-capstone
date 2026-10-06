@@ -6,6 +6,7 @@ import { queryKeys } from "@/lib/query-keys";
 import {
   getEmployee,
   getEmployeeForCurrentUser,
+  updateMyGovernmentIds,
   getEmployeeForProfile,
   getEmployeeProfilePhotoUrl,
   listEmployees,
@@ -97,5 +98,13 @@ export function useSavePersonnelEntry(kind: PersonnelKind, employeeId: string) {
       // Eligibility and certification / training records decide promotion readiness.
       void queryClient.invalidateQueries({ queryKey: ["promotion-eligibility"] });
     },
+  });
+}
+
+export function useUpdateMyGovernmentIds() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updateMyGovernmentIds,
+    onSuccess: () => { void queryClient.invalidateQueries({ queryKey: ["personnel-records", "current-user"] }); },
   });
 }

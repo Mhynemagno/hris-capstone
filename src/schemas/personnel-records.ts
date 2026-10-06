@@ -26,6 +26,20 @@ export function toPhilippineMobile(value: string | null | undefined) {
   return cleaned;
 }
 
+/** An optional government ID number: dashes and spaces are dropped, blank means none, and the digit count is checked. */
+const governmentIdNumber = (digits: number, message: string) =>
+  z
+    .string()
+    .optional()
+    .transform((value) => (value ?? "").replace(/[\s-]/g, "") || undefined)
+    .refine((value) => value === undefined || (/^\d+$/.test(value) && value.length === digits), message)
+    .optional();
+
+export const sssNumberSchema = governmentIdNumber(10, "Enter a 10-digit SSS number.");
+export const philhealthNumberSchema = governmentIdNumber(12, "Enter a 12-digit PhilHealth number.");
+
+export const governmentIdsSchema = z.object({ sssNumber: sssNumberSchema, philhealthNumber: philhealthNumberSchema });
+
 /** Same format as `philippineMobileSchema` in auth, with the wording HR sees on the employee form. */
 const requiredMobile = (message: string) =>
   z
@@ -92,6 +106,8 @@ export const employeeSchema = z
     address: requiredText(500, "Enter the home address."),
     emergencyContactName: requiredText(160, "Enter the emergency contact."),
     emergencyContactPhone: requiredMobile("Enter the emergency contact phone."),
+    sssNumber: sssNumberSchema,
+    philhealthNumber: philhealthNumberSchema,
     departmentId: z.coerce.number({ error: "Choose a unit / section." }).int().positive("Choose a unit / section."),
     rankId: z.coerce.number({ error: "Choose a rank." }).int().positive("Choose a rank."),
     employmentStatus: z.enum(employmentStatuses).default("active"),
@@ -180,3 +196,4 @@ export type QualificationInput = z.infer<typeof qualificationSchema>;
 export type CertificationInput = z.infer<typeof certificationSchema>;
 export type TrainingRecordInput = z.infer<typeof trainingRecordSchema>;
 export type EmployeeDirectoryFilters = z.infer<typeof employeeDirectoryFiltersSchema>;
+export type GovernmentIdsInput = z.infer<typeof governmentIdsSchema>;
