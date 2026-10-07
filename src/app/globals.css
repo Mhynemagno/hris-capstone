@@ -3,6 +3,8 @@
 @import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
+/* Applies only inside the HR/Admin/Employee/Management workspace (WorkspaceShell). */
+@custom-variant ws (&:where(.workspace, .workspace *));
 
 @theme inline {
   --color-background: var(--background);
@@ -12,28 +14,6 @@
   --font-mono: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-heading: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 
-  /*
-   * Readability-first type scale (UI/UX Pro Max "Corporate Trust" pairing).
-   * Utility names keep their relative meaning, but the smallest steps are
-   * raised so table cells, labels, and helper text never drop below 14px and
-   * everyday UI text renders at 16px or more.
-   */
-  --text-xs: 0.875rem;
-  --text-xs--line-height: 1.35rem;
-  --text-sm: 1rem;
-  --text-sm--line-height: 1.5rem;
-  --text-base: 1.0625rem;
-  --text-base--line-height: 1.7rem;
-  --text-lg: 1.1875rem;
-  --text-lg--line-height: 1.8rem;
-  --text-xl: 1.375rem;
-  --text-xl--line-height: 1.9rem;
-  --text-2xl: 1.625rem;
-  --text-2xl--line-height: 2.15rem;
-  --text-3xl: 1.875rem;
-  --text-3xl--line-height: 2.4rem;
-  --text-4xl: 2.25rem;
-  --text-4xl--line-height: 2.75rem;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -64,6 +44,13 @@
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-subtle: var(--primary-subtle);
+  --color-success: var(--success);
+  --color-success-subtle: var(--success-subtle);
+  --color-warning: var(--warning);
+  --color-warning-subtle: var(--warning-subtle);
+  --color-destructive-subtle: var(--destructive-subtle);
   --color-brand-command-red: var(--brand-command-red);
   --color-topbar: var(--topbar);
   --color-cta: var(--cta);
@@ -81,6 +68,30 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/*
+ * Readability-first type scale for the applicant and public pages (unchanged values).
+ * Declared with a plain @theme (not inline) so utilities read var(--text-*), which lets
+ * `.workspace` swap in the denser HR/Admin scale without touching applicant pages.
+ */
+@theme {
+  --text-xs: 0.875rem;
+  --text-xs--line-height: 1.35rem;
+  --text-sm: 1rem;
+  --text-sm--line-height: 1.5rem;
+  --text-base: 1.0625rem;
+  --text-base--line-height: 1.7rem;
+  --text-lg: 1.1875rem;
+  --text-lg--line-height: 1.8rem;
+  --text-xl: 1.375rem;
+  --text-xl--line-height: 1.9rem;
+  --text-2xl: 1.625rem;
+  --text-2xl--line-height: 2.15rem;
+  --text-3xl: 1.875rem;
+  --text-3xl--line-height: 2.4rem;
+  --text-4xl: 2.25rem;
+  --text-4xl--line-height: 2.75rem;
+}
+
 :root {
   /*
    * "Calm command" palette: a desaturated slate-navy frame, a steady police
@@ -96,6 +107,13 @@
   --popover-foreground: oklch(0.24 0.025 255);
   --primary: oklch(0.5 0.1 170);
   --primary-foreground: oklch(0.985 0 0);
+  --primary-hover: oklch(0.45 0.1 170);
+  --primary-subtle: oklch(0.95 0.025 170);
+  --success: #067647;
+  --success-subtle: #ecfdf3;
+  --warning: #b54708;
+  --warning-subtle: #fffaeb;
+  --destructive-subtle: #fef3f2;
   --brand-command-red: oklch(0.56 0.16 24);
   --secondary: oklch(0.955 0.01 250);
   --secondary-foreground: oklch(0.3 0.035 255);
@@ -147,6 +165,70 @@
   --sidebar-accent-foreground: oklch(0.28 0.08 258);
   --sidebar-border: oklch(0.91 0.01 258);
   --sidebar-ring: oklch(0.33 0.1 258);
+}
+
+/*
+ * HR / Admin / Employee / Management workspace (spec 2026-10-07 §3). Police navy brand,
+ * cool neutrals, borders over shadows, a denser 14px type scale. Scoped so the applicant
+ * and public pages keep today's tokens.
+ */
+.workspace {
+  --background: #f6f7f9;
+  --foreground: #101828;
+  --card: #ffffff;
+  --card-foreground: #101828;
+  --popover: #ffffff;
+  --popover-foreground: #101828;
+  --primary: #0f3467;
+  --primary-foreground: #ffffff;
+  --primary-hover: #0b2a55;
+  --primary-subtle: #ebf0f8;
+  --secondary: #f2f4f7;
+  --secondary-foreground: #475467;
+  --muted: #f2f4f7;
+  --muted-foreground: #667085;
+  --accent: #ebf0f8;
+  --accent-foreground: #0f3467;
+  --destructive: #b42318;
+  --destructive-subtle: #fef3f2;
+  --success: #067647;
+  --success-subtle: #ecfdf3;
+  --warning: #b54708;
+  --warning-subtle: #fffaeb;
+  --border: #e4e7ec;
+  --input: #d0d5dd;
+  --ring: #0f3467;
+  --chart-1: #0f3467;
+  --chart-4: #5b7db5;
+  --radius: 0.5rem;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: 1.125rem;
+  --text-base: 0.875rem;
+  --text-base--line-height: 1.25rem;
+  --text-lg: 1rem;
+  --text-lg--line-height: 1.5rem;
+  --text-xl: 1.125rem;
+  --text-xl--line-height: 1.75rem;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 2rem;
+  --text-3xl: 1.75rem;
+  --text-3xl--line-height: 2.25rem;
+  --text-4xl: 2rem;
+  --text-4xl--line-height: 2.5rem;
+}
+
+/* The workspace sidebar: white, navy text, a subtle navy "you are here". */
+.workspace .app-sidebar {
+  --sidebar: #ffffff;
+  --sidebar-foreground: #344054;
+  --sidebar-primary: #0f3467;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #ebf0f8;
+  --sidebar-accent-foreground: #0f3467;
+  --sidebar-border: #e4e7ec;
+  --sidebar-ring: #0f3467;
 }
 
 .dark {
@@ -238,6 +320,20 @@
   }
   :where(button, [role="button"]):disabled {
     cursor: not-allowed;
+  }
+  /* Hand-built tables on not-yet-redesigned workspace pages match DataTable until migrated. */
+  :where(.workspace) :where(table:not([data-slot=data-table])) :where(thead) {
+    background-color: var(--muted);
+  }
+  :where(.workspace) :where(table:not([data-slot=data-table])) :where(th) {
+    font-size: var(--text-xs);
+    font-weight: 500;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--muted-foreground);
+  }
+  :where(.workspace) :where(table:not([data-slot=data-table])) :where(tbody tr:hover) {
+    background-color: var(--muted);
   }
 }
 

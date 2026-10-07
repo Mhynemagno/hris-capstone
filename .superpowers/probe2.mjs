@@ -1,0 +1,16 @@
+import { chromium } from "@playwright/test";
+const browser = await chromium.launch({ channel: "msedge" });
+const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+await page.goto("http://localhost:3000/login");
+await page.getByLabel("Email").fill("demo.hr@example.test");
+await page.getByRole("textbox", { name: "Password" }).fill("DemoPass!2026");
+await page.getByRole("button", { name: "Login" }).click();
+await page.waitForURL((u) => !u.pathname.startsWith("/login"));
+const seen = [];
+page.on("request", (r) => seen.push(r.method() + " " + r.url().replace(/\?.*/, "").slice(0, 100)));
+await page.waitForTimeout(6000);
+const counts = {};
+for (const s of seen) counts[s] = (counts[s] ?? 0) + 1;
+console.log(counts);
+console.log(await page.evaluate(() => [...document.querySelectorAll("[role=alert]")].map((e) => e.textContent)));
+await browser.close();

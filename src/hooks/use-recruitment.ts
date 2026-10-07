@@ -14,7 +14,11 @@ import {
   getPublishedJob,
   hireApplication,
   listHrApplications,
+  listAllHrApplications,
   listHrJobs,
+  listAllHrJobs,
+  getHrJob,
+  listRecentApplications,
   listApplicantProfileDocuments,
   listApplicantProfileDocumentsFor,
   listMyApplications,
@@ -43,6 +47,7 @@ import type {
   JobOpeningInput,
 } from "@/schemas/recruitment";
 import type { JobPostingImageChange, ResubmitApplicationInput } from "@/queries/recruitment";
+import type { HrShortlistApplication } from "@/lib/types/database";
 
 export function usePublishedJobs(filters: Partial<JobFilters> = {}) {
   return useQuery({ queryKey: queryKeys.recruitment.publicJobs(filters), queryFn: () => listPublishedJobs(filters) });
@@ -221,6 +226,7 @@ export function useTransitionApplicationStatus() {
   return useMutation({
     mutationFn: (input: ApplicationStatusTransitionInput) => transitionApplicationStatus(input),
     onSuccess: (_, input) => {
+      void queryClient.invalidateQueries({ queryKey: ["workspace", "count"] });
       void queryClient.invalidateQueries({ queryKey: ["recruitment", "applications"] });
       void queryClient.invalidateQueries({ queryKey: ["reporting"] });
       void queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.application(input.applicationId) });
@@ -255,5 +261,25 @@ export function useSubmitBmiProof() {
   return useMutation({
     mutationFn: ({ applicationId, file }: { applicationId: string; file: File }) => submitBmiProof(applicationId, file),
     onSuccess: (_, input) => void queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.application(input.applicationId) }),
+  });
+}
+
+export function useRecentApplications(enabled = true) {
+  return useQuery({ queryKey: ["recruitment", "applications", "recent"], queryFn: () => listRecentApplications(5), enabled, staleTime: 60_000 });
+}
+
+export function useAllHrJobs() {
+  return useQuery({ queryKey: ["recruitment", "hr-jobs", "all"], queryFn: listAllHrJobs });
+}
+
+export function useHrJob(jobId: number) {
+  return useQuery({ queryKey: ["recruitment", "hr-jobs", "detail", jobId], queryFn: () => getHrJob(jobId), enabled: Number.isInteger(jobId) && jobId > 0 });
+}
+
+export function useAllHrApplications(filters: { aiStatus?: HrShortlistApplication["ai_score_status"]; minimumScore?: number } = {}) {
+  return useQuery({
+    queryKey: queryKeys.recruitment.applications({ all: true, ...filters }),
+    queryFn: () => listAllHrApplications(filters),
+    refetchInterval: (query) => analysisRefetchInterval((query.state.data ?? []).map((row) => row.ai_score_status)),
   });
 }

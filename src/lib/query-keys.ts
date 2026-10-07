@@ -6,6 +6,9 @@ export const queryKeys = {
     report: (role: "hr_personnel" | "management", filters: Record<string, unknown>) => ["reporting", "report", role, filters] as const,
   },
   appShell: () => ["app-shell"] as const,
+  workspace: {
+    count: (key: string) => ["workspace", "count", key] as const,
+  },
   roleLanding: (role: AppRole) => ["role-landing", role] as const,
   administration: {
     users: (filters: Record<string, unknown>) =>

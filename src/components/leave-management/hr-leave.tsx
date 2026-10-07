@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -32,7 +33,11 @@ function employeeName(request: Pick<LeaveRequestWithEmployee, "employees">) {
 }
 
 export function HrLeaveQueue() {
-  const [status, setStatus] = useState<LeaveRequestStatus | "">("");
+  // The dashboard links here with ?status=pending so the queue opens on For Approval.
+  const requested = useSearchParams().get("status");
+  const [status, setStatus] = useState<LeaveRequestStatus | "">(
+    statusOptions.some((option) => option.value === requested) ? (requested as LeaveRequestStatus) : "",
+  );
   const result = useHrLeaveRequests({ page: 1, pageSize: 25, status: status || undefined });
   const rows = result.data?.rows ?? [];
   const statusLabel = statusOptions.find((option) => option.value === status)?.label.toLowerCase();

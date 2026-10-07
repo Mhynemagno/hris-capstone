@@ -1,0 +1,103 @@
+  const status = job?.status ?? "draft";
+  const count = job ? applicationCount(job) : 0;
+  const note = job ? deadlineNote(job.closes_on, job.status) : null;
+
+  return (
+    <form className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start" noValidate onSubmit={(event) => { event.preventDefault(); void saveAs(hasApplications && job ? job.status : "draft"); }}>
+      <div className="min-w-0 space-y-6">
+        <section aria-labelledby="job-details-heading" className="space-y-4 rounded-lg border bg-card p-5">
+          <h2 className="text-lg font-semibold" id="job-details-heading">Details</h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <FormField error={errors.title?.message} htmlFor="job-title" label="Title" required>
+              <Input id="job-title" required {...form.register("title")} />
+            </FormField>
+            <FormField error={errors.location?.message} htmlFor="job-location" label="Location" required>
+              <Input id="job-location" required {...form.register("location")} />
+            </FormField>
+            <FormField error={errors.closesOn?.message} htmlFor="job-closes-on" label="Deadline of Application" required>
+              <Input id="job-closes-on" required type="date" {...form.register("closesOn")} />
+            </FormField>
+            <FormField description="Every recruitment is for this rank." htmlFor="job-position" label="Position">
+              <Input id="job-position" readOnly value={rankLabel(RECRUITMENT_RANK)} />
+            </FormField>
+          </div>
+          <FormField description="At least 20 characters." error={errors.description?.message} htmlFor="job-description" label="Description" required>
+            <Textarea className="min-h-40" id="job-description" required rows={8} {...form.register("description")} />
+          </FormField>
+        </section>
+
+        <section aria-labelledby="job-requirements-heading" className="space-y-4 rounded-lg border bg-card p-5">
+          <h2 className="text-lg font-semibold" id="job-requirements-heading">Requirements</h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {(["education", "eligibility"] as const).map((kind, index) => {
+              const label = kind === "education" ? "Education" : "Eligibility";
+              const fieldErrors = errors.requirements?.[kind];
+              // A saved requirement that is not listed (older openings) stays selectable as its own choice.
+              const choices = withSavedValue(PNP_GENERAL_REQUIREMENTS[kind], requirements?.[kind]?.choice);
+              return (
+                <div className="space-y-3 rounded-md bg-muted/50 p-3" key={kind}>
+                  <FormField error={fieldErrors?.choice?.message} htmlFor={`requirement-${kind}`} label={`Requirement ${index + 1}: ${label}`} required>
+                    <NativeSelect id={`requirement-${kind}`} required {...form.register(`requirements.${kind}.choice`)}>
+                      <option value="">Select {label.toLowerCase()}</option>
+                      {choices.map((choice) => <option key={choice} value={choice}>{choice}</option>)}
+                    </NativeSelect>
+                  </FormField>
+                  {requirements?.[kind]?.choice === OTHERS_CHOICE ? (
+                    <FormField error={fieldErrors?.other?.message} htmlFor={`requirement-${kind}-other`} label={`Specify ${label.toLowerCase()}`} required>
+                      <Input id={`requirement-${kind}-other`} maxLength={1000} required {...form.register(`requirements.${kind}.other`)} />
+                    </FormField>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-medium">Other requirements</legend>
+            <p className="text-sm text-muted-foreground">Uncheck a requirement that does not apply to this opening.</p>
+            <ul className="space-y-1">
+              {(requirements?.otherRequirements ?? []).map((item, index) => (
+                <li key={`${item.kind}-${item.requirement}`}>
+                  <label className="flex min-h-9 items-center gap-2 text-base">
+                    <input className="size-4 accent-[var(--primary)]" type="checkbox" {...form.register(`requirements.otherRequirements.${index}.included`)} /> {item.requirement}
+                  </label>
+                </li>
+              ))}
+            </ul>
+          </fieldset>
+        </section>
+
+        <section aria-labelledby="job-image-heading" className="space-y-4 rounded-lg border bg-card p-5">
+          <h2 className="text-lg font-semibold" id="job-image-heading">Image</h2>
+          <FormField description="Optional. PNG, JPEG, or WebP up to 5 MB." error={imageError ?? undefined} htmlFor="job-image" label="Image">
+            <div className="space-y-3">
+              {shownImage ? <Image alt="Job posting image preview" className="max-h-72 w-full rounded-md border object-contain" height={450} src={shownImage} unoptimized width={800} /> : null}
+              <div className="flex flex-wrap items-center gap-2">
+                <Input accept="image/png,image/jpeg,image/webp" className="max-w-sm" id="job-image" onChange={(event) => chooseImage(event.target.files?.[0])} ref={imageInput} type="file" />
+                {shownImage ? <Button onClick={clearImage} size="sm" type="button" variant="outline">Remove image</Button> : null}
+              </div>
+            </div>
+          </FormField>
+        </section>
+        {error ? <ErrorState message={error} /> : null}
+      </div>
+
+      <aside aria-label="Posting status" className="space-y-4 rounded-lg border bg-card p-5 lg:sticky lg:top-20">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-sm text-muted-foreground">Status</span>
+          <Badge variant={status === "published" ? "success" : "neutral"}>{JOB_STATUS_LABELS[status]}</Badge>
+        </div>
+        {job ? (
+          <dl className="space-y-2 text-sm">
+            <div className="flex justify-between gap-2"><dt className="text-muted-foreground">Applications</dt><dd>{count} {count === 1 ? "application" : "applications"}</dd></div>
+            <div className="flex justify-between gap-2"><dt className="text-muted-foreground">Deadline</dt><dd className="text-right">{note ?? "—"}</dd></div>
+          </dl>
+        ) : null}
+        {hasApplications ? <p className="rounded-md bg-warning-subtle p-3 text-sm text-warning">This posting has applications. Its status can only change by withdrawing it from the job postings list.</p> : null}
+        <div className="flex flex-col gap-2">
+          {!hasApplications ? <Button disabled={submitDisabled} onClick={() => void saveAs("published")} type="button">Publish opening</Button> : null}
+          <Button loading={save.isPending} type="submit" variant="outline">{hasApplications ? "Save changes" : "Save draft"}</Button>
+        </div>
+        {job?.status === "published" ? <Link className="block text-sm font-medium text-primary hover:underline" href={`/jobs/${job.id}`} target="_blank">View on public site</Link> : null}
+      </aside>
+    </form>
+  );

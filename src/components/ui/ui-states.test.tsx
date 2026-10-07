@@ -1,4 +1,8 @@
+import userEvent from "@testing-library/user-event";
 import { render, screen } from "@testing-library/react";
+import { vi } from "vitest";
+
+import { Button } from "./button";
 
 import { EmptyTableState } from "./empty-table-state";
 import { ErrorState } from "./error-state";
@@ -45,4 +49,19 @@ describe("shared UI states", () => {
 
     expect(screen.getByLabelText("Email address")).toBeInTheDocument();
   });
+});
+
+it("offers a retry from an error state", async () => {
+  const onRetry = vi.fn();
+  render(<ErrorState message="Network down" onRetry={onRetry} />);
+  expect(screen.getByRole("alert")).toHaveTextContent("Network down");
+  await userEvent.click(screen.getByRole("button", { name: "Try again" }));
+  expect(onRetry).toHaveBeenCalledTimes(1);
+});
+
+it("disables a loading button and marks it busy", () => {
+  render(<Button loading>Save</Button>);
+  const button = screen.getByRole("button", { name: /save/i });
+  expect(button).toBeDisabled();
+  expect(button).toHaveAttribute("aria-busy", "true");
 });

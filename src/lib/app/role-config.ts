@@ -18,12 +18,16 @@ export type RoleNavigationIcon =
   | "ChartColumn"
   | "UserPen";
 
+/** Live counts shown beside a nav item (src/hooks/use-workspace-counts.ts). */
+export type NavBadgeKey = "applicationsAwaitingReview" | "leaveForApproval" | "profileChangesPending";
+
 export type RoleNavigationItem = {
   href: `/${string}`;
   label: string;
   icon: RoleNavigationIcon;
   /** Sidebar section heading; related tasks share a group. */
   group?: string;
+  badge?: NavBadgeKey;
 };
 
 export type RoleConfig = {
@@ -44,15 +48,15 @@ export const ROLE_CONFIG: Record<AppRole, RoleConfig> = {
     landingDescription:
       "Manage secure system settings, accounts, and organization data.",
     navigation: [
-      { href: "/admin", label: "Dashboard", icon: "LayoutDashboard", group: "Administration" },
-      { href: "/admin/profile-change-requests", label: "Reviews & Approvals", icon: "UserPen", group: "Administration" },
-      { href: "/admin/users", label: "Account Management", icon: "Users", group: "Administration" },
-      { href: "/admin/audit-logs", label: "Audit logs", icon: "ScrollText", group: "Administration" },
+      { href: "/admin", label: "Dashboard", icon: "LayoutDashboard" },
+      { href: "/admin/users", label: "Accounts", icon: "Users", group: "People" },
+      { href: "/admin/profile-change-requests", label: "Approvals", icon: "UserPen", group: "People", badge: "profileChangesPending" },
       { href: "/admin/departments", label: "Units / Sections", icon: "Building2", group: "Organization" },
-      { href: "/admin/ranks", label: "Ranks", icon: "BriefcaseBusiness", group: "Organization" },
       { href: "/admin/unit-stations", label: "Units / Stations", icon: "MapPin", group: "Organization" },
+      { href: "/admin/ranks", label: "Ranks", icon: "BriefcaseBusiness", group: "Organization" },
       { href: "/admin/settings", label: "Settings", icon: "Settings", group: "System" },
-      { href: "/admin/integrations/attendance", label: "Attendance Integration", icon: "Fingerprint", group: "System" },
+      { href: "/admin/integrations/attendance", label: "Attendance integration", icon: "Fingerprint", group: "System" },
+      { href: "/admin/audit-logs", label: "Audit log", icon: "ScrollText", group: "System" },
     ],
   },
   hr_personnel: {
@@ -63,18 +67,17 @@ export const ROLE_CONFIG: Record<AppRole, RoleConfig> = {
     landingDescription:
       "Coordinate recruitment, personnel records, and HR operations.",
     navigation: [
-      { href: "/hr", label: "Dashboard", icon: "LayoutDashboard", group: "Overview" },
-      { href: "/hr/jobs", label: "Job Posting", icon: "BriefcaseBusiness", group: "Recruitment" },
-      { href: "/hr/applications", label: "Applications", icon: "FileText", group: "Recruitment" },
-      { href: "/hr/employees", label: "Employee Records", icon: "ContactRound", group: "Personnel Management" },
-      { href: "/hr/deployments", label: "Deployment Records", icon: "MapPin", group: "Personnel Management" },
-      { href: "/hr/leave-requests", label: "Leave Management", icon: "CalendarDays", group: "Personnel Management" },
-      { href: "/hr/promotions", label: "Promotion Records", icon: "TrendingUp", group: "Personnel Management" },
-      { href: "/hr/attendance/kiosk", label: "Daily Attendance", icon: "Fingerprint", group: "Attendance Management" },
-      { href: "/hr/attendance", label: "Attendance Records", icon: "Clock", group: "Attendance Management" },
-      { href: "/reports/attendance-leave", label: "Attendance Report", icon: "ChartColumn", group: "Attendance Management" },
+      { href: "/hr", label: "Dashboard", icon: "LayoutDashboard" },
+      { href: "/hr/jobs", label: "Job postings", icon: "BriefcaseBusiness", group: "Recruitment" },
+      { href: "/hr/applications", label: "Applications", icon: "FileText", group: "Recruitment", badge: "applicationsAwaitingReview" },
+      { href: "/hr/employees", label: "Employees", icon: "ContactRound", group: "Personnel" },
+      { href: "/hr/deployments", label: "Deployments", icon: "MapPin", group: "Personnel" },
+      { href: "/hr/leave-requests", label: "Leave", icon: "CalendarDays", group: "Personnel", badge: "leaveForApproval" },
+      { href: "/hr/promotions", label: "Promotions", icon: "TrendingUp", group: "Personnel" },
+      { href: "/hr/attendance", label: "Attendance", icon: "Clock", group: "Attendance" },
+      { href: "/hr/attendance/kiosk", label: "Kiosk", icon: "Fingerprint", group: "Attendance" },
       { href: "/reports", label: "Reports", icon: "ChartColumn", group: "Insights" },
-      { href: "/hr/public-site", label: "Public Announcements", icon: "ScrollText", group: "Public Portal" },
+      { href: "/hr/public-site", label: "Announcements", icon: "ScrollText", group: "Public site" },
     ],
   },
   applicant: {
@@ -100,32 +103,24 @@ export const ROLE_CONFIG: Record<AppRole, RoleConfig> = {
     landingDescription:
       "Access your HR information, requests, and work-related updates.",
     navigation: [
-      {
-        href: "/employee",
-        label: "Dashboard",
-        icon: "LayoutDashboard",
-      },
+      { href: "/employee", label: "Dashboard", icon: "LayoutDashboard" },
       { href: "/employee/profile", label: "My profile", icon: "ContactRound" },
       { href: "/employee/leave", label: "Leave", icon: "CalendarDays" },
       { href: "/employee/deployments", label: "Deployments", icon: "MapPin" },
       { href: "/employee/promotion-eligibility", label: "Promotion", icon: "TrendingUp" },
       { href: "/employee/attendance", label: "Attendance", icon: "Clock" },
-      { href: "/employee/attendance/scan", label: "Scan attendance", icon: "Fingerprint" },
+      { href: "/employee/attendance/scan", label: "Scan", icon: "Fingerprint" },
     ],
   },
   management: {
     role: "management",
     label: "Management",
     homeHref: "/management",
-    landingTitle: "Management workspace",
+    landingTitle: "Dashboard",
     landingDescription:
       "Review personnel information and organizational insights.",
     navigation: [
-      {
-        href: "/management",
-        label: "Management workspace",
-        icon: "LayoutDashboard",
-      },
+      { href: "/management", label: "Dashboard", icon: "LayoutDashboard" },
       { href: "/reports", label: "Reports", icon: "ChartColumn" },
     ],
   },

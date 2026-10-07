@@ -1,0 +1,83 @@
+{
+  "body": {
+    "font-family": "Inter, \"Inter Fallback\", ui-sans-serif, system-ui, sans-serif",
+    "font-size": "17px",
+    "font-weight": "400",
+    "line-height": "27.2px",
+    "color": "lab(11.7499 -1.28601 -8.86856)",
+    "background-color": "lab(97.0962 -0.553459 -1.78933)",
+    "border-top-color": "lab(88.9715 -1.08984 -3.56913)",
+    "border-top-left-radius": "0px",
+    "min-height": "100%",
+    "padding-left": "0px",
+    "box-shadow": "none"
+  },
+  "h1": {
+    "font-family": "Inter, \"Inter Fallback\", ui-sans-serif, system-ui, sans-serif",
+    "font-size": "30px",
+    "font-weight": "700",
+    "line-height": "38.4px",
+    "color": "lab(11.7499 -1.28601 -8.86856)",
+    "background-color": "rgba(0, 0, 0, 0)",
+    "border-top-color": "lab(88.9715 -1.08984 -3.56913)",
+    "border-top-left-radius": "0px",
+    "min-height": "0px",
+    "padding-left": "0px",
+    "box-shadow": "none"
+  },
+  "main a": {
+    "font-family": "Inter, \"Inter Fallback\", ui-sans-serif, system-ui, sans-serif",
+    "font-size": "16px",
+    "font-weight": "500",
+    "line-height": "24px",
+    "color": "lab(43.3162 -35.0452 6.37937)",
+    "background-color": "rgba(0, 0, 0, 0)",
+    "border-top-color": "lab(88.9715 -1.08984 -3.56913)",
+    "border-top-left-radius": "0px",
+    "min-height": "0px",
+    "padding-left": "0px",
+    "box-shadow": "none"
+  },
+  "button": {
+    "font-family": "Inter, \"Inter Fallback\", ui-sans-serif, system-ui, sans-serif",
+    "font-size": "17px",
+    "font-weight": "400",
+    "line-height": "27.2px",
+    "color": "lab(48.0876 -2.03595 -16.5814)",
+    "background-color": "rgba(0, 0, 0, 0)",
+    "border-top-color": "lab(88.9715 -1.08984 -3.56913)",
+    "border-top-left-radius": "0px",
+    "min-height": "0px",
+    "padding-left": "0px",
+    "box-shadow": "none"
+  },
+  "input": {
+    "font-family": "Inter, \"Inter Fallback\", ui-sans-serif, system-ui, sans-serif",
+    "font-size": "17px",
+    "font-weight": "400",
+    "line-height": "27.2px",
+    "color": "lab(1.76974 1.32743 -9.28855)",
+    "background-color": "rgb(255, 255, 255)",
+    "border-top-color": "lab(88.9715 -1.08984 -3.56913)",
+    "border-top-left-radius": "8px",
+    "min-height": "0px",
+    "padding-left": "12px",
+    "box-shadow": "none"
+  },
+  "select": {
+    "font-family": "Inter, \"Inter Fallback\", ui-sans-serif, system-ui, sans-serif",
+    "font-size": "17px",
+    "font-weight": "400",
+    "line-height": "normal",
+    "color": "lab(1.76974 1.32743 -9.28855)",
+    "background-color": "rgb(255, 255, 255)",
+    "border-top-color": "lab(88.9715 -1.08984 -3.56913)",
+    "border-top-left-radius": "8px",
+    "min-height": "0px",
+    "padding-left": "12px",
+    "box-shadow": "none"
+  },
+  "[data-slot=badge]": null,
+  "[data-slot=sidebar-inner]": null,
+  "header": null
+}

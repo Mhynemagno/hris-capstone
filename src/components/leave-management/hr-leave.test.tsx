@@ -33,6 +33,9 @@ vi.mock("@/hooks/use-leave-management", () => ({
   useDecideLeaveRequest: () => ({ isPending: false, mutateAsync: mocks.decide }),
 }));
 
+const navigation = vi.hoisted(() => ({ search: "" }));
+vi.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams(navigation.search) }));
+
 import { HrLeaveDetail, HrLeaveQueue } from "./hr-leave";
 
 describe("HrLeaveDetail", () => {
@@ -107,5 +110,18 @@ describe("HrLeaveQueue", () => {
 
     expect(mocks.hrQueueInput).toHaveBeenLastCalledWith(expect.objectContaining({ status: "pending" }));
     expect(screen.getByText("No leave requests are for approval. Try another status.")).toBeVisible();
+  });
+});
+
+describe("HrLeaveQueue status link", () => {
+  it("opens on the status named in the URL and ignores unknown values", () => {
+    navigation.search = "status=pending";
+    const { unmount } = render(<HrLeaveQueue />);
+    expect(mocks.hrQueueInput).toHaveBeenLastCalledWith(expect.objectContaining({ status: "pending" }));
+    unmount();
+    navigation.search = "status=bogus";
+    render(<HrLeaveQueue />);
+    expect(mocks.hrQueueInput).toHaveBeenLastCalledWith(expect.objectContaining({ status: undefined }));
+    navigation.search = "";
   });
 });

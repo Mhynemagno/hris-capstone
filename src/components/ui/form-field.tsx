@@ -37,8 +37,8 @@ export function FormField({
       : children;
 
   return (
-    <div className="space-y-2">
-      <label htmlFor={htmlFor} className="block text-sm font-semibold text-foreground">
+    <div className="space-y-2 ws:space-y-1.5">
+      <label htmlFor={htmlFor} className="block text-sm font-semibold text-foreground ws:font-medium">
         {label}
         {required ? (
           <span aria-hidden="true" className="ml-0.5 text-destructive">

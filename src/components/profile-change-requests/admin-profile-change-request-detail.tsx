@@ -140,7 +140,7 @@ export function AdminProfileChangeRequestDetail({ requestId }: { requestId: stri
   return (
     <section className="max-w-4xl space-y-6">
       <Link className="text-sm font-medium text-primary underline underline-offset-4" href="/admin/profile-change-requests">
-        Back to Reviews &amp; Approvals
+        Back to Approvals
       </Link>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>

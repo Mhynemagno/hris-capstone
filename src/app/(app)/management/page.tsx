@@ -1,5 +1,5 @@
-import { ReportingDashboard } from "@/components/reporting/dashboard";
+import { WorkspaceDashboard } from "@/components/reporting/workspace-dashboard";
 
 export default function ManagementPage() {
-  return <ReportingDashboard role="management" />;
+  return <WorkspaceDashboard role="management" />;
 }
