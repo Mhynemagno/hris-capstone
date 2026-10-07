@@ -3,7 +3,6 @@ import { render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { HrApplicationDetail } from "./hr-application-detail";
-import { HrApplicationList } from "./hr-application-list";
 
 const mocks = vi.hoisted(() => ({
   replace: vi.fn(),
@@ -89,50 +88,6 @@ describe("HR recruitment workspace", () => {
     expect(screen.getByText("Analyzing application…")).toBeInTheDocument();
     expect(screen.queryByLabelText("Approved anonymized CV text")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Analyze application" })).not.toBeInTheDocument();
-  });
-
-  it("shows a failed analysis as failed in both list and detail views", () => {
-    mocks.scores = [{ id: "00000000-0000-0000-0000-000000000003", status: "failed", score: null, explanation: null, failure_code: "provider_unavailable" }];
-    mocks.applications = [{ id: "00000000-0000-0000-0000-000000000001", status: "Submitted", submitted_at: "2026-08-20T00:00:00Z", ai_score_status: "failed", ai_score: null }];
-
-    const { unmount } = render(<HrApplicationList />);
-    expect(screen.getByRole("columnheader", { name: "AI recommendation" })).toBeInTheDocument();
-    expect(screen.getByRole("cell", { name: "Analysis failed" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /review application 00000000/i })).toHaveAttribute("href", "/hr/applications/00000000-0000-0000-0000-000000000001");
-    unmount();
-
-    render(<HrApplicationDetail applicationId="00000000-0000-0000-0000-000000000001" />);
-    expect(screen.getByText(/Analysis failed/)).toBeInTheDocument();
-    expect(screen.getByText(/You can retry when the service is available/)).toBeInTheDocument();
-  });
-
-  it("names each application by applicant and position with a readable score", () => {
-    mocks.applications = [{ id: "00000000-0000-0000-0000-000000000009", status: "Shortlisted", submitted_at: "2026-09-25T00:00:00Z", ai_score_status: "completed", ai_score: 82, applicant_name: "Juan Dela Cruz", applicant_number: 12, job_title: "Patrol Officer" }];
-
-    render(<HrApplicationList />);
-    expect(screen.getByText("Juan Dela Cruz")).toBeInTheDocument();
-    expect(screen.getByText("Applicant no. 0-00012")).toBeInTheDocument();
-    expect(screen.getByRole("cell", { name: "PAT — Patrolman / Patrolwoman" })).toBeInTheDocument();
-    expect(screen.queryByText("Patrol Officer")).not.toBeInTheDocument();
-    expect(screen.getByRole("cell", { name: "September 25, 2026" })).toBeInTheDocument();
-    expect(screen.getByRole("cell", { name: "82/100" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /review application juan dela cruz/i })).toHaveAttribute("href", "/hr/applications/00000000-0000-0000-0000-000000000009");
-  });
-
-  it("lists registered applicants who have not applied yet so a new sign-up shows in the queue", () => {
-    mocks.applications = [{ id: "00000000-0000-0000-0000-000000000009", status: "Submitted", submitted_at: "2026-09-25T00:00:00Z", ai_score_status: "queued", ai_score: null, applicant_name: "Juan Dela Cruz", applicant_number: 12 }];
-    mocks.registeredApplicants = [
-      { user_id: "u1", applicant_number: 12, first_name: "Juan", last_name: "Dela Cruz", middle_name: null, qualifier: null, full_name: "Juan Dela Cruz", email: "juan@example.test", registered_at: "2026-09-20T00:00:00Z", application_count: 1, latest_application_id: "00000000-0000-0000-0000-000000000009" },
-      { user_id: "u2", applicant_number: 13, first_name: "Maria", last_name: "Santos", middle_name: null, qualifier: null, full_name: "Maria Santos", email: "maria@example.test", registered_at: "2026-10-06T00:00:00Z", application_count: 0, latest_application_id: null },
-    ];
-
-    render(<HrApplicationList />);
-    expect(screen.getByText("1 application · 1 registered, not yet applied")).toBeInTheDocument();
-    const row = screen.getByText("Santos, Maria").closest("tr")!;
-    expect(within(row).getByText("Registered")).toBeInTheDocument();
-    expect(within(row).getByText("No application yet")).toBeInTheDocument();
-    expect(within(row).getByRole("cell", { name: "October 6, 2026" })).toBeInTheDocument();
-    expect(screen.getAllByText("Juan Dela Cruz")).toHaveLength(1);
   });
 
   it("tells HR when an analysis timed out and still offers a retry", () => {

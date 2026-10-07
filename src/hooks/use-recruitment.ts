@@ -14,6 +14,7 @@ import {
   getPublishedJob,
   hireApplication,
   listHrApplications,
+  listAllHrApplications,
   listHrJobs,
   listAllHrJobs,
   getHrJob,
@@ -46,6 +47,7 @@ import type {
   JobOpeningInput,
 } from "@/schemas/recruitment";
 import type { JobPostingImageChange, ResubmitApplicationInput } from "@/queries/recruitment";
+import type { HrShortlistApplication } from "@/lib/types/database";
 
 export function usePublishedJobs(filters: Partial<JobFilters> = {}) {
   return useQuery({ queryKey: queryKeys.recruitment.publicJobs(filters), queryFn: () => listPublishedJobs(filters) });
@@ -272,4 +274,12 @@ export function useAllHrJobs() {
 
 export function useHrJob(jobId: number) {
   return useQuery({ queryKey: ["recruitment", "hr-jobs", "detail", jobId], queryFn: () => getHrJob(jobId), enabled: Number.isInteger(jobId) && jobId > 0 });
+}
+
+export function useAllHrApplications(filters: { aiStatus?: HrShortlistApplication["ai_score_status"]; minimumScore?: number } = {}) {
+  return useQuery({
+    queryKey: queryKeys.recruitment.applications({ all: true, ...filters }),
+    queryFn: () => listAllHrApplications(filters),
+    refetchInterval: (query) => analysisRefetchInterval((query.state.data ?? []).map((row) => row.ai_score_status)),
+  });
 }

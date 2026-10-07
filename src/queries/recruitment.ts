@@ -378,9 +378,9 @@ export async function saveJobOpening(input: JobOpeningInput, jobId?: number, ima
   return { ...job, image_path: objectPath };
 }
 
-export async function listHrApplications(input: Partial<ApplicationAiFilters> = {}) {
-  const filters = applicationAiFiltersSchema.parse(input);
-  const { from, to } = pageRange(filters.page, filters.pageSize);
+type ShortlistFilters = { status?: Application["status"]; aiStatus?: HrShortlistApplication["ai_score_status"]; minimumScore?: number };
+
+async function fetchShortlist(filters: ShortlistFilters, from: number, to: number) {
   const { data, error } = await createBrowserSupabaseClient()
     .rpc("list_hr_application_shortlist", { target_application_status: filters.status ?? null, target_ai_status: filters.aiStatus ?? null, minimum_score: filters.minimumScore ?? null })
     .range(from, to);
@@ -388,7 +388,7 @@ export async function listHrApplications(input: Partial<ApplicationAiFilters> = 
   const shortlist = (data ?? []) as { application_id: string; applicant_id: string; job_opening_id: number; application_status: Application["status"]; submitted_at: string; ai_score_id: string | null; ai_score_status: HrShortlistApplication["ai_score_status"] | null; ai_score: number | null; ai_explanation: string | null; ai_model: string | null }[];
   // The shortlist RPC returns ids only; HR can read applicants and openings, so name them in two batched reads.
   const { applicants, jobs } = await shortlistNames(shortlist.map((row) => row.applicant_id), shortlist.map((row) => row.job_opening_id));
-  const rows = shortlist.map((row) => {
+  return shortlist.map((row) => {
     const applicant = applicants.get(row.applicant_id);
     return {
       id: row.application_id, applicant_id: row.applicant_id, job_opening_id: row.job_opening_id, status: row.application_status, submitted_at: row.submitted_at,
@@ -398,7 +398,18 @@ export async function listHrApplications(input: Partial<ApplicationAiFilters> = 
       job_title: jobs.get(row.job_opening_id) ?? null,
     };
   }) as HrShortlistApplication[];
+}
+
+export async function listHrApplications(input: Partial<ApplicationAiFilters> = {}) {
+  const filters = applicationAiFiltersSchema.parse(input);
+  const { from, to } = pageRange(filters.page, filters.pageSize);
+  const rows = await fetchShortlist(filters, from, to);
   return { rows, count: rows.length, filters } satisfies PaginatedResult<HrShortlistApplication, ApplicationAiFilters>;
+}
+
+/** Every application for the HR list, which filters, sorts and pages on the client. Move to server paging if volumes grow past ~1000. */
+export async function listAllHrApplications(filters: Omit<ShortlistFilters, "status"> = {}) {
+  return fetchShortlist(filters, 0, 999);
 }
 
 async function shortlistNames(applicantIds: string[], jobIds: number[]) {
