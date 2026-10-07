@@ -1,0 +1,71 @@
+{
+  "body": {
+    "font-family": "Inter, \"Inter Fallback\", ui-sans-serif, system-ui, sans-serif",
+    "font-size": "17px",
+    "font-weight": "400",
+    "line-height": "27.2px",
+    "color": "lab(11.7499 -1.28601 -8.86856)",
+    "background-color": "lab(97.0962 -0.553429 -1.78933)",
+    "border-top-color": "lab(88.9715 -1.08987 -3.56913)",
+    "border-top-left-radius": "0px",
+    "min-height": "100%",
+    "padding-left": "0px",
+    "box-shadow": "none"
+  },
+  "h1": {
+    "font-family": "Inter, \"Inter Fallback\", ui-sans-serif, system-ui, sans-serif",
+    "font-size": "30px",
+    "font-weight": "700",
+    "line-height": "38.4px",
+    "color": "lab(11.7499 -1.28601 -8.86856)",
+    "background-color": "rgba(0, 0, 0, 0)",
+    "border-top-color": "lab(88.9715 -1.08987 -3.56913)",
+    "border-top-left-radius": "0px",
+    "min-height": "0px",
+    "padding-left": "0px",
+    "box-shadow": "none"
+  },
+  "main a": {
+    "font-family": "Inter, \"Inter Fallback\", ui-sans-serif, system-ui, sans-serif",
+    "font-size": "16px",
+    "font-weight": "600",
+    "line-height": "24px",
+    "color": "lab(43.3162 -35.0452 6.37937)",
+    "background-color": "rgba(0, 0, 0, 0)",
+    "border-top-color": "oklab(0.499997 -0.0984778 0.017374 / 0.3)",
+    "border-top-left-radius": "10px",
+    "min-height": "44px",
+    "padding-left": "16px",
+    "box-shadow": "none"
+  },
+  "button": {
+    "font-family": "Inter, \"Inter Fallback\", ui-sans-serif, system-ui, sans-serif",
+    "font-size": "16px",
+    "font-weight": "600",
+    "line-height": "24px",
+    "color": "lab(98.26 0 0)",
+    "background-color": "lab(43.3162 -35.0452 6.37937)",
+    "border-top-color": "lab(88.9715 -1.08987 -3.56913)",
+    "border-top-left-radius": "10px",
+    "min-height": "44px",
+    "padding-left": "16px",
+    "box-shadow": "none"
+  },
+  "input": null,
+  "select": null,
+  "[data-slot=badge]": null,
+  "[data-slot=sidebar-inner]": null,
+  "header": {
+    "font-family": "Inter, \"Inter Fallback\", ui-sans-serif, system-ui, sans-serif",
+    "font-size": "17px",
+    "font-weight": "400",
+    "line-height": "27.2px",
+    "color": "lab(11.7499 -1.28601 -8.86856)",
+    "background-color": "oklab(0.974998 -0.00171965 -0.00467539 / 0.95)",
+    "border-top-color": "lab(88.9715 -1.08987 -3.56913)",
+    "border-top-left-radius": "0px",
+    "min-height": "auto",
+    "padding-left": "0px",
+    "box-shadow": "none"
+  }
+}
