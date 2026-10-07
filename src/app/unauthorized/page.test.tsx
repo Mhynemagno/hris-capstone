@@ -15,7 +15,7 @@ describe("UnauthorizedPage", () => {
 
     render(await UnauthorizedPage());
 
-    expect(screen.getByRole("link", { name: /return to management workspace/i })).toHaveAttribute("href", "/management");
+    expect(screen.getByRole("link", { name: /return to dashboard/i })).toHaveAttribute("href", "/management");
   });
 
   it("returns a signed-out visitor to sign in", async () => {

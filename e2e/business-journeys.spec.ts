@@ -250,7 +250,7 @@ test.describe("read-only and public journeys", () => {
     const title = `E2E Announcement ${runId}`;
     await signIn(page, "demo.hr@example.test", "/hr");
     await page.goto("/hr/public-site");
-    await expect(page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Public Announcements" })).toHaveAttribute("aria-current", "page");
+    await expect(page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Announcements" })).toHaveAttribute("aria-current", "page");
 
     await page.getByRole("button", { name: "New announcement" }).click();
     const form = page.getByRole("form", { name: "New announcement" });
