@@ -68,7 +68,7 @@ test.describe("Performance efficiency: time behaviour", () => {
 test.describe("Interaction capability (usability): accessibility", () => {
   const pages: [keyof typeof accounts | "public", string[]][] = [
     ["public", ["/", "/login", "/jobs"]],
-    ["hr", ["/hr", "/hr/employees", "/hr/employees/new", "/hr/leave-requests", "/hr/attendance", "/hr/public-site", "/reports"]],
+    ["hr", ["/hr", "/hr/jobs", "/hr/jobs/new", "/hr/applications", "/hr/applications?view=applicants", "/hr/employees", "/hr/employees/new", "/hr/leave-requests", "/hr/attendance", "/hr/public-site", "/reports"]],
     ["employee", ["/employee", "/employee/leave/new", "/employee/attendance"]],
     ["management", ["/management"]],
   ];
@@ -82,6 +82,19 @@ test.describe("Interaction capability (usability): accessibility", () => {
         const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
         const blocking = results.violations.filter((violation) => violation.impact === "serious" || violation.impact === "critical");
         expect(blocking.map((violation) => `${violation.id}: ${violation.help} (${violation.nodes.length} element(s))`), `${route}`).toEqual([]);
+      }
+      if (role === "hr") {
+        // The applicant review page, reached from the list like a user would.
+        await page.goto("/hr/applications?quick=all");
+        const firstApplication = page.locator("table[data-slot=data-table] tbody a[href^='/hr/applications/']").first();
+        if (await firstApplication.count()) {
+          await firstApplication.click();
+          await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+          await expect(page.getByText(/^Loading/)).toHaveCount(0, { timeout: 15_000 });
+          const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
+          const blocking = results.violations.filter((violation) => violation.impact === "serious" || violation.impact === "critical");
+          expect(blocking.map((violation) => `${violation.id}: ${violation.help} (${violation.nodes.length} element(s))`), "applicant review").toEqual([]);
+        }
       }
     });
   }

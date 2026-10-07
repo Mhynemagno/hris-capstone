@@ -17,6 +17,7 @@ export function Toaster() {
   );
 }
 
+/** sonner only marks its container as live; each toast also carries role="status" so it reads as a status message. */
 export function notifySuccess(message: string) {
-  toast.success(message);
+  toast.success(<span role="status">{message}</span>);
 }
