@@ -1,8 +1,7 @@
 import userEvent from "@testing-library/user-event";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { HrJobForm } from "./hr-job-form";
 import { HrApplicationDetail } from "./hr-application-detail";
 import { HrApplicationList } from "./hr-application-list";
 
@@ -54,28 +53,6 @@ describe("HR recruitment workspace", () => {
     mocks.applicationStatus = "Shortlisted";
     mocks.saveJob.mockReset();
     mocks.transition.mockReset();
-  });
-
-  it("saves a draft job opening with its general requirements", async () => {
-    mocks.saveJob.mockResolvedValue({ id: 3 });
-    const user = userEvent.setup();
-    render(<HrJobForm />);
-
-    await user.click(screen.getByLabelText(/^title/i));
-    await user.paste("Senior Recruiter");
-    await user.click(screen.getByLabelText(/^location/i));
-    await user.paste("San Juan City Police Station");
-    await user.type(screen.getByLabelText(/^deadline of application/i), "2026-10-31");
-    await user.click(screen.getByLabelText(/^description/i));
-    await user.paste("Lead recruitment operations across the organization.");
-    await user.selectOptions(screen.getByLabelText(/Requirement 1: Education/), "Baccalaureate Degree");
-    await user.selectOptions(screen.getByLabelText(/Requirement 2: Eligibility/), "Civil Service Professional Examination");
-    await user.click(screen.getByRole("button", { name: "Save draft" }));
-
-    await waitFor(() => expect(mocks.saveJob).toHaveBeenCalledWith(expect.objectContaining({
-      input: expect.objectContaining({ status: "draft", location: "San Juan City Police Station", closesOn: "2026-10-31", criteria: expect.arrayContaining([expect.objectContaining({ kind: "education", requirement: "Baccalaureate Degree" }), expect.objectContaining({ kind: "eligibility", requirement: "Civil Service Professional Examination" })]) }),
-    })));
-    expect(await screen.findByRole("status")).toHaveTextContent("Draft saved.");
   });
 
   it("allows HR to move an application forward and open the hire decision", async () => {

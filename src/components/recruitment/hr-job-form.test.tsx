@@ -1,10 +1,11 @@
 import userEvent from "@testing-library/user-event";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ save: vi.fn(), replace: vi.fn() }));
+const mocks = vi.hoisted(() => ({ save: vi.fn(), replace: vi.fn(), notify: vi.fn() }));
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: mocks.replace }) }));
+vi.mock("@/components/ui/toaster", () => ({ notifySuccess: mocks.notify }));
 vi.mock("@/hooks/use-recruitment", () => ({ useSaveJobOpening: () => ({ isPending: false, mutateAsync: mocks.save }) }));
 
 import { HrJobForm } from "./hr-job-form";
@@ -44,6 +45,22 @@ describe("HrJobForm", () => {
 
     await waitFor(() => expect(mocks.save).toHaveBeenCalledWith(expect.objectContaining({ input: expect.objectContaining({ status: "draft" }) })));
     expect(mocks.replace).not.toHaveBeenCalled();
+    await waitFor(() => expect(mocks.notify).toHaveBeenCalledWith("Draft saved."));
+  });
+
+  it("groups the form into Details, Requirements and Image with actions in a side panel", () => {
+    render(<HrJobForm />);
+    for (const heading of ["Details", "Requirements", "Image"]) expect(screen.getByRole("heading", { name: heading })).toBeInTheDocument();
+    const panel = screen.getByRole("complementary", { name: "Posting status" });
+    expect(within(panel).getByText("Draft")).toBeInTheDocument();
+    expect(within(panel).getByRole("button", { name: "Save draft" })).toBeInTheDocument();
+    expect(within(panel).getByRole("button", { name: "Publish opening" })).toBeInTheDocument();
+  });
+
+  it("links a published posting to the public site", () => {
+    render(<HrJobForm job={{ id: 7, title: "Patrol", description: "x".repeat(30), location: "San Juan", closes_on: "2099-12-31", status: "published", department_id: null, rank_id: null, published_at: null, created_by_user_id: null, created_at: "", updated_at: "", job_qualification_criteria: [], applications: [{ count: 2 }] }} />);
+    expect(screen.getByRole("link", { name: "View on public site" })).toHaveAttribute("href", "/jobs/7");
+    expect(screen.getByText("2 applications")).toBeInTheDocument();
   });
 
   it("has no department or rank fields and requires title, location, and deadline of application", async () => {
@@ -69,7 +86,7 @@ describe("HrJobForm", () => {
   it("saves the General Requirements as education, eligibility and the checked other requirements", async () => {
     const user = userEvent.setup();
     render(<HrJobForm />);
-    expect(screen.getByRole("heading", { name: "General Requirements" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Requirements" })).toBeInTheDocument();
     expect(screen.queryByText("Qualification criteria")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Add criterion" })).not.toBeInTheDocument();
     const education = screen.getByLabelText(/Requirement 1: Education/);
@@ -150,7 +167,7 @@ describe("HrJobForm", () => {
     await fillValidJobOpening(user);
     const file = new File(["image"], "poster.png", { type: "image/png" });
 
-    await user.upload(screen.getByLabelText(/^Image/), file);
+    await user.upload(screen.getByLabelText(/^Posting image/), file);
 
     expect(screen.getByRole("img", { name: "Job posting image preview" })).toHaveAttribute("src", "blob:preview");
     await user.click(screen.getByRole("button", { name: "Save draft" }));
@@ -164,7 +181,7 @@ describe("HrJobForm", () => {
     render(<HrJobForm job={job} />);
 
     expect(screen.getByRole("img", { name: "Job posting image preview" })).toHaveAttribute("src", expect.stringContaining("/job-posting-images/job-openings/8/"));
-    await user.upload(screen.getByLabelText(/^Image/), new File(["gif"], "poster.gif", { type: "image/gif" }));
+    await user.upload(screen.getByLabelText(/^Posting image/), new File(["gif"], "poster.gif", { type: "image/gif" }));
     expect(screen.getByText("Use a PNG, JPEG, or WebP image.")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Remove image" }));
