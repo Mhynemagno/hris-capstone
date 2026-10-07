@@ -221,6 +221,7 @@ export function useTransitionApplicationStatus() {
   return useMutation({
     mutationFn: (input: ApplicationStatusTransitionInput) => transitionApplicationStatus(input),
     onSuccess: (_, input) => {
+      void queryClient.invalidateQueries({ queryKey: ["workspace", "count"] });
       void queryClient.invalidateQueries({ queryKey: ["recruitment", "applications"] });
       void queryClient.invalidateQueries({ queryKey: ["reporting"] });
       void queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.application(input.applicationId) });
