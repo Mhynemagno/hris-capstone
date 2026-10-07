@@ -15,6 +15,8 @@ import {
   hireApplication,
   listHrApplications,
   listHrJobs,
+  listAllHrJobs,
+  getHrJob,
   listRecentApplications,
   listApplicantProfileDocuments,
   listApplicantProfileDocumentsFor,
@@ -262,4 +264,12 @@ export function useSubmitBmiProof() {
 
 export function useRecentApplications(enabled = true) {
   return useQuery({ queryKey: ["recruitment", "applications", "recent"], queryFn: () => listRecentApplications(5), enabled, staleTime: 60_000 });
+}
+
+export function useAllHrJobs() {
+  return useQuery({ queryKey: ["recruitment", "hr-jobs", "all"], queryFn: listAllHrJobs });
+}
+
+export function useHrJob(jobId: number) {
+  return useQuery({ queryKey: ["recruitment", "hr-jobs", "detail", jobId], queryFn: () => getHrJob(jobId), enabled: Number.isInteger(jobId) && jobId > 0 });
 }

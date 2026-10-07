@@ -318,6 +318,23 @@ export async function listHrJobs(input: Partial<JobFilters> = {}) {
   return { rows: (data ?? []) as Array<JobOpening & { job_qualification_criteria: JobQualificationCriterion[] }>, count: count ?? 0, filters } satisfies PaginatedResult<JobOpening & { job_qualification_criteria: JobQualificationCriterion[] }, JobFilters>;
 }
 
+export type HrJob = JobOpening & { job_qualification_criteria: JobQualificationCriterion[]; applications?: Array<{ count: number }> };
+
+const HR_JOB_SELECT = "*, job_qualification_criteria(*), applications(count)";
+
+/** Every posting for the HR list, which filters, sorts and pages on the client. Move to server paging if volumes grow past ~1000. */
+export async function listAllHrJobs(): Promise<HrJob[]> {
+  const { data, error } = await createBrowserSupabaseClient().from("job_openings").select(HR_JOB_SELECT).order("updated_at", { ascending: false }).range(0, 999);
+  throwIfError(error);
+  return (data ?? []) as HrJob[];
+}
+
+export async function getHrJob(id: number): Promise<HrJob | null> {
+  const { data, error } = await createBrowserSupabaseClient().from("job_openings").select(HR_JOB_SELECT).eq("id", id).maybeSingle();
+  throwIfError(error);
+  return (data as HrJob | null) ?? null;
+}
+
 export async function saveJobOpening(input: JobOpeningInput, jobId?: number, image?: JobPostingImageChange) {
   const values = jobOpeningSchema.parse(input);
   // No auth.getUser() round trip here: save_job_opening, set_job_opening_image and the storage policies
