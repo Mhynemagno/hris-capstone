@@ -2,11 +2,11 @@ import userEvent from "@testing-library/user-event";
 import { render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ remark: vi.fn(), retry: vi.fn(), notify: vi.fn(), scores: [] as Array<Record<string, unknown>>, profileUrl: vi.fn(), appUrl: vi.fn() }));
+const mocks = vi.hoisted(() => ({ remark: vi.fn(), retry: vi.fn(), notify: vi.fn(), scoreError: null as Error | null, scores: [] as Array<Record<string, unknown>>, profileUrl: vi.fn(), appUrl: vi.fn() }));
 vi.mock("@/components/ui/toaster", () => ({ notifySuccess: mocks.notify }));
 vi.mock("@/queries/recruitment", () => ({ getApplicantProfileDocumentUrl: mocks.profileUrl, getApplicantDocumentUrl: mocks.appUrl }));
 vi.mock("@/hooks/use-recruitment", () => ({
-  useApplicationAiScores: () => ({ data: mocks.scores, error: null }),
+  useApplicationAiScores: () => ({ data: mocks.scores, error: mocks.scoreError }),
   useRetryApplicationAnalysis: () => ({ isPending: false, mutateAsync: mocks.retry }),
   useAddApplicationRemark: () => ({ isPending: false, mutateAsync: mocks.remark }),
 }));
@@ -24,7 +24,7 @@ const history = [
 ] as never[];
 
 describe("applicant detail tabs", () => {
-  beforeEach(() => { mocks.scores = []; mocks.remark.mockReset(); mocks.retry.mockReset(); mocks.notify.mockReset(); });
+  beforeEach(() => { mocks.scoreError = null; mocks.scores = []; mocks.remark.mockReset(); mocks.retry.mockReset(); mocks.notify.mockReset(); });
 
   it("summarises the AI match, document checklist and latest remark on Overview", async () => {
     mocks.scores = [{ id: "s", status: "completed", score: 82, explanation: "Strong fit", failure_code: null }];
@@ -44,6 +44,13 @@ describe("applicant detail tabs", () => {
     expect(screen.getByRole("region", { name: "AI match" })).toHaveTextContent("Analysis timed out");
     await userEvent.click(screen.getByRole("button", { name: "Retry analysis" }));
     expect(mocks.retry).toHaveBeenCalledWith(id);
+  });
+
+  it("shows AI score loading errors instead of misreporting them as not analyzed", () => {
+    mocks.scoreError = new Error("Scores unavailable");
+    render(<OverviewTab applicationId={id} coverNote={null} history={[]} onShowDocuments={() => undefined} profileDocuments={[]} />);
+    expect(screen.getByRole("region", { name: "AI match" })).toHaveTextContent("Scores unavailable");
+    expect(screen.queryByText(/Not analyzed/)).not.toBeInTheDocument();
   });
 
   it("groups profile and application documents and marks missing ones", () => {
