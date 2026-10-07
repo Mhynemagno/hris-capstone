@@ -18,12 +18,16 @@ const PROBES = [
   "header",
 ] as const;
 
+// Job cards are intentionally absent when no openings are published. Keep the
+// /jobs baseline focused on the page's stable structure, not mutable content.
+const JOBS_PROBES = PROBES.filter((selector) => selector !== "main a");
+
 const PROPERTIES = [
   "font-family", "font-size", "font-weight", "line-height", "color", "background-color",
   "border-top-color", "border-top-left-radius", "min-height", "padding-left", "box-shadow",
 ] as const;
 
-async function styleSignature(page: Page) {
+async function styleSignature(page: Page, probes: readonly string[] = PROBES) {
   return page.evaluate(({ probes, properties }) => {
     const out: Record<string, Record<string, string> | null> = {};
     for (const selector of probes) {
@@ -33,7 +37,7 @@ async function styleSignature(page: Page) {
       out[selector] = Object.fromEntries(properties.map((name) => [name, style.getPropertyValue(name)]));
     }
     return out;
-  }, { probes: [...PROBES], properties: [...PROPERTIES] });
+  }, { probes: [...probes], properties: [...PROPERTIES] });
 }
 
 async function signInApplicant(page: Page) {
@@ -60,7 +64,8 @@ test.describe("applicant and public pages keep their current look", () => {
     test(`public page ${path}`, async ({ page }) => {
       await page.goto(path);
       await page.waitForLoadState("networkidle");
-      expect(JSON.stringify(await styleSignature(page), null, 2)).toMatchSnapshot(`${path === "/" ? "_home" : path.replaceAll("/", "_")}.styles.json`);
+      const probes = path === "/jobs" ? JOBS_PROBES : PROBES;
+      expect(JSON.stringify(await styleSignature(page, probes), null, 2)).toMatchSnapshot(`${path === "/" ? "_home" : path.replaceAll("/", "_")}.styles.json`);
     });
   }
 
