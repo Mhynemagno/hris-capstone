@@ -2,17 +2,17 @@
 
 ## System Administrator
 
-Use **Account management** to invite, edit, deactivate, or delete internal accounts and assign their role. Users and roles are intentionally one workspace: an account is the person who signs in, while its role controls access.
+Use **Accounts** to invite, edit, deactivate, or delete internal accounts and assign their role. Users and roles are intentionally one workspace: an account is the person who signs in, while its role controls access.
 
 - Select **View profile** for a linked employee account to review their read-only personnel profile.
-- Review employee contact-change requests and approve or reject them.
+- Review employee contact-change requests under **Approvals** and approve or reject them.
 - Maintain departments, positions, organization settings, audit logs, and attendance-integration settings.
 
 An Administrator can view but cannot edit an employee’s official profile, training, or photo through the profile page.
 
 ## HR Personnel
 
-Use **Personnel records** for official employee information: badge number, rank, name, work contact details, unit/station, status, and employment dates.
+Use **Employees** for official employee information: badge number, rank, name, work contact details, unit/station, status, and employment dates.
 
 - Open an employee record to maintain service history, qualifications, certifications, and training.
 - Under **Training**, add a course, provider, completion date, optional expiry date, hours, and notes.
@@ -20,6 +20,11 @@ Use **Personnel records** for official employee information: badge number, rank,
 - Training forms part of the evidence used in promotion reviews; it does not automatically promote an employee.
 
 HR also manages recruitment, leave decisions, deployments, promotion reviews, attendance, and HR reports.
+
+- The **Dashboard** opens with **Needs attention**: applications awaiting review, leave for approval, unmatched attendance IDs, attendance exceptions, and missing promotion requirements. Each row opens the matching list.
+- Use **Job postings** to create, publish, withdraw, or delete draft postings. Withdrawing and deleting are confirmed in a dialog.
+- Use **Applications** to review applicants. Filter by stage, job posting, or AI match, and switch to **Registered applicants** to see accounts that have not applied yet.
+- Open an application to review it. Select **Move to next stage**, choose the stage, then **Move to …**; select **Not selected** to end it; at For Training select **Hire applicant** and enter the badge number.
 
 ## Employee
 
