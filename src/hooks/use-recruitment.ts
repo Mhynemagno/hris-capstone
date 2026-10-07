@@ -15,6 +15,7 @@ import {
   hireApplication,
   listHrApplications,
   listHrJobs,
+  listRecentApplications,
   listApplicantProfileDocuments,
   listApplicantProfileDocumentsFor,
   listMyApplications,
@@ -257,4 +258,8 @@ export function useSubmitBmiProof() {
     mutationFn: ({ applicationId, file }: { applicationId: string; file: File }) => submitBmiProof(applicationId, file),
     onSuccess: (_, input) => void queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.application(input.applicationId) }),
   });
+}
+
+export function useRecentApplications(enabled = true) {
+  return useQuery({ queryKey: ["recruitment", "applications", "recent"], queryFn: () => listRecentApplications(5), enabled, staleTime: 60_000 });
 }

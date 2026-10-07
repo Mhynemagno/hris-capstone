@@ -399,6 +399,25 @@ async function shortlistNames(applicantIds: string[], jobIds: number[]) {
   };
 }
 
+export type RecentApplication = { id: string; status: Application["status"]; submitted_at: string; applicant_name: string | null; job_title: string | null };
+
+/** The newest submitted applications for the HR dashboard. */
+export async function listRecentApplications(limit = 5): Promise<RecentApplication[]> {
+  const { data, error } = await createBrowserSupabaseClient()
+    .from("applications")
+    .select("id, status, submitted_at, applicants(first_name, last_name), job_openings(title)")
+    .order("submitted_at", { ascending: false })
+    .limit(limit);
+  throwIfError(error);
+  return ((data ?? []) as unknown as Array<{ id: string; status: Application["status"]; submitted_at: string; applicants: { first_name: string | null; last_name: string | null } | null; job_openings: { title: string } | null }>).map((row) => ({
+    id: row.id,
+    status: row.status,
+    submitted_at: row.submitted_at,
+    applicant_name: row.applicants ? [row.applicants.first_name, row.applicants.last_name].filter(Boolean).join(" ") || null : null,
+    job_title: row.job_openings?.title ?? null,
+  }));
+}
+
 export async function transitionApplicationStatus(input: ApplicationStatusTransitionInput) {
   const values = applicationStatusTransitionSchema.parse(input);
   const { error } = await createBrowserSupabaseClient().rpc("transition_application_status", {

@@ -8,14 +8,14 @@ import type { ReportFilters } from "@/schemas/reporting";
 
 type ReportingRole = "hr_personnel" | "management";
 
-export function useHrDashboard(input: Partial<Pick<ReportFilters, "startsOn" | "endsOn">> = {}) {
+export function useHrDashboard(input: Partial<Pick<ReportFilters, "startsOn" | "endsOn">> = {}, enabled = true) {
   const filters = reportingFilters({ reportKey: "deployments", ...input });
-  return useQuery({ queryKey: queryKeys.reporting.dashboard("hr_personnel", filters), queryFn: () => getHrDashboard(filters), staleTime: 60_000 });
+  return useQuery({ queryKey: queryKeys.reporting.dashboard("hr_personnel", filters), queryFn: () => getHrDashboard(filters), staleTime: 60_000, enabled });
 }
 
-export function useManagementDashboard(input: Partial<Pick<ReportFilters, "startsOn" | "endsOn">> = {}) {
+export function useManagementDashboard(input: Partial<Pick<ReportFilters, "startsOn" | "endsOn">> = {}, enabled = true) {
   const filters = reportingFilters({ reportKey: "deployments", ...input });
-  return useQuery({ queryKey: queryKeys.reporting.dashboard("management", filters), queryFn: () => getManagementDashboard(filters), staleTime: 60_000 });
+  return useQuery({ queryKey: queryKeys.reporting.dashboard("management", filters), queryFn: () => getManagementDashboard(filters), staleTime: 60_000, enabled });
 }
 
 export function useReport(input: Partial<ReportFilters> & Pick<ReportFilters, "reportKey">, role: ReportingRole) {
