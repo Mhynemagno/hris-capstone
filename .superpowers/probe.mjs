@@ -1,0 +1,11 @@
+import { chromium } from "@playwright/test";
+const browser = await chromium.launch({ channel: "msedge" });
+const page = await browser.newPage({ viewport: { width: 1100, height: 900 } });
+await page.goto("http://localhost:3000/login");
+await page.getByLabel("Email").fill("demo.hr@example.test");
+await page.getByRole("textbox", { name: "Password" }).fill("DemoPass!2026");
+await page.getByRole("button", { name: "Login" }).click();
+await page.waitForURL((u) => !u.pathname.startsWith("/login"));
+await page.waitForTimeout(1500);
+console.log(await page.evaluate(() => ({ cookie: document.cookie, state: document.querySelector("[data-slot=sidebar]")?.getAttribute("data-state"), mm: matchMedia("(min-width: 768px) and (max-width: 1279px)").matches, html: document.documentElement.className })));
+await browser.close();
