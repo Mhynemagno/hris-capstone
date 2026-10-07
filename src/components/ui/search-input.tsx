@@ -8,8 +8,13 @@ import { Input } from "@/components/ui/input";
 export function SearchInput({ delay = 300, label, onChange, placeholder, value }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string; delay?: number }) {
   const id = useId();
   const [draft, setDraft] = useState(value);
+  const [synced, setSynced] = useState(value);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  useEffect(() => { setDraft(value); }, [value]);
+  // Follow the URL when it changes from outside (e.g. "Clear all"), without an effect.
+  if (value !== synced) {
+    setSynced(value);
+    setDraft(value);
+  }
   useEffect(() => () => clearTimeout(timer.current), []);
   function update(next: string) {
     setDraft(next);

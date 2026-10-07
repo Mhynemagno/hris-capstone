@@ -1,5 +1,6 @@
 import userEvent from "@testing-library/user-event";
 import { act, render, screen } from "@testing-library/react";
+import Link from "next/link";
 import { describe, expect, it, vi } from "vitest";
 
 import { EmptyState } from "./empty-state";
@@ -60,7 +61,7 @@ describe("workspace kit", () => {
   });
 
   it("renders an empty state with its action", () => {
-    render(<EmptyState action={<a href="/hr/jobs/new">New job posting</a>} description="Create one to start." title="No job postings yet" />);
+    render(<EmptyState action={<Link href="/hr/jobs/new">New job posting</Link>} description="Create one to start." title="No job postings yet" />);
     expect(screen.getByRole("status")).toHaveTextContent("No job postings yet");
     expect(screen.getByRole("link", { name: "New job posting" })).toBeInTheDocument();
   });

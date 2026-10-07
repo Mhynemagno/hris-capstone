@@ -1,25 +1,6 @@
 "use client";
 
-import {
-  BriefcaseBusiness,
-  Building2,
-  CalendarDays,
-  ChartColumn,
-  Clock,
-  ContactRound,
-  FileText,
-  Fingerprint,
-  LayoutDashboard,
-  MapPin,
-  PanelLeft,
-  ScrollText,
-  Settings,
-  ShieldCheck,
-  TrendingUp,
-  UserPen,
-  Users,
-  type LucideIcon,
-} from "lucide-react";
+import { PanelLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -49,7 +30,8 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import type { RoleConfig, RoleNavigationIcon, RoleNavigationItem } from "@/lib/app/role-config";
+import { NAVIGATION_ICONS } from "@/components/workspace-shell/nav-icons";
+import type { RoleConfig, RoleNavigationItem } from "@/lib/app/role-config";
 
 type AppShellProps = {
   children: ReactNode;
@@ -57,24 +39,6 @@ type AppShellProps = {
   email: string | null;
 };
 
-const NAVIGATION_ICONS: Record<RoleNavigationIcon, LucideIcon> = {
-  BriefcaseBusiness,
-  Building2,
-  CalendarDays,
-  ChartColumn,
-  Clock,
-  ContactRound,
-  FileText,
-  Fingerprint,
-  LayoutDashboard,
-  MapPin,
-  ScrollText,
-  Settings,
-  ShieldCheck,
-  TrendingUp,
-  UserPen,
-  Users,
-};
 
 /** Keeps configured order while grouping adjacent items under one heading. */
 function groupNavigation(items: readonly RoleNavigationItem[]) {

@@ -10,7 +10,7 @@ describe("RoleLanding", () => {
     render(<RoleLanding config={ROLE_CONFIG.management} />);
 
     expect(
-      screen.getByRole("heading", { name: /management workspace/i }),
+      screen.getByRole("heading", { name: /^dashboard$/i }),
     ).toBeInTheDocument();
     expect(screen.getByText(/what you can do here/i)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Reports" })).toHaveAttribute("href", "/reports");

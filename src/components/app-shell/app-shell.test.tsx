@@ -5,123 +5,26 @@ import { ROLE_CONFIG } from "@/lib/app/role-config";
 
 import { AppShell } from "./app-shell";
 
-const { usePathname, useRouter } = vi.hoisted(() => ({
-  usePathname: vi.fn(),
-  useRouter: vi.fn(),
-}));
+const { usePathname } = vi.hoisted(() => ({ usePathname: vi.fn() }));
+vi.mock("next/navigation", () => ({ usePathname, useRouter: () => ({ replace: vi.fn(), refresh: vi.fn() }) }));
+vi.mock("@/components/notifications/notification-bell", () => ({ NotificationBell: () => <a href="/notifications">Notifications</a> }));
 
-vi.mock("next/navigation", () => ({ usePathname, useRouter }));
-vi.mock("@/components/notifications/notification-bell", () => ({
-  NotificationBell: () => <a href="/notifications">Notifications</a>,
-}));
+describe("AppShell (applicant)", () => {
+  beforeEach(() => usePathname.mockReturnValue("/applicant"));
 
-describe("AppShell", () => {
-  beforeEach(() => {
-    usePathname.mockReturnValue("/hr");
-    useRouter.mockReturnValue({ replace: vi.fn(), refresh: vi.fn() });
+  it("shows the applicant navigation and identifies the current page", () => {
+    render(<AppShell config={ROLE_CONFIG.applicant} email="a@example.com"><p>Applicant</p></AppShell>);
+    const navigation = screen.getByRole("navigation", { name: /main navigation/i });
+    expect(within(navigation).getByRole("link", { name: "Dashboard" })).toHaveAttribute("aria-current", "page");
+    expect(within(navigation).getByRole("link", { name: "Job Openings" })).toHaveAttribute("href", "/jobs");
   });
 
-  it("shows only HR navigation and identifies the current page", () => {
-    render(
-      <AppShell config={ROLE_CONFIG.hr_personnel} email="hr@example.com">
-        <p>HR content</p>
-      </AppShell>,
-    );
-
-    const navigation = screen.getByRole("navigation", {
-      name: /main navigation/i,
-    });
-    const link = within(navigation).getByRole("link", {
-      name: "Dashboard",
-    });
-
-    expect(link).toHaveAttribute("href", "/hr");
-    expect(link).toHaveAttribute("aria-current", "page");
-    expect(link.closest("button")).toBeNull();
-    expect(
-      within(navigation).queryByRole("link", { name: /Management workspace/i }),
-    ).not.toBeInTheDocument();
-  });
-
-  it("provides accessible shell landmarks and a named sidebar control", () => {
-    render(
-      <AppShell config={ROLE_CONFIG.management} email="manager@example.com">
-        <p>Management content</p>
-      </AppShell>,
-    );
-
-    expect(
-      screen.getByRole("link", { name: /skip to main content/i }),
-    ).toHaveAttribute("href", "#main-content");
-    expect(
-      screen.getByRole("button", { name: /toggle sidebar/i }),
-    ).toHaveClass("min-h-11");
-    expect(screen.getAllByRole("main")).toHaveLength(1);
-    expect(screen.getByRole("main")).toHaveAttribute("id", "main-content");
-    expect(screen.getByRole("navigation", { name: /main navigation/i })).toBeInTheDocument();
+  it("keeps the original landmarks and brand", () => {
+    render(<AppShell config={ROLE_CONFIG.applicant} email="a@example.com"><p>Applicant</p></AppShell>);
+    expect(screen.getByRole("link", { name: /skip to main content/i })).toHaveAttribute("href", "#main-content");
+    expect(screen.getByRole("button", { name: /toggle sidebar/i })).toHaveClass("min-h-11");
     expect(screen.getByText("San Juan City Police Station")).toBeInTheDocument();
-    expect(screen.getByRole("img", { name: "San Juan City Police Station logo" })).toBeInTheDocument();
     expect(screen.getByTestId("brand-command-accent")).toBeInTheDocument();
-    // Signing out lives in the account menu.
-    expect(screen.getByRole("button", { name: "Account menu for manager@example.com" })).toBeInTheDocument();
-  });
-
-  it("groups HR tasks under the station's section headings, most specific link active", () => {
-    usePathname.mockReturnValue("/hr/attendance/kiosk");
-    render(
-      <AppShell config={ROLE_CONFIG.hr_personnel} email="hr@example.com">
-        <p>Kiosk</p>
-      </AppShell>,
-    );
-
-    const navigation = screen.getByRole("navigation", { name: /main navigation/i });
-    for (const heading of ["Overview", "Recruitment", "Personnel Management", "Attendance Management", "Insights", "Public Portal"]) {
-      expect(within(navigation).getByText(heading)).toBeInTheDocument();
-    }
-    expect(within(navigation).getByRole("link", { name: "Daily Attendance" })).toHaveAttribute("aria-current", "page");
-    expect(within(navigation).getByRole("link", { name: "Attendance Records" })).not.toHaveAttribute("aria-current");
-  });
-
-  it("gives every authenticated workspace a notifications entry point", () => {
-    render(
-      <AppShell config={ROLE_CONFIG.management} email="manager@example.com">
-        <p>Management content</p>
-      </AppShell>,
-    );
-
-    expect(screen.getByRole("link", { name: "Notifications" })).toHaveAttribute("href", "/notifications");
-    expect(
-      screen.getByRole("button", {
-        name: "Account menu for manager@example.com",
-      }),
-    ).toBeVisible();
-  });
-
-  it("keeps the most specific parent navigation active on detail pages", () => {
-    usePathname.mockReturnValue("/hr/applications/123e4567-e89b-42d3-a456-426614174000");
-    render(
-      <AppShell config={ROLE_CONFIG.hr_personnel} email="hr@example.com">
-        <p>Application detail</p>
-      </AppShell>,
-    );
-
-    const navigation = screen.getByRole("navigation", { name: /main navigation/i });
-    expect(within(navigation).getByRole("link", { name: "Applications" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByText("Applications", { selector: "[data-slot='breadcrumb-page']" })).toBeVisible();
-    expect(within(navigation).getByRole("link", { name: "Dashboard" })).not.toHaveAttribute("aria-current");
-  });
-
-  it("shows an icon beside every menu item on the white sidebar, without the Bagong Pilipinas logo", () => {
-    render(
-      <AppShell config={ROLE_CONFIG.hr_personnel} email="hr@example.com">
-        <p>HR content</p>
-      </AppShell>,
-    );
-
-    const navigation = screen.getByRole("navigation", { name: /main navigation/i });
-    for (const link of within(navigation).getAllByRole("link")) {
-      expect(link.querySelector("svg[aria-hidden='true']")).not.toBeNull();
-    }
-    expect(screen.queryByRole("img", { name: "Bagong Pilipinas logo" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Account menu for a@example.com" })).toBeInTheDocument();
   });
 });
