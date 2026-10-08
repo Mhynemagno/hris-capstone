@@ -1,6 +1,7 @@
 import { CircleCheck, CircleX, Clock } from "lucide-react";
 
 import type { ApplicantDocument, ApplicationStatusHistory } from "@/lib/types/database";
+import { PIPELINE_STAGES } from "@/lib/recruitment/application-stages";
 import { cn } from "@/lib/utils";
 import type { ApplicationStatus } from "@/schemas/recruitment";
 
@@ -16,38 +17,27 @@ export type TrackerStepState = "done" | "waiting" | "rejected";
 export type TrackerStep = { label: string; state: TrackerStepState; detail?: string };
 
 const reviewDetails: Partial<Record<ApplicationStatus, string>> = {
-  "Under Review": "HR is reviewing your application.",
-  Shortlisted: "You have been shortlisted.",
-  "Needs Revision": "HR asked you to revise your documents. Open the application to resubmit.",
+  "Application Submission": "Your application is now under review.",
+  "Physical Agility Test": "You are now scheduled for the physical agility test.",
+  "Physical & Medical Examination": "You are now scheduled for the physical and medical examination.",
+  "Neuro-Psychiatric Examination": "You are now scheduled for the neuro-psychiatric examination.",
+  "Drug Test": "You are now scheduled for the drug test.",
+  "Character & Background Investigation": "Your character and background investigation is in progress.",
+  "Panel Interview": "You are now scheduled for the panel interview.",
+  "Final Evaluation": "Your application is undergoing final evaluation.",
 };
 
-/**
- * The whole recruitment cycle as the applicant sees it (client consultation, 2026-10-06):
- * submitted, reviewed, interviewed in San Juan, endorsed to Crame for the BMI, the neuro exam,
- * training, then hired. Shortlisted and Needs Revision are part of the review stage.
- */
-const STAGES: Array<{ label: string; statuses: readonly ApplicationStatus[]; waiting: string; current?: string }> = [
-  { label: "Application Submitted", statuses: ["Submitted"], waiting: "", current: "Your application was received." },
-  { label: "Under Review", statuses: ["Under Review", "Shortlisted", "Needs Revision"], waiting: "Waiting for HR to start the review." },
-  { label: "For Interview", statuses: ["Interview"], waiting: "You will be told when you are for interview.", current: "Your requirements are complete. You are now for interview." },
-  { label: "Endorsed to Crame", statuses: ["Endorsed to Crame"], waiting: "After the interview, applicants who pass are endorsed to Crame for the BMI.", current: "Open the application to upload your proof of passing the BMI." },
-  { label: "Neuro Exam", statuses: ["Neuro Exam"], waiting: "After the BMI comes the neuro-psychiatric exam.", current: "You are now for the neuro-psychiatric exam." },
-  { label: "For Training", statuses: ["For Training"], waiting: "Applicants who pass the neuro exam are endorsed for training.", current: "You are endorsed for training." },
-];
-
 export function applicationStatusSteps(status: ApplicationStatus): TrackerStep[] {
-  if (status === "Not Selected") {
-    return [
-      { label: "Application Submitted", state: "done" },
-      { label: "Rejected — Not Selected", state: "rejected", detail: "Thank you for applying. You were not selected for this opening." },
-    ];
-  }
-  const reached = status === "Hired" ? STAGES.length : STAGES.findIndex((stage) => stage.statuses.includes(status));
-  const steps: TrackerStep[] = STAGES.map((stage, index) => {
-    if (index < reached) return { label: stage.label, state: "done" };
-    if (index === reached) return { label: stage.label, state: index === 0 ? "done" : "waiting", detail: reviewDetails[status] ?? stage.current };
-    return { label: stage.label, state: "waiting", detail: index === reached + 1 ? stage.waiting : undefined };
+  const reached = ["Shortlisted", "Not Selected", "Hired"].includes(status)
+    ? PIPELINE_STAGES.length
+    : PIPELINE_STAGES.indexOf(status);
+  const steps: TrackerStep[] = PIPELINE_STAGES.map((label, index) => {
+    if (index < reached || (index === 0 && reached === 0)) return { label, state: "done" };
+    if (index === reached) return { label, state: "waiting", detail: reviewDetails[status] };
+    return { label, state: "waiting" };
   });
+  if (status === "Shortlisted") steps.push({ label: "SHORTLISTED", state: "done", detail: "You have completed the recruitment process and are shortlisted." });
+  if (status === "Not Selected") steps.push({ label: "NOT SELECTED", state: "rejected", detail: "Thank you for applying. You were not selected for this opening." });
   if (status === "Hired") steps.push({ label: "Approved — Hired", state: "done", detail: "Congratulations! HR will contact you about the next steps." });
   return steps;
 }
