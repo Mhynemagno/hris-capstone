@@ -27,21 +27,22 @@ export function useBreadcrumbTrail(trail: Crumb[]) {
   }, [key, setTrail]);
 }
 
-export function WorkspaceBreadcrumbs({ section }: { section: { label: string; href: string } }) {
+export function WorkspaceBreadcrumbs({ section, variant = "dark" }: { section: { label: string; href: string }; variant?: "dark" | "light" }) {
   const trail = useContext(TrailContext)?.trail ?? [];
   const crumbs: Crumb[] = [{ label: section.label, href: trail.length ? section.href : undefined }, ...trail];
+  const isLight = variant === "light";
   return (
-    <Breadcrumb aria-label="Breadcrumb" className="min-w-0">
-      <BreadcrumbList className="flex-nowrap text-white/70">
+    <Breadcrumb aria-label="Breadcrumb" className="min-w-0" data-variant={variant}>
+      <BreadcrumbList className={isLight ? "flex-nowrap text-muted-foreground" : "flex-nowrap text-white/75"}>
         {crumbs.map((crumb, index) => {
           const last = index === crumbs.length - 1;
           return (
             <Fragment key={`${crumb.label}-${index}`}>
-              {index > 0 ? <BreadcrumbSeparator className="text-white/40" /> : null}
+              {index > 0 ? <BreadcrumbSeparator className={isLight ? "text-muted-foreground/60" : "text-white/45"} /> : null}
               <BreadcrumbItem className="min-w-0">
                 {last || !crumb.href
-                  ? <BreadcrumbPage className="truncate font-semibold text-white">{crumb.label}</BreadcrumbPage>
-                  : <Link className="truncate rounded hover:text-white" href={crumb.href}>{crumb.label}</Link>}
+                  ? <BreadcrumbPage className={isLight ? "truncate font-semibold text-foreground" : "truncate font-semibold text-white"}>{crumb.label}</BreadcrumbPage>
+                  : <Link className={isLight ? "truncate rounded transition-colors hover:text-foreground" : "truncate rounded transition-colors hover:text-white"} href={crumb.href}>{crumb.label}</Link>}
               </BreadcrumbItem>
             </Fragment>
           );

@@ -147,7 +147,7 @@ export type Employee = {
   philhealth_number: string | null;
   department_id: number | null;
   rank_id: number | null;
-  employment_status: "active" | "on_leave";
+  employment_status: "active" | "retired";
   employment_started_on: string;
   employment_ended_on: string | null;
   created_at: string;

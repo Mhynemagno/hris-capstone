@@ -48,6 +48,16 @@ describe("WorkspaceShell", () => {
     expect(screen.getByTestId("brand-command-accent")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Notifications" })).toHaveAttribute("href", "/notifications");
     expect(screen.getByRole("button", { name: "Account menu for manager@example.com" })).toBeInTheDocument();
+    expect(screen.getByText("San Juan CPS")).toBeInTheDocument();
+    expect(document.querySelector(".station-command-shell")).not.toBeInTheDocument();
+  });
+
+  it("gives HR a station-branded command header", () => {
+    render(<WorkspaceShell config={ROLE_CONFIG.hr_personnel} email="hr@example.com"><p>x</p></WorkspaceShell>);
+    expect(document.querySelector(".station-command-shell")).toBeInTheDocument();
+    expect(screen.getByText("Station HR Dashboard")).toBeInTheDocument();
+    expect(screen.getByText("Human Resource & Personnel Management System")).toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: "Breadcrumb" })).toHaveAttribute("data-variant", "light");
   });
 
   it("extends the breadcrumb with the page's trail and links the section", () => {

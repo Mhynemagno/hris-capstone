@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(20);
+select extensions.plan(22);
 
 select has_table('public', 'ranks', 'ranks table exists');
 select hasnt_table('public', 'positions', 'positions table is gone');
@@ -21,8 +21,16 @@ select hasnt_function('public', 'delete_position', array['bigint'], 'position de
 insert into public.employees (employee_number, first_name, last_name, personal_email, employment_started_on)
 values ('RANK-TEST-1', 'Rank', 'Tester', 'rank.tester@example.test', current_date);
 select throws_ok(
+  $$ update public.employees set employment_status = 'on_leave' where employee_number = 'RANK-TEST-1' $$,
+  '23514', null, 'on_leave is no longer an employee employment status'
+);
+select lives_ok(
+  $$ update public.employees set employment_status = 'retired' where employee_number = 'RANK-TEST-1' $$,
+  'retired is a supported employee employment status'
+);
+select throws_ok(
   $$ update public.employees set employment_status = 'inactive' where employee_number = 'RANK-TEST-1' $$,
-  '23514', null, 'only active / on_leave statuses are allowed'
+  '23514', null, 'only active / retired statuses are allowed'
 );
 
 select is(

@@ -346,11 +346,11 @@ describe("EmployeeForm", () => {
     expect(within(rank).getByRole("option", { name: "PCPL — Police Corporal" })).toBeInTheDocument();
   });
 
-  it("offers only the Active and On leave employment statuses", () => {
+  it("offers only the Active and Retired employment statuses", () => {
     render(<EmployeeForm employee={existingEmployee} onSaved={() => undefined} />);
 
     const status = screen.getByLabelText(/employment status/i);
-    expect(within(status).getAllByRole("option").map((option) => option.textContent)).toEqual(["Active", "On leave"]);
+    expect(within(status).getAllByRole("option").map((option) => option.textContent)).toEqual(["Active", "Retired"]);
   });
 
   it("uses telephone inputs for phone numbers", () => {

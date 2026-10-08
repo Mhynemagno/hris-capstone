@@ -212,7 +212,7 @@ function OfficialDetails({ record, departmentName, rankName }: { record: Employe
       <DetailSection title="III. Employment" rows={[
         { label: "Unit / Section", value: departmentName },
         { label: "Unit / Station", value: record.unit_station },
-        { label: "Employment status", value: record.employment_status === "on_leave" ? "On leave" : "Active" },
+        { label: "Employment status", value: record.employment_status === "retired" ? "Retired" : "Active" },
         { label: "Employment start date", value: formatDate(record.employment_started_on) },
       ]} />
     </div>
@@ -306,7 +306,7 @@ export function EmployeeRecordDetail({ employeeId }: { employeeId: string }) {
       </>}
       meta={[
         { label: "Badge number", value: <span className="tabular-nums">{record.employee_number}</span>, icon: BadgeCheck },
-        { label: "Status", value: record.employment_status === "on_leave" ? "On leave" : "Active", icon: ShieldCheck },
+        { label: "Status", value: record.employment_status === "retired" ? "Retired" : "Active", icon: ShieldCheck },
         { label: "Born", value: formatDay(record.date_of_birth) ?? "Not provided", icon: Cake },
         { label: "Gender", value: titleCase(record.gender) ?? "Not provided", icon: UserRound },
         { label: "Years of service", value: serviceLength(record.employment_started_on, record.employment_ended_on) ?? "Not recorded", icon: Clock },

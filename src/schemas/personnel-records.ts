@@ -47,7 +47,7 @@ const requiredMobile = (message: string) =>
     .transform(toPhilippineMobile)
     .pipe(z.string().min(1, message).regex(PHILIPPINE_MOBILE_PATTERN, "Enter the number as +639XXXXXXXXX."));
 
-const employmentStatuses = ["active", "on_leave"] as const;
+const employmentStatuses = ["active", "retired"] as const;
 const profilePhotoMimeTypes = ["image/png", "image/jpeg", "image/webp"] as const;
 const genders = ["female", "male", "prefer_not_to_say"] as const;
 const civilStatuses = ["single", "married", "widowed", "separated", "divorced"] as const;
@@ -112,7 +112,7 @@ export const employeeSchema = z
     rankId: z.coerce.number({ error: "Choose a rank." }).int().positive("Choose a rank."),
     employmentStatus: z.enum(employmentStatuses).default("active"),
     employmentStartedOn: z.iso.date({ error: (issue) => (issue.input === undefined || issue.input === "" ? "Enter the employment start date." : "Enter a valid date.") }),
-    // Not shown on the form (only Active and On leave records are kept); an existing value is carried through unchanged.
+    // Not shown on the form; an existing end date is carried through unchanged.
     employmentEndedOn: optionalDate,
   })
   .refine(hasValidDateRange("employmentStartedOn", "employmentEndedOn"), {

@@ -22,12 +22,12 @@ import { EmployeeAccountPicker } from "./employee-account-picker";
 
 const employmentStatusLabels: Record<Employee["employment_status"], string> = {
   active: "Active",
-  on_leave: "On leave",
+  retired: "Retired",
 };
 
 const statusStyles: Record<Employee["employment_status"], string> = {
   active: "bg-emerald-50 text-emerald-800 ring-emerald-600/20 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-400/30",
-  on_leave: "bg-amber-50 text-amber-900 ring-amber-600/20 dark:bg-amber-950/40 dark:text-amber-200 dark:ring-amber-400/30",
+  retired: "bg-slate-100 text-slate-800 ring-slate-600/20 dark:bg-slate-900/40 dark:text-slate-200 dark:ring-slate-400/30",
 };
 
 const iconAction = "inline-flex size-10 items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50";

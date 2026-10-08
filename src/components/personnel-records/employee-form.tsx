@@ -191,7 +191,7 @@ export function EmployeeForm({ employee, account, onSaved, pending = false }: Em
         <FormField error={e.employmentStatus} htmlFor="employment-status" label="Employment status" required>
           <NativeSelect defaultValue={employee?.employment_status ?? "active"} id="employment-status" name="employmentStatus" required>
             <option value="active">Active</option>
-            <option value="on_leave">On leave</option>
+            <option value="retired">Retired</option>
           </NativeSelect>
         </FormField>
         <FormField
