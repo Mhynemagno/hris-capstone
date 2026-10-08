@@ -5,7 +5,7 @@ import type { HrRegisteredApplicant, HrShortlistApplication } from "@/lib/types/
 import { buildApplicationRows, parseApplicationListParams } from "./application-list";
 
 const app = (overrides: Partial<HrShortlistApplication>): HrShortlistApplication => ({
-  id: "11111111-aaaa-bbbb-cccc-000000000001", applicant_id: "a1", job_opening_id: 1, status: "Submitted", cover_note: null, submitted_at: "2026-10-01T00:00:00Z",
+  id: "11111111-aaaa-bbbb-cccc-000000000001", applicant_id: "a1", job_opening_id: 1, status: "Application Submission", cover_note: null, submitted_at: "2026-10-01T00:00:00Z",
   reviewed_at: null, hired_employee_id: null, created_at: "", updated_at: "", ai_score_id: null, ai_score_status: "completed", ai_score: 80, ai_explanation: null, ai_model: null,
   applicant_name: "Ana Reyes", applicant_number: 12345, job_title: "Patrol North", ...overrides,
 });
@@ -19,13 +19,13 @@ describe("application list", () => {
     expect(parseApplicationListParams({ quick: "bogus", stage: "Bogus", job: "abc", q: " ana ", ai: "weird", minScore: "abc", sort: "nope", page: "x" })).toEqual({
       quick: "active", stage: "", job: null, q: "ana", ai: "", minScore: undefined, sort: { key: "ai", direction: "desc" }, page: 1,
     });
-    expect(parseApplicationListParams({ quick: "hired", stage: "Interview", job: "3", q: "", ai: "failed", minScore: "150", sort: "name:asc", page: "2" })).toMatchObject({
-      quick: "hired", stage: "Interview", job: 3, ai: "failed", minScore: 100, sort: { key: "name", direction: "asc" }, page: 2,
+    expect(parseApplicationListParams({ quick: "hired", stage: "Panel Interview", job: "3", q: "", ai: "failed", minScore: "150", sort: "name:asc", page: "2" })).toMatchObject({
+      quick: "hired", stage: "Panel Interview", job: 3, ai: "failed", minScore: 100, sort: { key: "name", direction: "asc" }, page: 2,
     });
   });
 
   it("shows active applications by default and keeps not-yet-applied people one click away", () => {
-    const apps = [app({ id: "1", status: "Interview" }), app({ id: "2", status: "Hired" }), app({ id: "3", status: "Not Selected" })];
+    const apps = [app({ id: "1", status: "Panel Interview" }), app({ id: "2", status: "Hired" }), app({ id: "3", status: "Not Selected" })];
     const people = [registered({})];
     const base = parseApplicationListParams({});
     expect(buildApplicationRows(apps, people, base).map((row) => row.id)).toEqual(["1"]);
@@ -35,7 +35,7 @@ describe("application list", () => {
   });
 
   it("lets an explicit stage or job override the quick view and never matches registered rows", () => {
-    const apps = [app({ id: "1", status: "Hired", job_opening_id: 2 }), app({ id: "2", status: "Interview", job_opening_id: 1 })];
+    const apps = [app({ id: "1", status: "Hired", job_opening_id: 2 }), app({ id: "2", status: "Panel Interview", job_opening_id: 1 })];
     const base = parseApplicationListParams({});
     expect(buildApplicationRows(apps, [registered({})], { ...base, stage: "Hired" }).map((row) => row.id)).toEqual(["1"]);
     expect(buildApplicationRows(apps, [registered({})], { ...base, job: 1 }).map((row) => row.id)).toEqual(["2"]);

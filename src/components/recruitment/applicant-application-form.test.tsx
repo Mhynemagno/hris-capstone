@@ -19,13 +19,6 @@ import { ApplicantApplicationForm } from "./applicant-application-form";
 const saved = (kind: string) => ({ id: kind, kind, object_path: `applicant-profiles/u/${kind}.pdf`, file_name: `${kind}.pdf`, mime_type: "application/pdf", updated_at: "2026-10-01T00:00:00Z" });
 const allFive = ["resume", "psa", "photo", "eligibility", "diploma"].map(saved);
 
-function stubFormData(coverNote: string, credentials: File[]) {
-  vi.stubGlobal("FormData", class {
-    get(name: string) { return name === "coverNote" ? coverNote : null; }
-    getAll(name: string) { return name === "credentials" ? credentials : []; }
-  });
-}
-
 describe("ApplicantApplicationForm", () => {
   beforeEach(() => {
     mocks.submit.mockReset();
@@ -54,21 +47,18 @@ describe("ApplicantApplicationForm", () => {
     expect(screen.getByText("Save or cancel the file you chose above before submitting.")).toBeVisible();
   });
 
-  it("attaches the saved CV, keeps optional credentials, and shows a tracking link", async () => {
+  it("attaches only the saved CV and shows a tracking link", async () => {
     const user = userEvent.setup();
     const cv = new File(["CV"], "resume.pdf", { type: "application/pdf" });
-    const credential = new File(["certificate"], "certificate.png", { type: "image/png" });
     mocks.loadFile.mockResolvedValue(cv);
     mocks.submit.mockResolvedValue("223e4567-e89b-42d3-a456-426614174000");
     render(<ApplicantApplicationForm jobId={7} />);
-    stubFormData("Ready to serve.", [credential]);
     await user.click(screen.getByRole("button", { name: "Submit application" }));
 
     expect(mocks.loadFile).toHaveBeenCalledWith(expect.objectContaining({ object_path: "applicant-profiles/u/resume.pdf" }));
     await waitFor(() => expect(mocks.submit).toHaveBeenCalledWith(expect.objectContaining({
       jobId: 7,
-      coverNote: "Ready to serve.",
-      documents: [{ kind: "cv", file: cv }, { kind: "credential", file: credential }],
+      documents: [{ kind: "cv", file: cv }],
     })));
     expect(await screen.findByRole("status")).toHaveTextContent("Application submitted");
     expect(screen.getByRole("link", { name: "Track application" })).toHaveAttribute("href", "/applicant/applications/223e4567-e89b-42d3-a456-426614174000");
@@ -78,7 +68,6 @@ describe("ApplicantApplicationForm", () => {
     const user = userEvent.setup();
     mocks.loadFile.mockRejectedValue(new Error("We could not attach your saved CV. Try again."));
     render(<ApplicantApplicationForm jobId={7} />);
-    stubFormData("", []);
     await user.click(screen.getByRole("button", { name: "Submit application" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("We could not attach your saved CV. Try again.");
     expect(mocks.submit).not.toHaveBeenCalled();
@@ -89,13 +78,12 @@ describe("ApplicantApplicationForm", () => {
     mocks.loadFile.mockResolvedValue(new File(["CV"], "resume.pdf", { type: "application/pdf" }));
     mocks.submit.mockRejectedValue(new ApplicantProfileRequiredError());
     render(<ApplicantApplicationForm jobId={7} />);
-    stubFormData("", []);
     await user.click(screen.getByRole("button", { name: "Submit application" }));
     expect(await screen.findByRole("link", { name: "Complete profile" })).toHaveAttribute("href", "/applicant/profile");
   });
 
   it("links to the existing application instead of offering a duplicate submission", () => {
-    mocks.existingApplication.mockReturnValue({ data: { id: "223e4567-e89b-42d3-a456-426614174000", status: "Under Review" }, error: null, isLoading: false });
+    mocks.existingApplication.mockReturnValue({ data: { id: "223e4567-e89b-42d3-a456-426614174000", status: "Application Submission" }, error: null, isLoading: false });
     render(<ApplicantApplicationForm jobId={7} />);
     expect(screen.getByRole("link", { name: "Open existing application" })).toHaveAttribute("href", "/applicant/applications/223e4567-e89b-42d3-a456-426614174000");
     expect(screen.queryByRole("button", { name: "Submit application" })).not.toBeInTheDocument();

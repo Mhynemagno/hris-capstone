@@ -126,7 +126,7 @@ insert into public.job_openings (title, description, status, published_at, creat
 values ('Portal feedback opening', 'An opening used by the applicant portal feedback tests.', 'published', now(), '00000000-0000-4000-8000-000000015003');
 
 insert into public.applications (id, applicant_id, job_opening_id, status)
-select '00000000-0000-4000-8000-000000015201', applicant.id, opening.id, 'Interview'
+select '00000000-0000-4000-8000-000000015201', applicant.id, opening.id, 'Panel Interview'
 from public.applicants applicant cross join public.job_openings opening
 where applicant.profile_id = '00000000-0000-4000-8000-000000015001' and opening.title = 'Portal feedback opening';
 
@@ -134,7 +134,7 @@ set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000015003';
 select extensions.is(
   (select row(application_count, latest_application_status, latest_job_title)::text from public.list_hr_registered_applicants() where user_id = '00000000-0000-4000-8000-000000015001'),
-  row(1::bigint, 'Interview', 'Portal feedback opening')::text,
+  row(1::bigint, 'Panel Interview', 'Portal feedback opening')::text,
   'The applicant directory shows the latest application status'
 );
 

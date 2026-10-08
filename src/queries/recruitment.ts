@@ -1,7 +1,7 @@
 import { RECRUITMENT_RANK } from "@/lib/pnp-catalogue";
 import { JOB_POSTING_IMAGE_BUCKET } from "@/lib/recruitment/job-posting-image";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
-import { profileDocumentFileSchemaFor } from "@/schemas/applicant-portal";
+import { APPLICANT_PROFILE_DOCUMENT_KINDS, profileDocumentFileSchemaFor } from "@/schemas/applicant-portal";
 import {
   applicantDocumentSchema,
   applicantProfilePhotoFileSchema,
@@ -33,10 +33,7 @@ type PendingApplicantDocument = {
   file: File;
 };
 
-type PendingApplicantProfileDocument = {
-  kind: ApplicantProfileDocument["kind"];
-  file: ApplicantProfileDocumentFile;
-};
+type PendingApplicantProfileDocuments = Partial<Record<ApplicantProfileDocument["kind"], ApplicantProfileDocumentFile>>;
 
 type SubmitApplicationInput = Omit<ApplicationSubmissionInput, "documents"> & {
   documents: PendingApplicantDocument[];
@@ -246,30 +243,35 @@ export async function loadMyProfileDocumentFile(document: Pick<ApplicantProfileD
   return new File([data], fileName, { type: document.mime_type });
 }
 
-export async function saveApplicantProfileDocuments(documents: PendingApplicantProfileDocument[]) {
+export async function saveApplicantProfileDocuments(documents: PendingApplicantProfileDocuments) {
   const user = await requireCurrentUser();
   const client = createBrowserSupabaseClient();
   const bucket = client.storage.from(applicantProfileDocumentBucket);
   const uploadedPaths: string[] = [];
+  const persistedPaths: string[] = [];
   try {
-    for (const document of documents) {
-      const file = profileDocumentFileSchemaFor(document.kind).parse(document.file);
+    for (const { kind } of APPLICANT_PROFILE_DOCUMENT_KINDS) {
+      const pending = documents[kind];
+      if (!pending) continue;
+      const file = profileDocumentFileSchemaFor(kind).parse(pending);
       const extension = applicantProfileDocumentExtensions[file.type as keyof typeof applicantProfileDocumentExtensions];
       const objectPath = `applicant-profiles/${user.id}/${crypto.randomUUID()}.${extension}`;
       const { error: uploadError } = await bucket.upload(objectPath, file, { contentType: file.type, upsert: false });
       throwIfError(uploadError);
       uploadedPaths.push(objectPath);
       const { error: saveError } = await client.rpc("save_my_applicant_profile_document", {
-        target_kind: document.kind,
+        target_kind: kind,
         target_object_path: objectPath,
         target_file_name: file.name,
         target_mime_type: file.type,
         target_size_bytes: file.size,
       });
       throwIfError(saveError);
+      persistedPaths.push(objectPath);
     }
   } catch (cause) {
-    if (uploadedPaths.length > 0) await bucket.remove(uploadedPaths).catch(() => undefined);
+    const unpersistedPaths = uploadedPaths.filter((path) => !persistedPaths.includes(path));
+    if (unpersistedPaths.length > 0) await bucket.remove(unpersistedPaths).catch(() => undefined);
     throw cause;
   }
 }
@@ -597,7 +599,7 @@ export async function getApplicantDocumentUrl(objectPath: string) {
   return data?.signedUrl ?? null;
 }
 
-export type { PendingApplicantDocument, PendingApplicantProfileDocument, ResubmitApplicationInput, SubmitApplicationInput };
+export type { PendingApplicantDocument, PendingApplicantProfileDocuments, ResubmitApplicationInput, SubmitApplicationInput };
 
 /** HR remark on an application's progress (e.g. "Passed the BMI, for neuro exam"); the applicant is notified. */
 export async function addApplicationRemark(input: ApplicationRemarkInput) {

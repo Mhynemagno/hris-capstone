@@ -28,7 +28,7 @@ export const REPORT_TITLES: Record<ReportKey, string> = {
   "promotion-training-needs": "Promotion and training needs",
 };
 
-const applicationStatuses = ["Submitted", "Under Review", "Shortlisted", "Interview", "Needs Revision", "Endorsed to Crame", "Neuro Exam", "For Training", "Hired", "Not Selected"];
+const applicationStatuses = ["Application Submission", "Physical Agility Test", "Physical & Medical Examination", "Neuro-Psychiatric Examination", "Drug Test", "Character & Background Investigation", "Panel Interview", "Final Evaluation", "Shortlisted", "Hired", "Not Selected"];
 
 /**
  * The value each report's `target_status` is compared against in get_hr_report / get_management_report

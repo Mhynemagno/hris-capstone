@@ -8,11 +8,13 @@ const applicationId = "123e4567-e89b-42d3-a456-426614174000";
 const mocks = vi.hoisted(() => ({
   hireApplication: vi.fn(),
   getApplicationAiScores: vi.fn(),
+  transitionApplicationStatus: vi.fn(),
 }));
 
 vi.mock("@/queries/recruitment", () => ({
   hireApplication: mocks.hireApplication,
   getApplicationAiScores: mocks.getApplicationAiScores,
+  transitionApplicationStatus: mocks.transitionApplicationStatus,
 }));
 
 import * as hooks from "./index";
@@ -24,6 +26,20 @@ function createWrapper(queryClient: QueryClient) {
 }
 
 describe("recruitment hooks", () => {
+  it("refreshes the application detail, HR list, and applicant-facing status after a stage change", async () => {
+    mocks.transitionApplicationStatus.mockResolvedValue(undefined);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const invalidateQueries = vi.spyOn(queryClient, "invalidateQueries");
+    const { result } = renderHook(() => hooks.useTransitionApplicationStatus(), { wrapper: createWrapper(queryClient) });
+
+    await result.current.mutateAsync({ applicationId, nextStatus: "Physical Agility Test" });
+
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ["recruitment", "applications"] });
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ["recruitment", "my-applications"] });
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ["recruitment", "application", applicationId] });
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ["reporting"] });
+  });
+
   it("refreshes recruitment, personnel, and administrator data after hiring", async () => {
     const recruitment = hooks as typeof hooks & {
       useHireApplication: () => {

@@ -2,7 +2,7 @@ import userEvent from "@testing-library/user-event";
 import { render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const state = vi.hoisted(() => ({ status: "Under Review", documents: [] as Array<Record<string, unknown>>, missing: false, history: [] as Array<Record<string, unknown>> }));
+const state = vi.hoisted(() => ({ status: "Application Submission", documents: [] as Array<Record<string, unknown>>, missing: false, history: [] as Array<Record<string, unknown>> }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn(), push: vi.fn() }), usePathname: () => "/hr/applications/x", useSearchParams: () => new URLSearchParams("") }));
 vi.mock("@/components/workspace-shell/breadcrumbs", () => ({ useBreadcrumbTrail: vi.fn() }));
 vi.mock("@/components/recruitment/stage-dialogs", () => ({
@@ -33,23 +33,24 @@ vi.mock("@/hooks/use-recruitment", () => ({
 import { HrApplicationReview } from "./application-review";
 
 describe("HrApplicationReview", () => {
-  beforeEach(() => { state.status = "Under Review"; state.documents = []; state.missing = false; state.history = [{ id: "h", previous_status: "Submitted", next_status: "Under Review", created_at: new Date(Date.now() - 4 * 86_400_000).toISOString(), note: null }]; });
+  beforeEach(() => { state.status = "Application Submission"; state.documents = []; state.missing = false; state.history = [{ id: "h", previous_status: null, next_status: "Application Submission", created_at: new Date(Date.now() - 4 * 86_400_000).toISOString(), note: null }]; });
 
   it("names the applicant, links the job and shows how long they have been at this stage", () => {
     render(<HrApplicationReview applicationId="00000000-0000-0000-0000-000000000001" />);
     expect(screen.getByRole("heading", { level: 1, name: "Ana Santos Reyes" })).toBeInTheDocument();
     expect(screen.getAllByRole("link", { name: "Patrol North" })[0]).toHaveAttribute("href", "/hr/jobs/4");
-    expect(screen.getByText("in Under Review for 4 days")).toBeInTheDocument();
+    expect(screen.getByText("in Application Submission for 4 days")).toBeInTheDocument();
     expect(screen.getByRole("list", { name: "Application stages" })).toBeInTheDocument();
-    expect(within(screen.getByRole("list", { name: "Application stages" })).getByText("Under Review").closest("li")).toHaveAttribute("aria-current", "step");
+    expect(within(screen.getByRole("list", { name: "Application stages" })).getByText("Application Submission").closest("li")).toHaveAttribute("aria-current", "step");
     expect(screen.getByRole("complementary", { name: "Applicant details" })).toHaveTextContent("ana@example.test");
   });
 
   it.each([
-    ["Under Review", ["Move to next stage", "Not selected"], []],
-    ["For Training", ["Hire applicant", "Not selected"], ["Move to next stage"]],
+    ["Application Submission", ["Move to next stage"], ["Not selected", "Hire applicant"]],
+    ["Final Evaluation", ["Move to next stage", "Not selected"], ["Hire applicant"]],
+    ["Shortlisted", ["Hire applicant"], ["Move to next stage", "Not selected"]],
     ["Hired", [], ["Move to next stage", "Hire applicant", "Not selected"]],
-    ["Needs Revision", [], ["Move to next stage"]],
+    ["Not Selected", [], ["Move to next stage", "Hire applicant", "Not selected"]],
   ])("shows the right actions at %s", (status, present, absent) => {
     state.status = status;
     render(<HrApplicationReview applicationId="00000000-0000-0000-0000-000000000001" />);
@@ -57,11 +58,10 @@ describe("HrApplicationReview", () => {
     for (const name of absent) expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
   });
 
-  it("disables moving on while the BMI proof is missing", () => {
-    state.status = "Endorsed to Crame";
+  it("offers the immediate next stage without a BMI-proof gate", () => {
+    state.status = "Physical & Medical Examination";
     render(<HrApplicationReview applicationId="00000000-0000-0000-0000-000000000001" />);
-    expect(screen.getByRole("button", { name: "Move to next stage" })).toBeDisabled();
-    expect(screen.getByText("Waiting for the applicant's BMI proof")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Move to next stage" })).toBeEnabled();
   });
 
   it("opens the move dialog", async () => {

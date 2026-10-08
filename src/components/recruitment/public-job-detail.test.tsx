@@ -28,7 +28,7 @@ describe("PublicJobDetail", () => {
     mocks.usePublishedJob.mockReturnValue({ data: job, error: null, isLoading: false });
   });
 
-  it("shows the title, posting image, description and sends signed-out visitors to login after they accept the privacy notice", async () => {
+  it("shows the title, posting image, description and sends signed-out visitors to registration after they accept the privacy notice", async () => {
     const user = userEvent.setup();
     mocks.getUser.mockResolvedValue({ data: { user: null } });
     render(<PublicJobDetail jobId={9} />);
@@ -44,7 +44,7 @@ describe("PublicJobDetail", () => {
     expect(agree).toBeDisabled();
     await user.click(screen.getByRole("checkbox", { name: /I have read and agree/ }));
     await user.click(agree);
-    expect(mocks.push).toHaveBeenCalledWith(`/login?as=applicant&next=${encodeURIComponent("/applicant/apply/9")}`);
+    expect(mocks.push).toHaveBeenCalledWith(`/applicant/register?next=${encodeURIComponent("/applicant/apply/9")}`);
   });
 
   it("does not continue when the privacy notice is cancelled", async () => {

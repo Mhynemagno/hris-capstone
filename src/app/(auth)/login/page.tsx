@@ -65,7 +65,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     : error === "account_disabled"
       ? "This account can no longer sign in. Contact your system administrator if you think this is a mistake."
     : error === "invitation_expired"
-      ? "This invitation link is invalid or has expired. Ask an administrator to send a new invitation."
+      ? "This confirmation or invitation link is invalid or has expired. Request a new link and try again."
       : undefined;
   const registerHref = nextPath === "/" ? "/applicant/register" : `/applicant/register?next=${encodeURIComponent(nextPath)}`;
   const title = mode === "employee" ? "Employee login" : mode === "applicant" ? "Applicant login" : "Login";

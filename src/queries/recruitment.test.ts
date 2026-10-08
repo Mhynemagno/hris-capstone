@@ -316,14 +316,14 @@ describe("applicant profile media", () => {
 
   it("uploads each required profile document before recording it through the scoped RPC", async () => {
     const queries = recruitmentQueries as typeof recruitmentQueries & {
-      saveApplicantProfileDocuments: (documents: Array<{ kind: "eligibility" | "diploma"; file: File }>) => Promise<void>;
+      saveApplicantProfileDocuments: (documents: { eligibility?: File; diploma?: File }) => Promise<void>;
     };
     mocks.getUser.mockResolvedValue({ data: { user: { id: userId } }, error: null });
 
     expect(queries.saveApplicantProfileDocuments).toBeTypeOf("function");
-    await expect(queries.saveApplicantProfileDocuments([
-      { kind: "eligibility", file: new File(["proof"], "eligibility.pdf", { type: "application/pdf" }) },
-    ])).resolves.toBeUndefined();
+    await expect(queries.saveApplicantProfileDocuments({
+      eligibility: new File(["proof"], "eligibility.pdf", { type: "application/pdf" }),
+    })).resolves.toBeUndefined();
 
     expect(mocks.upload).toHaveBeenCalledBefore(mocks.rpc);
     expect(mocks.rpc).toHaveBeenCalledWith("save_my_applicant_profile_document", expect.objectContaining({
@@ -331,6 +331,24 @@ describe("applicant profile media", () => {
       target_file_name: "eligibility.pdf",
       target_mime_type: "application/pdf",
     }));
+  });
+
+  it("keeps already-persisted files when a later profile-document save fails", async () => {
+    const queries = recruitmentQueries as typeof recruitmentQueries & {
+      saveApplicantProfileDocuments: (documents: { eligibility?: File; diploma?: File }) => Promise<void>;
+    };
+    mocks.getUser.mockResolvedValue({ data: { user: { id: userId } }, error: null });
+    mocks.rpc
+      .mockResolvedValueOnce({ error: null })
+      .mockResolvedValueOnce({ error: new Error("database write failed") });
+
+    await expect(queries.saveApplicantProfileDocuments({
+      eligibility: new File(["proof"], "eligibility.pdf", { type: "application/pdf" }),
+      diploma: new File(["proof"], "diploma.pdf", { type: "application/pdf" }),
+    })).rejects.toThrow("database write failed");
+
+    expect(mocks.remove).toHaveBeenCalledTimes(1);
+    expect(mocks.remove.mock.calls[0]?.[0]).toHaveLength(1);
   });
 });
 

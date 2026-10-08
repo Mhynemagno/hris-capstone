@@ -13,16 +13,17 @@ const optionalEnum = <T extends readonly [string, ...string[]]>(values: T) =>
   z.union([z.literal(""), z.enum(values)]).transform((value) => value || undefined).optional();
 
 export const applicationStatusSchema = z.enum([
-  "Submitted",
-  "Under Review",
+  "Application Submission",
+  "Physical Agility Test",
+  "Physical & Medical Examination",
+  "Neuro-Psychiatric Examination",
+  "Drug Test",
+  "Character & Background Investigation",
+  "Panel Interview",
+  "Final Evaluation",
   "Shortlisted",
-  "Interview",
-  "Needs Revision",
-  "Endorsed to Crame",
-  "Neuro Exam",
-  "For Training",
-  "Hired",
   "Not Selected",
+  "Hired",
 ]);
 
 export const jobOpeningStatusSchema = z.enum(["draft", "published", "closed"]);

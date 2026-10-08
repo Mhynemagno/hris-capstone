@@ -28,12 +28,11 @@ type HeaderProps = {
   submittedAt: string;
   status: ApplicationStatus;
   stageSince: string | null;
-  hasBmiProof: boolean;
 };
 
 export function ApplicationHeader(props: HeaderProps) {
   const [dialog, setDialog] = useState<"move" | "reject" | "hire" | null>(null);
-  const action = stageActions(props.status, props.hasBmiProof);
+  const action = stageActions(props.status);
   const canReject = "canReject" in action && action.canReject;
 
   return (
@@ -59,10 +58,8 @@ export function ApplicationHeader(props: HeaderProps) {
         </div>
       </div>
       <div className="flex shrink-0 flex-wrap items-center gap-2">
-        {action.kind === "waiting-resubmit" ? <p className="text-sm text-muted-foreground">Waiting for the applicant to resubmit</p> : null}
-        {action.kind === "waiting-bmi" ? <p className="text-sm text-muted-foreground">Waiting for the applicant&apos;s BMI proof</p> : null}
         {canReject ? <Button onClick={() => setDialog("reject")} variant="outline">Not selected</Button> : null}
-        {action.kind === "advance" || action.kind === "waiting-bmi" ? <Button disabled={action.kind === "waiting-bmi"} onClick={() => setDialog("move")}>Move to next stage</Button> : null}
+        {action.kind === "advance" ? <Button onClick={() => setDialog("move")}>Move to next stage</Button> : null}
         {action.kind === "hire" ? <Button onClick={() => setDialog("hire")}>Hire applicant</Button> : null}
       </div>
       <MoveStageDialog applicationId={props.applicationId} onOpenChange={(open) => setDialog(open ? "move" : null)} open={dialog === "move"} status={props.status} />

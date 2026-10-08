@@ -49,6 +49,6 @@ export function PublicJobDetail({ jobId }: { jobId: number }) {
     {imageUrl ? <Image alt={`${job.data.title} job posting`} className="h-auto w-full rounded-xl border object-contain" height={900} priority src={imageUrl} unoptimized width={1600} /> : null}
     <p className="whitespace-pre-wrap leading-7">{job.data.description}</p>
     <GeneralRequirements criteria={job.data.job_qualification_criteria ?? []} />
-    <ApplyPrivacyNotice className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/85 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50" href={isSignedIn ? applyPath : `/login?as=applicant&next=${encodeURIComponent(applyPath)}`}>Apply now<ArrowRight aria-hidden="true" className="size-4" /></ApplyPrivacyNotice>
+    <ApplyPrivacyNotice className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/85 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50" href={isSignedIn ? applyPath : `/applicant/register?next=${encodeURIComponent(applyPath)}`}>Apply now<ArrowRight aria-hidden="true" className="size-4" /></ApplyPrivacyNotice>
   </section>;
 }

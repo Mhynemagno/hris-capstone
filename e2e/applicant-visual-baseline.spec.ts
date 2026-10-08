@@ -41,8 +41,8 @@ async function styleSignature(page: Page, probes: readonly string[] = PROBES) {
 }
 
 async function signInApplicant(page: Page) {
-  await page.goto("/login");
-  await page.getByLabel("Email").fill("demo.applicant@example.test");
+  await page.goto("/login?as=applicant&next=/applicant");
+  await page.getByLabel("Applicant Number").fill("202604");
   await page.getByRole("textbox", { name: "Password" }).fill(demoPassword);
   await page.getByRole("button", { name: "Login" }).click();
   await expect(page).toHaveURL(/\/applicant$/, { timeout: 30_000 });

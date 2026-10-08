@@ -1,55 +1,55 @@
 import type { ApplicationStatusHistory } from "@/lib/types/database";
 import type { ApplicationStatus } from "@/schemas/recruitment";
 
-/** Forward stages in workflow order (supabase/migrations/20261006091000_applicant_post_interview_flow.sql). */
+/** The ordered eight-stage recruitment process provided in Doc2 (6). */
 export const PIPELINE_STAGES: readonly ApplicationStatus[] = [
-  "Submitted", "Under Review", "Shortlisted", "Interview", "Endorsed to Crame", "Neuro Exam", "For Training", "Hired",
+  "Application Submission",
+  "Physical Agility Test",
+  "Physical & Medical Examination",
+  "Neuro-Psychiatric Examination",
+  "Drug Test",
+  "Character & Background Investigation",
+  "Panel Interview",
+  "Final Evaluation",
 ];
 
-/** Stages HR still has to act on, or that wait on the applicant. */
-export const ACTIVE_STAGES: readonly ApplicationStatus[] = [
-  "Submitted", "Under Review", "Shortlisted", "Interview", "Needs Revision", "Endorsed to Crame", "Neuro Exam", "For Training",
-];
+/** Stages HR progresses before the final selection decision. */
+export const ACTIVE_STAGES: readonly ApplicationStatus[] = PIPELINE_STAGES;
 
 /**
- * Review transitions HR can choose. private.transition_application_status also accepts
- * Needs Revision, but HR no longer offers it (tester feedback). Hiring is its own flow
- * once the applicant is For Training; Needs Revision, Hired and Not Selected have none.
+ * Each PDF stage advances to the next one. Final Evaluation is the only point where
+ * the candidate can be shortlisted or not selected.
  */
 export const allowedNextStatuses: Record<ApplicationStatus, readonly ApplicationStatus[]> = {
-  Submitted: ["Under Review"],
-  "Under Review": ["Shortlisted", "Interview", "Not Selected"],
-  Shortlisted: ["Interview", "Not Selected"],
-  Interview: ["Endorsed to Crame", "Shortlisted", "Not Selected"],
-  "Endorsed to Crame": ["Neuro Exam", "Not Selected"],
-  "Neuro Exam": ["For Training", "Not Selected"],
-  "For Training": ["Not Selected"],
-  "Needs Revision": [],
+  "Application Submission": ["Physical Agility Test"],
+  "Physical Agility Test": ["Physical & Medical Examination"],
+  "Physical & Medical Examination": ["Neuro-Psychiatric Examination"],
+  "Neuro-Psychiatric Examination": ["Drug Test"],
+  "Drug Test": ["Character & Background Investigation"],
+  "Character & Background Investigation": ["Panel Interview"],
+  "Panel Interview": ["Final Evaluation"],
+  "Final Evaluation": ["Shortlisted", "Not Selected"],
+  Shortlisted: [],
   Hired: [],
   "Not Selected": [],
 };
 
 export type StageAction =
   | { kind: "advance"; next: ApplicationStatus[]; canReject: boolean }
-  | { kind: "waiting-bmi"; canReject: boolean }
   | { kind: "hire"; canReject: boolean }
-  | { kind: "waiting-resubmit" }
   | { kind: "closed" };
 
-export function stageActions(status: ApplicationStatus, hasBmiProof: boolean): StageAction {
+export function stageActions(status: ApplicationStatus): StageAction {
   if (status === "Hired" || status === "Not Selected") return { kind: "closed" };
-  if (status === "Needs Revision") return { kind: "waiting-resubmit" };
+  if (status === "Shortlisted") return { kind: "hire", canReject: false };
   const allowed = allowedNextStatuses[status];
   const canReject = allowed.includes("Not Selected");
-  if (status === "For Training") return { kind: "hire", canReject };
-  if (status === "Endorsed to Crame" && !hasBmiProof) return { kind: "waiting-bmi", canReject };
   return { kind: "advance", next: allowed.filter((next) => next !== "Not Selected"), canReject };
 }
 
 export function stageBadgeVariant(status: ApplicationStatus) {
-  if (status === "Submitted") return "info" as const;
-  if (status === "Needs Revision") return "warning" as const;
-  if (status === "Hired") return "success" as const;
+  if (status === "Application Submission") return "info" as const;
+  if (status === "Shortlisted" || status === "Hired") return "success" as const;
   if (status === "Not Selected") return "danger" as const;
   return "neutral" as const;
 }
@@ -63,7 +63,7 @@ export function endedAtStage(history: Pick<ApplicationStatusHistory, "previous_s
 export function trackerPosition(status: ApplicationStatus, endedAt?: ApplicationStatus | null) {
   const index = (value: ApplicationStatus) => Math.max(0, PIPELINE_STAGES.indexOf(value));
   if (status === "Hired") return { reached: PIPELINE_STAGES.length - 1, outcome: "hired" as const };
-  if (status === "Not Selected") return { reached: endedAt ? index(endedAt === "Needs Revision" ? "Under Review" : endedAt) : 0, outcome: "not-selected" as const };
-  if (status === "Needs Revision") return { reached: index("Under Review"), outcome: "needs-revision" as const };
+  if (status === "Shortlisted") return { reached: PIPELINE_STAGES.length - 1, outcome: "shortlisted" as const };
+  if (status === "Not Selected") return { reached: endedAt ? index(endedAt) : 0, outcome: "not-selected" as const };
   return { reached: index(status), outcome: "open" as const };
 }

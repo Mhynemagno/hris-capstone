@@ -30,10 +30,10 @@ describe("queryKeys", () => {
     };
 
     expect(recruitment.recruitment).toBeDefined();
-    expect(recruitment.recruitment.applications({ page: 1, pageSize: 20, status: "Submitted" })).toEqual([
+    expect(recruitment.recruitment.applications({ page: 1, pageSize: 20, status: "Application Submission" })).toEqual([
       "recruitment",
       "applications",
-      { page: 1, pageSize: 20, status: "Submitted" },
+      { page: 1, pageSize: 20, status: "Application Submission" },
     ]);
   });
 

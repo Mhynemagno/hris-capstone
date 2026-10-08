@@ -1,8 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 
 import { getSafeNextPath } from "@/lib/auth/safe-redirect";
+import { getPublicSupabaseConfig } from "@/lib/supabase/env";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { loginSchema } from "@/schemas/auth";
+import { loginIdentifierSchema, loginSchema } from "@/schemas/auth";
 
 function loginRedirect(request: NextRequest, nextPath: string, error?: string, mode?: string) {
   const url = new URL("/login", request.url);
@@ -20,17 +22,30 @@ export async function POST(request: NextRequest) {
   );
   const asValue = formData.get("as");
   const mode = asValue === "employee" || asValue === "applicant" ? asValue : undefined;
-  const result = loginSchema.safeParse({
-    email: formData.get("email"),
-    password: formData.get("password"),
-  });
+  const result = mode
+    ? loginIdentifierSchema(mode).safeParse({ identifier: formData.get("identifier"), password: formData.get("password") })
+    : loginSchema.safeParse({ email: formData.get("email"), password: formData.get("password") });
 
   if (!result.success) {
     return loginRedirect(request, nextPath, "invalid_credentials", mode);
   }
 
+  let email = "email" in result.data ? result.data.email : null;
+  if (mode) {
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (serviceRoleKey) {
+      const { url } = getPublicSupabaseConfig();
+      const admin = createClient(url, serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } });
+      const identifier = "identifier" in result.data ? result.data.identifier : "";
+      const { data } = await admin.rpc("resolve_login_identifier", { target_mode: mode, target_identifier: identifier });
+      email = typeof data === "string" ? data : null;
+    }
+    if (!email) return loginRedirect(request, nextPath, "invalid_credentials", mode);
+  }
+  if (!email) return loginRedirect(request, nextPath, "invalid_credentials", mode);
+
   const supabase = await createServerSupabaseClient();
-  const { data, error } = await supabase.auth.signInWithPassword(result.data);
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password: result.data.password });
 
   if (error) {
     // Supabase Auth refuses accounts an administrator has blocked from signing in.

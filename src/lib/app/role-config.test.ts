@@ -25,11 +25,11 @@ describe("role configuration", () => {
     }
   });
 
-  it("puts Job Openings in the applicant sidebar", () => {
+  it("uses the requested applicant sidebar order", () => {
     expect(getRoleConfig("applicant").navigation.map(({ href, label, icon }) => ({ href, label, icon }))).toEqual([
       { href: "/applicant", label: "Dashboard", icon: "LayoutDashboard" },
-      { href: "/jobs", label: "Job Openings", icon: "BriefcaseBusiness" },
       { href: "/applicant/profile", label: "Profile", icon: "ContactRound" },
+      { href: "/jobs", label: "Recruitment", icon: "BriefcaseBusiness" },
       { href: "/applicant/documents", label: "Documents", icon: "FileText" },
       { href: "/applicant/applications", label: "Application Status", icon: "Clock" },
     ]);

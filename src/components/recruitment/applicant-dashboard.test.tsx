@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-const applications = vi.hoisted(() => ({ rows: [{ id: "x", status: "Under Review", job_openings: { title: "Patrolman" } }] as unknown[] }));
+const applications = vi.hoisted(() => ({ rows: [{ id: "x", status: "Panel Interview", job_openings: { title: "Patrolman" } }] as unknown[] }));
 vi.mock("@/hooks/use-applicant-portal", () => ({
   useMyApplicationStatuses: () => ({ data: { rows: applications.rows }, error: null, isLoading: false }),
 }));
@@ -13,10 +13,16 @@ vi.mock("@/hooks/use-recruitment", () => ({
 import { ApplicantDashboard } from "./applicant-dashboard";
 
 describe("ApplicantDashboard", () => {
-  it("summarizes the latest application and required documents", () => {
+  it("shows the PDF recruitment process, progress, and the latest application's tracker", () => {
     render(<ApplicantDashboard />);
     expect(screen.getByRole("heading", { level: 1, name: "Welcome, Juan" })).toBeVisible();
-    expect(screen.getByText("Under Review")).toBeVisible();
+    expect(screen.getAllByText("Panel Interview").length).toBeGreaterThan(0);
+    expect(screen.getByText("7 / 8")).toBeVisible();
+    expect(screen.getByRole("list", { name: "Application progress" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Recruitment process" })).toBeVisible();
+    expect(screen.getAllByText("Character & Background Investigation").length).toBeGreaterThan(0);
+    expect(screen.getByRole("heading", { name: "PNP minimum qualifications" })).toBeVisible();
+    expect(screen.getByText("Baccalaureate Degree")).toBeVisible();
     expect(screen.getByText("2 of 5")).toBeVisible();
     expect(screen.getByText("Upload your CV / Resume, PSA birth certificate, 2x2 picture, Eligibility, and Diploma.")).toBeVisible();
     expect(screen.getByRole("link", { name: "View application status" })).toHaveAttribute("href", "/applicant/applications");
@@ -29,5 +35,6 @@ describe("ApplicantDashboard", () => {
     render(<ApplicantDashboard />);
     expect(screen.getByRole("link", { name: "Start an application" })).toHaveAttribute("href", "/jobs");
     expect(screen.queryByRole("link", { name: "View application status" })).not.toBeInTheDocument();
+    expect(screen.getByText("0 / 8")).toBeVisible();
   });
 });

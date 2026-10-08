@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(87);
+select extensions.plan(88);
 
 delete from public.applications;
 delete from public.job_openings;
@@ -166,7 +166,7 @@ select extensions.lives_ok(
   )$$,
   'Applicant can submit an application with an owned CV'
 );
-select extensions.is((select status from public.applications where id = '00000000-0000-4000-8000-000000009401'::uuid), 'Submitted', 'Submission starts in Submitted status');
+select extensions.is((select status from public.applications where id = '00000000-0000-4000-8000-000000009401'::uuid), 'Application Submission', 'Submission starts at Application Submission');
 set local role postgres;
 select extensions.is(
   (select status from public.application_ai_scores where application_id = '00000000-0000-4000-8000-000000009401'::uuid),
@@ -190,7 +190,7 @@ select extensions.has_function('public', 'transition_application_status', array[
 select extensions.has_function('public', 'hire_application', array['uuid', 'text', 'text'], 'Badge-number hiring workflow exists');
 
 select extensions.throws_ok(
-  $$select public.transition_application_status('00000000-0000-4000-8000-000000009401'::uuid, 'Under Review', null)$$,
+  $$select public.transition_application_status('00000000-0000-4000-8000-000000009401'::uuid, 'Physical Agility Test', null)$$,
   '42501', 'HR access is required.', 'Applicants cannot transition their own application'
 );
 
@@ -291,10 +291,10 @@ select extensions.throws_ok(
   'A job posting requires a deadline of application'
 );
 select extensions.lives_ok(
-  $$select public.transition_application_status('00000000-0000-4000-8000-000000009401'::uuid, 'Under Review', 'Initial review started')$$,
-  'HR can move Submitted to Under Review'
+  $$select public.transition_application_status('00000000-0000-4000-8000-000000009401'::uuid, 'Physical Agility Test', 'Cleared for physical testing')$$,
+  'HR can move Application Submission to the Physical Agility Test'
 );
-select extensions.is((select status from public.applications where id = '00000000-0000-4000-8000-000000009401'::uuid), 'Under Review', 'Review transition persists');
+select extensions.is((select status from public.applications where id = '00000000-0000-4000-8000-000000009401'::uuid), 'Physical Agility Test', 'Physical Agility Test transition persists');
 
 set local role postgres;
 select extensions.throws_ok(
@@ -315,7 +315,7 @@ select
   '00000000-0000-4000-8000-000000009402',
   applicant.id,
   opening.id,
-  'Submitted'
+  'Application Submission'
 from public.applicants applicant
 join public.job_openings opening on opening.status = 'draft'
 where applicant.profile_id = '00000000-0000-4000-8000-000000009102';
@@ -365,7 +365,7 @@ select extensions.is(
 );
 select extensions.is(
   (select status from public.applications where id = '00000000-0000-4000-8000-000000009401'::uuid),
-  'Under Review',
+  'Physical Agility Test',
   'AI scoring does not change the application status'
 );
 
@@ -416,41 +416,41 @@ select extensions.is(
 
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000009101';
 select extensions.lives_ok(
-  $$select public.transition_application_status('00000000-0000-4000-8000-000000009401'::uuid, 'Shortlisted', 'Meets the required criteria')$$,
-  'HR can shortlist an application under review'
+  $$select public.transition_application_status('00000000-0000-4000-8000-000000009401'::uuid, 'Physical & Medical Examination', 'Passed the Physical Agility Test')$$,
+  'HR can advance an applicant to the Physical and Medical Examination'
 );
-select extensions.is((select status from public.applications where id = '00000000-0000-4000-8000-000000009401'::uuid), 'Shortlisted', 'Shortlist transition persists');
+select extensions.is((select status from public.applications where id = '00000000-0000-4000-8000-000000009401'::uuid), 'Physical & Medical Examination', 'Physical and Medical Examination transition persists');
 select extensions.throws_ok(
   $$select public.hire_application('00000000-0000-4000-8000-000000009401'::uuid, 'EMP-2026-001', null)$$,
-  '22023', 'Only applicants endorsed for training can be hired.', 'Hiring waits until the end of the cycle'
+  '22023', 'Only shortlisted applicants can be hired.', 'Hiring waits until the end of the cycle'
 );
 select extensions.lives_ok(
-  $$select public.transition_application_status('00000000-0000-4000-8000-000000009401'::uuid, 'Interview', null)$$,
-  'HR can set an application for interview'
+  $$select public.transition_application_status('00000000-0000-4000-8000-000000009401'::uuid, 'Neuro-Psychiatric Examination', null)$$,
+  'HR can advance an applicant to the Neuro-Psychiatric Examination'
 );
 select extensions.lives_ok(
-  $$select public.transition_application_status('00000000-0000-4000-8000-000000009401'::uuid, 'Endorsed to Crame', null)$$,
-  'HR can endorse an interviewed applicant to Crame'
-);
-select extensions.throws_ok(
-  $$select public.transition_application_status('00000000-0000-4000-8000-000000009401'::uuid, 'Neuro Exam', null)$$,
-  '22023', 'The applicant has not uploaded proof of passing the BMI yet.', 'The neuro exam waits for the BMI proof'
+  $$select public.transition_application_status('00000000-0000-4000-8000-000000009401'::uuid, 'Drug Test', null)$$,
+  'HR can advance an applicant to the Drug Test'
 );
 select extensions.lives_ok(
-  $$select public.add_application_remark('00000000-0000-4000-8000-000000009401'::uuid, 'Passed the BMI at Crame.')$$,
-  'HR can add a progress remark'
-);
--- Stand in for the applicant's uploaded BMI proof, then finish the cycle.
-insert into public.applicant_documents (application_id, kind, object_path, file_name, mime_type, size_bytes, uploaded_by_user_id)
-select '00000000-0000-4000-8000-000000009401'::uuid, 'bmi_proof', 'applicants/test/bmi.pdf', 'bmi.pdf', 'application/pdf', 10, uploaded_by_user_id
-from public.applicant_documents where application_id = '00000000-0000-4000-8000-000000009401'::uuid limit 1;
-select extensions.lives_ok(
-  $$select public.transition_application_status('00000000-0000-4000-8000-000000009401'::uuid, 'Neuro Exam', null)$$,
-  'HR can move an applicant with BMI proof to the neuro exam'
+  $$select public.transition_application_status('00000000-0000-4000-8000-000000009401'::uuid, 'Character & Background Investigation', null)$$,
+  'HR can advance an applicant to the Character and Background Investigation'
 );
 select extensions.lives_ok(
-  $$select public.transition_application_status('00000000-0000-4000-8000-000000009401'::uuid, 'For Training', null)$$,
-  'HR can endorse an applicant for training'
+  $$select public.add_application_remark('00000000-0000-4000-8000-000000009401'::uuid, 'Background investigation opened.')$$,
+  'HR can add a progress remark during the recruitment process'
+);
+select extensions.lives_ok(
+  $$select public.transition_application_status('00000000-0000-4000-8000-000000009401'::uuid, 'Panel Interview', null)$$,
+  'HR can advance an applicant to the Panel Interview'
+);
+select extensions.lives_ok(
+  $$select public.transition_application_status('00000000-0000-4000-8000-000000009401'::uuid, 'Final Evaluation', null)$$,
+  'HR can advance an applicant to Final Evaluation'
+);
+select extensions.lives_ok(
+  $$select public.transition_application_status('00000000-0000-4000-8000-000000009401'::uuid, 'Shortlisted', 'Passed the final evaluation')$$,
+  'HR can shortlist an applicant only after Final Evaluation'
 );
 
 select extensions.lives_ok(

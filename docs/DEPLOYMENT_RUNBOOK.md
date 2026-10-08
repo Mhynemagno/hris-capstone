@@ -21,9 +21,10 @@ Follow [AI_SHORTLISTING_SETUP.md](AI_SHORTLISTING_SETUP.md): deploy `process-app
 ## Vercel
 
 1. Confirm the GitHub integration deploys the intended `main` commit; no Vercel CLI token is needed for this project workflow.
-2. Configure `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` in Development, Preview, and Production. These are public client configuration values, never service-role/secret values.
-3. Add `https://<production-domain>/auth/callback` to Supabase Auth Redirect URLs and set the `APP_URL` secret for `invite-internal-user` to that same origin.
-4. Deploy, then smoke-test `/`, `/login`, HR dashboard, Management dashboard, Reports, and one authorized/one denied role route. Record the deployed URL and commit in the release matrix.
+2. Configure `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` in Development, Preview, and Production. These are public client configuration values.
+3. Configure `SUPABASE_SERVICE_ROLE_KEY` in Development, Preview, and Production as a server-only environment variable. The identifier-login route uses it to resolve an applicant number or employee badge number before password sign-in. Never prefix it with `NEXT_PUBLIC_`, expose it to browser code, or commit it.
+4. Add `https://<production-domain>/auth/callback` to Supabase Auth Redirect URLs and set the `APP_URL` secret for `invite-internal-user` to that same origin.
+5. Deploy, then smoke-test `/`, `/login`, HR dashboard, Management dashboard, Reports, and one authorized/one denied role route. Record the deployed URL and commit in the release matrix.
 
 ## Rollback
 

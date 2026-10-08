@@ -42,6 +42,10 @@ describe("authentication schemas", () => {
     });
   });
 
+  it("allows an empty middle name", () => {
+    expect(applicantRegistrationSchema.parse({ ...validRegistration, middleName: "" }).middleName).toBeUndefined();
+  });
+
   it("accepts +639 mobile numbers and rejects other formats", () => {
     expect(applicantRegistrationSchema.parse({ ...validRegistration, mobileNumber: "+639998887777" }).mobileNumber).toBe("+639998887777");
     for (const mobileNumber of ["9171234567", "+63917123456", "08171234567", "+6391712345678", ""]) {

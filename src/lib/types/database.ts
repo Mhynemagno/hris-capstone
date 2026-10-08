@@ -322,7 +322,7 @@ export type Application = {
   id: string;
   applicant_id: string;
   job_opening_id: number;
-  status: "Submitted" | "Under Review" | "Shortlisted" | "Interview" | "Needs Revision" | "Endorsed to Crame" | "Neuro Exam" | "For Training" | "Hired" | "Not Selected";
+  status: "Application Submission" | "Physical Agility Test" | "Physical & Medical Examination" | "Neuro-Psychiatric Examination" | "Drug Test" | "Character & Background Investigation" | "Panel Interview" | "Final Evaluation" | "Shortlisted" | "Not Selected" | "Hired";
   cover_note: string | null;
   submitted_at: string;
   reviewed_at: string | null;

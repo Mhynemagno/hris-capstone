@@ -1,11 +1,11 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const state = vi.hoisted(() => ({ status: "Needs Revision" }));
+const state = vi.hoisted(() => ({ status: "Application Submission" }));
 
 const application = {
   id: "223e4567-e89b-42d3-a456-426614174000",
-  status: "Needs Revision",
+  status: "Application Submission",
   submitted_at: "2026-09-07T00:00:00.000Z",
   job_openings: {
     id: 4, title: "Investigator", description: "Handles case files for the station.", location: null, closes_on: null, status: "closed",
@@ -15,13 +15,11 @@ const application = {
 
 vi.mock("@/hooks/use-recruitment", () => ({
   useMyApplication: () => ({
-    data: { application: { ...application, status: state.status }, history: [{ id: "h1", next_status: "Needs Revision", note: "Please upload a clearer CV.", created_at: "2026-09-08T00:00:00.000Z" }],
+    data: { application: { ...application, status: state.status }, history: [{ id: "h1", next_status: "Application Submission", note: "Your application is now under review.", created_at: "2026-09-08T00:00:00.000Z" }],
       documents: [{ id: "d1", kind: "cv", file_name: "cv.pdf", object_path: "applicants/a/b/cv.pdf" }] },
     error: null,
     isLoading: false,
   }),
-  useResubmitApplication: () => ({ isPending: false, mutateAsync: vi.fn() }),
-  useSubmitBmiProof: () => ({ isPending: false, mutateAsync: vi.fn() }),
 }));
 vi.mock("@/queries/recruitment", () => ({ getApplicantDocumentUrl: vi.fn().mockResolvedValue(null) }));
 
@@ -29,33 +27,10 @@ import { ApplicantApplicationDetail } from "./applicant-application-detail";
 
 describe("ApplicantApplicationDetail", () => {
   beforeEach(() => {
-    state.status = "Needs Revision";
+    state.status = "Application Submission";
   });
 
-  it("asks for the BMI proof only while endorsed to Crame", () => {
-    state.status = "Endorsed to Crame";
-    render(<ApplicantApplicationDetail applicationId={application.id} />);
-
-    expect(screen.getByRole("heading", { name: "Proof of passing the BMI" })).toBeInTheDocument();
-    expect(screen.getByLabelText("BMI proof (PDF, PNG or JPEG)")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Resubmit application" })).not.toBeInTheDocument();
-  });
-
-  it("does not ask for the BMI proof at other stages", () => {
-    render(<ApplicantApplicationDetail applicationId={application.id} />);
-    expect(screen.queryByRole("button", { name: "Upload BMI proof" })).not.toBeInTheDocument();
-  });
-
-  it("offers document re-upload only while HR has marked the application Needs Revision", async () => {
-    render(<ApplicantApplicationDetail applicationId={application.id} />);
-
-    expect(screen.getByRole("heading", { name: /Needs Revision/ })).toBeInTheDocument();
-    expect(screen.getByLabelText("Replacement CV (PDF)")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Resubmit application" })).toBeInTheDocument();
-    await waitFor(() => expect(screen.getByRole("list", { name: "Status history" })).toHaveTextContent("Please upload a clearer CV."));
-  });
-
-  it("shows what the applicant applied for, dated status history, and document types", () => {
+  it("shows submitted documents with a semantic submitted badge", () => {
     render(<ApplicantApplicationDetail applicationId={application.id} />);
 
     expect(screen.getByRole("heading", { name: "What you applied for" })).toBeInTheDocument();
@@ -63,5 +38,7 @@ describe("ApplicantApplicationDetail", () => {
     expect(screen.getByText("PCpl — Police Corporal")).toBeInTheDocument();
     expect(screen.getByRole("list", { name: "Status history" })).toHaveTextContent("September 8, 2026");
     expect(screen.getByRole("list", { name: "Documents" })).toHaveTextContent("CV");
+    expect(screen.getByText("SUBMITTED")).toHaveClass("text-emerald-800");
+    expect(screen.queryByRole("button", { name: "Resubmit application" })).not.toBeInTheDocument();
   });
 });

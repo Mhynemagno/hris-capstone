@@ -7,6 +7,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useMyApplicationStatuses } from "@/hooks/use-applicant-portal";
 import { formatDate } from "@/lib/format-date";
+import { PIPELINE_STAGES } from "@/lib/recruitment/application-stages";
 import type { Application } from "@/lib/types/database";
 
 type ApplicationWithOpening = Application & { job_openings?: { title?: string; location?: string } | null };
@@ -30,6 +31,7 @@ export function ApplicantApplicationStatus() {
             <div>
               <h3 className="font-bold">{application.job_openings?.title ?? `Application ${application.id.slice(0, 8)}`}</h3>
               <p className="text-sm text-muted-foreground">Submitted {formatDate(application.submitted_at)}</p>
+              <p className="mt-1 text-sm font-medium text-primary">{Math.max(0, PIPELINE_STAGES.indexOf(application.status) + 1) || PIPELINE_STAGES.length} / {PIPELINE_STAGES.length}</p>
             </div>
             <Link className="inline-flex min-h-11 items-center text-sm font-medium text-primary underline-offset-4 hover:underline" href={`/applicant/applications/${application.id}`}>View application</Link>
           </div>
