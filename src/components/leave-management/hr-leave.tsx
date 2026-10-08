@@ -5,11 +5,11 @@ import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { EmptyTableState } from "@/components/ui/empty-table-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { FormField } from "@/components/ui/form-field";
 import { LoadingState } from "@/components/ui/loading-state";
 import { nativeSelectClassName } from "@/components/ui/native-select";
+import { Pagination } from "@/components/ui/pagination";
 import { Textarea } from "@/components/ui/textarea";
 import { useDecideLeaveRequest, useHrLeaveRequests, useLeaveRequest } from "@/hooks/use-leave-management";
 import { formatDate, formatDateRange } from "@/lib/format-date";
@@ -17,6 +17,7 @@ import type { LeaveRequestStatus, LeaveRequestWithEmployee } from "@/lib/types/d
 import { getLeaveAttachmentUrl } from "@/queries/leave-management";
 
 import { LeaveStatusBadge } from "./leave-status-badge";
+import { LeaveRequestTable } from "./leave-request-table";
 
 const statusOptions: Array<{ value: LeaveRequestStatus; label: string }> = [
   { value: "pending", label: "For Approval" },
@@ -32,13 +33,15 @@ function employeeName(request: Pick<LeaveRequestWithEmployee, "employees">) {
   return [employee.first_name, employee.middle_name, employee.last_name].filter(Boolean).join(" ");
 }
 
-export function HrLeaveQueue() {
+export function HrLeaveQueue({ page = 1, onPageChange, onStatusChange, status: controlledStatus }: { page?: number; onPageChange?: (page: number) => void; onStatusChange?: (status: LeaveRequestStatus | "") => void; status?: LeaveRequestStatus | "" } = {}) {
   // The dashboard links here with ?status=pending so the queue opens on For Approval.
   const requested = useSearchParams().get("status");
-  const [status, setStatus] = useState<LeaveRequestStatus | "">(
+  const [localStatus, setLocalStatus] = useState<LeaveRequestStatus | "">(
     statusOptions.some((option) => option.value === requested) ? (requested as LeaveRequestStatus) : "",
   );
-  const result = useHrLeaveRequests({ page: 1, pageSize: 25, status: status || undefined });
+  const status = controlledStatus ?? localStatus;
+  const setStatus = onStatusChange ?? setLocalStatus;
+  const result = useHrLeaveRequests({ page, pageSize: 25, status: status || undefined });
   const rows = result.data?.rows ?? [];
   const statusLabel = statusOptions.find((option) => option.value === status)?.label.toLowerCase();
 
@@ -71,57 +74,8 @@ export function HrLeaveQueue() {
       ) : result.error ? (
         <ErrorState message={result.error.message} />
       ) : (
-        <div className="relative overflow-x-auto rounded-xl border">
-          <table className="w-full min-w-[760px] text-left text-sm">
-            <caption className="sr-only">Leave requests{statusLabel ? ` with status ${statusLabel}` : ""}</caption>
-            <thead className="bg-muted/60">
-              <tr>
-                <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Employee</th>
-                <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Leave type</th>
-                <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Dates</th>
-                <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Submitted</th>
-                <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Status</th>
-                <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.length ? (
-                rows.map((row) => (
-                  <tr className="border-t" key={row.id}>
-                    <td className="px-4 py-3 align-top">
-                      <span className="font-medium">{employeeName(row)}</span>
-                      {row.employees?.employee_number ? (
-                        <span className="block text-xs text-muted-foreground">Badge no. {row.employees.employee_number}</span>
-                      ) : null}
-                    </td>
-                    <td className="px-4 py-3 align-top font-medium">{row.leave_type_name}</td>
-                    <td className="px-4 py-3 align-top">{formatDateRange(row.starts_on, row.ends_on)}</td>
-                    <td className="px-4 py-3 align-top">{formatDate(row.created_at)}</td>
-                    <td className="px-4 py-3 align-top">
-                      <LeaveStatusBadge status={row.status} />
-                    </td>
-                    <td className="px-4 py-3 align-top">
-                      <Link
-                        aria-label={`${row.status === "pending" ? "Review" : "View"} ${employeeName(row)}'s ${row.leave_type_name} request, ${formatDateRange(row.starts_on, row.ends_on)}`}
-                        className="font-medium text-primary underline underline-offset-4"
-                        href={`/hr/leave-requests/${row.id}`}
-                      >
-                        {row.status === "pending" ? "Review" : "View"}
-                      </Link>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <EmptyTableState
-                    colSpan={6}
-                    message={statusLabel ? `No leave requests are ${statusLabel}. Try another status.` : "No leave requests have been submitted yet."}
-                  />
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <><LeaveRequestTable emptyMessage={statusLabel ? `No leave requests are ${statusLabel}. Try another status.` : "No leave requests have been submitted yet."} rows={rows} status={status || undefined} />
+        {onPageChange && result.data ? <Pagination from={result.data.rows.length ? (page - 1) * 25 + 1 : 0} noun="leave requests" onPageChange={onPageChange} page={page} pageCount={Math.max(1, Math.ceil(result.data.count / 25))} to={Math.min(page * 25, result.data.count)} total={result.data.count} /> : null}</>
       )}
     </section>
   );

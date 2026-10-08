@@ -88,6 +88,10 @@ export const leaveRequestFiltersSchema = paginationSchema.extend({
   endsOn: isoDateSchema.optional(),
 });
 
+export const leaveTypeFiltersSchema = paginationSchema.extend({
+  pageSize: z.coerce.number().int().positive().transform((value) => Math.min(value, 100)).default(25),
+});
+
 export type LeaveRequestStatus = z.infer<typeof leaveStatusSchema>;
 export type LeaveTypeInput = z.infer<typeof leaveTypeSchema>;
 export type LeaveTypeUpdateInput = z.infer<typeof leaveTypeUpdateSchema>;
@@ -98,3 +102,4 @@ export type LeaveRequestSubmissionInput = z.infer<typeof leaveRequestSubmissionS
 export type LeaveCancellationInput = z.infer<typeof leaveCancellationSchema>;
 export type LeaveDecisionInput = z.infer<typeof leaveDecisionSchema>;
 export type LeaveRequestFilters = z.infer<typeof leaveRequestFiltersSchema>;
+export type LeaveTypeFilters = z.infer<typeof leaveTypeFiltersSchema>;
