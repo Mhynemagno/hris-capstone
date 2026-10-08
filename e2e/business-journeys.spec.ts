@@ -83,6 +83,7 @@ test.describe("leave journey", () => {
     const typeName = `E2E Leave ${runId}`;
     await signIn(page, "demo.hr@example.test", "/hr");
     await page.goto("/hr/leave-requests");
+    await page.getByRole("tab", { name: "Leave types" }).click();
 
     await page.getByLabel(/^Name/).first().fill(typeName);
     await page.getByRole("button", { name: "Add leave type" }).click();
