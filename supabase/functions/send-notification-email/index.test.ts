@@ -84,7 +84,7 @@ Deno.test("rejects non-POST requests and requests without the worker secret befo
   const handler = createSendNotificationEmailHandler({
     createClient: () => {
       clientsCreated += 1;
-      return {};
+      throw new Error("The client must not be created.");
     },
     getEnv: getEnvFrom(environment()),
     fetch: async () => {
@@ -109,7 +109,7 @@ Deno.test("returns 503 before claiming jobs when notification-email configuratio
   const handler = createSendNotificationEmailHandler({
     createClient: () => {
       clientsCreated += 1;
-      return {};
+      throw new Error("The client must not be created.");
     },
     getEnv: getEnvFrom(environment({ BREVO_API_KEY: undefined })),
   });
@@ -126,7 +126,7 @@ Deno.test("rejects an unsupported portal URL scheme before claiming jobs", async
   const handler = createSendNotificationEmailHandler({
     createClient: () => {
       clientsCreated += 1;
-      return {};
+      throw new Error("The client must not be created.");
     },
     getEnv: getEnvFrom(environment({ APP_URL: "httpx://portal.example.test" })),
   });

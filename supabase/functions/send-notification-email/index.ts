@@ -15,7 +15,19 @@ type EmailTemplate = {
   copy: string;
 };
 
-type ClientFactory = (url: string, key: string, options?: unknown) => any;
+type SupabaseAdminClient = {
+  rpc: (name: string, args?: Record<string, unknown>) => Promise<{ data: unknown; error: unknown | null }>;
+  auth: {
+    admin: {
+      getUserById: (userId: string) => Promise<{
+        data: { user: { email?: string | null } | null };
+        error: unknown | null;
+      }>;
+    };
+  };
+};
+
+type ClientFactory = (url: string, key: string, options?: unknown) => SupabaseAdminClient;
 
 type Dependencies = {
   createClient?: ClientFactory;
