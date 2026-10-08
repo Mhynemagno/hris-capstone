@@ -20,7 +20,7 @@ export const promotionCriterionRequirementSchema = z.object({
 
 export const promotionCriterionSchema = z.object({
   targetRankId: positiveInteger,
-  minimumYearsOfService: z.coerce.number().int().min(0).max(100),
+  minimumYearsOfService: z.coerce.number().int().min(1).max(3),
   // Promotion is judged on years of service and trainings only; the rating minimum is kept for older criteria.
   minimumPerformanceRating: optionalRating,
   requirements: z.array(promotionCriterionRequirementSchema)

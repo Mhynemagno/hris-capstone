@@ -28,6 +28,10 @@ describe("promotion eligibility schemas", () => {
     expect(promotionCriterionSchema.safeParse({ targetRankId: 4, minimumYearsOfService: -1, requirements: [{ recordKind: "deployment", requiredName: "x", label: "x", isMandatory: true }] }).success).toBe(false);
   });
 
+  it.each([0, 4, 100])("rejects %i years of service for a criterion", (minimumYearsOfService) => {
+    expect(promotionCriterionSchema.safeParse({ targetRankId: 4, minimumYearsOfService, requirements: [{ recordKind: "training", requiredName: "PSJLC", label: "PSJLC", isMandatory: true }] }).success).toBe(false);
+  });
+
   it("requires at least one requirement, without duplicates, and needs no rating minimum", () => {
     const training = (name: string) => ({ recordKind: "training", requiredName: name, label: name, isMandatory: true });
     const base = { targetRankId: 4, minimumYearsOfService: 3 };

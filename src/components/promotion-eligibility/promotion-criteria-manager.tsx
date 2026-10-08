@@ -11,7 +11,7 @@ import { FormField } from "@/components/ui/form-field";
 import { LoadingState } from "@/components/ui/loading-state";
 import { nativeSelectClassName } from "@/components/ui/native-select";
 import { useRankOptions } from "@/hooks/use-administration";
-import { PNP_CERTIFICATIONS, SERVICE_YEAR_CHOICES } from "@/lib/pnp-catalogue";
+import { PNP_CERTIFICATIONS } from "@/lib/pnp-catalogue";
 import { rankLabel } from "@/lib/ranks";
 import { useCreatePromotionCriterion, usePromotionCriteria, useSetPromotionCriterionActive } from "@/hooks/use-promotion-eligibility";
 import type { PromotionCriterionRequirement } from "@/lib/types/database";
@@ -25,6 +25,7 @@ const recordKindLabels = { certification: "Certification / Training", qualificat
  */
 const REQUIREMENT_RECORD_KIND = "certification" as const;
 const MAX_REQUIREMENTS = 30;
+const SERVICE_YEAR_CHOICES = [1, 2, 3] as const;
 
 type RequirementRow = { key: number; name: string };
 type FieldErrors = Partial<Record<"targetRankId" | "minimumYearsOfService" | "requirements" | "form", string>>;
@@ -111,8 +112,8 @@ function CriterionForm({ rankOptions, takenRankIds }: { rankOptions: { value: st
         />
       </FormField>
       <FormField error={errors.minimumYearsOfService} htmlFor="minimum-years" label="Minimum years of service" required>
-        <select className={nativeSelectClassName} defaultValue="0" id="minimum-years" name="minimumYearsOfService" required>
-          {SERVICE_YEAR_CHOICES.map((years) => <option key={years} value={years}>{years === 0 ? "No minimum" : `${years} ${years === 1 ? "year" : "years"}`}</option>)}
+        <select className={nativeSelectClassName} defaultValue="1" id="minimum-years" name="minimumYearsOfService" required>
+          {SERVICE_YEAR_CHOICES.map((years) => <option key={years} value={years}>{`${years} ${years === 1 ? "year" : "years"}`}</option>)}
         </select>
       </FormField>
       <fieldset aria-describedby={errors.requirements ? "requirements-error" : undefined} className="grid gap-4 rounded-lg border p-4 sm:col-span-2 sm:grid-cols-2">
@@ -207,6 +208,7 @@ export function PromotionCriteriaManager() {
                       <p className="flex flex-wrap items-center gap-2 text-base font-semibold">
                         {title}
                         <Badge variant={criterion.is_active ? "secondary" : "outline"}>{criterion.is_active ? "Active" : "Inactive"}</Badge>
+                        {criterion.minimum_years_of_service > 3 ? <Badge variant="destructive">Update to 1–3 years</Badge> : null}
                       </p>
                       <p className="text-sm text-muted-foreground">
                         At least {criterion.minimum_years_of_service} {criterion.minimum_years_of_service === 1 ? "year" : "years"} of service
