@@ -20,7 +20,7 @@ export const promotionCriterionRequirementSchema = z.object({
 
 export const promotionCriterionSchema = z.object({
   targetRankId: positiveInteger,
-  minimumYearsOfService: z.coerce.number().int().min(0).max(100),
+  minimumYearsOfService: z.coerce.number().int().min(1).max(3),
   // Promotion is judged on years of service and trainings only; the rating minimum is kept for older criteria.
   minimumPerformanceRating: optionalRating,
   requirements: z.array(promotionCriterionRequirementSchema)
@@ -85,6 +85,10 @@ export const promotionEvaluationFiltersSchema = paginationSchema.extend({
   recommendation: promotionRecommendationSchema.optional(),
   search: z.string().trim().max(200).transform((value) => value || undefined).optional(),
 });
+export const promotionReadinessFiltersSchema = paginationSchema.extend({
+  pageSize: z.coerce.number().int().positive().transform((value) => Math.min(value, 100)).default(25),
+  employeeId: uuidSchema.optional(),
+});
 
 export const employeePromotionEligibilitySchema = z.object({
   employeeId: uuidSchema,
@@ -107,3 +111,4 @@ export type PromotionEvidenceInput = z.infer<typeof promotionEvidenceSchema>;
 export type PromotionEvaluationInput = z.infer<typeof promotionEvaluationSchema>;
 export type PromotionEvaluationUpdateInput = z.infer<typeof promotionEvaluationUpdateSchema>;
 export type PromotionEvaluationFilters = z.infer<typeof promotionEvaluationFiltersSchema>;
+export type PromotionReadinessFilters = z.infer<typeof promotionReadinessFiltersSchema>;

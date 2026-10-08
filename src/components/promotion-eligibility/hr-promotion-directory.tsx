@@ -6,11 +6,13 @@ import { buttonVariants } from "@/components/ui/button";
 import { EmptyTableState } from "@/components/ui/empty-table-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
+import { Pagination } from "@/components/ui/pagination";
 import { useRankOptions } from "@/hooks/use-administration";
 import { formatDate } from "@/lib/format-date";
 import { rankLabel } from "@/lib/ranks";
 import type { PromotionReadiness } from "@/lib/types/database";
-import { usePromotionReadiness } from "@/hooks/use-promotion-eligibility";
+import { usePromotionReadinessPage } from "@/hooks/use-promotion-eligibility";
+import { useListParams } from "@/lib/workspace/list-params";
 
 const recommendationLabels: Record<string, string> = {
   recommended: "Recommended",
@@ -27,11 +29,14 @@ function readinessText(readiness: PromotionReadiness) {
 
 export function HrPromotionDirectory() {
   // One row per reviewed employee (their latest review); readiness is checked against today's records.
-  const query = usePromotionReadiness();
+  const { params, set } = useListParams(["page"] as const);
+  const page = Math.max(1, Number(params.page) || 1);
+  const query = usePromotionReadinessPage({ page, pageSize: 25 });
   const ranks = useRankOptions();
   if (query.isLoading) return <LoadingState label="Loading promotion reviews…" />;
   if (query.error) return <ErrorState message={query.error.message} />;
-  const rows = query.data ?? [];
+  const rows = query.data?.rows ?? [];
+  const total = query.data?.count ?? 0;
   const rankTitle = (rankId: number) => {
     const rank = ranks.data?.find((row) => row.id === rankId);
     return rank ? rankLabel(rank) : `Rank #${rankId}`;
@@ -91,6 +96,7 @@ export function HrPromotionDirectory() {
           </tbody>
         </table>
       </div>
+      <Pagination from={rows.length ? (page - 1) * 25 + 1 : 0} noun="promotion reviews" onPageChange={(next) => set({ page: String(next) })} page={page} pageCount={Math.max(1, Math.ceil(total / 25))} to={Math.min(page * 25, total)} total={total} />
     </section>
   );
 }

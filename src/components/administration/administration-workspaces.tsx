@@ -37,6 +37,7 @@ import { formatDateTime } from "@/lib/format-date";
 import type { Department, ManagedUser, Rank, UnitStation } from "@/lib/types/database";
 import { APP_ROLES, type AppRole } from "@/lib/types/roles";
 import { cn } from "@/lib/utils";
+import { useListParams } from "@/lib/workspace/list-params";
 import {
   departmentSchema,
   unitStationSchema,
@@ -132,6 +133,21 @@ function useDebouncedValue<T>(value: T, delay = 300) {
     return () => clearTimeout(timer);
   }, [value, delay]);
   return debounced;
+}
+
+/** Keep a responsive search field while the URL remains the durable list state. */
+function useUrlSearch(value: string) {
+  const [previousValue, setPreviousValue] = useState(value);
+  const [search, setSearch] = useState(value);
+  if (value !== previousValue) {
+    setPreviousValue(value);
+    setSearch(value);
+  }
+  return [search, setSearch] as const;
+}
+
+function urlPage(value: string) {
+  return Math.max(1, Number(value) || 1);
 }
 
 type ListQuery = { error: Error | null; isFetching?: boolean; isLoading: boolean; refetch: () => unknown };
@@ -293,10 +309,11 @@ function ManagedUsersTable({ onDelete, onEdit, rows, showProfiles }: {
 }
 
 function ManagedAccountsWorkspace({ invite }: { invite: boolean }) {
-  const [search, setSearch] = useState("");
-  const [role, setRole] = useState<AppRole | "">("");
-  const [status, setStatus] = useState<StatusFilter>("");
-  const [page, setPage] = useState(1);
+  const { params, set } = useListParams(["search", "role", "status", "page"] as const);
+  const [search, setSearch] = useUrlSearch(params.search);
+  const role = APP_ROLES.includes(params.role as AppRole) ? params.role as AppRole : "";
+  const status: StatusFilter = params.status === "active" || params.status === "inactive" ? params.status : "";
+  const page = urlPage(params.page);
   const [selected, setSelected] = useState<ManagedUser | null>(null);
   const [deleting, setDeleting] = useState<ManagedUser | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -307,18 +324,13 @@ function ManagedAccountsWorkspace({ invite }: { invite: boolean }) {
   const inviteMutation = useInviteInternalUser();
   const updateMutation = useUpdateManagedUser();
 
-  function resetPage(callback: () => void) {
-    callback();
-    setPage(1);
-  }
-
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <UserFilters
-          onRoleChange={(value) => resetPage(() => setRole(value))}
-          onSearchChange={(value) => resetPage(() => setSearch(value))}
-          onStatusChange={(value) => resetPage(() => setStatus(value))}
+          onRoleChange={(value) => set({ role: value })}
+          onSearchChange={(value) => { setSearch(value); set({ search: value }); }}
+          onStatusChange={(value) => set({ status: value })}
           role={role}
           search={search}
           status={status}
@@ -329,7 +341,7 @@ function ManagedAccountsWorkspace({ invite }: { invite: boolean }) {
       <ListBody loadingLabel="Loading accounts…" result={result}>
         <ManagedUsersTable onDelete={setDeleting} onEdit={setSelected} rows={result.data?.rows ?? []} showProfiles={invite} />
       </ListBody>
-      <PaginatedTableControls onPageChange={setPage} page={page} pageSize={20} totalCount={result.data?.count ?? 0} />
+      <PaginatedTableControls onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={20} totalCount={result.data?.count ?? 0} />
       {invite ? (
         <AdministrationFormPanel description="Invite an internal account without exposing administrative credentials." onOpenChange={setInviteOpen} open={inviteOpen} title="Invite account">
           <InvitationForm
@@ -412,9 +424,10 @@ function DepartmentForm({ department, onSaved, pending }: { department?: Departm
 }
 
 export function DepartmentsWorkspace() {
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<StatusFilter>("");
-  const [page, setPage] = useState(1);
+  const { params, set } = useListParams(["search", "status", "page"] as const);
+  const [search, setSearch] = useUrlSearch(params.search);
+  const status: StatusFilter = params.status === "active" || params.status === "inactive" ? params.status : "";
+  const page = urlPage(params.page);
   const [editing, setEditing] = useState<Department | null>(null);
   const [deleting, setDeleting] = useState<Department | null>(null);
   const [creating, setCreating] = useState(false);
@@ -422,16 +435,12 @@ export function DepartmentsWorkspace() {
   const searchTerm = useDebouncedValue(search.trim());
   const result = useDepartments({ page, pageSize: 20, ...(searchTerm ? { search: searchTerm } : {}), ...(status ? { status } : {}) });
   const save = useSaveDepartment();
-  const resetPage = (callback: () => void) => {
-    callback();
-    setPage(1);
-  };
   const rows = result.data?.rows ?? [];
 
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <ReferenceFilters label="units / sections" onSearchChange={(value) => resetPage(() => setSearch(value))} onStatusChange={(value) => resetPage(() => setStatus(value))} search={search} status={status} />
+        <ReferenceFilters label="units / sections" onSearchChange={(value) => { setSearch(value); set({ search: value }); }} onStatusChange={(value) => set({ status: value })} search={search} status={status} />
         <Button className="w-full sm:w-auto" onClick={() => setCreating(true)} type="button">Add unit / section</Button>
       </div>
       <SuccessMessage message={notice} />
@@ -449,7 +458,7 @@ export function DepartmentsWorkspace() {
           )) : <tr><EmptyTableState colSpan={3} message="No units / sections match these filters." /></tr>}
         </DataTable>
       </ListBody>
-      <PaginatedTableControls onPageChange={setPage} page={page} pageSize={20} totalCount={result.data?.count ?? 0} />
+      <PaginatedTableControls onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={20} totalCount={result.data?.count ?? 0} />
       <AdministrationFormPanel description="Create a unit / section for personnel and job openings." onOpenChange={setCreating} open={creating} title="Add unit / section">
         <DepartmentForm onSaved={async (input) => { await save.mutateAsync({ input: { ...input, isActive: true } }); setCreating(false); setNotice(`${input.name} was added.`); }} pending={save.isPending} />
       </AdministrationFormPanel>
@@ -502,9 +511,10 @@ function UnitStationForm({ onSaved, pending, unitStation }: { onSaved: (input: U
 }
 
 export function UnitStationsWorkspace() {
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<StatusFilter>("");
-  const [page, setPage] = useState(1);
+  const { params, set } = useListParams(["search", "status", "page"] as const);
+  const [search, setSearch] = useUrlSearch(params.search);
+  const status: StatusFilter = params.status === "active" || params.status === "inactive" ? params.status : "";
+  const page = urlPage(params.page);
   const [editing, setEditing] = useState<UnitStation | null>(null);
   const [deleting, setDeleting] = useState<UnitStation | null>(null);
   const [creating, setCreating] = useState(false);
@@ -512,16 +522,12 @@ export function UnitStationsWorkspace() {
   const searchTerm = useDebouncedValue(search.trim());
   const result = useUnitStationCatalogue({ page, pageSize: 20, ...(searchTerm ? { search: searchTerm } : {}), ...(status ? { status } : {}) });
   const save = useSaveUnitStation();
-  const resetPage = (callback: () => void) => {
-    callback();
-    setPage(1);
-  };
   const rows = result.data?.rows ?? [];
 
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <ReferenceFilters label="units / stations" onSearchChange={(value) => resetPage(() => setSearch(value))} onStatusChange={(value) => resetPage(() => setStatus(value))} search={search} status={status} />
+        <ReferenceFilters label="units / stations" onSearchChange={(value) => { setSearch(value); set({ search: value }); }} onStatusChange={(value) => set({ status: value })} search={search} status={status} />
         <Button className="w-full sm:w-auto" onClick={() => setCreating(true)} type="button">Add unit / station</Button>
       </div>
       <p className="text-sm text-muted-foreground">
@@ -542,7 +548,7 @@ export function UnitStationsWorkspace() {
           )) : <tr><EmptyTableState colSpan={3} message={searchTerm || status ? "No units match these filters." : "No units yet. Add the station's precincts and units so they can be assigned."} /></tr>}
         </DataTable>
       </ListBody>
-      <PaginatedTableControls onPageChange={setPage} page={page} pageSize={20} totalCount={result.data?.count ?? 0} />
+      <PaginatedTableControls onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={20} totalCount={result.data?.count ?? 0} />
       <AdministrationFormPanel description="Create a unit / station for personnel records." onOpenChange={setCreating} open={creating} title="Add unit / station">
         <UnitStationForm onSaved={async (input) => { await save.mutateAsync({ input: { ...input, isActive: true } }); setCreating(false); setNotice(`${input.name} was added.`); }} pending={save.isPending} />
       </AdministrationFormPanel>
@@ -606,9 +612,10 @@ function RankForm({ onSaved, pending, rank }: { onSaved: (input: RankInput) => P
 }
 
 export function RanksWorkspace() {
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<StatusFilter>("");
-  const [page, setPage] = useState(1);
+  const { params, set } = useListParams(["search", "status", "page"] as const);
+  const [search, setSearch] = useUrlSearch(params.search);
+  const status: StatusFilter = params.status === "active" || params.status === "inactive" ? params.status : "";
+  const page = urlPage(params.page);
   const [editing, setEditing] = useState<Rank | null>(null);
   const [deleting, setDeleting] = useState<Rank | null>(null);
   const [creating, setCreating] = useState(false);
@@ -616,16 +623,12 @@ export function RanksWorkspace() {
   const searchTerm = useDebouncedValue(search.trim());
   const result = useRanks({ page, pageSize: 20, ...(searchTerm ? { search: searchTerm } : {}), ...(status ? { status } : {}) });
   const save = useSaveRank();
-  const resetPage = (callback: () => void) => {
-    callback();
-    setPage(1);
-  };
   const rows = result.data?.rows ?? [];
 
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <ReferenceFilters label="ranks" onSearchChange={(value) => resetPage(() => setSearch(value))} onStatusChange={(value) => resetPage(() => setStatus(value))} search={search} status={status} />
+        <ReferenceFilters label="ranks" onSearchChange={(value) => { setSearch(value); set({ search: value }); }} onStatusChange={(value) => set({ status: value })} search={search} status={status} />
         <Button className="w-full sm:w-auto" onClick={() => setCreating(true)} type="button">Add rank</Button>
       </div>
       <p className="text-sm text-muted-foreground">
@@ -648,7 +651,7 @@ export function RanksWorkspace() {
           )) : <tr><EmptyTableState colSpan={5} message="No ranks match these filters." /></tr>}
         </DataTable>
       </ListBody>
-      <PaginatedTableControls onPageChange={setPage} page={page} pageSize={20} totalCount={result.data?.count ?? 0} />
+      <PaginatedTableControls onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={20} totalCount={result.data?.count ?? 0} />
       <AdministrationFormPanel description="Add a police rank. It becomes available in every unit / section." onOpenChange={setCreating} open={creating} title="Add rank">
         <RankForm onSaved={async (input) => { await save.mutateAsync({ input: { ...input, isActive: true }, rankId: undefined }); setCreating(false); setNotice(`${input.name} was added.`); }} pending={save.isPending} />
       </AdministrationFormPanel>
@@ -762,18 +765,15 @@ const AUDIT_ENTITY_SUGGESTIONS = [
 ];
 
 export function AuditLogsWorkspace() {
-  const [search, setSearch] = useState("");
-  const [entityType, setEntityType] = useState("");
-  const [action, setAction] = useState<AuditActionGroup | "">("");
-  const [page, setPage] = useState(1);
+  const { params, set, clear } = useListParams(["search", "entityType", "action", "page"] as const);
+  const [search, setSearch] = useUrlSearch(params.search);
+  const [entityType, setEntityType] = useUrlSearch(params.entityType);
+  const action = AUDIT_ACTION_GROUP_KEYS.includes(params.action as AuditActionGroup) ? params.action as AuditActionGroup : "";
+  const page = urlPage(params.page);
   const [selected, setSelected] = useState<AuditLogDisplay | null>(null);
   const searchTerm = useDebouncedValue(search.trim());
   const entityTerm = useDebouncedValue(entityType.trim());
   const result = useAuditLogs({ page, pageSize: 20, ...(searchTerm ? { search: searchTerm } : {}), ...(entityTerm ? { entityType: entityTerm } : {}), ...(action ? { action } : {}) });
-  const resetPage = (callback: () => void) => {
-    callback();
-    setPage(1);
-  };
   const filtered = Boolean(search || entityType || action);
   const rows = result.data?.rows ?? [];
 
@@ -781,18 +781,18 @@ export function AuditLogsWorkspace() {
     <div className="space-y-5">
       <div className="grid gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
         <FormField htmlFor="audit-search" label="Search">
-          <Input id="audit-search" onChange={(event) => resetPage(() => setSearch(event.target.value))} placeholder="Name, record, or ID" type="search" value={search} />
+          <Input id="audit-search" onChange={(event) => { setSearch(event.target.value); set({ search: event.target.value }); }} placeholder="Name, record, or ID" type="search" value={search} />
         </FormField>
         <FormField htmlFor="audit-entity" label="Record type">
-          <Input id="audit-entity" list="audit-entity-options" onChange={(event) => resetPage(() => setEntityType(event.target.value))} placeholder="Any" value={entityType} />
+          <Input id="audit-entity" list="audit-entity-options" onChange={(event) => { setEntityType(event.target.value); set({ entityType: event.target.value }); }} placeholder="Any" value={entityType} />
         </FormField>
         <FormField htmlFor="audit-action" label="Action">
-          <select className={nativeSelectClassName} id="audit-action" onChange={(event) => resetPage(() => setAction(event.target.value as AuditActionGroup | ""))} value={action}>
+          <select className={nativeSelectClassName} id="audit-action" onChange={(event) => set({ action: event.target.value })} value={action}>
             <option value="">All actions</option>
             {AUDIT_ACTION_GROUP_KEYS.map((key) => <option key={key} value={key}>{AUDIT_ACTION_GROUPS[key].label}</option>)}
           </select>
         </FormField>
-        <Button disabled={!filtered} onClick={() => resetPage(() => { setSearch(""); setEntityType(""); setAction(""); })} type="button" variant="outline">Clear filters</Button>
+        <Button disabled={!filtered} onClick={() => { setSearch(""); setEntityType(""); clear(["search", "entityType", "action"]); }} type="button" variant="outline">Clear filters</Button>
         <datalist id="audit-entity-options">{AUDIT_ENTITY_SUGGESTIONS.map((value) => <option key={value} value={value} />)}</datalist>
       </div>
       <ListBody loadingLabel="Loading audit history…" result={result}>
@@ -810,7 +810,7 @@ export function AuditLogsWorkspace() {
           )) : <tr><EmptyTableState colSpan={5} message={filtered ? "No audit entries match these filters." : "No audit entries have been recorded yet."} /></tr>}
         </DataTable>
       </ListBody>
-      <PaginatedTableControls onPageChange={setPage} page={page} pageSize={20} totalCount={result.data?.count ?? 0} />
+      <PaginatedTableControls onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={20} totalCount={result.data?.count ?? 0} />
       {selected ? (
         <AdministrationFormPanel description="Audit entries are a permanent record and cannot be changed." onOpenChange={(open) => { if (!open) setSelected(null); }} open title="Audit record details">
           <div className="space-y-4">

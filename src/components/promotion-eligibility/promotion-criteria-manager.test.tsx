@@ -91,7 +91,7 @@ describe("PromotionCriteriaManager", () => {
     await user.click(screen.getByRole("button", { name: "Save criteria" }));
     await waitFor(() => expect(create).toHaveBeenCalledWith({
       targetRankId: 7,
-      minimumYearsOfService: 0,
+      minimumYearsOfService: 1,
       minimumPerformanceRating: null,
       requirements: [first, second].map((name) => ({ recordKind: "certification", requiredName: name, label: name, isMandatory: true })),
     }));

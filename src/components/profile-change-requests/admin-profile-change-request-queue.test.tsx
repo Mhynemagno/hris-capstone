@@ -1,8 +1,17 @@
+import userEvent from "@testing-library/user-event";
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const hooks = vi.hoisted(() => ({ useAdminProfileChangeRequests: vi.fn() }));
 vi.mock("@/hooks/use-profile-change-requests", () => hooks);
+const navigation = vi.hoisted(() => ({ replace: vi.fn(), search: "" }));
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/admin/profile-change-requests",
+  useRouter: () => ({ replace: navigation.replace }),
+  useSearchParams: () => new URLSearchParams(navigation.search),
+}));
+
+beforeEach(() => { navigation.replace.mockReset(); navigation.search = ""; });
 
 import { AdminProfileChangeRequestQueue } from "./admin-profile-change-request-queue";
 
@@ -21,5 +30,16 @@ describe("AdminProfileChangeRequestQueue", () => {
     expect([...(status as HTMLSelectElement).options].map((option) => option.text)).toEqual(["All statuses", "Approved", "Rejected"]);
     expect(hooks.useAdminProfileChangeRequests).toHaveBeenCalledWith({ page: 1, pageSize: 20 });
     expect(screen.getByRole("link", { name: /review request/i })).toBeInTheDocument();
+  });
+
+  it("writes a selected status to the URL and resets its page", async () => {
+    const user = userEvent.setup();
+    navigation.search = "page=3";
+    hooks.useAdminProfileChangeRequests.mockReturnValue({ data: { rows: [], count: 0 }, error: null, isLoading: false });
+
+    render(<AdminProfileChangeRequestQueue />);
+    await user.selectOptions(screen.getByRole("combobox", { name: "Status" }), "approved");
+
+    expect(navigation.replace).toHaveBeenCalledWith("/admin/profile-change-requests?status=approved", { scroll: false });
   });
 });

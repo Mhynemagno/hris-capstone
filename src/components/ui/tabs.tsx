@@ -4,7 +4,7 @@ import { Tabs as TabsPrimitive } from "@base-ui/react/tabs";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { ReactNode } from "react";
 
-type TabItem = { value: string; label: string; count?: number };
+type TabItem = { value: string; label: ReactNode; count?: number };
 
 export function Tabs({ children, items, label, onValueChange, value }: { value: string; onValueChange: (value: string) => void; items: TabItem[]; label: string; children: ReactNode }) {
   return (

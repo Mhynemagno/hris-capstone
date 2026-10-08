@@ -21,7 +21,9 @@ Use **Employees** for official employee information: badge number, rank, name, w
 
 HR also manages recruitment, leave decisions, deployments, promotion reviews, attendance, and HR reports.
 
-- The **Dashboard** opens with **Needs attention**: applications awaiting review, leave for approval, unmatched attendance IDs, attendance exceptions, and missing promotion requirements. Each row opens the matching list.
+- The **Dashboard** opens with **Needs attention** tabs for Leave requests for approval and Attendance exceptions. Review compact queues in place, then use each tab's full-workspace link for the complete list.
+- Sign in to the generic internal login with either your email address or badge number; employee-only and applicant-only login paths remain badge-number and Applicant-Number specific.
+- New promotion criteria must use a minimum of one, two, or three years of service. Older criteria above that range remain visible until HR corrects them.
 - Use **Job postings** to create, publish, withdraw, or delete draft postings. Withdrawing and deleting are confirmed in a dialog.
 - Use **Applications** to review applicants. Filter by stage, job posting, or AI match, and switch to **Registered applicants** to see accounts that have not applied yet.
 - Open an application to review it. Move it one stage at a time through Application Submission, Physical Agility Test, Physical & Medical Examination, Neuro-Psychiatric Examination, Drug Test, Character & Background Investigation, Panel Interview, and Final Evaluation. At Final Evaluation, choose **Shortlisted** or **Not selected**. Only a Shortlisted applicant can be hired; enter the Badge Number when hiring.

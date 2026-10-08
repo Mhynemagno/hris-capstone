@@ -12,6 +12,7 @@ export const loginSchema = z.object({
   email: z.email(),
   password: passwordSchema,
 });
+export const internalLoginSchema = z.object({ identifier: z.string().trim().min(1), password: passwordSchema });
 
 export type LoginMode = "applicant" | "employee";
 

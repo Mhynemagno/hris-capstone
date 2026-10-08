@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 const hooks = vi.hoisted(() => ({
   useMyPromotionEligibility: vi.fn(),
   usePromotionReadiness: vi.fn(),
+  usePromotionReadinessPage: vi.fn(),
   useHrPromotionEmployee: vi.fn(),
   usePromotionCriteria: vi.fn(),
   useCreatePerformanceRating: vi.fn(),
@@ -13,6 +14,7 @@ const hooks = vi.hoisted(() => ({
 const adminHooks = vi.hoisted(() => ({ useRankOptions: vi.fn() }));
 vi.mock("@/hooks/use-promotion-eligibility", () => hooks);
 vi.mock("@/hooks/use-administration", () => adminHooks);
+vi.mock("next/navigation", () => ({ usePathname: () => "/hr/promotions", useRouter: () => ({ replace: vi.fn() }), useSearchParams: () => new URLSearchParams("") }));
 
 import { EmployeePromotionEligibility } from "./employee-promotion-eligibility";
 import { HrPromotionDirectory } from "./hr-promotion-directory";
@@ -33,7 +35,7 @@ describe("promotion eligibility presentation", () => {
   });
 
   it("labels the HR directory as an advisory review without a promotion action", () => {
-    hooks.usePromotionReadiness.mockReturnValue({ isLoading: false, data: [] });
+    hooks.usePromotionReadinessPage.mockReturnValue({ isLoading: false, data: { rows: [], count: 0 } });
     adminHooks.useRankOptions.mockReturnValue({ isLoading: false, data: ranks });
     render(<HrPromotionDirectory />);
     expect(screen.getByText(/never change an employee.?s rank automatically/i)).toBeInTheDocument();
@@ -42,9 +44,9 @@ describe("promotion eligibility presentation", () => {
   });
 
   it("lists one row per employee with readiness as of today", () => {
-    hooks.usePromotionReadiness.mockReturnValue({ isLoading: false, data: [
+    hooks.usePromotionReadinessPage.mockReturnValue({ isLoading: false, data: { rows: [
       { employee_id: "e1", employee_name: "Peters, Tyson", evaluation_id: "v1", target_rank_id: 9, target_rank_name: "Police Chief Inspector", evaluated_on: "2026-09-01", recommendation: "deferred", readiness: { yearsOfService: 2, minimumYearsOfService: 2, isReady: false, missingRequirements: ["Scuba Diving"], requirements: [] } },
-    ] });
+    ], count: 1 } });
     adminHooks.useRankOptions.mockReturnValue({ isLoading: false, data: ranks });
     render(<HrPromotionDirectory />);
     const row = screen.getByText("Peters, Tyson").closest("tr")!;

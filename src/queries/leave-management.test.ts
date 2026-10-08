@@ -20,7 +20,7 @@ vi.mock("@/lib/supabase/client", () => ({
   }),
 }));
 
-import { leaveRequestFilters, submitLeaveRequest } from "./leave-management";
+import { leaveRequestFilters, listLeaveTypes, submitLeaveRequest } from "./leave-management";
 
 describe("leave management queries", () => {
   beforeEach(() => vi.resetAllMocks());
@@ -49,5 +49,18 @@ describe("leave management queries", () => {
     }, [new File(["evidence"], "evidence.pdf", { type: "application/pdf" })])).rejects.toThrow("request rejected");
 
     expect(remove).toHaveBeenCalledWith([expect.stringMatching(new RegExp(`^leave-requests/${userId}/${requestId}/`))]);
+  });
+
+  it("requests a bounded leave-type page with an exact count", async () => {
+    const range = vi.fn().mockResolvedValue({ count: 51, data: [], error: null });
+    const order = vi.fn(() => ({ range }));
+    const select = vi.fn(() => ({ order }));
+    mocks.from.mockReturnValue({ select });
+
+    await listLeaveTypes({ page: 2, pageSize: 25 });
+
+    expect(select).toHaveBeenCalledWith("*", { count: "exact" });
+    expect(order).toHaveBeenCalledWith("name");
+    expect(range).toHaveBeenCalledWith(25, 49);
   });
 });

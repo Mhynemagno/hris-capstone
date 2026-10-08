@@ -9,6 +9,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { LoadingState } from "@/components/ui/loading-state";
+import { Pagination } from "@/components/ui/pagination";
 import { Textarea } from "@/components/ui/textarea";
 import { useCreateLeaveType, useLeaveTypes, useSetLeaveTypeAllotment, useUpdateLeaveType } from "@/hooks/use-leave-management";
 import type { LeaveType } from "@/lib/types/database";
@@ -86,8 +87,8 @@ function EditLeaveTypeForm({ onDone, type }: { onDone: (message: string) => void
   );
 }
 
-export function LeaveTypeManager() {
-  const types = useLeaveTypes();
+export function LeaveTypeManager({ onPageChange, page = 1 }: { onPageChange?: (page: number) => void; page?: number } = {}) {
+  const types = useLeaveTypes({ page, pageSize: 25 });
   const create = useCreateLeaveType();
   const update = useUpdateLeaveType();
   const [error, setError] = useState<string | null>(null);
@@ -150,9 +151,9 @@ export function LeaveTypeManager() {
       </form>
       {error ? <ErrorState message={error} /> : null}
       <p aria-live="polite" className="text-sm font-medium text-emerald-700 dark:text-emerald-400" role="status">{notice ?? ""}</p>
-      {types.data?.length ? (
+      {types.data?.rows.length ? (
         <ul className="space-y-2">
-          {types.data.map((type) => (
+          {types.data.rows.map((type) => (
             <li className="rounded-lg border bg-background px-4 py-3" key={type.id}>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex flex-wrap items-center gap-2">
@@ -185,6 +186,7 @@ export function LeaveTypeManager() {
       ) : (
         <p className="rounded-lg border border-dashed px-4 py-6 text-center text-muted-foreground">No leave types yet. Add the first one above.</p>
       )}
+      {onPageChange && types.data ? <Pagination from={types.data.rows.length ? (page - 1) * 25 + 1 : 0} noun="leave types" onPageChange={onPageChange} page={page} pageCount={Math.max(1, Math.ceil(types.data.count / 25))} to={Math.min(page * 25, types.data.count)} total={types.data.count} /> : null}
       <DeleteRecordDialog
         alternative={deleting?.is_active ? { label: "Deactivate instead", onSelect: () => setActive(deleting, false) } : undefined}
         entityId={deleting?.id ?? null}

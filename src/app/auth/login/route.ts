@@ -1,10 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { z } from "zod";
 
 import { getSafeNextPath } from "@/lib/auth/safe-redirect";
 import { getPublicSupabaseConfig } from "@/lib/supabase/env";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { loginIdentifierSchema, loginSchema } from "@/schemas/auth";
+import { internalLoginSchema, loginIdentifierSchema } from "@/schemas/auth";
 
 function loginRedirect(request: NextRequest, nextPath: string, error?: string, mode?: string) {
   const url = new URL("/login", request.url);
@@ -24,20 +25,20 @@ export async function POST(request: NextRequest) {
   const mode = asValue === "employee" || asValue === "applicant" ? asValue : undefined;
   const result = mode
     ? loginIdentifierSchema(mode).safeParse({ identifier: formData.get("identifier"), password: formData.get("password") })
-    : loginSchema.safeParse({ email: formData.get("email"), password: formData.get("password") });
+    : internalLoginSchema.safeParse({ identifier: formData.get("identifier") ?? formData.get("email"), password: formData.get("password") });
 
   if (!result.success) {
     return loginRedirect(request, nextPath, "invalid_credentials", mode);
   }
 
-  let email = "email" in result.data ? result.data.email : null;
-  if (mode) {
+  let email = mode ? null : (z.email().safeParse(result.data.identifier).success ? result.data.identifier : null);
+  if (mode || !email) {
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (serviceRoleKey) {
       const { url } = getPublicSupabaseConfig();
       const admin = createClient(url, serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } });
-      const identifier = "identifier" in result.data ? result.data.identifier : "";
-      const { data } = await admin.rpc("resolve_login_identifier", { target_mode: mode, target_identifier: identifier });
+      const identifier = result.data.identifier;
+      const { data } = await admin.rpc("resolve_login_identifier", { target_mode: mode ?? "employee", target_identifier: identifier });
       email = typeof data === "string" ? data : null;
     }
     if (!email) return loginRedirect(request, nextPath, "invalid_credentials", mode);

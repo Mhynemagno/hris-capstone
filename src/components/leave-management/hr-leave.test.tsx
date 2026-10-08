@@ -12,8 +12,9 @@ vi.mock("@/queries/leave-management", () => ({ getLeaveAttachmentUrl: vi.fn() })
 vi.mock("@/hooks/use-leave-management", () => ({
   useHrLeaveRequests: (input: unknown) => {
     mocks.hrQueueInput(input);
-    return { isLoading: false, error: null, data: { rows: mocks.rows } };
+    return { isLoading: false, error: null, data: { rows: mocks.rows, count: mocks.rows.length } };
   },
+  useLeaveTypes: () => ({ isLoading: false, error: null, data: { rows: [], count: 0 } }),
   useLeaveRequest: () => ({
     isLoading: false,
     error: null,
@@ -34,9 +35,14 @@ vi.mock("@/hooks/use-leave-management", () => ({
 }));
 
 const navigation = vi.hoisted(() => ({ search: "" }));
-vi.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams(navigation.search) }));
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/hr/leave-requests",
+  useRouter: () => ({ replace: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(navigation.search),
+}));
 
 import { HrLeaveDetail, HrLeaveQueue } from "./hr-leave";
+import { HrLeaveWorkspace } from "./hr-leave-workspace";
 
 describe("HrLeaveDetail", () => {
   beforeEach(() => {
@@ -122,6 +128,17 @@ describe("HrLeaveQueue status link", () => {
     navigation.search = "status=bogus";
     render(<HrLeaveQueue />);
     expect(mocks.hrQueueInput).toHaveBeenLastCalledWith(expect.objectContaining({ status: undefined }));
+    navigation.search = "";
+  });
+});
+
+describe("HrLeaveWorkspace", () => {
+  it("opens requested pending requests on the URL-selected page", () => {
+    navigation.search = "tab=requests&status=pending&page=2";
+    render(<HrLeaveWorkspace />);
+
+    expect(screen.getByRole("tab", { name: /requests/i })).toHaveAttribute("aria-selected", "true");
+    expect(mocks.hrQueueInput).toHaveBeenLastCalledWith(expect.objectContaining({ page: 2, pageSize: 25, status: "pending" }));
     navigation.search = "";
   });
 });

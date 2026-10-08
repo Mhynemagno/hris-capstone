@@ -13,6 +13,7 @@ vi.mock("@/hooks/use-deployment-tracking", () => ({
   useEmployeeOptions: () => ({ isLoading: false, error: null, data: [{ id: "e1", fullName: "Ana One", employeeNumber: "PAT-001" }] }),
 }));
 vi.mock("next/link", () => ({ default: ({ children, href, ...props }: { children: ReactNode; href: string }) => <a href={href} {...props}>{children}</a> }));
+vi.mock("next/navigation", () => ({ usePathname: () => "/hr/deployments", useRouter: () => ({ replace: vi.fn() }), useSearchParams: () => new URLSearchParams("") }));
 
 describe("deployment tracking presentation", () => {
   it.each([["scheduled", "Scheduled"], ["ongoing", "Ongoing"], ["completed", "Completed"], ["cancelled", "Cancelled"]] as const)("labels %s deployments accessibly", (status, label) => {

@@ -1,13 +1,14 @@
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { LeaveBalance, LeaveRequest, LeaveRequestAttachment, LeaveRequestWithEmployee, LeaveType, PaginatedResult } from "@/lib/types/database";
-import { leaveAttachmentSchema, leaveCancellationSchema, leaveDecisionSchema, leaveRequestDraftSchema, leaveRequestFiltersSchema, leaveRequestSubmissionSchema, leaveTypeAllotmentSchema, leaveTypeSchema, leaveTypeUpdateSchema, type LeaveRequestFilters } from "@/schemas/leave-management";
+import { leaveAttachmentSchema, leaveCancellationSchema, leaveDecisionSchema, leaveRequestDraftSchema, leaveRequestFiltersSchema, leaveRequestSubmissionSchema, leaveTypeAllotmentSchema, leaveTypeFiltersSchema, leaveTypeSchema, leaveTypeUpdateSchema, type LeaveRequestFilters, type LeaveTypeFilters } from "@/schemas/leave-management";
 import { uuidSchema } from "@/schemas/common";
 
 function throwIfError(error: { message: string } | null) { if (error) throw new Error(error.message); }
 export function leaveRequestFilters(input: unknown = {}) { return leaveRequestFiltersSchema.parse(input); }
+export function leaveTypeFilters(input: unknown = {}) { return leaveTypeFiltersSchema.parse(input); }
 
 /** Every leave type the caller can see (HR sees inactive types too); for the admin leave-type list. */
-export async function listLeaveTypes() { const { data, error } = await createBrowserSupabaseClient().from("leave_types").select("*").order("name"); throwIfError(error); return (data ?? []) as LeaveType[]; }
+export async function listLeaveTypes(input: Partial<LeaveTypeFilters> = {}): Promise<PaginatedResult<LeaveType, LeaveTypeFilters>> { const filters=leaveTypeFilters(input); const from=(filters.page-1)*filters.pageSize; const { data, error, count }=await createBrowserSupabaseClient().from("leave_types").select("*",{count:"exact"}).order("name").range(from,from+filters.pageSize-1); throwIfError(error); return { rows:(data??[]) as LeaveType[], count:count??0, filters }; }
 /** Only leave types that can currently be requested (submit_leave_request rejects inactive types). */
 export async function listActiveLeaveTypes() { const { data, error } = await createBrowserSupabaseClient().from("leave_types").select("*").eq("is_active", true).order("name"); throwIfError(error); return (data ?? []) as LeaveType[]; }
 export async function listMyLeaveRequests(input: Partial<LeaveRequestFilters> = {}): Promise<PaginatedResult<LeaveRequest, LeaveRequestFilters>> { const filters = leaveRequestFilters(input); const from=(filters.page-1)*filters.pageSize; let query=createBrowserSupabaseClient().from("leave_requests").select("*",{count:"exact"}).order("created_at",{ascending:false}).range(from,from+filters.pageSize-1); if(filters.status) query=query.eq("status",filters.status); const {data,error,count}=await query; throwIfError(error); return {rows:(data??[]) as LeaveRequest[],count:count??0,filters}; }

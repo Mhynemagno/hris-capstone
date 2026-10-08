@@ -78,7 +78,7 @@ export const queryKeys = {
     hrContacts: () => ["public-site", "hr-contacts"] as const,
   },
   leaveManagement: {
-    types: () => ["leave-management", "types"] as const,
+    types: (filters?: Record<string, unknown>) => filters ? ["leave-management", "types", filters] as const : ["leave-management", "types"] as const,
     mine: (filters: Record<string, unknown>) => ["leave-management", "mine", filters] as const,
     request: (requestId: string) => ["leave-management", "request", requestId] as const,
     hrQueue: (filters: Record<string, unknown>) => ["leave-management", "hr-queue", filters] as const,
@@ -95,7 +95,7 @@ export const queryKeys = {
     hrDirectory: (filters: Record<string, unknown>) => ["promotion-eligibility", "hr-directory", filters] as const,
     hrEmployee: (employeeId: string) => ["promotion-eligibility", "hr-employee", employeeId] as const,
     mine: () => ["promotion-eligibility", "mine"] as const,
-    readiness: (employeeId?: string) => ["promotion-eligibility", "readiness", employeeId ?? "all"] as const,
+    readiness: (scope: string | Record<string, unknown> = "all") => ["promotion-eligibility", "readiness", scope] as const,
   },
   attendanceIntegration: {
     hrLogs: (filters: Record<string, unknown>) => ["attendance-integration", "hr-logs", filters] as const,

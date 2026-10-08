@@ -8,6 +8,7 @@ export const attendanceEventTypeSchema = z.enum(["attendance", "absence"]);
 export const attendanceFiltersSchema = paginationSchema.extend({
   employeeId: uuidSchema.optional(),
   status: attendanceStatusSchema.optional(),
+  statuses: z.array(attendanceStatusSchema).min(1).optional(),
   startsOn: isoDateSchema.optional(),
   endsOn: isoDateSchema.optional(),
 }).superRefine((value, context) => {

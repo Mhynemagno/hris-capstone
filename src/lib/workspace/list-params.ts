@@ -3,7 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 /** List screen state in the URL so dashboard links, refresh and Back restore the same view. */
-export function useListParams<K extends string>(keys: readonly K[]) {
+export function useListParams<K extends string>(keys: readonly K[], { pageKey = "page" }: { pageKey?: string } = {}) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -19,15 +19,15 @@ export function useListParams<K extends string>(keys: readonly K[]) {
     for (const [key, value] of Object.entries(patch) as [K, string | undefined][]) {
       if (value) next.set(key, value); else next.delete(key);
     }
-    const onlyPage = Object.keys(patch).every((key) => key === "page");
-    if (!onlyPage && !options.keepPage) next.delete("page");
+    const onlyPage = Object.keys(patch).every((key) => key === pageKey);
+    if (!onlyPage && !options.keepPage) next.delete(pageKey);
     write(next);
   }
 
   function clear(clearKeys: readonly K[]) {
     const next = new URLSearchParams(searchParams.toString());
     for (const key of clearKeys) next.delete(key);
-    next.delete("page");
+    next.delete(pageKey);
     write(next);
   }
 

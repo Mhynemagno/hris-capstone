@@ -20,6 +20,7 @@ vi.mock("@/hooks/use-attendance-integration", () => ({
   }),
   useResolveUnmatchedAttendanceEvent: () => ({ isPending: false, mutateAsync: resolve }),
 }));
+vi.mock("next/navigation", () => ({ usePathname: () => "/hr/attendance/unmatched", useRouter: () => ({ replace: vi.fn() }), useSearchParams: () => new URLSearchParams("") }));
 
 import { UnmatchedAttendanceQueue } from "./unmatched-attendance-queue";
 

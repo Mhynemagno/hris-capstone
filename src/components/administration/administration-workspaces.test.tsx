@@ -1,6 +1,15 @@
 import userEvent from "@testing-library/user-event";
 import { render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const navigation = vi.hoisted(() => ({ replace: vi.fn(), search: "" }));
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/admin/departments",
+  useRouter: () => ({ replace: navigation.replace }),
+  useSearchParams: () => new URLSearchParams(navigation.search),
+}));
+
+beforeEach(() => { navigation.replace.mockReset(); navigation.search = ""; });
 
 const hooks = vi.hoisted(() => ({
   useDeleteManagedUser: vi.fn().mockReturnValue({ isPending: false, mutateAsync: vi.fn() }),
@@ -54,7 +63,7 @@ describe("administration shared controls", () => {
     await user.click(screen.getByRole("button", { name: /next page/i }));
 
     expect(onPageChange).toHaveBeenCalledWith(3);
-    expect(screen.getByText("Page 2 of 3")).toBeInTheDocument();
+    expect(screen.getByText("21–40 of 45 records")).toBeInTheDocument();
   });
 
   it("disables unavailable page changes", () => {
@@ -182,6 +191,18 @@ describe("administration shared controls", () => {
     await waitFor(() => expect(hooks.useDepartments).toHaveBeenLastCalledWith(expect.objectContaining({ search: "Oper", page: 1 })));
     // The query only follows the pause in typing, not every keystroke.
     expect(hooks.useDepartments.mock.calls.some(([filters]) => filters.search === "Op")).toBe(false);
+  });
+
+  it("writes administration filters to the URL and resets pagination", async () => {
+    const user = userEvent.setup();
+    navigation.search = "page=3";
+    hooks.useDepartments.mockReturnValue({ data: { rows: [], count: 0 }, error: null, isLoading: false, refetch: vi.fn() });
+    hooks.useSaveDepartment.mockReturnValue({ isPending: false, mutateAsync: vi.fn() });
+
+    render(<DepartmentsWorkspace />);
+    await user.selectOptions(screen.getByRole("combobox", { name: "Filter units / sections by status" }), "inactive");
+
+    expect(navigation.replace).toHaveBeenCalledWith("/admin/departments?status=inactive", { scroll: false });
   });
 
   it("shows the first load inside the table area so the search box stays usable", () => {

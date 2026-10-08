@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(26);
+select extensions.plan(27);
 
 select extensions.has_table('public', 'promotion_criteria', 'Promotion criteria table exists');
 select extensions.has_table('public', 'promotion_criteria_requirements', 'Promotion requirement table exists');
@@ -53,12 +53,18 @@ select extensions.lives_ok(
     current_setting('test.criterion_id')::uuid,
     (select updated_at from public.promotion_criteria where id = current_setting('test.criterion_id')::uuid),
     9901,
-    4,
+    3,
     4,
     true,
     '[{"recordKind":"certification","requiredName":"First Aid","label":"First-aid certification","isMandatory":true}]'::jsonb
   )$$,
   'HR can update promotion criteria without an ambiguous column error'
+);
+select extensions.throws_ok(
+  $$select public.create_promotion_criterion(9901, 4, 4, '[]'::jsonb)$$,
+  '23514',
+  null,
+  'Promotion criteria cannot require more than three years of service'
 );
 select extensions.lives_ok($$select public.create_performance_rating('00000000-0000-4000-8000-000000000811'::uuid, 5, '2025-01-01', '2025-12-31', 'Strong review')$$, 'HR records an overall rating');
 select extensions.lives_ok($$select public.create_promotion_evaluation('00000000-0000-4000-8000-000000000811'::uuid, 9901, current_setting('test.criterion_id')::uuid, '2026-08-24', 'recommended', 'Ready for manual consideration', '[]'::jsonb)$$, 'HR creates an advisory evaluation');

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CalendarDays, ChevronDown, FileText, Fingerprint, Plus, TrendingUp, TriangleAlert } from "lucide-react";
+import { ChevronDown, Plus } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { ApplicationStageBadge } from "@/components/recruitment/application-stage-badge";
@@ -17,7 +17,6 @@ import { StatStrip } from "@/components/ui/stat-strip";
 import { PageContainer } from "@/components/workspace-shell/page-container";
 import { useRecentApplications } from "@/hooks/use-recruitment";
 import { useHrDashboard, useManagementDashboard } from "@/hooks/use-reporting";
-import { useWorkspaceCount } from "@/hooks/use-workspace-counts";
 import { attendanceStatusLabel } from "@/lib/attendance-status";
 import { formatDate } from "@/lib/format-date";
 import { PIPELINE_STAGES } from "@/lib/recruitment/application-stages";
@@ -25,7 +24,7 @@ import { resolvePeriod } from "@/lib/workspace/date-range";
 import { useListParams } from "@/lib/workspace/list-params";
 import type { DashboardSummary } from "@/schemas/reporting";
 
-import { AttentionList, type AttentionItem } from "./attention-list";
+import { HrDashboardAttention } from "./hr-dashboard-attention";
 import { ChartCard, ColumnTrendChart, formatCount, HorizontalBarChart, type ChartDatum } from "./charts";
 
 type DashboardRole = "hr_personnel" | "management";
@@ -158,8 +157,6 @@ export function WorkspaceDashboard({ role }: { role: DashboardRole }) {
   const hrQuery = useHrDashboard(range, isHr);
   const managementQuery = useManagementDashboard(range, !isHr);
   const query = isHr ? hrQuery : managementQuery;
-  const awaitingReview = useWorkspaceCount("applicationsAwaitingReview", isHr);
-  const unmatched = useWorkspaceCount("unmatchedAttendance", isHr);
   const recent = useRecentApplications(isHr);
 
   return (
@@ -171,25 +168,16 @@ export function WorkspaceDashboard({ role }: { role: DashboardRole }) {
         title="Dashboard"
       />
       {query.isLoading ? <DashboardSkeleton /> : query.error ? <ErrorState message={query.error.message} onRetry={() => void query.refetch()} /> : query.data ? (
-        <DashboardBody awaitingReview={awaitingReview} data={query.data} isHr={isHr} recent={recent} unmatched={unmatched} />
+        <DashboardBody data={query.data} isHr={isHr} recent={recent} />
       ) : null}
     </PageContainer>
   );
 }
 
-type CountQuery = { data?: number; isError: boolean };
 type RecentQuery = ReturnType<typeof useRecentApplications>;
 
-function DashboardBody({ awaitingReview, data, isHr, recent, unmatched }: { data: DashboardSummary; isHr: boolean; awaitingReview: CountQuery; unmatched: CountQuery; recent: RecentQuery }) {
+function DashboardBody({ data, isHr, recent }: { data: DashboardSummary; isHr: boolean; recent: RecentQuery }) {
   const metric = (key: string) => data.metrics[key] ?? 0;
-  const countOf = (query: CountQuery) => (query.isError || query.data === undefined ? null : query.data);
-  const attention: AttentionItem[] = [
-    { key: "applications", label: "Applications awaiting review", count: countOf(awaitingReview), href: "/hr/applications?stage=Application%20Submission", icon: FileText },
-    { key: "leave", label: "Leave requests for approval", count: "pendingLeave" in data.metrics ? metric("pendingLeave") : null, href: "/hr/leave-requests?status=pending", icon: CalendarDays },
-    { key: "unmatched", label: "Unmatched attendance IDs", count: countOf(unmatched), href: "/hr/attendance/unmatched", icon: Fingerprint },
-    { key: "exceptions", label: "Attendance exceptions", count: "attendanceExceptions" in data.metrics ? metric("attendanceExceptions") : null, href: "/hr/attendance", icon: TriangleAlert },
-    { key: "promotions", label: "Missing promotion requirements", count: "trainingNeeds" in data.metrics ? metric("trainingNeeds") : null, href: "/hr/promotions", icon: TrendingUp },
-  ];
   const workforce = metric("activeWorkforce");
   const onDutyShare = workforce ? Math.round((metric("attendanceToday") / workforce) * 100) : 0;
   const stats = [
@@ -204,10 +192,7 @@ function DashboardBody({ awaitingReview, data, isHr, recent, unmatched }: { data
   return (
     <div className="space-y-6">
       {isHr ? (
-        <section aria-labelledby="needs-attention" className="rounded-lg border bg-card">
-          <h2 className="border-b px-5 py-3 text-lg font-semibold" id="needs-attention">Needs attention</h2>
-          <AttentionList items={attention} />
-        </section>
+        <HrDashboardAttention />
       ) : null}
       <StatStrip items={stats} label="Today" />
       {isHr ? (

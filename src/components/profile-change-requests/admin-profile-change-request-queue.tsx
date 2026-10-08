@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 
 import { PaginatedTableControls } from "@/components/administration/paginated-table-controls";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +11,7 @@ import { LoadingState } from "@/components/ui/loading-state";
 import { nativeSelectClassName } from "@/components/ui/native-select";
 import { useAdminProfileChangeRequests } from "@/hooks/use-profile-change-requests";
 import { formatDateTime } from "@/lib/format-date";
+import { useListParams } from "@/lib/workspace/list-params";
 import type { ProfileChangeStatus } from "@/schemas/profile-change-requests";
 
 // "All statuses" is the default and includes pending requests, so they can still be actioned.
@@ -19,8 +19,9 @@ const statuses: Array<ProfileChangeStatus | ""> = ["", "approved", "rejected"];
 const statusLabel = (status: ProfileChangeStatus | "") => (status ? status[0].toUpperCase() + status.slice(1) : "All statuses");
 
 export function AdminProfileChangeRequestQueue() {
-  const [page, setPage] = useState(1);
-  const [status, setStatus] = useState<ProfileChangeStatus | "">("");
+  const { params, set } = useListParams(["status", "page"] as const);
+  const page = Math.max(1, Number(params.page) || 1);
+  const status = statuses.includes(params.status as ProfileChangeStatus) ? params.status as ProfileChangeStatus : "";
   const result = useAdminProfileChangeRequests({ page, pageSize: 20, ...(status ? { status } : {}) });
   const rows = result.data?.rows ?? [];
 
@@ -31,10 +32,7 @@ export function AdminProfileChangeRequestQueue() {
           <select
             className={nativeSelectClassName}
             id="request-status"
-            onChange={(event) => {
-              setStatus(event.target.value as ProfileChangeStatus | "");
-              setPage(1);
-            }}
+            onChange={(event) => set({ status: event.target.value })}
             value={status}
           >
             {statuses.map((item) => (
@@ -100,7 +98,7 @@ export function AdminProfileChangeRequestQueue() {
               </tbody>
             </table>
           </div>
-          <PaginatedTableControls onPageChange={setPage} page={page} pageSize={20} totalCount={result.data?.count ?? 0} />
+          <PaginatedTableControls onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={20} totalCount={result.data?.count ?? 0} />
         </>
       )}
     </div>
