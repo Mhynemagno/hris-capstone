@@ -55,11 +55,6 @@ begin
      where employee.profile_id = target_profile_id
      for update;
 
-    if target_employee_id is null then
-      raise exception 'Cannot assign a badge number: no employee record is linked to %.', target_email
-        using errcode = 'P0002';
-    end if;
-
     loop
       candidate_badge := format('%s-%s', candidate_number / 100000, lpad((candidate_number % 100000)::text, 5, '0'));
       exit when not exists (
