@@ -17,7 +17,7 @@ export function ProfileChangeRequestList() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
-  const requests = useMyProfileChangeRequests({ page, pageSize: 20 });
+  const requests = useMyProfileChangeRequests({ page, pageSize: 10 });
   const cancel = useCancelProfileChangeRequest();
 
   async function cancelRequest(requestId: string) {
@@ -107,7 +107,7 @@ export function ProfileChangeRequestList() {
           </p>
         )}
       </div>
-      <PaginatedTableControls onPageChange={setPage} page={page} pageSize={20} totalCount={requests.data?.count ?? 0} />
+      <PaginatedTableControls onPageChange={setPage} page={page} pageSize={10} totalCount={requests.data?.count ?? 0} />
       <Link className={buttonVariants()} href="/employee/profile/change-request">
         Request a change
       </Link>

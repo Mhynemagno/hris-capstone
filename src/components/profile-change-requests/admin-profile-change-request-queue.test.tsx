@@ -28,7 +28,7 @@ describe("AdminProfileChangeRequestQueue", () => {
     const status = screen.getByRole("combobox", { name: "Status" });
     expect(status).toHaveValue("");
     expect([...(status as HTMLSelectElement).options].map((option) => option.text)).toEqual(["All statuses", "Approved", "Rejected"]);
-    expect(hooks.useAdminProfileChangeRequests).toHaveBeenCalledWith({ page: 1, pageSize: 20 });
+    expect(hooks.useAdminProfileChangeRequests).toHaveBeenCalledWith({ page: 1, pageSize: 10 });
     expect(screen.getByRole("link", { name: /review request/i })).toBeInTheDocument();
   });
 

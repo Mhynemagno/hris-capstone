@@ -106,17 +106,19 @@ export function ApplicantRegistrationForm({ loginHref = "/login", nextPath = nul
 
   return (
     <form aria-busy={pending} className="space-y-4" noValidate onSubmit={onSubmit}>
-      <FormField error={fieldErrors.lastName} htmlFor="registration-last-name" label="Last Name" required><input autoComplete="family-name" className={inputClassName} id="registration-last-name" maxLength={60} name="lastName" required /></FormField>
-      <FormField error={fieldErrors.firstName} htmlFor="registration-first-name" label="First Name" required><input autoComplete="given-name" className={inputClassName} id="registration-first-name" maxLength={60} name="firstName" required /></FormField>
-      <FormField error={fieldErrors.middleName} htmlFor="registration-middle-name" label="Middle Name"><input autoComplete="additional-name" className={inputClassName} id="registration-middle-name" maxLength={60} name="middleName" /></FormField>
-      <FormField error={fieldErrors.qualifier} htmlFor="registration-qualifier" label="Qualifier" required><select className={inputClassName} defaultValue="" id="registration-qualifier" name="qualifier" required><option disabled value="">Select</option>{APPLICANT_QUALIFIERS.map((qualifier) => <option key={qualifier} value={qualifier}>{qualifier}</option>)}<option value="None">None</option></select></FormField>
-      <FormField error={fieldErrors.email} htmlFor="registration-email" label="Email" required><input autoComplete="email" className={inputClassName} id="registration-email" inputMode="email" name="email" required type="email" /></FormField>
-      <FormField error={fieldErrors.mobileNumber} htmlFor="registration-mobile" label="Mobile Number" required><input autoComplete="tel" className={inputClassName} id="registration-mobile" inputMode="tel" maxLength={16} name="mobileNumber" placeholder="+639XXXXXXXXX" required type="tel" /></FormField>
-      <FormField error={fieldErrors.birthdate} htmlFor="registration-birthdate" label="Birthdate" required>
-        <input autoComplete="bday" className={inputClassName} id="registration-birthdate" name="birthdate" required type="date" />
-      </FormField>
-      <PasswordField autoComplete="new-password" error={fieldErrors.password} id="registration-password" label="Password" name="password" />
-      <PasswordField autoComplete="new-password" error={fieldErrors.confirmPassword} id="registration-confirm-password" label="Confirm Password" name="confirmPassword" />
+      <div className="grid gap-4 md:grid-cols-2">
+        <FormField error={fieldErrors.lastName} htmlFor="registration-last-name" label="Last Name" required><input autoComplete="family-name" className={inputClassName} id="registration-last-name" maxLength={60} name="lastName" required /></FormField>
+        <FormField error={fieldErrors.firstName} htmlFor="registration-first-name" label="First Name" required><input autoComplete="given-name" className={inputClassName} id="registration-first-name" maxLength={60} name="firstName" required /></FormField>
+        <FormField error={fieldErrors.middleName} htmlFor="registration-middle-name" label="Middle Name"><input autoComplete="additional-name" className={inputClassName} id="registration-middle-name" maxLength={60} name="middleName" /></FormField>
+        <FormField error={fieldErrors.qualifier} htmlFor="registration-qualifier" label="Qualifier" required><select className={inputClassName} defaultValue="" id="registration-qualifier" name="qualifier" required><option disabled value="">Select</option>{APPLICANT_QUALIFIERS.map((qualifier) => <option key={qualifier} value={qualifier}>{qualifier}</option>)}<option value="None">None</option></select></FormField>
+        <FormField error={fieldErrors.email} htmlFor="registration-email" label="Email" required><input autoComplete="email" className={inputClassName} id="registration-email" inputMode="email" name="email" required type="email" /></FormField>
+        <FormField error={fieldErrors.mobileNumber} htmlFor="registration-mobile" label="Mobile Number" required><input autoComplete="tel" className={inputClassName} id="registration-mobile" inputMode="tel" maxLength={16} name="mobileNumber" placeholder="+639XXXXXXXXX" required type="tel" /></FormField>
+        <FormField error={fieldErrors.birthdate} htmlFor="registration-birthdate" label="Birthdate" required>
+          <input autoComplete="bday" className={inputClassName} id="registration-birthdate" name="birthdate" required type="date" />
+        </FormField>
+        <PasswordField autoComplete="new-password" error={fieldErrors.password} id="registration-password" label="Password" name="password" />
+        <PasswordField autoComplete="new-password" error={fieldErrors.confirmPassword} id="registration-confirm-password" label="Confirm Password" name="confirmPassword" />
+      </div>
       {error ? <ErrorState message={error} /> : null}
       <button className="h-11 w-full rounded-md bg-primary px-4 font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60" disabled={pending} type="submit">
         {pending ? "Registering…" : "Register"}

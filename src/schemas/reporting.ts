@@ -31,7 +31,7 @@ export const reportFiltersSchema = z
     departmentId: z.coerce.number().int().positive().optional(),
     status: z.string().trim().min(1).max(64).optional(),
     page: z.coerce.number().int().min(1).default(1),
-    pageSize: z.coerce.number().int().min(1).max(100).default(25),
+    pageSize: z.coerce.number().int().min(1).max(100).default(10),
   })
   .transform((value) => ({ ...defaultRange(), ...value }))
   .superRefine((value, context) => {

@@ -8,6 +8,7 @@ import { AppShell } from "./app-shell";
 const { usePathname } = vi.hoisted(() => ({ usePathname: vi.fn() }));
 vi.mock("next/navigation", () => ({ usePathname, useRouter: () => ({ replace: vi.fn(), refresh: vi.fn() }) }));
 vi.mock("@/components/notifications/notification-bell", () => ({ NotificationBell: () => <a href="/notifications">Notifications</a> }));
+vi.mock("@/components/auth/sign-out-button", () => ({ SignOutButton: () => <button type="button">Sign out</button> }));
 
 describe("AppShell (applicant)", () => {
   beforeEach(() => usePathname.mockReturnValue("/applicant"));
@@ -26,5 +27,10 @@ describe("AppShell (applicant)", () => {
     expect(screen.getByText("San Juan City Police Station")).toBeInTheDocument();
     expect(screen.getByTestId("brand-command-accent")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Account menu for a@example.com" })).toBeInTheDocument();
+  });
+
+  it("anchors the sign-out action at the bottom of the sidebar", () => {
+    render(<AppShell config={ROLE_CONFIG.applicant} email="a@example.com"><p>Applicant</p></AppShell>);
+    expect(screen.getByRole("button", { name: "Sign out" }).closest('[data-sidebar="footer"]')).not.toBeNull();
   });
 });

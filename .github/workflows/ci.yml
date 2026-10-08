@@ -41,7 +41,21 @@ jobs:
           version: 2.114.0
 
       - name: Start local Supabase services
-        run: supabase start
+        run: |
+          for attempt in 1 2 3 4 5; do
+            if supabase start; then
+              exit 0
+            fi
+
+            if [ "$attempt" -eq 5 ]; then
+              echo "Supabase services could not start after $attempt attempts."
+              exit 1
+            fi
+
+            delay=$((attempt * 30))
+            echo "Supabase image pull failed; retrying in ${delay}s (attempt $((attempt + 1))/5)."
+            sleep "$delay"
+          done
 
       - name: Run database regression tests
         run: supabase test db --local supabase/tests

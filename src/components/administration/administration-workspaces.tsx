@@ -319,7 +319,7 @@ function ManagedAccountsWorkspace({ invite }: { invite: boolean }) {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const searchTerm = useDebouncedValue(search.trim());
-  const filters = { page, pageSize: 20 as const, ...(searchTerm ? { search: searchTerm } : {}), ...(role ? { role } : {}), ...(status ? { status } : {}) };
+  const filters = { page, pageSize: 10 as const, ...(searchTerm ? { search: searchTerm } : {}), ...(role ? { role } : {}), ...(status ? { status } : {}) };
   const result = useManagedUsers(filters);
   const inviteMutation = useInviteInternalUser();
   const updateMutation = useUpdateManagedUser();
@@ -341,7 +341,7 @@ function ManagedAccountsWorkspace({ invite }: { invite: boolean }) {
       <ListBody loadingLabel="Loading accounts…" result={result}>
         <ManagedUsersTable onDelete={setDeleting} onEdit={setSelected} rows={result.data?.rows ?? []} showProfiles={invite} />
       </ListBody>
-      <PaginatedTableControls onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={20} totalCount={result.data?.count ?? 0} />
+      <PaginatedTableControls onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={10} totalCount={result.data?.count ?? 0} />
       {invite ? (
         <AdministrationFormPanel description="Invite an internal account without exposing administrative credentials." onOpenChange={setInviteOpen} open={inviteOpen} title="Invite account">
           <InvitationForm
@@ -433,7 +433,7 @@ export function DepartmentsWorkspace() {
   const [creating, setCreating] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const searchTerm = useDebouncedValue(search.trim());
-  const result = useDepartments({ page, pageSize: 20, ...(searchTerm ? { search: searchTerm } : {}), ...(status ? { status } : {}) });
+  const result = useDepartments({ page, pageSize: 10, ...(searchTerm ? { search: searchTerm } : {}), ...(status ? { status } : {}) });
   const save = useSaveDepartment();
   const rows = result.data?.rows ?? [];
 
@@ -458,7 +458,7 @@ export function DepartmentsWorkspace() {
           )) : <tr><EmptyTableState colSpan={3} message="No units / sections match these filters." /></tr>}
         </DataTable>
       </ListBody>
-      <PaginatedTableControls onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={20} totalCount={result.data?.count ?? 0} />
+      <PaginatedTableControls onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={10} totalCount={result.data?.count ?? 0} />
       <AdministrationFormPanel description="Create a unit / section for personnel and job openings." onOpenChange={setCreating} open={creating} title="Add unit / section">
         <DepartmentForm onSaved={async (input) => { await save.mutateAsync({ input: { ...input, isActive: true } }); setCreating(false); setNotice(`${input.name} was added.`); }} pending={save.isPending} />
       </AdministrationFormPanel>
@@ -520,7 +520,7 @@ export function UnitStationsWorkspace() {
   const [creating, setCreating] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const searchTerm = useDebouncedValue(search.trim());
-  const result = useUnitStationCatalogue({ page, pageSize: 20, ...(searchTerm ? { search: searchTerm } : {}), ...(status ? { status } : {}) });
+  const result = useUnitStationCatalogue({ page, pageSize: 10, ...(searchTerm ? { search: searchTerm } : {}), ...(status ? { status } : {}) });
   const save = useSaveUnitStation();
   const rows = result.data?.rows ?? [];
 
@@ -548,7 +548,7 @@ export function UnitStationsWorkspace() {
           )) : <tr><EmptyTableState colSpan={3} message={searchTerm || status ? "No units match these filters." : "No units yet. Add the station's precincts and units so they can be assigned."} /></tr>}
         </DataTable>
       </ListBody>
-      <PaginatedTableControls onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={20} totalCount={result.data?.count ?? 0} />
+      <PaginatedTableControls onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={10} totalCount={result.data?.count ?? 0} />
       <AdministrationFormPanel description="Create a unit / station for personnel records." onOpenChange={setCreating} open={creating} title="Add unit / station">
         <UnitStationForm onSaved={async (input) => { await save.mutateAsync({ input: { ...input, isActive: true } }); setCreating(false); setNotice(`${input.name} was added.`); }} pending={save.isPending} />
       </AdministrationFormPanel>
@@ -621,7 +621,7 @@ export function RanksWorkspace() {
   const [creating, setCreating] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const searchTerm = useDebouncedValue(search.trim());
-  const result = useRanks({ page, pageSize: 20, ...(searchTerm ? { search: searchTerm } : {}), ...(status ? { status } : {}) });
+  const result = useRanks({ page, pageSize: 10, ...(searchTerm ? { search: searchTerm } : {}), ...(status ? { status } : {}) });
   const save = useSaveRank();
   const rows = result.data?.rows ?? [];
 
@@ -651,7 +651,7 @@ export function RanksWorkspace() {
           )) : <tr><EmptyTableState colSpan={5} message="No ranks match these filters." /></tr>}
         </DataTable>
       </ListBody>
-      <PaginatedTableControls onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={20} totalCount={result.data?.count ?? 0} />
+      <PaginatedTableControls onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={10} totalCount={result.data?.count ?? 0} />
       <AdministrationFormPanel description="Add a police rank. It becomes available in every unit / section." onOpenChange={setCreating} open={creating} title="Add rank">
         <RankForm onSaved={async (input) => { await save.mutateAsync({ input: { ...input, isActive: true }, rankId: undefined }); setCreating(false); setNotice(`${input.name} was added.`); }} pending={save.isPending} />
       </AdministrationFormPanel>
@@ -773,7 +773,7 @@ export function AuditLogsWorkspace() {
   const [selected, setSelected] = useState<AuditLogDisplay | null>(null);
   const searchTerm = useDebouncedValue(search.trim());
   const entityTerm = useDebouncedValue(entityType.trim());
-  const result = useAuditLogs({ page, pageSize: 20, ...(searchTerm ? { search: searchTerm } : {}), ...(entityTerm ? { entityType: entityTerm } : {}), ...(action ? { action } : {}) });
+  const result = useAuditLogs({ page, pageSize: 10, ...(searchTerm ? { search: searchTerm } : {}), ...(entityTerm ? { entityType: entityTerm } : {}), ...(action ? { action } : {}) });
   const filtered = Boolean(search || entityType || action);
   const rows = result.data?.rows ?? [];
 
@@ -810,7 +810,7 @@ export function AuditLogsWorkspace() {
           )) : <tr><EmptyTableState colSpan={5} message={filtered ? "No audit entries match these filters." : "No audit entries have been recorded yet."} /></tr>}
         </DataTable>
       </ListBody>
-      <PaginatedTableControls onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={20} totalCount={result.data?.count ?? 0} />
+      <PaginatedTableControls onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={10} totalCount={result.data?.count ?? 0} />
       {selected ? (
         <AdministrationFormPanel description="Audit entries are a permanent record and cannot be changed." onOpenChange={(open) => { if (!open) setSelected(null); }} open title="Audit record details">
           <div className="space-y-4">

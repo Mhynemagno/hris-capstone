@@ -7,11 +7,15 @@ const mocks = vi.hoisted(() => ({
   types: [] as Array<Record<string, unknown>>,
   balances: [] as Array<Record<string, unknown>>,
   cancel: vi.fn(),
+  leaveRequestFilters: vi.fn(),
   submit: vi.fn(),
 }));
 
 vi.mock("@/hooks/use-leave-management", () => ({
-  useMyLeaveRequests: () => ({ isLoading: false, error: null, data: { rows: mocks.rows } }),
+  useMyLeaveRequests: (filters: { page: number; pageSize: number }) => {
+    mocks.leaveRequestFilters(filters);
+    return { isLoading: false, error: null, data: { rows: mocks.rows, count: 21 } };
+  },
   useCancelLeaveRequest: () => ({ isPending: false, mutateAsync: mocks.cancel }),
   useRequestableLeaveTypes: () => ({ isLoading: false, error: null, data: mocks.types }),
   useSubmitLeaveRequest: () => ({ isPending: false, mutateAsync: mocks.submit }),
@@ -30,12 +34,24 @@ describe("EmployeeLeaveList", () => {
   beforeEach(() => {
     mocks.rows = [];
     mocks.cancel.mockReset();
+    mocks.leaveRequestFilters.mockReset();
   });
 
   it("shows a useful empty state when there are no leave requests", () => {
     render(<EmployeeLeaveList />);
     expect(screen.getByText(/No leave requests yet\./)).toBeVisible();
     expect(screen.getByRole("link", { name: "Request leave" })).toHaveAttribute("href", "/employee/leave/new");
+  });
+
+  it("loads ten leave requests at a time and lets the employee change pages", async () => {
+    mocks.rows = [{ id: "123e4567-e89b-42d3-a456-426614174000", leave_type_name: "Annual leave", starts_on: "2026-09-01", ends_on: "2026-09-02", reason: null, status: "approved", decision_note: null }];
+    const user = userEvent.setup();
+    render(<EmployeeLeaveList />);
+
+    expect(mocks.leaveRequestFilters).toHaveBeenLastCalledWith({ page: 1, pageSize: 10 });
+    expect(screen.getByText("1–10 of 21 leave requests")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Next page" }));
+    expect(mocks.leaveRequestFilters).toHaveBeenLastCalledWith({ page: 2, pageSize: 10 });
   });
 
   it("asks for confirmation and reports a failed cancellation without removing the request", async () => {

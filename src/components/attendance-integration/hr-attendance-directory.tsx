@@ -16,7 +16,7 @@ import { formatAttendanceTime } from "./attendance-time";
 export function HrAttendanceDirectory() {
   const { params, set } = useListParams(["page"] as const);
   const page = Math.max(1, Number(params.page) || 1);
-  const query = useHrAttendanceLogs({ page, pageSize: 25 });
+  const query = useHrAttendanceLogs({ page, pageSize: 10 });
   if (query.isLoading) return <LoadingState label="Loading attendance history…" />;
   if (query.error) return <ErrorState message={query.error.message} />;
   const rows = query.data?.rows ?? [];
@@ -66,7 +66,7 @@ export function HrAttendanceDirectory() {
           </tbody>
         </table>
       </div>
-      <Pagination from={rows.length ? (page - 1) * 25 + 1 : 0} noun="attendance records" onPageChange={(next) => set({ page: String(next) })} page={page} pageCount={Math.max(1, Math.ceil(total / 25))} to={Math.min(page * 25, total)} total={total} />
+      <Pagination from={rows.length ? (page - 1) * 10 + 1 : 0} noun="attendance records" onPageChange={(next) => set({ page: String(next) })} page={page} pageCount={Math.max(1, Math.ceil(total / 10))} to={Math.min(page * 10, total)} total={total} />
     </section>
   );
 }

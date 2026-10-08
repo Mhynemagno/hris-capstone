@@ -116,7 +116,7 @@ describe("NotificationInbox", () => {
     expect(nextPage).toBeEnabled();
     await user.click(nextPage);
 
-    expect(mocks.useNotifications).toHaveBeenLastCalledWith({ page: 2, pageSize: 20 });
+    expect(mocks.useNotifications).toHaveBeenLastCalledWith({ page: 2, pageSize: 10 });
   });
 
   it("reports notification update failures without hiding the inbox", () => {

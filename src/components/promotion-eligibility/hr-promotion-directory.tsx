@@ -31,7 +31,7 @@ export function HrPromotionDirectory() {
   // One row per reviewed employee (their latest review); readiness is checked against today's records.
   const { params, set } = useListParams(["page"] as const);
   const page = Math.max(1, Number(params.page) || 1);
-  const query = usePromotionReadinessPage({ page, pageSize: 25 });
+  const query = usePromotionReadinessPage({ page, pageSize: 10 });
   const ranks = useRankOptions();
   if (query.isLoading) return <LoadingState label="Loading promotion reviews…" />;
   if (query.error) return <ErrorState message={query.error.message} />;
@@ -96,7 +96,7 @@ export function HrPromotionDirectory() {
           </tbody>
         </table>
       </div>
-      <Pagination from={rows.length ? (page - 1) * 25 + 1 : 0} noun="promotion reviews" onPageChange={(next) => set({ page: String(next) })} page={page} pageCount={Math.max(1, Math.ceil(total / 25))} to={Math.min(page * 25, total)} total={total} />
+      <Pagination from={rows.length ? (page - 1) * 10 + 1 : 0} noun="promotion reviews" onPageChange={(next) => set({ page: String(next) })} page={page} pageCount={Math.max(1, Math.ceil(total / 10))} to={Math.min(page * 10, total)} total={total} />
     </section>
   );
 }

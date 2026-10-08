@@ -9,6 +9,7 @@ import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { LoadingState } from "@/components/ui/loading-state";
 import { nativeSelectClassName } from "@/components/ui/native-select";
+import { Pagination } from "@/components/ui/pagination";
 import { Textarea } from "@/components/ui/textarea";
 import {
   useCancelLeaveRequest,
@@ -46,7 +47,8 @@ function balanceHint(balance: LeaveBalance | undefined, year: number) {
 }
 
 export function EmployeeLeaveList() {
-  const result = useMyLeaveRequests({ page: 1, pageSize: 25 });
+  const [page, setPage] = useState(1);
+  const result = useMyLeaveRequests({ page, pageSize: 10 });
   const cancel = useCancelLeaveRequest();
   const [error, setError] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
@@ -55,6 +57,7 @@ export function EmployeeLeaveList() {
   if (result.isLoading) return <LoadingState label="Loading your leave history…" />;
   if (result.error) return <ErrorState message={result.error.message} />;
   const rows = result.data?.rows ?? [];
+  const total = result.data?.count ?? 0;
 
   async function cancelRequest(requestId: string) {
     setError(null);
@@ -136,6 +139,7 @@ export function EmployeeLeaveList() {
           No leave requests yet. Use “Request leave” to submit your first request.
         </p>
       )}
+      <Pagination from={rows.length ? (page - 1) * 10 + 1 : 0} noun="leave requests" onPageChange={setPage} page={page} pageCount={Math.max(1, Math.ceil(total / 10))} to={Math.min(page * 10, total)} total={total} />
     </section>
   );
 }

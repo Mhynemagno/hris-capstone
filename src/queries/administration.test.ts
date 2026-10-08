@@ -53,7 +53,7 @@ describe("administration queries", () => {
     vi.resetAllMocks();
   });
 
-  it("returns a flat managed-user page and requests only its 20-row range", async () => {
+  it("returns a flat managed-user page and requests only its 10-row range", async () => {
     const profileChain = createChain({
       data: [{
         id: testUserId,
@@ -72,7 +72,7 @@ describe("administration queries", () => {
     });
     mocks.from.mockReturnValueOnce(profileChain).mockReturnValueOnce(roleChain);
 
-    const page = await listManagedUsers({ page: 2, pageSize: 20, search: "Ada", role: "employee" });
+    const page = await listManagedUsers({ page: 2, pageSize: 10, search: "Ada", role: "employee" });
 
     expect(page).toEqual({
       rows: [{
@@ -86,9 +86,9 @@ describe("administration queries", () => {
         assigned_at: "2026-08-01T00:00:00.000Z",
       }],
       count: 21,
-      filters: { page: 2, pageSize: 20, search: "Ada", role: "employee" },
+      filters: { page: 2, pageSize: 10, search: "Ada", role: "employee" },
     });
-    expect(profileChain.range).toHaveBeenCalledWith(20, 39);
+    expect(profileChain.range).toHaveBeenCalledWith(10, 19);
     expect(roleChain.eq).toHaveBeenCalledWith("role", "employee");
     expect(roleChain.in).toHaveBeenCalledWith("user_id", [testUserId]);
   });
@@ -112,9 +112,9 @@ describe("administration queries", () => {
     });
     mocks.from.mockReturnValueOnce(profileChain).mockReturnValueOnce(roleChain);
 
-    await listManagedUsers({ page: 2, pageSize: 20 });
+    await listManagedUsers({ page: 2, pageSize: 10 });
 
-    expect(profileChain.range).toHaveBeenCalledWith(20, 39);
+    expect(profileChain.range).toHaveBeenCalledWith(10, 19);
     expect(profileChain.select).not.toHaveBeenCalledWith(expect.stringContaining("user_roles!"));
     expect(roleChain.in).toHaveBeenCalledWith("user_id", [testUserId]);
   });
@@ -125,7 +125,7 @@ describe("administration queries", () => {
     const roleChain = createChain({ data: [{ user_id: testUserId, role: "employee", assigned_at: "2026-08-01T00:00:00.000Z" }], error: null });
     mocks.from.mockReturnValueOnce(profileChain).mockReturnValueOnce(roleChain);
 
-    const page = await listManagedUsers({ page: 1, pageSize: 20 });
+    const page = await listManagedUsers({ page: 1, pageSize: 10 });
 
     expect(page.rows).toEqual([expect.objectContaining({ id: testUserId, employee_id: employeeId })]);
   });
@@ -136,13 +136,13 @@ describe("administration queries", () => {
     const activationChain = createChain({ data: [{ id: "00000000-0000-0000-0000-000000000010", employee_id: "00000000-0000-0000-0000-000000000011", profile_id: testUserId, application_id: "00000000-0000-0000-0000-000000000012", status: "pending", requested_by_user_id: "00000000-0000-0000-0000-000000000013", activated_by_user_id: null, activated_at: null, created_at: "2026-08-20T00:00:00.000Z" }], error: null });
     mocks.from.mockReturnValueOnce(profileChain).mockReturnValueOnce(roleChain).mockReturnValueOnce(activationChain);
 
-    const page = await listManagedUsers({ page: 1, pageSize: 20 });
+    const page = await listManagedUsers({ page: 1, pageSize: 10 });
 
     expect(activationChain.in).toHaveBeenCalledWith("profile_id", [testUserId]);
     expect(page.rows[0]).toMatchObject({ pending_activation: { status: "pending", profile_id: testUserId } });
   });
 
-  it("enriches a 20-row audit page with only the profiles referenced by that page", async () => {
+  it("enriches a 10-row audit page with only the profiles referenced by that page", async () => {
     const targetUserId = "223e4567-e89b-42d3-a456-426614174000";
     const auditChain = createChain({
       data: [{
@@ -166,9 +166,9 @@ describe("administration queries", () => {
     });
     mocks.from.mockReturnValueOnce(auditChain).mockReturnValueOnce(profileChain);
 
-    const page = await listAuditLogs({ page: 1, pageSize: 20 });
+    const page = await listAuditLogs({ page: 1, pageSize: 10 });
 
-    expect(auditChain.range).toHaveBeenCalledWith(0, 19);
+    expect(auditChain.range).toHaveBeenCalledWith(0, 9);
     expect(profileChain.in).toHaveBeenCalledWith("id", [testUserId, targetUserId]);
     expect(page.rows[0]).toMatchObject({
       actorLabel: "Chief Ada Lovelace",
@@ -189,7 +189,7 @@ describe("administration queries", () => {
     const deletedChain = createChain({ data: [{ entity_id: deletedId, metadata: { full_name: "Fernando Allen" } }], error: null });
     mocks.from.mockReturnValueOnce(auditChain).mockReturnValueOnce(profileChain).mockReturnValueOnce(deletedChain);
 
-    const page = await listAuditLogs({ page: 1, pageSize: 20, action: "deleted", search: "Allen, F" });
+    const page = await listAuditLogs({ page: 1, pageSize: 10, action: "deleted", search: "Allen, F" });
 
     expect(auditChain.in).toHaveBeenCalledWith("action", ["delete", "deleted"]);
     expect(auditChain.or).toHaveBeenCalledWith(expect.stringContaining("metadata->>full_name.ilike.%Allen_ F%"));
@@ -201,7 +201,7 @@ describe("administration queries", () => {
     const profileChain = createChain({ data: [], count: 0, error: null });
     mocks.from.mockReturnValueOnce(profileChain);
 
-    await listManagedUsers({ page: 1, pageSize: 20, search: "Allen, (Fernando)" });
+    await listManagedUsers({ page: 1, pageSize: 10, search: "Allen, (Fernando)" });
 
     expect(profileChain.or).toHaveBeenCalledWith("full_name.ilike.%Allen_ _Fernando_%,email.ilike.%Allen_ _Fernando_%");
   });

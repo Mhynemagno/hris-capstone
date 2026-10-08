@@ -9,7 +9,7 @@ const optionalFilterText = (max: number) =>
   z.string().trim().max(max).transform((value) => value || undefined).optional();
 
 const administrationPageSchema = paginationSchema.extend({
-  pageSize: z.literal(20).default(20),
+  pageSize: z.literal(10).default(10),
 });
 
 export const internalInvitationSchema = z.object({

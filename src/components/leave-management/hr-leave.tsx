@@ -41,7 +41,7 @@ export function HrLeaveQueue({ page = 1, onPageChange, onStatusChange, status: c
   );
   const status = controlledStatus ?? localStatus;
   const setStatus = onStatusChange ?? setLocalStatus;
-  const result = useHrLeaveRequests({ page, pageSize: 25, status: status || undefined });
+  const result = useHrLeaveRequests({ page, pageSize: 10, status: status || undefined });
   const rows = result.data?.rows ?? [];
   const statusLabel = statusOptions.find((option) => option.value === status)?.label.toLowerCase();
 
@@ -75,7 +75,7 @@ export function HrLeaveQueue({ page = 1, onPageChange, onStatusChange, status: c
         <ErrorState message={result.error.message} />
       ) : (
         <><LeaveRequestTable emptyMessage={statusLabel ? `No leave requests are ${statusLabel}. Try another status.` : "No leave requests have been submitted yet."} rows={rows} status={status || undefined} />
-        {onPageChange && result.data ? <Pagination from={result.data.rows.length ? (page - 1) * 25 + 1 : 0} noun="leave requests" onPageChange={onPageChange} page={page} pageCount={Math.max(1, Math.ceil(result.data.count / 25))} to={Math.min(page * 25, result.data.count)} total={result.data.count} /> : null}</>
+        {onPageChange && result.data ? <Pagination from={result.data.rows.length ? (page - 1) * 10 + 1 : 0} noun="leave requests" onPageChange={onPageChange} page={page} pageCount={Math.max(1, Math.ceil(result.data.count / 10))} to={Math.min(page * 10, result.data.count)} total={result.data.count} /> : null}</>
       )}
     </section>
   );

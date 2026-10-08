@@ -1,15 +1,11 @@
 "use client";
 
-import { LogOut } from "lucide-react";
-
-import { SignOutButton } from "@/components/auth/sign-out-button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
@@ -47,12 +43,6 @@ export function AccountMenu({ email, roleLabel }: AccountMenuProps) {
             </span>
           </DropdownMenuLabel>
         </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <SignOutButton
-          className="w-full justify-start"
-          icon={<LogOut aria-hidden="true" className="size-4" />}
-          variant="ghost"
-        />
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -28,9 +28,8 @@ for (const role of roles) {
     await expect(page.getByRole("heading", { name: "Access denied" })).toBeVisible();
 
     await page.goto(role.home);
-    await page.getByRole("button", { name: new RegExp(`Account menu for ${role.email}`) }).click();
-    await page.getByRole("menu").getByRole("button", { name: "Sign out" }).click();
-    await expect(page).toHaveURL(/\/login$/);
+    await page.getByRole("button", { name: "Sign out" }).click();
+    await expect(page).toHaveURL(/^https?:\/\/[^/]+\/$/);
 
     await page.goto(role.home);
     await expect(page).toHaveURL(/\/login\?/);

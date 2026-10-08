@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { reportFiltersSchema } from "./reporting";
+import { reportFiltersSchema, reportingFilters } from "./reporting";
 
 describe("reporting schemas", () => {
   it("normalizes a report filter with pagination", () => {
@@ -13,6 +13,10 @@ describe("reporting schemas", () => {
         pageSize: "25",
       }),
     ).toMatchObject({ reportKey: "attendance-leave", page: 2, pageSize: 25 });
+  });
+
+  it("uses ten rows per page when a report does not specify a page size", () => {
+    expect(reportingFilters({ reportKey: "deployments" }).pageSize).toBe(10);
   });
 
   it("rejects unknown reports and reversed ranges", () => {
