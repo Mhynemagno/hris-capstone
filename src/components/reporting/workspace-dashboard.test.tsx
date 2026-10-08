@@ -27,6 +27,8 @@ vi.mock("@/hooks/use-workspace-counts", () => ({ useWorkspaceCount: (key: string
 vi.mock("@/hooks/use-recruitment", () => ({
   useRecentApplications: () => ({ isLoading: false, error: null, data: [{ id: "a1", status: "Application Submission", submitted_at: "2026-10-07T00:00:00Z", applicant_name: "Aplica Candidate", job_title: "Patrol 2026" }] }),
 }));
+vi.mock("@/hooks/use-leave-management", () => ({ useHrLeaveRequests: () => ({ isLoading: false, error: null, data: { rows: [], count: 0 } }) }));
+vi.mock("@/hooks/use-attendance-integration", () => ({ useHrAttendanceLogs: () => ({ isLoading: false, error: null, data: { rows: [], count: 0 } }) }));
 
 import { WorkspaceDashboard } from "./workspace-dashboard";
 
@@ -35,7 +37,7 @@ describe("WorkspaceDashboard", () => {
     render(<WorkspaceDashboard role="hr_personnel" />);
     expect(screen.getByRole("heading", { level: 1, name: "Dashboard" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Needs attention" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Applications awaiting review.*3/ })).toHaveAttribute("href", "/hr/applications?stage=Application%20Submission");
+    expect(screen.getByRole("tab", { name: /Leave requests for approval/ })).toBeInTheDocument();
     expect(screen.getByRole("article", { name: "On duty today" })).toHaveTextContent("142 / 160");
     expect(screen.getByRole("article", { name: "Open job postings" })).toHaveTextContent("2");
     const pipeline = screen.getByRole("region", { name: "Recruitment pipeline" });

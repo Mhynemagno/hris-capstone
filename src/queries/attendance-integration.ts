@@ -11,6 +11,8 @@ export async function listHrAttendanceLogs(input: Partial<AttendanceFilters> = {
   let query = createBrowserSupabaseClient().from("attendance_logs").select("*, employee:employees(id, employee_number, first_name, last_name)", { count: "exact" }).order("attendance_date", { ascending: false }).range(from, from + filters.pageSize - 1);
   if (filters.employeeId) query = query.eq("employee_id", filters.employeeId);
   if (filters.status) query = query.eq("status", filters.status);
+  if (filters.statuses?.length === 1) query = query.eq("status", filters.statuses[0]);
+  if (filters.statuses && filters.statuses.length > 1) query = query.in("status", filters.statuses);
   if (filters.startsOn) query = query.gte("attendance_date", filters.startsOn);
   if (filters.endsOn) query = query.lte("attendance_date", filters.endsOn);
   const { data, error, count } = await query; throwIfError(error);
