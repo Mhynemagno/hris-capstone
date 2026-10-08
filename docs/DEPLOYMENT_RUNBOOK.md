@@ -18,6 +18,10 @@
 
 Follow [AI_SHORTLISTING_SETUP.md](AI_SHORTLISTING_SETUP.md): deploy `process-application-analysis`, set `GEMINI_API_KEY` and `ANALYSIS_WORKER_SECRET` as function secrets, and store `project_url` and `analysis_worker_secret` in Vault. The every-minute `pg_cron` schedule and the 15-minute stale-attempt timeout are created by migration `20260924112000_application_analysis_schedule.sql`. `process-application-analysis` is the one function deployed with `verify_jwt = false`, because it authenticates with the worker secret header instead.
 
+### Notification emails
+
+Follow [EMAIL_NOTIFICATIONS_SETUP.md](EMAIL_NOTIFICATIONS_SETUP.md): deploy `send-notification-email`, configure its Brevo API and worker secrets, and store the matching `email_notification_worker_secret` in Vault. Its every-minute schedule and private outbox are created by migration `20261008120000_brevo_email_notifications.sql`. This is also intentionally deployed with `verify_jwt = false`, because the cron tick authenticates with its dedicated worker-secret header; it must not be exposed as a browser endpoint.
+
 ## Vercel
 
 1. Confirm the GitHub integration deploys the intended `main` commit; no Vercel CLI token is needed for this project workflow.

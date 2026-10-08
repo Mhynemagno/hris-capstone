@@ -110,7 +110,7 @@ The deployment owner must create a Brevo transactional API key and keep it separ
 - `BREVO_SENDER_EMAIL` and `BREVO_SENDER_NAME` — the existing Brevo-registered sender values, configured for the Edge Function without committing the personal address to source control.
 - `EMAIL_NOTIFICATION_WORKER_SECRET` — Supabase Edge Function secret.
 - `email_notification_worker_secret` — the same worker secret stored in Supabase Vault for the cron tick.
-- `project_url` — existing Vault secret; it must equal the deployed application origin used in links.
+- `project_url` — existing Vault secret containing the Supabase project URL used by the cron tick to invoke Edge Functions. `APP_URL` is the deployed application origin used in links.
 
 The function is deployed with `verify_jwt = false` and protects itself using `x-email-notification-worker-secret`, exactly like the existing scheduled analysis worker. Before production deployment, the owner must send one test to a controlled recipient and confirm Brevo accepts the configured existing sender.
 
