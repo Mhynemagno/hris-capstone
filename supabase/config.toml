@@ -418,3 +418,8 @@ enabled = true
 # The worker authenticates every call with the x-analysis-worker-secret header (see index.ts),
 # so the gateway JWT check is disabled for the pg_cron caller.
 verify_jwt = false
+
+[functions.send-notification-email]
+# The cron tick authenticates with x-email-notification-worker-secret (see index.ts),
+# so the gateway JWT check is disabled for this scheduled worker only.
+verify_jwt = false
