@@ -5,6 +5,7 @@
 | `NEXT_PUBLIC_SUPABASE_URL` | Vercel / project owner | Development, Preview, Production | public | Browser-safe project URL. |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Vercel / project owner | Development, Preview, Production | public | Browser-safe publishable key only. |
 | `SUPABASE_ACCESS_TOKEN` | GitHub Actions / project owner | CI | secret | Used only for authenticated Supabase CLI deployment. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Vercel / project owner | Development, Preview, Production | secret | Used only by Next.js server routes for identifier-login lookup. Never define as `NEXT_PUBLIC_*` or commit. |
 | `SUPABASE_SECRET_KEY` or `SUPABASE_SERVICE_ROLE_KEY` | Supabase Edge Function runtime | Function runtime only | secret | Never define as `NEXT_PUBLIC_*` or commit. |
 | `APP_URL` | Supabase Edge Function runtime | Production | configuration | Exact deployed application origin for invitation redirects. |
 | Gemini provider key | Supabase Edge Function runtime | configured environments | secret | Send only dummy/anonymized/consented CV content. |
