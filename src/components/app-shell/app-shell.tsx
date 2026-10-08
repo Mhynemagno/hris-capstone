@@ -1,12 +1,13 @@
 "use client";
 
-import { PanelLeft } from "lucide-react";
+import { LogOut, PanelLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { AccountMenu } from "@/components/auth/account-menu";
+import { SignOutButton } from "@/components/auth/sign-out-button";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import {
   Breadcrumb,
@@ -18,6 +19,7 @@ import {
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -118,6 +120,13 @@ export function AppShell({ children, config, email }: AppShellProps) {
               ))}
             </nav>
           </SidebarContent>
+          <SidebarFooter className="border-t border-sidebar-border p-3">
+            <SignOutButton
+              className="justify-start text-sidebar-foreground"
+              icon={<LogOut aria-hidden="true" className="size-4" />}
+              variant="ghost"
+            />
+          </SidebarFooter>
         </Sidebar>
         <SidebarInset className="min-w-0 overflow-y-auto overscroll-contain bg-background" id="main-content">
           <header className="dark sticky top-0 z-20 flex h-16 shrink-0 items-center gap-3 border-b border-white/10 bg-topbar px-3 text-foreground sm:px-4">

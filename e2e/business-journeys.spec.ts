@@ -21,7 +21,7 @@ async function signIn(page: Page, email: string, home: string) {
 
 async function signOut(page: Page) {
   await page.getByRole("button", { name: "Sign out" }).click();
-  await expect(page).toHaveURL(/^\/$/);
+  await expect(page).toHaveURL(/^https?:\/\/[^/]+\/$/);
 }
 
 function isoDate(daysFromToday: number) {
@@ -72,8 +72,10 @@ test.describe("administrator master data", () => {
     await expect(page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Ranks" })).toHaveAttribute("aria-current", "page");
     await expect(page.getByRole("cell", { name: "PAT", exact: true })).toBeVisible();
     await expect(page.getByRole("cell", { name: "Patrolman / Patrolwoman", exact: true })).toBeVisible();
-    await expect(page.getByRole("cell", { name: "PCOL", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Delete Patrolman / Patrolwoman" })).toBeVisible();
+    // Ranks list ten per page in seniority order, so the most senior rank is on page 2.
+    await page.goto("/admin/ranks?page=2");
+    await expect(page.getByRole("cell", { name: "PCOL", exact: true })).toBeVisible();
   });
 });
 
@@ -146,7 +148,9 @@ test.describe("personnel records and profile changes", () => {
     const phone = `+63917${String(Math.floor(Math.random() * 1e7)).padStart(7, "0")}`;
     await signIn(page, "demo.hr@example.test", "/hr");
     await page.goto("/hr/employees");
-    await page.getByRole("link", { name: /0-00001|Demo/ }).first().click();
+    // Other demo accounts have records too, so pick the one linked to demo.employee by its badge.
+    await page.getByLabel("Search").fill("0-00001");
+    await page.getByRole("link", { name: /View record for Demo Employee/ }).click();
     await expect(page).toHaveURL(/\/hr\/employees\/[0-9a-f-]{36}$/, { timeout: 30_000 });
     const recordUrl = page.url();
     await page.goto(`${recordUrl}?tab=official&mode=edit`);

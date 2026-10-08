@@ -29,7 +29,7 @@ for (const role of roles) {
 
     await page.goto(role.home);
     await page.getByRole("button", { name: "Sign out" }).click();
-    await expect(page).toHaveURL(/^\/$/);
+    await expect(page).toHaveURL(/^https?:\/\/[^/]+\/$/);
 
     await page.goto(role.home);
     await expect(page).toHaveURL(/\/login\?/);

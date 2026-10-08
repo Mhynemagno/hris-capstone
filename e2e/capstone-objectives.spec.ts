@@ -39,7 +39,7 @@ async function signIn(page: Page, email: string, home: string, password = demoPa
 
 async function signOut(page: Page) {
   await page.getByRole("button", { name: "Sign out" }).click();
-  await expect(page).toHaveURL(/^\/$/);
+  await expect(page).toHaveURL(/^https?:\/\/[^/]+\/$/);
 }
 
 function isoDate(daysFromToday: number) {
