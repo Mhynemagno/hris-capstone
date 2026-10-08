@@ -45,8 +45,11 @@ begin
      for update;
 
     if target_profile_id is null then
-      raise exception 'Cannot assign a badge number: no profile exists for %.', target_email
-        using errcode = 'P0002';
+      -- These accounts exist in the deployed project, but they are not
+      -- created in a clean local/CI database. Leave such environments
+      -- provisionable instead of preventing all subsequent migrations.
+      raise notice 'Skipped badge assignment: no profile exists for %.', target_email;
+      continue;
     end if;
 
     select employee.id
