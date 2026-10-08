@@ -39,7 +39,7 @@ export type StageAction =
   | { kind: "hire"; canReject: boolean }
   | { kind: "closed" };
 
-export function stageActions(status: ApplicationStatus, _hasBmiProof?: boolean): StageAction {
+export function stageActions(status: ApplicationStatus): StageAction {
   if (status === "Hired" || status === "Not Selected") return { kind: "closed" };
   if (status === "Shortlisted") return { kind: "hire", canReject: false };
   const allowed = allowedNextStatuses[status];

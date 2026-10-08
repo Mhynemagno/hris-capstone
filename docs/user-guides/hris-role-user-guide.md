@@ -24,7 +24,7 @@ HR also manages recruitment, leave decisions, deployments, promotion reviews, at
 - The **Dashboard** opens with **Needs attention**: applications awaiting review, leave for approval, unmatched attendance IDs, attendance exceptions, and missing promotion requirements. Each row opens the matching list.
 - Use **Job postings** to create, publish, withdraw, or delete draft postings. Withdrawing and deleting are confirmed in a dialog.
 - Use **Applications** to review applicants. Filter by stage, job posting, or AI match, and switch to **Registered applicants** to see accounts that have not applied yet.
-- Open an application to review it. Select **Move to next stage**, choose the stage, then **Move to …**; select **Not selected** to end it; at For Training select **Hire applicant** and enter the badge number.
+- Open an application to review it. Move it one stage at a time through Application Submission, Physical Agility Test, Physical & Medical Examination, Neuro-Psychiatric Examination, Drug Test, Character & Background Investigation, Panel Interview, and Final Evaluation. At Final Evaluation, choose **Shortlisted** or **Not selected**. Only a Shortlisted applicant can be hired; enter the Badge Number when hiring.
 
 ## Employee
 
@@ -39,7 +39,7 @@ Rank, badge number, unit/station, employment status, and official training are H
 
 ## Applicant
 
-Use **Job openings** to browse available posts, update your applicant profile, submit applications, and track application status. Applicants cannot access employee, HR, management, or administrator workspaces.
+Use **Recruitment** to browse available posts, update your applicant profile, submit applications, and track application status. Register using your name, email, mobile number, birthdate, and password, then confirm your email. Sign in with your six-digit Applicant Number. Save the five required documents together before submitting; the dashboard and Application Status show progress through all eight recruitment stages. Applicants cannot access employee, HR, management, or administrator workspaces.
 
 ## Management
 

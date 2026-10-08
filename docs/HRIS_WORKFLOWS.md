@@ -1,10 +1,10 @@
 # HRIS workflow guide
 
-Applicants receive an immutable, server-generated Applicant Number displayed as `0-12345`. It is not an employee Badge Number. When HR hires an applicant, HR assigns the employee's Badge Number.
+Applicants sign in with their six-digit Applicant Number (separators may be entered if shown). Employees sign in with their Badge Number. These identifiers are not interchangeable. New applicants must confirm their email before signing in.
 
-Applicants may optionally upload a private profile photo. If they do not, the system displays the standard silhouette avatar. Eligibility and diploma records are private and must be uploaded before submitting an application.
+Applicants may optionally upload a private profile photo. If they do not, the system displays the standard silhouette avatar. Before submitting an application, applicants save all five private required documents—CV/Resume, PSA birth certificate, 2x2 picture, Eligibility, and Diploma—using the single **Save documents** action.
 
-HR can return an application as **Needs Revision** with an optional note. Only that status lets the applicant replace application documents and resubmit. Existing applications cannot be submitted again for the same opening.
+HR advances an application through the eight-stage recruitment process: **Application Submission**, **Physical Agility Test**, **Physical & Medical Examination**, **Neuro-Psychiatric Examination**, **Drug Test**, **Character & Background Investigation**, **Panel Interview**, and **Final Evaluation**. Only at Final Evaluation can HR mark an applicant **Shortlisted** or **Not Selected**. Only Shortlisted applicants can be hired. Existing applications cannot be submitted again for the same opening.
 
 HR can delete an unused draft opening or withdraw an active opening without removing its application history. Unit/Station is selected from the active catalogue when creating or editing a personnel record. Deployments use the operational states **active** and **rejected**; HR selects an employee by Badge Number and chooses a Unit Assignment.
 
