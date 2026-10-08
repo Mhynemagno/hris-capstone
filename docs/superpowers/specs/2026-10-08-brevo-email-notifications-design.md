@@ -1,6 +1,6 @@
 # Brevo Email Notifications Design
 
-**Status:** Ready for user review  
+**Status:** Ready for user review
 **Date:** 2026-10-08
 
 ## Purpose and success criteria
