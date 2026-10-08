@@ -25,7 +25,7 @@ describe("LoginForm", () => {
 
   it("labels the fields, links to password recovery, and toggles the password inside its input", () => {
     render(<LoginForm nextPath="/" />);
-    expect(screen.getByLabelText("Email")).toHaveAttribute("type", "email");
+    expect(screen.getByLabelText("Email or badge number")).toHaveAttribute("type", "text");
     const password = screen.getByLabelText("Password");
     expect(password).toHaveAttribute("type", "password");
     expect(screen.getByRole("link", { name: "Forgot your password?" })).toHaveAttribute("href", "/forgot-password");
