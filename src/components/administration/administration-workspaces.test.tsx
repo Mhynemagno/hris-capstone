@@ -54,7 +54,7 @@ describe("administration shared controls", () => {
     await user.click(screen.getByRole("button", { name: /next page/i }));
 
     expect(onPageChange).toHaveBeenCalledWith(3);
-    expect(screen.getByText("Page 2 of 3")).toBeInTheDocument();
+    expect(screen.getByText("21–40 of 45 records")).toBeInTheDocument();
   });
 
   it("disables unavailable page changes", () => {

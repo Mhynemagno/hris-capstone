@@ -28,3 +28,12 @@ it("keeps other params when only the page changes", () => {
   act(() => result.current.set({ page: "4" }));
   expect(nav.replace).toHaveBeenCalledWith("/hr/applications?q=ana&page=4", { scroll: false });
 });
+
+it("resets a configured page key when a tab changes while preserving unrelated dashboard state", () => {
+  nav.search = "period=month&attentionPage=3&attention=leave";
+  const { result } = renderHook(() => useListParams(["attention", "attentionPage"] as const, { pageKey: "attentionPage" }));
+
+  act(() => result.current.set({ attention: "attendance" }));
+
+  expect(nav.replace).toHaveBeenCalledWith("/hr/applications?period=month&attention=attendance", { scroll: false });
+});

@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { Pagination } from "@/components/ui/pagination";
 
 type PaginatedTableControlsProps = {
   onPageChange: (page: number) => void;
@@ -9,14 +9,8 @@ type PaginatedTableControlsProps = {
 
 export function PaginatedTableControls({ onPageChange, page, pageSize, totalCount }: PaginatedTableControlsProps) {
   const pageCount = Math.max(1, Math.ceil(totalCount / pageSize));
+  const from = totalCount ? (page - 1) * pageSize + 1 : 0;
+  const to = totalCount ? Math.min(page * pageSize, totalCount) : 0;
 
-  return (
-    <nav aria-label="Table pagination" className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <p aria-live="polite" className="text-sm text-muted-foreground">Page {page} of {pageCount}</p>
-      <div className="flex w-full gap-2 sm:w-auto">
-        <Button aria-label="Previous page" disabled={page <= 1} onClick={() => onPageChange(page - 1)} type="button" variant="outline">Previous</Button>
-        <Button aria-label="Next page" disabled={page >= pageCount} onClick={() => onPageChange(page + 1)} type="button" variant="outline">Next</Button>
-      </div>
-    </nav>
-  );
+  return <Pagination from={from} noun="records" onPageChange={onPageChange} page={page} pageCount={pageCount} to={to} total={totalCount} />;
 }
