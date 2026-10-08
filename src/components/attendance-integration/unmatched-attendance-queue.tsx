@@ -7,11 +7,15 @@ import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { ErrorState } from "@/components/ui/error-state";
 import { FormField } from "@/components/ui/form-field";
 import { LoadingState } from "@/components/ui/loading-state";
+import { Pagination } from "@/components/ui/pagination";
 import { useAttendanceEmployees, useResolveUnmatchedAttendanceEvent, useUnmatchedAttendanceEvents } from "@/hooks/use-attendance-integration";
 import { formatDate } from "@/lib/format-date";
+import { useListParams } from "@/lib/workspace/list-params";
 
 export function UnmatchedAttendanceQueue() {
-  const events = useUnmatchedAttendanceEvents({ page: 1, pageSize: 25 });
+  const { params, set } = useListParams(["page"] as const);
+  const page = Math.max(1, Number(params.page) || 1);
+  const events = useUnmatchedAttendanceEvents({ page, pageSize: 25 });
   const employees = useAttendanceEmployees();
   const resolve = useResolveUnmatchedAttendanceEvent();
   const [selected, setSelected] = useState<Record<string, string | null>>({});
@@ -26,6 +30,7 @@ export function UnmatchedAttendanceQueue() {
   if (events.isLoading || employees.isLoading) return <LoadingState label="Loading unmatched attendance events…" />;
   if (events.error || employees.error) return <ErrorState message={(events.error ?? employees.error)?.message ?? "Unable to load attendance events."} />;
   const rows = events.data?.rows ?? [];
+  const total = events.data?.count ?? rows.length;
 
   async function mapEvent(eventId: string, externalEmployeeId: string) {
     const employeeId = selected[eventId];
@@ -72,6 +77,7 @@ export function UnmatchedAttendanceQueue() {
           </article>
         );
       }) : <p className="rounded-xl border p-4 text-sm text-muted-foreground">No unmatched attendance events. New unknown device IDs appear here after an import.</p>}
+      <Pagination from={rows.length ? (page - 1) * 25 + 1 : 0} noun="unmatched events" onPageChange={(next) => set({ page: String(next) })} page={page} pageCount={Math.max(1, Math.ceil(total / 25))} to={Math.min(page * 25, total)} total={total} />
     </section>
   );
 }

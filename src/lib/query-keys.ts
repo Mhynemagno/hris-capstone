@@ -95,7 +95,7 @@ export const queryKeys = {
     hrDirectory: (filters: Record<string, unknown>) => ["promotion-eligibility", "hr-directory", filters] as const,
     hrEmployee: (employeeId: string) => ["promotion-eligibility", "hr-employee", employeeId] as const,
     mine: () => ["promotion-eligibility", "mine"] as const,
-    readiness: (employeeId?: string) => ["promotion-eligibility", "readiness", employeeId ?? "all"] as const,
+    readiness: (scope: string | Record<string, unknown> = "all") => ["promotion-eligibility", "readiness", scope] as const,
   },
   attendanceIntegration: {
     hrLogs: (filters: Record<string, unknown>) => ["attendance-integration", "hr-logs", filters] as const,

@@ -16,6 +16,8 @@ import { useRankOptions } from "@/hooks/use-administration";
 import { useEmployeeDirectory, useEmployeeProfilePhotoUrl, useUnlinkedEmployeeAccounts } from "@/hooks/use-personnel-records";
 import type { Employee } from "@/lib/types/database";
 import { cn } from "@/lib/utils";
+import { useListParams } from "@/lib/workspace/list-params";
+import { Pagination } from "@/components/ui/pagination";
 
 import { DepartmentRankFields } from "./department-rank-fields";
 import { EmployeeAccountPicker } from "./employee-account-picker";
@@ -53,11 +55,13 @@ function Blank() {
 }
 
 export function EmployeeDirectory() {
-  const [search, setSearch] = useState("");
+  const { params, set } = useListParams(["q", "department", "rank", "status", "page"] as const);
+  const search = params.q;
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [departmentId, setDepartmentId] = useState("");
-  const [rankId, setRankId] = useState("");
-  const [employmentStatus, setEmploymentStatus] = useState<Employee["employment_status"] | "">("");
+  const departmentId = params.department;
+  const rankId = params.rank;
+  const employmentStatus = params.status as Employee["employment_status"] | "";
+  const page = Math.max(1, Number(params.page) || 1);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const { data, error, isLoading } = useEmployeeDirectory({
@@ -65,6 +69,8 @@ export function EmployeeDirectory() {
     departmentId: departmentId ? Number(departmentId) : undefined,
     rankId: rankId ? Number(rankId) : undefined,
     employmentStatus: employmentStatus || undefined,
+    page,
+    pageSize: 25,
   });
   const accounts = useUnlinkedEmployeeAccounts();
   const ranks = useRankOptions();
@@ -75,10 +81,7 @@ export function EmployeeDirectory() {
   const total = data?.count ?? 0;
 
   function clearFilters() {
-    setSearch("");
-    setDepartmentId("");
-    setRankId("");
-    setEmploymentStatus("");
+    set({ q: "", department: "", rank: "", status: "" });
   }
 
   return (
@@ -93,7 +96,7 @@ export function EmployeeDirectory() {
             <label className="sr-only" htmlFor="employee-search">Search</label>
             <div className="relative">
               <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input className="pl-9" id="employee-search" onChange={(event) => setSearch(event.target.value)} placeholder="Search name or badge number" type="search" value={search} />
+              <Input className="pl-9" id="employee-search" onChange={(event) => set({ q: event.target.value })} placeholder="Search name or badge number" type="search" value={search} />
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -115,13 +118,13 @@ export function EmployeeDirectory() {
             departmentId={departmentId}
             departmentPlaceholder="All units / sections"
             idPrefix="employee-filter"
-            onDepartmentChange={setDepartmentId}
-            onRankChange={setRankId}
+            onDepartmentChange={(department) => set({ department })}
+            onRankChange={(rank) => set({ rank })}
             rankId={rankId}
             rankPlaceholder="All ranks"
           />
           <FormField htmlFor="employee-filter-status" label="Employment status">
-            <NativeSelect id="employee-filter-status" onChange={(event) => setEmploymentStatus(event.target.value as Employee["employment_status"] | "")} value={employmentStatus}>
+            <NativeSelect id="employee-filter-status" onChange={(event) => set({ status: event.target.value })} value={employmentStatus}>
               <option value="">All statuses</option>
               {(Object.keys(employmentStatusLabels) as Employee["employment_status"][]).map((status) => <option key={status} value={status}>{employmentStatusLabels[status]}</option>)}
             </NativeSelect>
@@ -204,6 +207,7 @@ export function EmployeeDirectory() {
             </table>
           </div>
         )}
+        <Pagination from={rows.length ? (page - 1) * 25 + 1 : 0} noun="employees" onPageChange={(next) => set({ page: String(next) })} page={page} pageCount={Math.max(1, Math.ceil(total / 25))} to={Math.min(page * 25, total)} total={total} />
       </section>
 
       <DeleteRecordDialog

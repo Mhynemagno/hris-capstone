@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({ useEmployeeDirectory: vi.fn() }));
+const navigation = vi.hoisted(() => ({ replace: vi.fn(), search: "" }));
 
 vi.mock("@/hooks/use-personnel-records", () => ({
   useEmployeeDirectory: mocks.useEmployeeDirectory,
@@ -33,6 +34,7 @@ vi.mock("@/hooks/use-administration", () => ({
     ],
   }),
 }));
+vi.mock("next/navigation", () => ({ usePathname: () => "/hr/employees", useRouter: () => ({ replace: navigation.replace }), useSearchParams: () => new URLSearchParams(navigation.search) }));
 
 import { EmployeeDirectory } from "./employee-directory";
 
@@ -51,6 +53,8 @@ const employee = {
 
 describe("EmployeeDirectory", () => {
   beforeEach(() => {
+    navigation.search = "";
+    navigation.replace.mockReset();
     mocks.useEmployeeDirectory.mockReset();
     mocks.useEmployeeDirectory.mockReturnValue({ data: { rows: [employee], count: 1 }, error: null, isLoading: false });
   });
@@ -82,7 +86,7 @@ describe("EmployeeDirectory", () => {
     expect(screen.queryByRole("link", { name: /update to 0-00000/i })).not.toBeInTheDocument();
   });
 
-  it("filters by department, rank, and employment status, then clears", async () => {
+  it("writes department, rank, and employment-status filters to the URL and resets the page", async () => {
     const user = userEvent.setup();
     render(<EmployeeDirectory />);
 
@@ -94,21 +98,18 @@ describe("EmployeeDirectory", () => {
     expect(within(screen.getByLabelText("Employment status")).getAllByRole("option").map((option) => option.textContent)).toEqual(["All statuses", "Active", "Retired"]);
     await user.selectOptions(screen.getByLabelText("Employment status"), "retired");
 
-    expect(mocks.useEmployeeDirectory).toHaveBeenLastCalledWith(expect.objectContaining({ departmentId: 3, rankId: 7, employmentStatus: "retired" }));
+    expect(navigation.replace).toHaveBeenLastCalledWith("/hr/employees?status=retired", { scroll: false });
     // Filters can find records in inactive departments.
     expect(screen.getByRole("option", { name: "Records (inactive)" })).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Clear filters" }));
-    expect(mocks.useEmployeeDirectory).toHaveBeenLastCalledWith({ search: "", departmentId: undefined, rankId: undefined, employmentStatus: undefined });
+    expect(screen.getByRole("button", { name: "Clear filters" })).toBeDisabled();
   });
 
   it("explains an empty filtered result", async () => {
     mocks.useEmployeeDirectory.mockReturnValue({ data: { rows: [], count: 0 }, error: null, isLoading: false });
-    const user = userEvent.setup();
+    navigation.search = "q=zzz";
     render(<EmployeeDirectory />);
 
-    expect(screen.getByRole("link", { name: "Add the first employee" })).toBeInTheDocument();
-    await user.type(screen.getByLabelText("Search"), "zzz");
     expect(screen.getByText(/No personnel records match these filters/)).toBeInTheDocument();
   });
 });

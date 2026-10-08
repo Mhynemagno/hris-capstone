@@ -5,14 +5,18 @@ import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
+import { Pagination } from "@/components/ui/pagination";
 import { useHrAttendanceLogs } from "@/hooks/use-attendance-integration";
 import { formatDate } from "@/lib/format-date";
+import { useListParams } from "@/lib/workspace/list-params";
 
 import { AttendanceStatusBadge } from "./attendance-status-badge";
 import { formatAttendanceTime } from "./attendance-time";
 
 export function HrAttendanceDirectory() {
-  const query = useHrAttendanceLogs({ page: 1, pageSize: 25 });
+  const { params, set } = useListParams(["page"] as const);
+  const page = Math.max(1, Number(params.page) || 1);
+  const query = useHrAttendanceLogs({ page, pageSize: 25 });
   if (query.isLoading) return <LoadingState label="Loading attendance history…" />;
   if (query.error) return <ErrorState message={query.error.message} />;
   const rows = query.data?.rows ?? [];
@@ -62,6 +66,7 @@ export function HrAttendanceDirectory() {
           </tbody>
         </table>
       </div>
+      <Pagination from={rows.length ? (page - 1) * 25 + 1 : 0} noun="attendance records" onPageChange={(next) => set({ page: String(next) })} page={page} pageCount={Math.max(1, Math.ceil(total / 25))} to={Math.min(page * 25, total)} total={total} />
     </section>
   );
 }

@@ -6,13 +6,17 @@ import { useMemo } from "react";
 import { buttonVariants } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
+import { Pagination } from "@/components/ui/pagination";
 import { useEmployeeOptions, useHrDeployments } from "@/hooks/use-deployment-tracking";
 import { formatDate } from "@/lib/format-date";
+import { useListParams } from "@/lib/workspace/list-params";
 
 import { DeploymentStatusBadge } from "./deployment-status-badge";
 
 export function HrDeploymentDirectory() {
-  const query = useHrDeployments({ page: 1, pageSize: 25 });
+  const { params, set } = useListParams(["page"] as const);
+  const page = Math.max(1, Number(params.page) || 1);
+  const query = useHrDeployments({ page, pageSize: 25 });
   const employees = useEmployeeOptions();
   const employeeById = useMemo(() => new Map((employees.data ?? []).map((employee) => [employee.id, employee])), [employees.data]);
   const newDeploymentLink = <Link className={buttonVariants({ className: "w-full sm:w-auto" })} href="/hr/deployments/new">New deployment</Link>;
@@ -70,6 +74,7 @@ export function HrDeploymentDirectory() {
           </tbody>
         </table>
       </div>
+      <Pagination from={rows.length ? (page - 1) * 25 + 1 : 0} noun="deployments" onPageChange={(next) => set({ page: String(next) })} page={page} pageCount={Math.max(1, Math.ceil(total / 25))} to={Math.min(page * 25, total)} total={total} />
     </section>
   );
 }
