@@ -5,17 +5,17 @@ The HRIS has two separate Brevo integrations:
 - **Supabase Auth SMTP** continues to deliver invitation, confirmation, recovery, and account-security emails. Leave the existing SMTP configuration unchanged.
 - **HRIS workflow notifications** use the `send-notification-email` Edge Function and Brevo's transactional HTTPS endpoint, `https://api.brevo.com/v3/smtp/email`.
 
-The notification worker sends only these generic messages after a matching in-app notification is created:
+The notification worker sends the exact title and full body of these in-app notifications after they are created:
 
-| Notification type | Generic email message |
+| Notification type | Email content |
 | --- | --- |
-| `application_status_updated` | There is an update to your application. Sign in to view it. |
-| `application_remark_added` | A new update was added to your application. Sign in to view it. |
-| `leave_request_decision` | Your leave request has been decided. Sign in to view it. |
-| `profile_change_decision` | Your profile-change request has been decided. Sign in to view it. |
-| `deployment_assigned`, `deployment_updated` | Your deployment record was updated. Sign in to view it. |
+| `application_status_updated` | The application update, including its status and any HR note. |
+| `application_remark_added` | The HR remark itself. |
+| `leave_request_decision` | The approval/rejection decision and reason. |
+| `profile_change_decision` | The approval/rejection decision and reason. |
+| `deployment_assigned`, `deployment_updated` | The deployment details in the notification. |
 
-`password_changed` stays in-app only because Supabase Auth already owns the corresponding security email. No workflow email contains a status detail, remark, decision rationale, deployment location, document name, attachment, or the original notification body.
+`password_changed` stays in-app only because Supabase Auth already owns the corresponding security email. The email also includes an optional protected link back to the same notification in HRIS.
 
 ## 1. Apply the migration and deploy the worker
 
@@ -64,9 +64,9 @@ To rotate it, find the existing secret ID with `select id, name from vault.secre
 ## 4. Controlled-recipient smoke test
 
 1. Use a controlled account with a valid email address and trigger one allowed workflow event.
-2. Confirm the recipient receives one in-app notification and one generic email with a sign-in link.
+2. Confirm the recipient receives one in-app notification and one email with the same title and body plus an optional sign-in link.
 3. Confirm the outbox job moves to `accepted` and records a Brevo message ID. `accepted` means Brevo accepted the request; delivery/bounce webhooks are not part of this release.
-4. Confirm the email reveals none of the protected workflow details listed above.
+4. Confirm the email text matches the in-app notification for the controlled recipient.
 
 ## Troubleshooting
 

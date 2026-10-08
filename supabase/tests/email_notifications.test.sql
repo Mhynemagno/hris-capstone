@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(29);
+select extensions.plan(32);
 
 select extensions.has_table('private', 'notification_email_outbox', 'Private notification email outbox exists');
 select extensions.has_function('public', 'claim_notification_email_jobs', array['integer'], 'Service worker claim RPC exists');
@@ -34,7 +34,21 @@ select extensions.is(
 select extensions.is(
   (select string_agg(template_key, ',' order by notification_id) from private.notification_email_outbox),
   'application_update,application_remark,leave_decision,profile_change_decision,deployment_update,deployment_update',
-  'Eligible notification types map to the expected generic email templates'
+  'Eligible notification types map to the expected email templates'
+);
+select extensions.is(
+  (select string_agg(notification_title || ':' || notification_body, ',' order by notification_id) from private.notification_email_outbox),
+  'Application updated:Sensitive applicant status details.,Application remark:Sensitive HR remark.,Leave decided:Sensitive leave decision reason.,Profile decided:Sensitive profile decision reason.,Deployment assigned:Sensitive deployment location.,Deployment updated:Sensitive updated deployment location.',
+  'Eligible notifications snapshot their full in-app title and body for email delivery'
+);
+select extensions.is(
+  (select notification_body from private.notification_email_outbox where notification_id = 'b0000000-0000-0000-0000-000000000003'),
+  'Sensitive leave decision reason.',
+  'The email queue retains the complete leave decision content'
+);
+select extensions.ok(
+  pg_get_functiondef('private.notify_deployment_assignment()'::regprocedure) not like '%new.status <> ''active''%',
+  'Deployment notifications are not restricted to the obsolete active status'
 );
 select extensions.is(
   (select count(*) from private.notification_email_outbox where notification_id in ('b0000000-0000-0000-0000-000000000007', 'b0000000-0000-0000-0000-000000000008')),
@@ -42,7 +56,7 @@ select extensions.is(
   'Password and unrecognised notification types never enqueue email'
 );
 select extensions.throws_ok(
-  $$insert into private.notification_email_outbox (notification_id, recipient_user_id, template_key, continue_path) values ('b0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000002', 'application_update', '/applicant/applications/b0000000-0000-0000-0000-000000000001')$$,
+  $$insert into private.notification_email_outbox (notification_id, recipient_user_id, template_key, continue_path, notification_title, notification_body) values ('b0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000002', 'application_update', '/applicant/applications/b0000000-0000-0000-0000-000000000001', 'Application updated', 'Sensitive applicant status details.')$$,
   '23505', null,
   'A notification can create only one email job'
 );

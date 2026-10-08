@@ -79,7 +79,7 @@ Internal invitations work with Supabase's default automated invitation email. Af
 
 ## Notification email delivery
 
-Supabase Auth continues to send invitations, confirmations, password recovery, and account-security mail through its configured Brevo SMTP provider. Separate HRIS workflow-notification emails use the `send-notification-email` Edge Function and Brevo's transactional HTTPS API; they are queued from selected in-app notifications and contain only generic sign-in prompts. Configure and deploy that worker with [EMAIL_NOTIFICATIONS_SETUP.md](docs/EMAIL_NOTIFICATIONS_SETUP.md). Keep all Brevo keys, sender values, worker secrets, and SMTP credentials out of Git and browser variables.
+Supabase Auth continues to send invitations, confirmations, password recovery, and account-security mail through its configured Brevo SMTP provider. Separate HRIS workflow-notification emails use the `send-notification-email` Edge Function and Brevo's transactional HTTPS API; they are queued from selected in-app notifications and contain the same title and body that the recipient sees in HRIS, with an optional sign-in link. Configure and deploy that worker with [EMAIL_NOTIFICATIONS_SETUP.md](docs/EMAIL_NOTIFICATIONS_SETUP.md). Keep all Brevo keys, sender values, worker secrets, and SMTP credentials out of Git and browser variables.
 
 ## Supabase database workflow
 

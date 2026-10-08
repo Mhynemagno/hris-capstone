@@ -7,6 +7,8 @@ type Job = {
   recipient_user_id: string;
   template_key: string;
   continue_path: string;
+  notification_title: string;
+  notification_body: string;
 };
 
 type EmailWorkerClient = {
@@ -51,6 +53,8 @@ function job(templateKey: string, suffix = "1"): Job {
     recipient_user_id: recipientId,
     template_key: templateKey,
     continue_path: "/employee/leave?source=notification",
+    notification_title: "Leave request approved",
+    notification_body: "Your leave request has been approved. Reason: Staffing < coverage.",
   };
 }
 
@@ -137,14 +141,8 @@ Deno.test("rejects an unsupported portal URL scheme before claiming jobs", async
   assertEquals(clientsCreated, 0);
 });
 
-for (const [templateKey, expectedCopy] of Object.entries({
-  application_update: "There is an update to your application. Sign in to view it.",
-  application_remark: "A new update was added to your application. Sign in to view it.",
-  leave_decision: "Your leave request has been decided. Sign in to view it.",
-  profile_change_decision: "Your profile-change request has been decided. Sign in to view it.",
-  deployment_update: "Your deployment record was updated. Sign in to view it.",
-})) {
-  Deno.test(`sends generic ${templateKey} email copy through Brevo`, async () => {
+for (const templateKey of ["application_update", "application_remark", "leave_decision", "profile_change_decision", "deployment_update"]) {
+  Deno.test(`sends the queued ${templateKey} notification content through Brevo`, async () => {
     const currentJob = job(templateKey);
     const { client, rpcCalls } = createClient([currentJob]);
     const requests: Array<{ input: string | URL | Request; init?: RequestInit }> = [];
@@ -167,11 +165,12 @@ for (const [templateKey, expectedCopy] of Object.entries({
     assertEquals(payload.sender, { email: "sender@example.test", name: "HRIS Notifications" });
     assertEquals(payload.to, [{ email: "recipient@example.test" }]);
     assertEquals(payload.tags, [`email-notification:${currentJob.id}`]);
-    assertStringIncludes(payload.textContent, expectedCopy);
+    assertEquals(payload.subject, currentJob.notification_title);
+    assertStringIncludes(payload.textContent, currentJob.notification_body);
     assertStringIncludes(payload.textContent, protectedLink);
-    assertStringIncludes(payload.htmlContent, expectedCopy);
+    assertStringIncludes(payload.htmlContent, "Your leave request has been approved. Reason: Staffing &lt; coverage.");
+    assertEquals(payload.htmlContent.includes("Staffing < coverage"), false);
     assertStringIncludes(payload.htmlContent, protectedLink);
-    assertEquals(JSON.stringify(payload).includes("Sensitive source notification body"), false);
     assertEquals(rpcCalls.at(-1), {
       name: "complete_notification_email_job",
       args: { target_job_id: currentJob.id, target_provider_message_id: "<brevo-message@example.test>" },

@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Deliver the selected existing in-app notifications as secure, generic Brevo transactional emails with durable retries.
+**Goal:** Deliver the selected existing in-app notifications as Brevo transactional emails with durable retries. Superseded on 2026-10-09: emails now include the same title and full body as the source in-app notification.
 
 **Architecture:** A private outbox trigger turns selected `public.notifications` records into deduplicated email jobs. A Vault-authenticated, per-minute scheduled Edge Function claims jobs through service-role-only RPCs and sends them to Brevo's HTTPS API, recording either Brevo acceptance or retry/failure state.
 
@@ -16,7 +16,7 @@
 - Keep the user's existing sender configured through `BREVO_SENDER_EMAIL` and `BREVO_SENDER_NAME`; do not commit its address or credentials.
 - Never expose `BREVO_API_KEY`, worker secrets, recipient email addresses, or service-role keys to browser code, migrations, tests, or logs.
 - Enqueue only `application_status_updated`, `application_remark_added`, `leave_request_decision`, `profile_change_decision`, `deployment_assigned`, and `deployment_updated`; exclude `password_changed` and every other type.
-- Email copy must be generic and link through `/auth/continue`; it must not include workflow notes, reasons, locations, medical/recruitment examination data, document names, or attachments.
+- Emails include the exact source notification title and body and link through `/auth/continue`.
 - Use native Deno `fetch`; do not add an SDK or a second provider.
 - Retry transient errors at 5 minutes, 30 minutes, and 2 hours, for four total attempts. Treat `accepted` as Brevo API acceptance, not confirmed inbox delivery.
 
@@ -25,7 +25,7 @@
 - An eligible notification inserted twice or a trigger replay must still create only one outbox row; Task 1's uniqueness test owns this.
 - A browser-authenticated caller must not be able to claim, inspect, complete, or fail a job; Task 1's grants/RLS tests own this.
 - A stale `sending` job must return to the retry path without a second active claim; Task 1's state-transition tests own this.
-- A recipient-visible message must never contain sensitive notification body text, even if it exists in the source row; Task 2's request-body assertions own this.
+- The recipient-visible message uses the source notification body; Task 2's request-body assertions own this.
 - A Brevo 429/5xx must retry while an invalid-recipient or other non-rate-limited 4xx must fail without retry; Task 2's error-classification tests own this.
 
 ---
@@ -102,7 +102,7 @@ git commit -m "feat: queue notification emails"
 
 - [ ] **Step 1: Write the failing Deno tests for the worker**
 
-Use injected `createClient`, `getEnv`, `fetch`, and `now` dependencies. Assert a missing/wrong worker secret returns 401 before database or network calls, missing runtime configuration returns 503, and a non-POST request returns 405. For each template key, assert the outgoing Brevo request targets `https://api.brevo.com/v3/smtp/email`, uses the `api-key` header, applies the configured sender, includes a unique job tag, creates an `APP_URL/auth/continue?next=` link, and excludes the source notification body and other sensitive strings. Assert a 201 response with `messageId` completes the exact job; a 201 response without it is retryable; 429/5xx/network errors call the retryable failure RPC; a 400 invalid-recipient response calls terminal failure; and one job's failure does not prevent later claimed jobs from being processed.
+Use injected `createClient`, `getEnv`, `fetch`, and `now` dependencies. Assert a missing/wrong worker secret returns 401 before database or network calls, missing runtime configuration returns 503, and a non-POST request returns 405. For each template key, assert the outgoing Brevo request targets `https://api.brevo.com/v3/smtp/email`, uses the `api-key` header, applies the configured sender, includes a unique job tag, uses the source notification title and body, and creates an `APP_URL/auth/continue?next=` link. Assert a 201 response with `messageId` completes the exact job; a 201 response without it is retryable; 429/5xx/network errors call the retryable failure RPC; a 400 invalid-recipient response calls terminal failure; and one job's failure does not prevent later claimed jobs from being processed.
 
 - [ ] **Step 2: Run the Deno test to verify it fails because the handler does not exist**
 
@@ -114,7 +114,7 @@ Expected: FAIL with an import error for `./index.ts`.
 
 Implement `createSendNotificationEmailHandler({ createClient, getEnv, fetch, now } = {})` in `supabase/functions/send-notification-email/index.ts`, and start `Deno.serve(createSendNotificationEmailHandler())` only when `import.meta.main` is true. Require `EMAIL_NOTIFICATION_WORKER_SECRET`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY` or `SUPABASE_SERVICE_ROLE_KEY`, `BREVO_API_KEY`, `BREVO_SENDER_EMAIL`, `BREVO_SENDER_NAME`, and `APP_URL`.
 
-Claim at most 10 jobs with the service-role client. Map only the five template keys to exact generic subjects/body copy from the spec. Create links with `new URL('/auth/continue', appUrl)` and `searchParams.set('next', continuePath)` so the relative path is encoded rather than concatenated. POST JSON to Brevo with sender, one recipient, subject, HTML/text content, and an `email-notification:<job-id>` tag. Classify 429, 5xx, and network exceptions as retryable; classify other 4xx responses and missing recipient email as terminal. Never log keys, email addresses, notification body text, or Brevo response body.
+Claim at most 10 jobs with the service-role client. Map only the five approved template keys and use their queued notification title/body as the subject/content. Create links with `new URL('/auth/continue', appUrl)` and `searchParams.set('next', continuePath)` so the relative path is encoded rather than concatenated. POST JSON to Brevo with sender, one recipient, subject, HTML/text content, and an `email-notification:<job-id>` tag. Classify 429, 5xx, and network exceptions as retryable; classify other 4xx responses and missing recipient email as terminal. Never log keys, email addresses, notification body text, or Brevo response body.
 
 - [ ] **Step 4: Run the focused worker tests and then all Edge Function tests**
 
@@ -212,7 +212,7 @@ Expected: PASS for each command.
 
 Deploy: `npx supabase@latest functions deploy send-notification-email --use-api`
 
-Create an allowed notification using a controlled test workflow. Verify one in-app notification, one outbox row in `accepted` state with a Brevo message ID, and one generic email with a secure login/continuation link. Verify the email has no notification body, note, decision rationale, location, or attachment detail.
+Create an allowed notification using a controlled test workflow. Verify one in-app notification, one outbox row in `accepted` state with a Brevo message ID, and one email with the same notification title/body and a secure login/continuation link.
 
 - [ ] **Step 4: Commit only any verification-driven correction**
 
@@ -220,7 +220,7 @@ If verification requires a correction, stage only the files that correction chan
 
 ## Plan Self-Review
 
-- **Spec coverage:** Task 1 implements the outbox, matrix, authorization, retries, stale recovery, and scheduler. Task 2 implements Brevo sending, secure links, generic copy, and provider outcomes. Task 3 implements the required configuration and documentation. Task 4 verifies the complete system and controlled delivery.
+- **Spec coverage:** Task 1 implements the outbox, matrix, authorization, retries, stale recovery, and scheduler. Task 2 implements Brevo sending, secure links, notification content, and provider outcomes. Task 3 implements the required configuration and documentation. Task 4 verifies the complete system and controlled delivery.
 - **Step scan:** Each test, execution, implementation, verification, and commit step names one concrete artifact or command. The migration filename is dynamic by Supabase CLI design; all other paths and interfaces are fixed.
 - **Type consistency:** Task 1's service-only RPC names and argument names are the same names Task 2 consumes. The function and header names match Task 3's runtime configuration.
 - **Review focus:** All five identified risk classes have a named owning task and test assertion.

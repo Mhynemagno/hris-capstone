@@ -8,11 +8,8 @@ type EmailJob = {
   recipient_user_id: string;
   template_key: string;
   continue_path: string;
-};
-
-type EmailTemplate = {
-  subject: string;
-  copy: string;
+  notification_title: string;
+  notification_body: string;
 };
 
 type SupabaseAdminClient = {
@@ -35,36 +32,14 @@ type Dependencies = {
   fetch?: typeof globalThis.fetch;
 };
 
-const templates: Record<string, EmailTemplate> = {
-  application_update: {
-    subject: "Application update",
-    copy: "There is an update to your application. Sign in to view it.",
-  },
-  application_remark: {
-    subject: "Application update",
-    copy: "A new update was added to your application. Sign in to view it.",
-  },
-  leave_decision: {
-    subject: "Leave request update",
-    copy: "Your leave request has been decided. Sign in to view it.",
-  },
-  profile_change_decision: {
-    subject: "Profile-change request update",
-    copy: "Your profile-change request has been decided. Sign in to view it.",
-  },
-  deployment_update: {
-    subject: "Deployment update",
-    copy: "Your deployment record was updated. Sign in to view it.",
-  },
-};
-
 const json = (status: number, body: Record<string, unknown>) =>
   Response.json(body, { status, headers: { "Content-Type": "application/json" } });
 
 function isEmailJob(value: unknown): value is EmailJob {
   if (!value || typeof value !== "object") return false;
   const job = value as Record<string, unknown>;
-  return ["id", "recipient_user_id", "template_key", "continue_path"].every((key) => typeof job[key] === "string");
+  return ["id", "recipient_user_id", "template_key", "continue_path", "notification_title", "notification_body"]
+    .every((key) => typeof job[key] === "string");
 }
 
 function buildContinueUrl(appUrl: string, continuePath: string) {
@@ -79,6 +54,16 @@ function failureForStatus(status: number) {
     code: status === 429 || status >= 500 ? "provider_unavailable" : "provider_rejected",
     detail: `Brevo returned HTTP ${status}.`,
   };
+}
+
+function escapeHtml(value: string) {
+  return value.replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  })[character] ?? character);
 }
 
 export function createSendNotificationEmailHandler({
@@ -135,13 +120,6 @@ export function createSendNotificationEmailHandler({
         }
       };
 
-      const template = templates[job.template_key];
-      if (!template) {
-        await persistFailure("unsupported_template", "The queued template is not supported.", false);
-        failed += 1;
-        continue;
-      }
-
       let recipientEmail: string | null = null;
       try {
         const { data: recipient, error: recipientError } = await admin.auth.admin.getUserById(job.recipient_user_id);
@@ -167,9 +145,9 @@ export function createSendNotificationEmailHandler({
       const payload = {
         sender: { email: senderEmail, name: senderName },
         to: [{ email: recipientEmail }],
-        subject: template.subject,
-        textContent: `${template.copy}\n\nSign in to view: ${continueUrl}`,
-        htmlContent: `<p>${template.copy}</p><p><a href="${continueUrl}">Sign in to view</a></p>`,
+        subject: job.notification_title,
+        textContent: `${job.notification_body}\n\nOpen in HRIS: ${continueUrl}`,
+        htmlContent: `<p>${escapeHtml(job.notification_body).replace(/\r?\n/g, "<br>")}</p><p><a href="${continueUrl}">Open in HRIS</a></p>`,
         tags: [`email-notification:${job.id}`],
       };
 

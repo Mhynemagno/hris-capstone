@@ -31,11 +31,11 @@ The existing Brevo sender address and sender name remain unchanged at the user's
 | Event source / notification type | Recipient | Delivery | Email content |
 | --- | --- | --- | --- |
 | Supabase Auth invitation, confirmation, recovery, and password security templates | Account owner | Existing Auth + Brevo SMTP | Auth-managed template; no change in this feature. |
-| `application_status_updated` | Applicant | Immediate | "There is an update to your application. Sign in to view it." |
-| `application_remark_added` | Applicant | Immediate | "A new update was added to your application. Sign in to view it." |
-| `leave_request_decision` | Employee | Immediate | "Your leave request has been decided. Sign in to view it." |
-| `profile_change_decision` | Employee | Immediate | "Your profile-change request has been decided. Sign in to view it." |
-| `deployment_assigned`, `deployment_updated` | Employee | Immediate | "Your deployment record was updated. Sign in to view it." |
+| `application_status_updated` | Applicant | Immediate | Exact in-app notification title and body, including status and HR note. |
+| `application_remark_added` | Applicant | Immediate | Exact in-app notification title and body, including the remark. |
+| `leave_request_decision` | Employee | Immediate | Exact in-app notification title and body, including decision and reason. |
+| `profile_change_decision` | Employee | Immediate | Exact in-app notification title and body, including decision and reason. |
+| `deployment_assigned`, `deployment_updated` | Employee | Immediate | Exact in-app notification title and body, including deployment details. |
 | `password_changed` | Account owner | In-app only | Auth's password-changed template is the sole email channel, preventing duplicate messages. |
 | All other notification types and non-notification events | — | In-app only | No email is created. |
 
@@ -59,7 +59,7 @@ Workflow SQL → public.notifications insert
              → outbox status accepted or retry / failed
 ```
 
-The new `private.notification_email_outbox` table is not exposed through the Data API. It snapshots the recipient user ID, notification type, and safe internal link at notification creation. It deliberately does not store the recipient email or confidential notification body. The worker obtains the current Auth email only within a service-role database RPC, immediately before sending.
+The new `private.notification_email_outbox` table is not exposed through the Data API. It snapshots the recipient user ID, notification type, title, body, and safe internal link at notification creation. The worker obtains the current Auth email only within a service-role database RPC, immediately before sending.
 
 The notification trigger maps only the approved types in the matrix to a template key. A unique `notification_id` guarantees one job per notification even if a transaction or trigger is retried. Deleting an in-app notification does not cancel an already-created email job; the event was valid when created and the delivery record remains available for operations.
 
@@ -95,7 +95,7 @@ The scheduled tick follows the established `process-application-analysis` model:
 
 1. validate its worker header and runtime configuration;
 2. use a service-role Supabase client to claim a small batch of jobs;
-3. resolve the recipient email and compose a generic text and HTML message for each allowed template key;
+3. resolve the recipient email and compose a text and HTML message from the queued notification title and body;
 4. POST each message to Brevo's transactional endpoint with the server-only `BREVO_API_KEY` and a job-specific tag;
 5. record Brevo's returned `messageId`, or classify and persist the failure; and
 6. return aggregate counts without recipient or provider-secret data.
@@ -128,13 +128,13 @@ The function is deployed with `verify_jwt = false` and protects itself using `x-
 
 - Missing/incorrect worker secret returns 401 and does not call Supabase or Brevo.
 - Missing configuration returns 503.
-- Each template maps to generic, non-sensitive copy and a protected continuation URL.
+- Each template snapshots the exact in-app notification title and body, plus a protected continuation URL.
 - Brevo success records the provider message ID and accepts the job.
 - Provider validation errors fail the job; transient failures schedule the appropriate retry.
 
 ### Deployment smoke test
 
-Use a controlled account and an existing workflow that creates an allowed notification, then verify the in-app notification, one corresponding outbox job, a Brevo `accepted` job state with message ID, and receipt of a generic email. Inspect the cron and `pg_net` run records if the worker is not invoked.
+Use a controlled account and an existing workflow that creates an allowed notification, then verify the in-app notification, one corresponding outbox job, a Brevo `accepted` job state with message ID, and receipt of an email with the same title and body. Inspect the cron and `pg_net` run records if the worker is not invoked.
 
 ## Documentation changes
 
