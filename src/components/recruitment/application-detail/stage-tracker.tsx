@@ -14,10 +14,9 @@ export function StageTracker({ endedAt, status }: { status: ApplicationStatus; e
           const done = index < reached || (index === reached && outcome === "hired");
           const current = index === reached && outcome !== "hired";
           const stopped = current && outcome === "not-selected";
-          const revising = current && outcome === "needs-revision";
           return (
             <li aria-current={current ? "step" : undefined} className="flex min-w-0 flex-1 items-center gap-1.5" key={stage}>
-              <span aria-hidden="true" className={cn("grid size-5 shrink-0 place-items-center rounded-full border text-[10px]", done && "border-primary bg-primary text-primary-foreground", current && !stopped && !revising && "border-primary text-primary ring-2 ring-primary/20", stopped && "border-destructive bg-destructive text-white", revising && "border-warning text-warning", !done && !current && "border-input text-muted-foreground")}>
+              <span aria-hidden="true" className={cn("grid size-5 shrink-0 place-items-center rounded-full border text-[10px]", done && "border-primary bg-primary text-primary-foreground", current && !stopped && "border-primary text-primary ring-2 ring-primary/20", stopped && "border-destructive bg-destructive text-white", !done && !current && "border-input text-muted-foreground")}>
                 {done ? <Check className="size-3" /> : stopped ? <X className="size-3" /> : index + 1}
               </span>
               <span className={cn("truncate text-xs", current ? "font-semibold text-foreground" : "text-muted-foreground")}>{stage}</span>

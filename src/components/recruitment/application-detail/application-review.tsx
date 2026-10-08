@@ -63,7 +63,6 @@ export function HrApplicationReview({ applicationId }: { applicationId: string }
         applicantNumber={applicant?.applicant_number ?? null}
         applicationId={applicationId}
         formattedNumber={formatApplicantNumber(applicant?.applicant_number)}
-        hasBmiProof={documents.some((document) => document.kind === "bmi_proof")}
         initials={initials}
         jobId={application.job_opening_id}
         jobTitle={job?.title ?? null}

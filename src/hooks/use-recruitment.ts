@@ -228,6 +228,7 @@ export function useTransitionApplicationStatus() {
     onSuccess: (_, input) => {
       void queryClient.invalidateQueries({ queryKey: ["workspace", "count"] });
       void queryClient.invalidateQueries({ queryKey: ["recruitment", "applications"] });
+      void queryClient.invalidateQueries({ queryKey: ["recruitment", "my-applications"] });
       void queryClient.invalidateQueries({ queryKey: ["reporting"] });
       void queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.application(input.applicationId) });
     },
