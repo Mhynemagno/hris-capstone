@@ -4,13 +4,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
-import { PanelLeft } from "lucide-react";
+import { LogOut, PanelLeft } from "lucide-react";
 
 import { AccountMenu } from "@/components/auth/account-menu";
+import { SignOutButton } from "@/components/auth/sign-out-button";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { Toaster } from "@/components/ui/toaster";
 import {
-  Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarInset,
+  Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarInset,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger, useSidebar,
 } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -135,6 +136,13 @@ export function WorkspaceShell({ children, config, email }: WorkspaceShellProps)
                 ))}
               </nav>
             </SidebarContent>
+            <SidebarFooter className="border-t border-sidebar-border p-3 group-data-[collapsible=icon]:p-2">
+              <SignOutButton
+                className="justify-start text-sidebar-foreground group-data-[collapsible=icon]:size-9 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
+                icon={<LogOut aria-hidden="true" className="size-4" />}
+                variant="ghost"
+              />
+            </SidebarFooter>
           </Sidebar>
           <SidebarInset className="min-w-0 overflow-y-auto overscroll-contain bg-background" id="main-content">
             <header className={cn("sticky top-0 z-20 flex shrink-0 items-center gap-3 px-3 sm:px-5", isStationCommand ? "min-h-17 border-b bg-card text-foreground" : "dark h-14 bg-topbar text-foreground sm:px-4")}>

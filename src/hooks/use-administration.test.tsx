@@ -47,14 +47,14 @@ describe("administration hooks", () => {
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ["administration", "audit-logs"] });
   });
 
-  it("uses the role cache family with a normalized 20-row filter", async () => {
-    mocks.listManagedUsers.mockResolvedValue({ rows: [], count: 0, filters: { page: 1, pageSize: 20, role: "employee" } });
+  it("uses the role cache family with a normalized 10-row filter", async () => {
+    mocks.listManagedUsers.mockResolvedValue({ rows: [], count: 0, filters: { page: 1, pageSize: 10, role: "employee" } });
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const { result } = renderHook(() => useManagedRoles({ role: "employee" }), { wrapper: createWrapper(queryClient) });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(queryClient.getQueryData(["administration", "roles", { page: 1, pageSize: 20, role: "employee" }])).toBeTruthy();
-    expect(mocks.listManagedUsers).toHaveBeenCalledWith({ page: 1, pageSize: 20, role: "employee" });
+    expect(queryClient.getQueryData(["administration", "roles", { page: 1, pageSize: 10, role: "employee" }])).toBeTruthy();
+    expect(mocks.listManagedUsers).toHaveBeenCalledWith({ page: 1, pageSize: 10, role: "employee" });
   });
 });

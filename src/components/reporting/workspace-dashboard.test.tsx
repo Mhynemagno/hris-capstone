@@ -1,8 +1,10 @@
+import userEvent from "@testing-library/user-event";
 import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
+const navigation = vi.hoisted(() => ({ replace: vi.fn() }));
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
+  useRouter: () => ({ replace: navigation.replace, push: vi.fn() }),
   usePathname: () => "/hr",
   useSearchParams: () => new URLSearchParams(""),
 }));
@@ -33,11 +35,15 @@ vi.mock("@/hooks/use-attendance-integration", () => ({ useHrAttendanceLogs: () =
 import { WorkspaceDashboard } from "./workspace-dashboard";
 
 describe("WorkspaceDashboard", () => {
-  it("leads HR with needs-attention work, then today's figures, pipeline and recent applications", () => {
+  beforeEach(() => navigation.replace.mockReset());
+
+  it("keeps HR dashboard data visible by default and moves review queues to their own tab", async () => {
+    const user = userEvent.setup();
     render(<WorkspaceDashboard role="hr_personnel" />);
     expect(screen.getByRole("heading", { level: 1, name: "Dashboard" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Needs attention" })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: /Leave requests for approval/ })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Dashboard data" })).toHaveAttribute("data-active");
+    expect(screen.getByRole("tab", { name: "Needs attention" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Needs attention" })).not.toBeInTheDocument();
     expect(screen.getByRole("article", { name: "On duty today" })).toHaveTextContent("142 / 160");
     expect(screen.getByRole("article", { name: "Open job postings" })).toHaveTextContent("2");
     const pipeline = screen.getByRole("region", { name: "Recruitment pipeline" });
@@ -46,6 +52,10 @@ describe("WorkspaceDashboard", () => {
     expect(screen.getByRole("region", { name: "Attendance" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Aplica Candidate" })).toHaveAttribute("href", "/hr/applications/a1");
     expect(screen.getByRole("button", { name: /Create/ })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("tab", { name: "Needs attention" }));
+
+    expect(navigation.replace).toHaveBeenCalledWith("/hr?view=attention", { scroll: false });
   });
 
   it("shows a station pulse alongside the personnel distribution for HR", () => {

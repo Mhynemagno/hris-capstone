@@ -14,6 +14,7 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatStrip } from "@/components/ui/stat-strip";
+import { TabPanel, Tabs, useUrlTab } from "@/components/ui/tabs";
 import { PageContainer } from "@/components/workspace-shell/page-container";
 import { useRecentApplications } from "@/hooks/use-recruitment";
 import { useHrDashboard, useManagementDashboard } from "@/hooks/use-reporting";
@@ -189,11 +190,8 @@ function DashboardBody({ data, isHr, recent }: { data: DashboardSummary; isHr: b
   ];
   const breakdown = (key: string) => data.breakdowns[key] ?? [];
 
-  return (
+  const dashboardData = (
     <div className="space-y-6">
-      {isHr ? (
-        <HrDashboardAttention />
-      ) : null}
       <StatStrip items={stats} label="Today" />
       {isHr ? (
         <>
@@ -251,5 +249,20 @@ function DashboardBody({ data, isHr, recent }: { data: DashboardSummary; isHr: b
         </>
       )}
     </div>
+  );
+
+  const [tab, setTab] = useUrlTab("view", ["data", "attention"], "data");
+  if (!isHr) return dashboardData;
+
+  return (
+    <Tabs
+      items={[{ value: "data", label: "Dashboard data" }, { value: "attention", label: "Needs attention" }]}
+      label="HR dashboard views"
+      onValueChange={setTab}
+      value={tab}
+    >
+      <TabPanel value="data">{dashboardData}</TabPanel>
+      <TabPanel value="attention"><HrDashboardAttention /></TabPanel>
+    </Tabs>
   );
 }

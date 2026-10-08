@@ -88,7 +88,7 @@ function EditLeaveTypeForm({ onDone, type }: { onDone: (message: string) => void
 }
 
 export function LeaveTypeManager({ onPageChange, page = 1 }: { onPageChange?: (page: number) => void; page?: number } = {}) {
-  const types = useLeaveTypes({ page, pageSize: 25 });
+  const types = useLeaveTypes({ page, pageSize: 10 });
   const create = useCreateLeaveType();
   const update = useUpdateLeaveType();
   const [error, setError] = useState<string | null>(null);
@@ -186,7 +186,7 @@ export function LeaveTypeManager({ onPageChange, page = 1 }: { onPageChange?: (p
       ) : (
         <p className="rounded-lg border border-dashed px-4 py-6 text-center text-muted-foreground">No leave types yet. Add the first one above.</p>
       )}
-      {onPageChange && types.data ? <Pagination from={types.data.rows.length ? (page - 1) * 25 + 1 : 0} noun="leave types" onPageChange={onPageChange} page={page} pageCount={Math.max(1, Math.ceil(types.data.count / 25))} to={Math.min(page * 25, types.data.count)} total={types.data.count} /> : null}
+      {onPageChange && types.data ? <Pagination from={types.data.rows.length ? (page - 1) * 10 + 1 : 0} noun="leave types" onPageChange={onPageChange} page={page} pageCount={Math.max(1, Math.ceil(types.data.count / 10))} to={Math.min(page * 10, types.data.count)} total={types.data.count} /> : null}
       <DeleteRecordDialog
         alternative={deleting?.is_active ? { label: "Deactivate instead", onSelect: () => setActive(deleting, false) } : undefined}
         entityId={deleting?.id ?? null}

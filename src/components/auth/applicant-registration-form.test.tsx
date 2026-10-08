@@ -43,6 +43,12 @@ describe("ApplicantRegistrationForm", { timeout: 20_000 }, () => {
     expect(screen.queryByText("Show password")).not.toBeInTheDocument();
   });
 
+  it("groups registration fields into two columns on wider screens", () => {
+    const { container } = render(<ApplicantRegistrationForm />);
+
+    expect(container.querySelector(".md\\:grid-cols-2")).toHaveClass("grid");
+  });
+
   it("normalizes the mobile number, sends structured account metadata, and opens job openings", async () => {
     const user = userEvent.setup();
     mocks.signUp.mockResolvedValue({ data: { session: { access_token: "test" } }, error: null });

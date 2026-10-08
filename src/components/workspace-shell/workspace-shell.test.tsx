@@ -7,6 +7,7 @@ const { usePathname } = vi.hoisted(() => ({ usePathname: vi.fn() }));
 vi.mock("next/navigation", () => ({ usePathname, useRouter: () => ({ replace: vi.fn(), refresh: vi.fn(), push: vi.fn() }) }));
 vi.mock("@/components/notifications/notification-bell", () => ({ NotificationBell: () => <a href="/notifications">Notifications</a> }));
 vi.mock("@/components/workspace-shell/nav-badge", () => ({ NavBadge: ({ badge }: { badge: string }) => <span>badge:{badge}</span> }));
+vi.mock("@/components/auth/sign-out-button", () => ({ SignOutButton: () => <button type="button">Sign out</button> }));
 
 import { useBreadcrumbTrail } from "./breadcrumbs";
 import { WorkspaceShell } from "./workspace-shell";
@@ -58,6 +59,12 @@ describe("WorkspaceShell", () => {
     expect(screen.getByText("Station HR Dashboard")).toBeInTheDocument();
     expect(screen.getByText("Human Resource & Personnel Management System")).toBeInTheDocument();
     expect(screen.getByRole("navigation", { name: "Breadcrumb" })).toHaveAttribute("data-variant", "light");
+  });
+
+  it("anchors the sign-out action at the bottom of the sidebar", () => {
+    render(<WorkspaceShell config={ROLE_CONFIG.hr_personnel} email="hr@example.com"><p>x</p></WorkspaceShell>);
+
+    expect(screen.getByRole("button", { name: "Sign out" }).closest('[data-sidebar="footer"]')).not.toBeNull();
   });
 
   it("extends the breadcrumb with the page's trail and links the section", () => {

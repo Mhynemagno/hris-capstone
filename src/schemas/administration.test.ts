@@ -49,7 +49,7 @@ describe("administration schemas", () => {
     ).toBe(false);
   });
 
-  it("accepts internal invitations with name parts and 20-row managed-user pages", () => {
+  it("accepts internal invitations with name parts and 10-row managed-user pages", () => {
     expect(
       internalInvitationSchema.parse({
         email: "new.hr@example.com",
@@ -59,11 +59,11 @@ describe("administration schemas", () => {
       }),
     ).toMatchObject({ firstName: "New", lastName: "HR", fullName: "New HR", role: "hr_personnel" });
     expect(
-      managedUserFiltersSchema.parse({ page: "2", pageSize: 20, status: "active" }),
-    ).toMatchObject({ page: 2, pageSize: 20, status: "active" });
+      managedUserFiltersSchema.parse({ page: "2", pageSize: 10, status: "active" }),
+    ).toMatchObject({ page: 2, pageSize: 10, status: "active" });
   });
 
-  it("rejects applicant invitations and non-20 page sizes while clearing blank audit filters", () => {
+  it("rejects applicant invitations and non-10 page sizes while clearing blank audit filters", () => {
     expect(
       internalInvitationSchema.safeParse({
         email: "applicant@example.com",
@@ -72,8 +72,8 @@ describe("administration schemas", () => {
         role: "applicant",
       }).success,
     ).toBe(false);
-    expect(auditLogFiltersSchema.parse({ entityType: " ", pageSize: 20 }).entityType).toBeUndefined();
-    expect(managedUserFiltersSchema.safeParse({ pageSize: 21 }).success).toBe(false);
+    expect(auditLogFiltersSchema.parse({ entityType: " ", pageSize: 10 }).entityType).toBeUndefined();
+    expect(managedUserFiltersSchema.safeParse({ pageSize: 11 }).success).toBe(false);
   });
 
   it("rejects invitations with a missing name part", () => {

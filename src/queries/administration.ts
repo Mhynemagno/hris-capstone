@@ -71,26 +71,26 @@ export function searchPattern(value: string) {
   return `%${value.replace(/[%*,()"\\]/g, "_")}%`;
 }
 
-function pageRange(page: number) {
-  const from = (page - 1) * 20;
-  return { from, to: from + 19 };
+function pageRange(page: number, pageSize: number) {
+  const from = (page - 1) * pageSize;
+  return { from, to: from + pageSize - 1 };
 }
 
 function managedUserFilters(input: Partial<ManagedUserFilters> = {}) {
-  return managedUserFiltersSchema.parse({ page: 1, pageSize: 20, ...input });
+  return managedUserFiltersSchema.parse({ page: 1, pageSize: 10, ...input });
 }
 
 function referenceDataFilters(input: Partial<ReferenceDataFilters> = {}) {
-  return referenceDataFiltersSchema.parse({ page: 1, pageSize: 20, ...input });
+  return referenceDataFiltersSchema.parse({ page: 1, pageSize: 10, ...input });
 }
 
 function auditLogFilters(input: Partial<AuditLogFilters> = {}) {
-  return auditLogFiltersSchema.parse({ page: 1, pageSize: 20, ...input });
+  return auditLogFiltersSchema.parse({ page: 1, pageSize: 10, ...input });
 }
 
 export async function listManagedUsers(input: Partial<ManagedUserFilters> = {}): Promise<PaginatedResult<ManagedUser, ManagedUserFilters>> {
   const filters = managedUserFilters(input);
-  const { from, to } = pageRange(filters.page);
+  const { from, to } = pageRange(filters.page, filters.pageSize);
   const client = createBrowserSupabaseClient();
   let query = client
     .from("profiles")
@@ -174,7 +174,7 @@ export async function deleteManagedUser(input: ManagedUserDeleteInput) {
 
 export async function listDepartments(input: Partial<ReferenceDataFilters> = {}): Promise<PaginatedResult<Department, ReferenceDataFilters>> {
   const filters = referenceDataFilters(input);
-  const { from, to } = pageRange(filters.page);
+  const { from, to } = pageRange(filters.page, filters.pageSize);
   let query = createBrowserSupabaseClient().from("departments").select("*", { count: "exact" }).order("name");
   if (filters.search) query = query.ilike("name", searchPattern(filters.search));
   if (filters.status) query = query.eq("is_active", filters.status === "active");
@@ -206,7 +206,7 @@ export async function saveDepartment(input: DepartmentInput, departmentId?: numb
 
 export async function listUnitStationCatalogue(input: Partial<ReferenceDataFilters> = {}): Promise<PaginatedResult<UnitStation, ReferenceDataFilters>> {
   const filters = referenceDataFilters(input);
-  const { from, to } = pageRange(filters.page);
+  const { from, to } = pageRange(filters.page, filters.pageSize);
   let query = createBrowserSupabaseClient().from("unit_stations").select("*", { count: "exact" }).order("name");
   if (filters.search) query = query.ilike("name", searchPattern(filters.search));
   if (filters.status) query = query.eq("is_active", filters.status === "active");
@@ -228,7 +228,7 @@ export async function saveUnitStation(input: UnitStationInput, unitStationId?: n
 
 export async function listRanks(input: Partial<ReferenceDataFilters> = {}): Promise<PaginatedResult<Rank, ReferenceDataFilters>> {
   const filters = referenceDataFilters(input);
-  const { from, to } = pageRange(filters.page);
+  const { from, to } = pageRange(filters.page, filters.pageSize);
   let query = createBrowserSupabaseClient().from("ranks").select("*", { count: "exact" }).order("sort_order");
   if (filters.search) {
     const pattern = searchPattern(filters.search);
@@ -282,7 +282,7 @@ export async function saveOrganizationSettings(input: OrganizationSettingsInput)
 
 export async function listAuditLogs(input: Partial<AuditLogFilters> = {}): Promise<PaginatedResult<AuditLogDisplay, AuditLogFilters>> {
   const filters = auditLogFilters(input);
-  const { from, to } = pageRange(filters.page);
+  const { from, to } = pageRange(filters.page, filters.pageSize);
   const client = createBrowserSupabaseClient();
   let query = client.from("audit_logs").select("*", { count: "exact" }).order("created_at", { ascending: false });
   if (filters.search) {

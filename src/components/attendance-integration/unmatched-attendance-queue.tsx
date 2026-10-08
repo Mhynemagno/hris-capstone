@@ -15,7 +15,7 @@ import { useListParams } from "@/lib/workspace/list-params";
 export function UnmatchedAttendanceQueue() {
   const { params, set } = useListParams(["page"] as const);
   const page = Math.max(1, Number(params.page) || 1);
-  const events = useUnmatchedAttendanceEvents({ page, pageSize: 25 });
+  const events = useUnmatchedAttendanceEvents({ page, pageSize: 10 });
   const employees = useAttendanceEmployees();
   const resolve = useResolveUnmatchedAttendanceEvent();
   const [selected, setSelected] = useState<Record<string, string | null>>({});
@@ -77,7 +77,7 @@ export function UnmatchedAttendanceQueue() {
           </article>
         );
       }) : <p className="rounded-xl border p-4 text-sm text-muted-foreground">No unmatched attendance events. New unknown device IDs appear here after an import.</p>}
-      <Pagination from={rows.length ? (page - 1) * 25 + 1 : 0} noun="unmatched events" onPageChange={(next) => set({ page: String(next) })} page={page} pageCount={Math.max(1, Math.ceil(total / 25))} to={Math.min(page * 25, total)} total={total} />
+      <Pagination from={rows.length ? (page - 1) * 10 + 1 : 0} noun="unmatched events" onPageChange={(next) => set({ page: String(next) })} page={page} pageCount={Math.max(1, Math.ceil(total / 10))} to={Math.min(page * 10, total)} total={total} />
     </section>
   );
 }

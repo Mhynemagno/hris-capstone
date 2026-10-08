@@ -19,10 +19,9 @@ async function signIn(page: Page, email: string, home: string) {
   await expect(page).toHaveURL(new RegExp(`${home}$`));
 }
 
-async function signOut(page: Page, email: string) {
-  await page.getByRole("button", { name: new RegExp(`Account menu for ${email}`) }).click();
-  await page.getByRole("menu").getByRole("button", { name: "Sign out" }).click();
-  await expect(page).toHaveURL(/\/login$/);
+async function signOut(page: Page) {
+  await page.getByRole("button", { name: "Sign out" }).click();
+  await expect(page).toHaveURL(/^\/$/);
 }
 
 function isoDate(daysFromToday: number) {
@@ -120,7 +119,7 @@ test.describe("leave journey", () => {
     await page.goto("/employee/leave");
     const request = page.getByRole("article").filter({ hasText: reason });
     await expect(request).toContainText("For Approval");
-    await signOut(page, "demo.employee@example.test");
+    await signOut(page);
 
     await signIn(page, "demo.hr@example.test", "/hr");
     await page.goto("/hr/leave-requests");
@@ -131,7 +130,7 @@ test.describe("leave journey", () => {
     await expect(page.getByRole("status").filter({ hasText: "approved" })).toBeVisible();
     await page.reload();
     await expect(page.getByRole("button", { name: "Approve request" })).toHaveCount(0);
-    await signOut(page, "demo.hr@example.test");
+    await signOut(page);
 
     await signIn(page, "demo.employee@example.test", "/employee");
     await page.goto("/employee/leave");
@@ -186,7 +185,7 @@ test.describe("personnel records and profile changes", () => {
     await expect(page.getByLabel(/^Phone/).first()).toHaveValue(phone);
     await expect(page.getByLabel(/^Unit \/ Section/).first()).toHaveValue(departmentBefore);
     await expect(page.getByLabel(/^Rank/).first()).toHaveValue(rankBefore);
-    await signOut(page, "demo.hr@example.test");
+    await signOut(page);
 
     // The linked account still resolves to the same record after the edit.
     await signIn(page, "demo.employee@example.test", "/employee");
@@ -201,7 +200,7 @@ test.describe("personnel records and profile changes", () => {
     await page.getByLabel(/^Emergency contact name/).fill(contact);
     await page.getByRole("button", { name: "Submit request" }).click();
     await expect(page.getByRole("status").filter({ hasText: /submitted|sent/i })).toBeVisible();
-    await signOut(page, "demo.employee@example.test");
+    await signOut(page);
 
     await signIn(page, "demo.admin@example.test", "/admin");
     await page.goto("/admin/profile-change-requests");
@@ -210,7 +209,7 @@ test.describe("personnel records and profile changes", () => {
     await expect(page.getByText(contact)).toBeVisible({ timeout: 15_000 });
     await page.getByRole("button", { name: "Approve request" }).click();
     await expect(page.getByRole("button", { name: "Approve request" })).toHaveCount(0);
-    await signOut(page, "demo.admin@example.test");
+    await signOut(page);
 
     await signIn(page, "demo.employee@example.test", "/employee");
     await page.goto("/employee/profile");
@@ -240,7 +239,7 @@ test.describe("read-only and public journeys", () => {
     await page.getByLabel(/^Requirement 2: Eligibility/).selectOption("NAPOLCOM PNP Entrance Examination");
     await page.getByRole("button", { name: "Publish opening" }).click();
     await expect(page).toHaveURL(/\/hr\/jobs$/);
-    await signOut(page, "demo.hr@example.test");
+    await signOut(page);
 
     await page.goto("/jobs");
     await page.getByRole("link", { name: new RegExp(title) }).first().click();
@@ -264,7 +263,7 @@ test.describe("read-only and public journeys", () => {
 
     await page.getByRole("button", { name: `Publish ${title}` }).click();
     await expect(page.getByText(`${title} is now published on the landing page.`)).toBeVisible();
-    await signOut(page, "demo.hr@example.test");
+    await signOut(page);
 
     await page.goto("/");
     const announcements = page.getByRole("region", { name: "Announcements" });

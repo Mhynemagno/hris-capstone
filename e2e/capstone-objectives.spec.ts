@@ -37,10 +37,9 @@ async function signIn(page: Page, email: string, home: string, password = demoPa
   await expect(page).toHaveURL(new RegExp(`${home}$`), { timeout: 30_000 });
 }
 
-async function signOut(page: Page, email: string) {
-  await page.getByRole("button", { name: new RegExp(`Account menu for ${email}`) }).click();
-  await page.getByRole("menu").getByRole("button", { name: "Sign out" }).click();
-  await expect(page).toHaveURL(/\/login$/);
+async function signOut(page: Page) {
+  await page.getByRole("button", { name: "Sign out" }).click();
+  await expect(page).toHaveURL(/^\/$/);
 }
 
 function isoDate(daysFromToday: number) {
@@ -176,7 +175,7 @@ test.describe("Objective 2: recruitment management", () => {
     await page.getByLabel(/^Requirement 2: Eligibility/).selectOption("NAPOLCOM PNP Entrance Examination");
     await page.getByRole("button", { name: "Publish opening" }).click();
     await expect(page).toHaveURL(/\/hr\/jobs$/);
-    await signOut(page, HR.email);
+    await signOut(page);
 
     // A new applicant registers (hiring links a login to exactly one employee record).
     await page.goto("/applicant/register");
@@ -232,7 +231,7 @@ test.describe("Objective 2: recruitment management", () => {
     const trackHref = await page.getByRole("link", { name: "Track application" }).getAttribute("href");
     const applicationId = trackHref?.split("/").pop() as string;
     expect(applicationId).toMatch(/^[0-9a-f-]{36}$/);
-    await signOut(page, applicantEmail);
+    await signOut(page);
 
     // HR tracks the application through its statuses and records the hiring decision.
     await signIn(page, HR.email, HR.home);
@@ -275,7 +274,7 @@ test.describe("Objective 2: recruitment management", () => {
     await page.goto("/hr/employees");
     await page.getByLabel("Search").fill(badge);
     await expect(page.getByRole("link", { name: new RegExp(`View record for Aplica Candidate ${runId}`) })).toBeVisible({ timeout: 15_000 });
-    await signOut(page, HR.email);
+    await signOut(page);
 
     // The applicant is kept informed of every status change.
     await signIn(page, applicantEmail, "/applicant");
@@ -301,7 +300,7 @@ test.describe("Objective 3: deployment tracking", () => {
     await expect(page.getByRole("status").filter({ hasText: `${unit} was added.` })).toBeVisible();
     await page.getByLabel("Search units / stations").fill(unit);
     await expect(page.getByRole("cell", { name: unit, exact: true })).toBeVisible();
-    await signOut(page, ADMIN.email);
+    await signOut(page);
 
     await signIn(page, HR.email, HR.home);
 
@@ -323,7 +322,7 @@ test.describe("Objective 3: deployment tracking", () => {
 
     await page.goto("/hr/deployments");
     await expect(page.getByRole("link", { name: new RegExp(`View details for ${role}`) })).toBeVisible({ timeout: 15_000 });
-    await signOut(page, HR.email);
+    await signOut(page);
 
     await signIn(page, EMPLOYEE.email, EMPLOYEE.home);
     await page.goto("/employee/deployments");
@@ -391,7 +390,7 @@ test.describe("Objective 4: promotion eligibility tracker", () => {
     const promotionRow = page.getByRole("row").filter({ has: page.getByRole("link", { name: /Open review for .*PCPL/ }) }).filter({ hasText: formatDate(isoDate(0)) ?? isoDate(0) }).first();
     await expect(promotionRow).toBeVisible({ timeout: 15_000 });
     await expect(promotionRow).toContainText("Ready");
-    await signOut(page, HR.email);
+    await signOut(page);
 
     await signIn(page, EMPLOYEE.email, EMPLOYEE.home);
     await page.goto("/employee/promotion-eligibility");
@@ -420,7 +419,7 @@ test.describe("Objective 5: personnel self-service portal", () => {
     await page.getByLabel(/^Notes/).fill(reason);
     await page.getByRole("button", { name: "Submit request" }).click();
     await expect(page.getByRole("status").filter({ hasText: /Leave request submitted/ })).toBeVisible();
-    await signOut(page, EMPLOYEE.email);
+    await signOut(page);
 
     await signIn(page, HR.email, HR.home);
     await page.goto("/hr/leave-requests");
@@ -429,7 +428,7 @@ test.describe("Objective 5: personnel self-service portal", () => {
     await page.getByRole("textbox", { name: "Notes" }).fill("Staffing is short on these dates.");
     await page.getByRole("button", { name: "Reject request" }).click();
     await expect(page.getByRole("status").filter({ hasText: /rejected/i })).toBeVisible();
-    await signOut(page, HR.email);
+    await signOut(page);
 
     await signIn(page, EMPLOYEE.email, EMPLOYEE.home);
     await page.goto("/employee/leave");
@@ -479,7 +478,7 @@ test.describe("Objective 6: attendance monitoring and reporting", () => {
     await page.goto("/reports/attendance-leave");
     await expect(page.getByRole("heading", { name: "Attendance and leave" })).toBeVisible();
     await expect(page.getByRole("row").filter({ hasText: employee.badge })).toContainText("late", { timeout: 15_000 });
-    await signOut(page, HR.email);
+    await signOut(page);
 
     await signIn(page, EMPLOYEE.email, EMPLOYEE.home);
     await page.goto("/employee/attendance");
@@ -500,10 +499,12 @@ test.describe("Objective 7: analytics dashboard", () => {
     const figure = async (name: string) => Number((await page.getByRole("article", { name, exact: true }).locator("p").nth(1).innerText()).split("/")[0]!.replace(/[^\d]/g, ""));
     expect(await figure("Active deployments")).toBeGreaterThan(0);
     expect(await figure("Personnel")).toBeGreaterThan(0);
-    for (const heading of ["Needs attention", "Recruitment pipeline", "Attendance", "Recent applications"]) {
+    for (const heading of ["Recruitment pipeline", "Attendance", "Recent applications"]) {
       await expect(page.getByRole("heading", { name: heading, exact: true })).toBeVisible();
     }
-    await signOut(page, HR.email);
+    await page.getByRole("tab", { name: "Needs attention" }).click();
+    await expect(page.getByRole("heading", { name: "Needs attention", exact: true })).toBeVisible();
+    await signOut(page);
 
     await signIn(page, MANAGEMENT.email, MANAGEMENT.home);
     await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible({ timeout: 30_000 });
@@ -546,7 +547,7 @@ test.describe("Objective 8: automated reports", () => {
       await expect(page.getByRole("heading", { name: heading })).toBeVisible();
       await expect(page.getByRole("table")).toBeVisible({ timeout: 15_000 });
     }
-    await signOut(page, HR.email);
+    await signOut(page);
 
     await signIn(page, MANAGEMENT.email, MANAGEMENT.home);
     await page.goto("/reports/deployments");

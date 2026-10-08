@@ -70,7 +70,7 @@ export function EmployeeDirectory() {
     rankId: rankId ? Number(rankId) : undefined,
     employmentStatus: employmentStatus || undefined,
     page,
-    pageSize: 25,
+    pageSize: 10,
   });
   const accounts = useUnlinkedEmployeeAccounts();
   const ranks = useRankOptions();
@@ -207,7 +207,7 @@ export function EmployeeDirectory() {
             </table>
           </div>
         )}
-        <Pagination from={rows.length ? (page - 1) * 25 + 1 : 0} noun="employees" onPageChange={(next) => set({ page: String(next) })} page={page} pageCount={Math.max(1, Math.ceil(total / 25))} to={Math.min(page * 25, total)} total={total} />
+        <Pagination from={rows.length ? (page - 1) * 10 + 1 : 0} noun="employees" onPageChange={(next) => set({ page: String(next) })} page={page} pageCount={Math.max(1, Math.ceil(total / 10))} to={Math.min(page * 10, total)} total={total} />
       </section>
 
       <DeleteRecordDialog

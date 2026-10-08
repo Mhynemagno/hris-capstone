@@ -55,15 +55,15 @@ import { AuditLogsWorkspace, DepartmentsWorkspace, RanksWorkspace, SettingsWorks
 import { PaginatedTableControls } from "./paginated-table-controls";
 
 describe("administration shared controls", () => {
-  it("moves through a known 20-row page range", async () => {
+  it("moves through a known 10-row page range", async () => {
     const user = userEvent.setup();
     const onPageChange = vi.fn();
-    render(<PaginatedTableControls page={2} pageSize={20} totalCount={45} onPageChange={onPageChange} />);
+    render(<PaginatedTableControls page={2} pageSize={10} totalCount={45} onPageChange={onPageChange} />);
 
     await user.click(screen.getByRole("button", { name: /next page/i }));
 
     expect(onPageChange).toHaveBeenCalledWith(3);
-    expect(screen.getByText("21–40 of 45 records")).toBeInTheDocument();
+    expect(screen.getByText("11–20 of 45 records")).toBeInTheDocument();
   });
 
   it("disables unavailable page changes", () => {

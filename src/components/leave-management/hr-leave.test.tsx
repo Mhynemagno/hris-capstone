@@ -138,7 +138,7 @@ describe("HrLeaveWorkspace", () => {
     render(<HrLeaveWorkspace />);
 
     expect(screen.getByRole("tab", { name: /requests/i })).toHaveAttribute("aria-selected", "true");
-    expect(mocks.hrQueueInput).toHaveBeenLastCalledWith(expect.objectContaining({ page: 2, pageSize: 25, status: "pending" }));
+    expect(mocks.hrQueueInput).toHaveBeenLastCalledWith(expect.objectContaining({ page: 2, pageSize: 10, status: "pending" }));
     navigation.search = "";
   });
 });

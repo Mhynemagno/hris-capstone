@@ -22,7 +22,7 @@ export function AdminProfileChangeRequestQueue() {
   const { params, set } = useListParams(["status", "page"] as const);
   const page = Math.max(1, Number(params.page) || 1);
   const status = statuses.includes(params.status as ProfileChangeStatus) ? params.status as ProfileChangeStatus : "";
-  const result = useAdminProfileChangeRequests({ page, pageSize: 20, ...(status ? { status } : {}) });
+  const result = useAdminProfileChangeRequests({ page, pageSize: 10, ...(status ? { status } : {}) });
   const rows = result.data?.rows ?? [];
 
   return (
@@ -98,7 +98,7 @@ export function AdminProfileChangeRequestQueue() {
               </tbody>
             </table>
           </div>
-          <PaginatedTableControls onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={20} totalCount={result.data?.count ?? 0} />
+          <PaginatedTableControls onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={10} totalCount={result.data?.count ?? 0} />
         </>
       )}
     </div>

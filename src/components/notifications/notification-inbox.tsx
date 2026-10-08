@@ -18,7 +18,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
 
-const pageSize = 20;
+const pageSize = 10;
 
 export function NotificationInbox() {
   const [page, setPage] = useState(1);

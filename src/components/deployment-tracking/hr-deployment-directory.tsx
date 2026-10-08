@@ -16,7 +16,7 @@ import { DeploymentStatusBadge } from "./deployment-status-badge";
 export function HrDeploymentDirectory() {
   const { params, set } = useListParams(["page"] as const);
   const page = Math.max(1, Number(params.page) || 1);
-  const query = useHrDeployments({ page, pageSize: 25 });
+  const query = useHrDeployments({ page, pageSize: 10 });
   const employees = useEmployeeOptions();
   const employeeById = useMemo(() => new Map((employees.data ?? []).map((employee) => [employee.id, employee])), [employees.data]);
   const newDeploymentLink = <Link className={buttonVariants({ className: "w-full sm:w-auto" })} href="/hr/deployments/new">New deployment</Link>;
@@ -74,7 +74,7 @@ export function HrDeploymentDirectory() {
           </tbody>
         </table>
       </div>
-      <Pagination from={rows.length ? (page - 1) * 25 + 1 : 0} noun="deployments" onPageChange={(next) => set({ page: String(next) })} page={page} pageCount={Math.max(1, Math.ceil(total / 25))} to={Math.min(page * 25, total)} total={total} />
+      <Pagination from={rows.length ? (page - 1) * 10 + 1 : 0} noun="deployments" onPageChange={(next) => set({ page: String(next) })} page={page} pageCount={Math.max(1, Math.ceil(total / 10))} to={Math.min(page * 10, total)} total={total} />
     </section>
   );
 }

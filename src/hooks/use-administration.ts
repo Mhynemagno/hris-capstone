@@ -37,15 +37,15 @@ import {
 } from "@/schemas/administration";
 
 function managedFilters(filters: Partial<ManagedUserFilters> = {}) {
-  return managedUserFiltersSchema.parse({ page: 1, pageSize: 20, ...filters });
+  return managedUserFiltersSchema.parse({ page: 1, pageSize: 10, ...filters });
 }
 
 function referenceFilters(filters: Partial<ReferenceDataFilters> = {}) {
-  return referenceDataFiltersSchema.parse({ page: 1, pageSize: 20, ...filters });
+  return referenceDataFiltersSchema.parse({ page: 1, pageSize: 10, ...filters });
 }
 
 function auditFilters(filters: Partial<AuditLogFilters> = {}) {
-  return auditLogFiltersSchema.parse({ page: 1, pageSize: 20, ...filters });
+  return auditLogFiltersSchema.parse({ page: 1, pageSize: 10, ...filters });
 }
 
 export function useManagedUsers(filters: Partial<ManagedUserFilters> = {}) {
