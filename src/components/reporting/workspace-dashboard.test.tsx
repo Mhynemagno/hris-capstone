@@ -46,6 +46,15 @@ describe("WorkspaceDashboard", () => {
     expect(screen.getByRole("button", { name: /Create/ })).toBeInTheDocument();
   });
 
+  it("shows a station pulse alongside the personnel distribution for HR", () => {
+    render(<WorkspaceDashboard role="hr_personnel" />);
+    const distribution = screen.getByRole("region", { name: "Personnel distribution" });
+    expect(within(distribution).getByRole("img", { name: "Patrol: 90" })).toBeInTheDocument();
+    const pulse = screen.getByRole("region", { name: "Today's station pulse" });
+    expect(within(pulse).getByText("Present today")).toBeInTheDocument();
+    expect(within(pulse).getByText("Deployed / outside field")).toBeInTheDocument();
+  });
+
   it("gives Management a read-only view with workforce breakdowns", () => {
     render(<WorkspaceDashboard role="management" />);
     expect(screen.queryByRole("heading", { name: "Needs attention" })).not.toBeInTheDocument();

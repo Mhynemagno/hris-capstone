@@ -168,9 +168,8 @@
 }
 
 /*
- * HR / Admin / Employee / Management workspace (spec 2026-10-07 §3). Police navy brand,
- * cool neutrals, borders over shadows, a denser 14px type scale. Scoped so the applicant
- * and public pages keep today's tokens.
+ * Internal police workspace. HR and admin share the station-command frame while the
+ * applicant and public experiences retain their own typography and palette.
  */
 .workspace {
   --background: #f6f7f9;
@@ -219,16 +218,16 @@
   --text-4xl--line-height: 2.5rem;
 }
 
-/* The workspace sidebar: white, navy text, a subtle navy "you are here". */
-.workspace .app-sidebar {
-  --sidebar: #ffffff;
-  --sidebar-foreground: #344054;
-  --sidebar-primary: #0f3467;
+/* Dark navigation creates a clear command frame around the white data canvas. */
+.workspace .station-sidebar {
+  --sidebar: #101828;
+  --sidebar-foreground: #f8fafc;
+  --sidebar-primary: #2563eb;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #ebf0f8;
-  --sidebar-accent-foreground: #0f3467;
-  --sidebar-border: #e4e7ec;
-  --sidebar-ring: #0f3467;
+  --sidebar-accent: #1d2939;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #24314a;
+  --sidebar-ring: #93c5fd;
 }
 
 .dark {

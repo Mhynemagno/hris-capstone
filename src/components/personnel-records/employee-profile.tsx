@@ -52,7 +52,7 @@ export function EmployeeProfile({ employee, trainings, qualifications, serviceHi
   const department = employee.department_id ? departments.data?.find((row) => row.id === employee.department_id) : undefined;
 
   const badge = { label: "Badge number", value: <span className="tabular-nums">{employee.employee_number}</span>, icon: BadgeCheck };
-  const status = { label: "Status", value: employee.employment_status === "on_leave" ? "On leave" : "Active", icon: ShieldCheck };
+  const status = { label: "Status", value: employee.employment_status === "retired" ? "Retired" : "Active", icon: ShieldCheck };
   const service = { label: "Years of service", value: serviceLength(employee.employment_started_on, employee.employment_ended_on) ?? "Not recorded", icon: Clock };
   const assignment = [
     { label: "Unit / Section", value: department?.name ?? "Not assigned", icon: Building2 },

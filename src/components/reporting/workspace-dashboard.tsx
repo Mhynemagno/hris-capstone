@@ -105,6 +105,40 @@ function PipelineChart({ rows }: { rows: ChartDatum[] }) {
   );
 }
 
+function StationPulse({ data }: { data: DashboardSummary }) {
+  const metric = (key: string) => data.metrics[key] ?? 0;
+  const workforce = metric("activeWorkforce");
+  const deployed = metric("activeDeployments");
+  const present = metric("attendanceToday");
+  const onLeave = metric("onLeave");
+  const exceptions = "attendanceExceptions" in data.metrics ? metric("attendanceExceptions") : 0;
+  const rows = [
+    { label: "Present today", count: present, href: "/hr/attendance", color: "bg-emerald-500" },
+    { label: "Deployed / outside field", count: deployed, href: "/hr/deployments", color: "bg-amber-500" },
+    { label: "Approved leave", count: onLeave, href: "/hr/leave-requests?status=approved", color: "bg-violet-500" },
+    { label: "Attendance exceptions", count: exceptions, href: "/hr/attendance", color: "bg-rose-500" },
+  ];
+
+  return (
+    <Panel footer={<Link className="font-medium text-primary hover:underline" href="/hr/attendance">Go to full attendance roster →</Link>} id="station-pulse-heading" title="Today's station pulse">
+      <div className="space-y-4">
+        {rows.map((row) => {
+          const share = workforce ? Math.min(100, Math.round((row.count / workforce) * 100)) : 0;
+          return (
+            <Link className="group block rounded-md px-1 py-0.5 transition-colors hover:bg-muted focus-visible:outline-offset-2" href={row.href} key={row.label}>
+              <div className="mb-1 flex items-center justify-between gap-3 text-sm">
+                <span className="font-medium text-foreground">{row.label}</span>
+                <span className="shrink-0 font-semibold tabular-nums">{formatCount(row.count)} <span className="font-normal text-muted-foreground">({share}%)</span></span>
+              </div>
+              <span aria-hidden="true" className="block h-2 overflow-hidden rounded-full bg-muted"><span className={`block h-full rounded-full ${row.color} transition-opacity group-hover:opacity-80`} style={{ width: `${share}%` }} /></span>
+            </Link>
+          );
+        })}
+      </div>
+    </Panel>
+  );
+}
+
 function DashboardSkeleton() {
   return (
     <div className="space-y-6">
@@ -176,39 +210,60 @@ function DashboardBody({ awaitingReview, data, isHr, recent, unmatched }: { data
         </section>
       ) : null}
       <StatStrip items={stats} label="Today" />
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Panel footer={`${formatCount(metric("hiredApplicants"))} hired in this period`} id="pipeline-heading" title="Recruitment pipeline">
-          <PipelineChart rows={breakdown("recruitmentPipeline")} />
-        </Panel>
-        <Panel id="attendance-heading" title="Attendance">
-          <div className="space-y-5">
-            {breakdown("attendanceTrend").some((row) => row.count > 0)
-              ? <ColumnTrendChart data={breakdown("attendanceTrend")} formatLabel={formatDay} unit="attendance" />
-              : <p className="grid min-h-32 place-items-center rounded-md border border-dashed text-sm text-muted-foreground">No attendance recorded in this period.</p>}
-            {breakdown("attendanceStatus").length ? <HorizontalBarChart data={breakdown("attendanceStatus")} formatLabel={attendanceStatusLabel} /> : null}
-          </div>
-        </Panel>
-      </div>
       {isHr ? (
-        <Panel footer={<Link className="font-medium text-primary hover:underline" href="/hr/applications">View all applications →</Link>} id="recent-heading" title="Recent applications">
-          {recent.isLoading ? <Skeleton className="h-32 w-full" /> : recent.error ? <ErrorState message={recent.error.message} /> : recent.data?.length ? (
-            <ul className="-my-2 divide-y">
-              {recent.data.map((application) => (
-                <li className="flex flex-wrap items-center gap-x-4 gap-y-1 py-2.5" key={application.id}>
-                  <Link className="min-w-40 flex-1 font-medium hover:underline" href={`/hr/applications/${application.id}`}>{application.applicant_name ?? `Application ${application.id.slice(0, 8)}`}</Link>
-                  <span className="min-w-32 text-muted-foreground">{application.job_title ?? "—"}</span>
-                  <ApplicationStageBadge status={application.status} />
-                  <span className="w-40 text-right text-sm text-muted-foreground tabular-nums">{formatDate(application.submitted_at)}</span>
-                </li>
-              ))}
-            </ul>
-          ) : <EmptyState title="No applications yet" />}
-        </Panel>
+        <>
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.75fr)_minmax(19rem,0.85fr)]">
+            <ChartCard data={breakdown("workforceByDepartment")} id="personnel-distribution" labelHeading="Unit / Section" subtitle="View staffing by unit or section" title="Personnel distribution"><HorizontalBarChart data={breakdown("workforceByDepartment")} /></ChartCard>
+            <StationPulse data={data} />
+          </div>
+          <div className="grid gap-6 xl:grid-cols-3">
+            <Panel footer={`${formatCount(metric("hiredApplicants"))} hired in this period`} id="pipeline-heading" title="Recruitment pipeline">
+              <PipelineChart rows={breakdown("recruitmentPipeline")} />
+            </Panel>
+            <Panel id="attendance-heading" title="Attendance">
+              <div className="space-y-5">
+                {breakdown("attendanceTrend").some((row) => row.count > 0)
+                  ? <ColumnTrendChart data={breakdown("attendanceTrend")} formatLabel={formatDay} unit="attendance" />
+                  : <p className="grid min-h-32 place-items-center rounded-md border border-dashed text-sm text-muted-foreground">No attendance recorded in this period.</p>}
+                {breakdown("attendanceStatus").length ? <HorizontalBarChart data={breakdown("attendanceStatus")} formatLabel={attendanceStatusLabel} /> : null}
+              </div>
+            </Panel>
+            <Panel footer={<Link className="font-medium text-primary hover:underline" href="/hr/applications">View all applications →</Link>} id="recent-heading" title="Recent applications">
+              {recent.isLoading ? <Skeleton className="h-32 w-full" /> : recent.error ? <ErrorState message={recent.error.message} /> : recent.data?.length ? (
+                <ul className="-my-2 divide-y">
+                  {recent.data.map((application) => (
+                    <li className="flex flex-wrap items-center gap-x-4 gap-y-1 py-2.5" key={application.id}>
+                      <Link className="min-w-40 flex-1 font-medium hover:underline" href={`/hr/applications/${application.id}`}>{application.applicant_name ?? `Application ${application.id.slice(0, 8)}`}</Link>
+                      <span className="min-w-32 text-muted-foreground">{application.job_title ?? "—"}</span>
+                      <ApplicationStageBadge status={application.status} />
+                      <span className="w-40 text-right text-sm text-muted-foreground tabular-nums">{formatDate(application.submitted_at)}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : <EmptyState title="No applications yet" />}
+            </Panel>
+          </div>
+        </>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-2">
-          <ChartCard data={breakdown("workforceByDepartment")} id="by-unit" labelHeading="Unit / Section" title="Personnel by unit / section"><HorizontalBarChart data={breakdown("workforceByDepartment")} /></ChartCard>
-          <ChartCard data={breakdown("workforceByRank")} id="by-rank" labelHeading="Rank" title="Personnel by rank"><HorizontalBarChart data={breakdown("workforceByRank")} /></ChartCard>
-        </div>
+        <>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Panel footer={`${formatCount(metric("hiredApplicants"))} hired in this period`} id="pipeline-heading" title="Recruitment pipeline">
+              <PipelineChart rows={breakdown("recruitmentPipeline")} />
+            </Panel>
+            <Panel id="attendance-heading" title="Attendance">
+              <div className="space-y-5">
+                {breakdown("attendanceTrend").some((row) => row.count > 0)
+                  ? <ColumnTrendChart data={breakdown("attendanceTrend")} formatLabel={formatDay} unit="attendance" />
+                  : <p className="grid min-h-32 place-items-center rounded-md border border-dashed text-sm text-muted-foreground">No attendance recorded in this period.</p>}
+                {breakdown("attendanceStatus").length ? <HorizontalBarChart data={breakdown("attendanceStatus")} formatLabel={attendanceStatusLabel} /> : null}
+              </div>
+            </Panel>
+          </div>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <ChartCard data={breakdown("workforceByDepartment")} id="by-unit" labelHeading="Unit / Section" title="Personnel by unit / section"><HorizontalBarChart data={breakdown("workforceByDepartment")} /></ChartCard>
+            <ChartCard data={breakdown("workforceByRank")} id="by-rank" labelHeading="Rank" title="Personnel by rank"><HorizontalBarChart data={breakdown("workforceByRank")} /></ChartCard>
+          </div>
+        </>
       )}
     </div>
   );

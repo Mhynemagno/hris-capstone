@@ -46,7 +46,7 @@ const employee = {
   employee_number: "1-00001",
   department_id: 3,
   rank_id: 7,
-  employment_status: "on_leave",
+  employment_status: "retired",
 };
 
 describe("EmployeeDirectory", () => {
@@ -64,7 +64,7 @@ describe("EmployeeDirectory", () => {
     expect(within(table).getByRole("cell", { name: "Pat" })).toBeInTheDocument();
     expect(within(table).getByRole("cell", { name: "Santos" })).toBeInTheDocument();
     expect(within(table).getByRole("cell", { name: "Jr." })).toBeInTheDocument();
-    expect(within(table).getByRole("cell", { name: "On leave" })).toBeInTheDocument();
+    expect(within(table).getByRole("cell", { name: "Retired" })).toBeInTheDocument();
     expect(within(table).getByRole("link", { name: /view record for ana reyes/i })).toHaveAttribute("href", `/hr/employees/${employee.id}`);
     expect(within(table).getByRole("link", { name: /edit record for ana reyes/i })).toHaveAttribute("href", `/hr/employees/${employee.id}?tab=official&mode=edit`);
     expect(screen.getByRole("link", { name: "Add New Employee" })).toHaveAttribute("href", "/hr/employees/new");
@@ -91,10 +91,10 @@ describe("EmployeeDirectory", () => {
     await user.selectOptions(screen.getByLabelText("Unit / Section"), "3");
     expect(within(screen.getByLabelText("Rank")).getByRole("option", { name: "PCpl — Police Corporal" })).toBeInTheDocument();
     await user.selectOptions(screen.getByLabelText("Rank"), "7");
-    expect(within(screen.getByLabelText("Employment status")).getAllByRole("option").map((option) => option.textContent)).toEqual(["All statuses", "Active", "On leave"]);
-    await user.selectOptions(screen.getByLabelText("Employment status"), "on_leave");
+    expect(within(screen.getByLabelText("Employment status")).getAllByRole("option").map((option) => option.textContent)).toEqual(["All statuses", "Active", "Retired"]);
+    await user.selectOptions(screen.getByLabelText("Employment status"), "retired");
 
-    expect(mocks.useEmployeeDirectory).toHaveBeenLastCalledWith(expect.objectContaining({ departmentId: 3, rankId: 7, employmentStatus: "on_leave" }));
+    expect(mocks.useEmployeeDirectory).toHaveBeenLastCalledWith(expect.objectContaining({ departmentId: 3, rankId: 7, employmentStatus: "retired" }));
     // Filters can find records in inactive departments.
     expect(screen.getByRole("option", { name: "Records (inactive)" })).toBeInTheDocument();
 

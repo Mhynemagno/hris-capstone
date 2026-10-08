@@ -44,7 +44,7 @@ describe("personnel record schemas", () => {
     });
   });
 
-  it("records the rank by its catalogue id and allows only Active or On leave", () => {
+  it("records the rank by its catalogue id and allows only Active or Retired", () => {
     const base = {
       employeeNumber: "1-00002",
       firstName: "Ana",
@@ -53,11 +53,12 @@ describe("personnel record schemas", () => {
       employmentStartedOn: "2024-01-01",
       ...requiredPersonal,
     };
-    expect(employeeSchema.parse({ ...base, rankId: "9", unitStation: "Station 1", employmentStatus: "on_leave" })).toMatchObject({
+    expect(employeeSchema.parse({ ...base, rankId: "9", unitStation: "Station 1", employmentStatus: "retired" })).toMatchObject({
       rankId: 9,
       unitStation: "Station 1",
-      employmentStatus: "on_leave",
+      employmentStatus: "retired",
     });
+    expect(employeeSchema.safeParse({ ...base, employmentStatus: "on_leave" }).success).toBe(false);
     expect(employeeSchema.safeParse({ ...base, employmentStatus: "separated" }).success).toBe(false);
     expect(employeeSchema.safeParse({ ...base, employmentStatus: "inactive" }).success).toBe(false);
   });
