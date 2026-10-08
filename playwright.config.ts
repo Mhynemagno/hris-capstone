@@ -1,15 +1,16 @@
 import { execSync } from "node:child_process";
 import { defineConfig, devices } from "@playwright/test";
 
-const localHosts = new Set(["localhost", "127.0.0.1"]);
+const localHosts = new Set(["localhost", "127.0.0.1", "host.docker.internal"]);
 
 function getLocalSupabaseEnvironment() {
   // Workers re-evaluate this config; reuse what the main process resolved so
   // `supabase status` runs once instead of once per worker.
   const cachedUrl = process.env.HRIS_E2E_SUPABASE_URL;
   const cachedKey = process.env.HRIS_E2E_SUPABASE_PUBLISHABLE_KEY;
-  if (cachedUrl && cachedKey && localHosts.has(new URL(cachedUrl).hostname)) {
-    return { url: cachedUrl, publishableKey: cachedKey };
+  const cachedServiceRoleKey = process.env.HRIS_E2E_SUPABASE_SERVICE_ROLE_KEY;
+  if (cachedUrl && cachedKey && cachedServiceRoleKey && localHosts.has(new URL(cachedUrl).hostname)) {
+    return { url: cachedUrl, publishableKey: cachedKey, serviceRoleKey: cachedServiceRoleKey };
   }
 
   const status = execSync("npx supabase status --output env", {
@@ -24,7 +25,8 @@ function getLocalSupabaseEnvironment() {
 
   const url = values.get("API_URL");
   const publishableKey = values.get("PUBLISHABLE_KEY") ?? values.get("ANON_KEY");
-  if (!url || !publishableKey) {
+  const serviceRoleKey = values.get("SECRET_KEY") ?? values.get("SERVICE_ROLE_KEY");
+  if (!url || !publishableKey || !serviceRoleKey) {
     throw new Error("Start the local Supabase stack before running Playwright.");
   }
   if (!localHosts.has(new URL(url).hostname)) {
@@ -33,7 +35,8 @@ function getLocalSupabaseEnvironment() {
 
   process.env.HRIS_E2E_SUPABASE_URL = url;
   process.env.HRIS_E2E_SUPABASE_PUBLISHABLE_KEY = publishableKey;
-  return { url, publishableKey };
+  process.env.HRIS_E2E_SUPABASE_SERVICE_ROLE_KEY = serviceRoleKey;
+  return { url, publishableKey, serviceRoleKey };
 }
 
 const localSupabase = getLocalSupabaseEnvironment();
@@ -65,6 +68,7 @@ export default defineConfig({
       ...process.env,
       NEXT_PUBLIC_SUPABASE_URL: localSupabase.url,
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: localSupabase.publishableKey,
+      SUPABASE_SERVICE_ROLE_KEY: localSupabase.serviceRoleKey,
     },
   },
 });

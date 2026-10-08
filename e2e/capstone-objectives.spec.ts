@@ -215,9 +215,9 @@ test.describe("Objective 2: recruitment management", () => {
     const png = { name: "photo.png", mimeType: "image/png", buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64") };
     for (const [label, file] of [["CV / Resume", pdf("resume.pdf")], ["PSA birth certificate", pdf("psa.pdf")], ["2x2 picture", png], ["Eligibility", pdf("eligibility.pdf")], ["Diploma", pdf("diploma.pdf")]] as const) {
       await page.getByLabel(`Upload ${label} document`).setInputFiles(file);
-      await page.getByRole("button", { name: `Save ${label} document` }).click();
-      await expect(page.getByRole("status").filter({ hasText: `${label} document saved.` })).toBeVisible();
     }
+    await page.getByRole("button", { name: "Save documents" }).click();
+    await expect(page.getByRole("status").filter({ hasText: "Documents saved." })).toBeVisible();
     await expect(page.getByText("5 of 5 required documents saved")).toBeVisible();
 
     await page.goto("/jobs");
@@ -227,7 +227,6 @@ test.describe("Objective 2: recruitment management", () => {
     await page.getByRole("button", { name: "I Agree & Continue" }).click();
     await expect(page).toHaveURL(/\/applicant\/apply\/\d+$/);
     await expect(page.getByLabel("CV (PDF)")).toHaveCount(0);
-    await page.getByLabel("Cover note (optional)").fill("I am applying through the capstone objective tests.");
     await page.getByRole("button", { name: "Submit application" }).click();
     await expect(page.getByRole("status").filter({ hasText: "Application submitted" })).toBeVisible({ timeout: 30_000 });
     const trackHref = await page.getByRole("link", { name: "Track application" }).getAttribute("href");
@@ -257,22 +256,16 @@ test.describe("Objective 2: recruitment management", () => {
         await expect(dialog).toBeHidden();
       }
     };
-    // The whole cycle runs in the system: interview in San Juan, endorsement to Crame, BMI proof, neuro exam, training.
-    await advance(["Under Review", "Interview", "Endorsed to Crame"]);
-    await expect(page.getByText("Waiting for the applicant's BMI proof")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Move to next stage" })).toBeDisabled();
-    await signOut(page, HR.email);
-
-    await signIn(page, applicantEmail, "/applicant");
-    await page.goto(`/applicant/applications/${applicationId}`);
-    await page.getByLabel("BMI proof (PDF, PNG or JPEG)").setInputFiles(pdf("bmi.pdf"));
-    await page.getByRole("button", { name: "Upload BMI proof" }).click();
-    await expect(page.getByText("BMI proof uploaded. HR will check it and update your progress.")).toBeVisible();
-    await signOut(page, applicantEmail);
-
-    await signIn(page, HR.email, HR.home);
-    await page.goto(`/hr/applications/${applicationId}`);
-    await advance(["Neuro Exam", "For Training"]);
+    await advance([
+      "Physical Agility Test",
+      "Physical & Medical Examination",
+      "Neuro-Psychiatric Examination",
+      "Drug Test",
+      "Character & Background Investigation",
+      "Panel Interview",
+      "Final Evaluation",
+      "Shortlisted",
+    ]);
     await page.getByRole("button", { name: "Hire applicant" }).click();
     const hireDialog = page.getByRole("dialog", { name: "Hire applicant" });
     await hireDialog.getByLabel(/^Badge number/).fill(badge);
