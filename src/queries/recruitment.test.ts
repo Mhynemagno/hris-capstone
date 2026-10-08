@@ -332,6 +332,24 @@ describe("applicant profile media", () => {
       target_mime_type: "application/pdf",
     }));
   });
+
+  it("keeps already-persisted files when a later profile-document save fails", async () => {
+    const queries = recruitmentQueries as typeof recruitmentQueries & {
+      saveApplicantProfileDocuments: (documents: { eligibility?: File; diploma?: File }) => Promise<void>;
+    };
+    mocks.getUser.mockResolvedValue({ data: { user: { id: userId } }, error: null });
+    mocks.rpc
+      .mockResolvedValueOnce({ error: null })
+      .mockResolvedValueOnce({ error: new Error("database write failed") });
+
+    await expect(queries.saveApplicantProfileDocuments({
+      eligibility: new File(["proof"], "eligibility.pdf", { type: "application/pdf" }),
+      diploma: new File(["proof"], "diploma.pdf", { type: "application/pdf" }),
+    })).rejects.toThrow("database write failed");
+
+    expect(mocks.remove).toHaveBeenCalledTimes(1);
+    expect(mocks.remove.mock.calls[0]?.[0]).toHaveLength(1);
+  });
 });
 
 describe("loadMyProfileDocumentFile", () => {

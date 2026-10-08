@@ -12,7 +12,7 @@ const summary = {
   range: { startsOn: "2026-09-09", endsOn: "2026-10-08" },
   metrics: { totalPersonnel: 160, attendanceToday: 142, activeWorkforce: 160, onLeave: 4, activeDeployments: 7, openJobs: 2, hiredApplicants: 1, pendingLeave: 2, attendanceExceptions: 5, trainingNeeds: 0 },
   breakdowns: {
-    recruitmentPipeline: [{ label: "Submitted", count: 3 }, { label: "Interview", count: 1 }, { label: "Not Selected", count: 2 }],
+    recruitmentPipeline: [{ label: "Application Submission", count: 3 }, { label: "Panel Interview", count: 1 }, { label: "Not Selected", count: 2 }],
     attendanceTrend: [{ label: "2026-10-07", count: 140 }],
     attendanceStatus: [{ label: "present", count: 130 }, { label: "late", count: 10 }],
     workforceByDepartment: [{ label: "Patrol", count: 90 }],
@@ -25,7 +25,7 @@ vi.mock("@/hooks/use-reporting", () => ({
 }));
 vi.mock("@/hooks/use-workspace-counts", () => ({ useWorkspaceCount: (key: string) => ({ data: key === "applicationsAwaitingReview" ? 3 : 0, isError: false }) }));
 vi.mock("@/hooks/use-recruitment", () => ({
-  useRecentApplications: () => ({ isLoading: false, error: null, data: [{ id: "a1", status: "Submitted", submitted_at: "2026-10-07T00:00:00Z", applicant_name: "Aplica Candidate", job_title: "Patrol 2026" }] }),
+  useRecentApplications: () => ({ isLoading: false, error: null, data: [{ id: "a1", status: "Application Submission", submitted_at: "2026-10-07T00:00:00Z", applicant_name: "Aplica Candidate", job_title: "Patrol 2026" }] }),
 }));
 
 import { WorkspaceDashboard } from "./workspace-dashboard";
@@ -35,11 +35,11 @@ describe("WorkspaceDashboard", () => {
     render(<WorkspaceDashboard role="hr_personnel" />);
     expect(screen.getByRole("heading", { level: 1, name: "Dashboard" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Needs attention" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Applications awaiting review.*3/ })).toHaveAttribute("href", "/hr/applications?stage=Submitted");
+    expect(screen.getByRole("link", { name: /Applications awaiting review.*3/ })).toHaveAttribute("href", "/hr/applications?stage=Application%20Submission");
     expect(screen.getByRole("article", { name: "On duty today" })).toHaveTextContent("142 / 160");
     expect(screen.getByRole("article", { name: "Open job postings" })).toHaveTextContent("2");
     const pipeline = screen.getByRole("region", { name: "Recruitment pipeline" });
-    expect(within(pipeline).getByRole("link", { name: /Submitted.*3/ })).toHaveAttribute("href", "/hr/applications?stage=Submitted");
+    expect(within(pipeline).getByRole("link", { name: /Application Submission.*3/ })).toHaveAttribute("href", "/hr/applications?stage=Application%20Submission");
     expect(within(pipeline).getByText(/1 hired in this period/)).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Attendance" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Aplica Candidate" })).toHaveAttribute("href", "/hr/applications/a1");

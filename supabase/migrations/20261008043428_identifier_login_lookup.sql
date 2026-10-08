@@ -12,7 +12,7 @@ declare
 begin
   if target_mode = 'applicant' then
     normalized_identifier := regexp_replace(normalized_identifier, '[^0-9]', '', 'g');
-    if normalized_identifier !~ '^[0-9]{6}$' then return null; end if;
+    if normalized_identifier !~ '^[0-9]{6,}$' then return null; end if;
     select profile.email into resolved_email
       from public.applicants applicant
       join public.profiles profile on profile.id = applicant.profile_id

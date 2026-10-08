@@ -184,7 +184,7 @@ function DashboardBody({ awaitingReview, data, isHr, recent, unmatched }: { data
   const metric = (key: string) => data.metrics[key] ?? 0;
   const countOf = (query: CountQuery) => (query.isError || query.data === undefined ? null : query.data);
   const attention: AttentionItem[] = [
-    { key: "applications", label: "Applications awaiting review", count: countOf(awaitingReview), href: "/hr/applications?stage=Submitted", icon: FileText },
+    { key: "applications", label: "Applications awaiting review", count: countOf(awaitingReview), href: "/hr/applications?stage=Application%20Submission", icon: FileText },
     { key: "leave", label: "Leave requests for approval", count: "pendingLeave" in data.metrics ? metric("pendingLeave") : null, href: "/hr/leave-requests?status=pending", icon: CalendarDays },
     { key: "unmatched", label: "Unmatched attendance IDs", count: countOf(unmatched), href: "/hr/attendance/unmatched", icon: Fingerprint },
     { key: "exceptions", label: "Attendance exceptions", count: "attendanceExceptions" in data.metrics ? metric("attendanceExceptions") : null, href: "/hr/attendance", icon: TriangleAlert },

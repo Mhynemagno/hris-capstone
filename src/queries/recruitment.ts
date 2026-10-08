@@ -248,6 +248,7 @@ export async function saveApplicantProfileDocuments(documents: PendingApplicantP
   const client = createBrowserSupabaseClient();
   const bucket = client.storage.from(applicantProfileDocumentBucket);
   const uploadedPaths: string[] = [];
+  const persistedPaths: string[] = [];
   try {
     for (const { kind } of APPLICANT_PROFILE_DOCUMENT_KINDS) {
       const pending = documents[kind];
@@ -266,9 +267,11 @@ export async function saveApplicantProfileDocuments(documents: PendingApplicantP
         target_size_bytes: file.size,
       });
       throwIfError(saveError);
+      persistedPaths.push(objectPath);
     }
   } catch (cause) {
-    if (uploadedPaths.length > 0) await bucket.remove(uploadedPaths).catch(() => undefined);
+    const unpersistedPaths = uploadedPaths.filter((path) => !persistedPaths.includes(path));
+    if (unpersistedPaths.length > 0) await bucket.remove(unpersistedPaths).catch(() => undefined);
     throw cause;
   }
 }

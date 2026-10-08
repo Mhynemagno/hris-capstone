@@ -16,7 +16,7 @@ describe("AppShell (applicant)", () => {
     render(<AppShell config={ROLE_CONFIG.applicant} email="a@example.com"><p>Applicant</p></AppShell>);
     const navigation = screen.getByRole("navigation", { name: /main navigation/i });
     expect(within(navigation).getByRole("link", { name: "Dashboard" })).toHaveAttribute("aria-current", "page");
-    expect(within(navigation).getByRole("link", { name: "Job Openings" })).toHaveAttribute("href", "/jobs");
+    expect(within(navigation).getByRole("link", { name: "Recruitment" })).toHaveAttribute("href", "/jobs");
   });
 
   it("keeps the original landmarks and brand", () => {

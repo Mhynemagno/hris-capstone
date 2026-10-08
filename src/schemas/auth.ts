@@ -15,7 +15,7 @@ export const loginSchema = z.object({
 
 export type LoginMode = "applicant" | "employee";
 
-const applicantNumberLoginSchema = z.string().trim().transform((value) => value.replace(/[^0-9]/g, "")).refine((value) => /^\d{6}$/.test(value), "Enter your six-digit Applicant Number.");
+const applicantNumberLoginSchema = z.string().trim().transform((value) => value.replace(/[^0-9]/g, "")).refine((value) => /^\d{6,}$/.test(value), "Enter your Applicant Number.");
 const badgeNumberLoginSchema = z.string().trim().transform((value) => value.toUpperCase()).pipe(z.string().min(1, "Enter your Badge Number.").max(32, "Enter a valid Badge Number."));
 
 /** Validates the public identifier only; its email lookup remains server-only. */
