@@ -19,8 +19,8 @@ import { ProfileTab } from "./profile-tab";
 const id = "00000000-0000-0000-0000-000000000001";
 const profileDocuments = [{ id: "d1", kind: "resume", file_name: "resume.pdf", object_path: "p/resume.pdf", updated_at: "2026-10-01T00:00:00Z" }] as never[];
 const history = [
-  { id: "h1", application_id: id, actor_user_id: null, previous_status: null, next_status: "Submitted", note: null, created_at: "2026-10-01T00:00:00Z" },
-  { id: "h2", application_id: id, actor_user_id: "x", previous_status: "Submitted", next_status: "Submitted", note: "Passed the BMI at Crame.", created_at: "2026-10-02T00:00:00Z" },
+  { id: "h1", application_id: id, actor_user_id: null, previous_status: null, next_status: "Application Submission", note: null, created_at: "2026-10-01T00:00:00Z" },
+  { id: "h2", application_id: id, actor_user_id: "x", previous_status: "Application Submission", next_status: "Application Submission", note: "Application is under review.", created_at: "2026-10-02T00:00:00Z" },
 ] as never[];
 
 describe("applicant detail tabs", () => {
@@ -33,7 +33,7 @@ describe("applicant detail tabs", () => {
     expect(screen.getByRole("region", { name: "AI match" })).toHaveTextContent("82/100");
     expect(screen.getByText("1 of 5 required documents uploaded")).toBeInTheDocument();
     expect(screen.getByText(/Missing: PSA birth certificate, 2x2 picture, Eligibility, Diploma/)).toBeInTheDocument();
-    expect(screen.getByText("Passed the BMI at Crame.")).toBeInTheDocument();
+    expect(screen.getByText("Application is under review.")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "View documents" }));
     expect(onShowDocuments).toHaveBeenCalled();
   });
@@ -65,7 +65,7 @@ describe("applicant detail tabs", () => {
     mocks.remark.mockResolvedValue(undefined);
     render(<ActivityTab applicationId={id} history={history} />);
     const items = screen.getAllByRole("listitem");
-    expect(items[0]).toHaveTextContent("Passed the BMI at Crame.");
+    expect(items[0]).toHaveTextContent("Application is under review.");
     await userEvent.click(screen.getByRole("button", { name: "Add remark" }));
     expect(screen.getByRole("alert")).toHaveTextContent("Enter a remark.");
     await userEvent.type(screen.getByLabelText("Remark"), "Called the applicant.");

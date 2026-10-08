@@ -22,7 +22,7 @@ import { getWorkspaceCount } from "./workspace-counts";
 beforeEach(() => { calls.filters = []; calls.result = { count: 4, error: null }; });
 
 it.each([
-  ["applicationsAwaitingReview", "applications", ["eq", "status", "Submitted"]],
+  ["applicationsAwaitingReview", "applications", ["eq", "status", "Application Submission"]],
   ["leaveForApproval", "leave_requests", ["eq", "status", "pending"]],
   ["profileChangesPending", "profile_change_requests", ["eq", "status", "pending"]],
   ["unmatchedAttendance", "attendance_unmatched_events", ["is", "resolved_at", null]],

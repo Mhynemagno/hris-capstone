@@ -8,7 +8,7 @@ export async function getWorkspaceCount(key: WorkspaceCountKey): Promise<number>
   const client = createBrowserSupabaseClient();
   const head = { count: "exact" as const, head: true };
   const query =
-    key === "applicationsAwaitingReview" ? client.from("applications").select("id", head).eq("status", "Submitted")
+    key === "applicationsAwaitingReview" ? client.from("applications").select("id", head).eq("status", "Application Submission")
     : key === "leaveForApproval" ? client.from("leave_requests").select("id", head).eq("status", "pending")
     : key === "profileChangesPending" ? client.from("profile_change_requests").select("id", head).eq("status", "pending")
     : client.from("attendance_unmatched_events").select("id", head).is("resolved_at", null);
