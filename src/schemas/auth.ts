@@ -13,6 +13,19 @@ export const loginSchema = z.object({
   password: passwordSchema,
 });
 
+export type LoginMode = "applicant" | "employee";
+
+const applicantNumberLoginSchema = z.string().trim().transform((value) => value.replace(/[^0-9]/g, "")).refine((value) => /^\d{6}$/.test(value), "Enter your six-digit Applicant Number.");
+const badgeNumberLoginSchema = z.string().trim().transform((value) => value.toUpperCase()).pipe(z.string().min(1, "Enter your Badge Number.").max(32, "Enter a valid Badge Number."));
+
+/** Validates the public identifier only; its email lookup remains server-only. */
+export function loginIdentifierSchema(mode: LoginMode) {
+  return z.object({
+    identifier: mode === "applicant" ? applicantNumberLoginSchema : badgeNumberLoginSchema,
+    password: passwordSchema,
+  });
+}
+
 /** Name qualifiers offered at registration; "None" is stored as no qualifier. */
 export const APPLICANT_QUALIFIERS = ["Jr.", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"] as const;
 

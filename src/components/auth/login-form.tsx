@@ -38,14 +38,15 @@ export function LoginForm({ error, mode, nextPath }: LoginFormProps) {
     >
       <input name="next" type="hidden" value={nextPath} />
       {mode ? <input name="as" type="hidden" value={mode} /> : null}
-      <FormField htmlFor="login-email" label="Email">
+      <FormField htmlFor="login-identifier" label={mode === "applicant" ? "Applicant Number" : mode === "employee" ? "Badge Number" : "Email"}>
         <input
           autoComplete="username"
           className="h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-slate-950 shadow-sm outline-none focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/20"
-          id="login-email"
-          inputMode="email"
-          name="email"
-          type="email"
+          id="login-identifier"
+          inputMode={mode === "applicant" ? "numeric" : mode === "employee" ? "text" : "email"}
+          name={mode ? "identifier" : "email"}
+          pattern={mode === "applicant" ? "[0-9]*" : undefined}
+          type={mode === "applicant" ? "text" : mode === "employee" ? "text" : "email"}
         />
       </FormField>
       <div className="space-y-2">

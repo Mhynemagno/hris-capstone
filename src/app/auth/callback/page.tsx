@@ -21,8 +21,8 @@ function AuthCallback() {
       const supabase = createBrowserSupabaseClient();
       let error: Error | null = null;
 
-      if (tokenHash && type === "invite") {
-        ({ error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: "invite" }));
+      if (tokenHash && (type === "invite" || type === "email")) {
+        ({ error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type }));
       } else if (code) {
         ({ error } = await supabase.auth.exchangeCodeForSession(code));
       } else {
