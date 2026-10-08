@@ -35,7 +35,7 @@ export const applicantRegistrationSchema = z
     email: z.email(),
     mobileNumber: philippineMobileSchema,
     ...namePartsSchema.shape,
-    middleName: z.string().trim().min(1, "Middle name is required.").max(60),
+    middleName: z.string().trim().max(60).transform((value) => value || undefined),
     qualifier: z.enum([...APPLICANT_QUALIFIERS, "None"], { error: "Choose a qualifier, or None." }),
     birthdate: z.iso.date({ error: (issue) => (issue.input === "" ? "Birthdate is required." : "Enter a valid birthdate.") }).refine((value) => value < localToday(), "Birthdate must be in the past."),
     password: passwordSchema,

@@ -32,9 +32,10 @@ describe("ApplicantRegistrationForm", { timeout: 20_000 }, () => {
 
   it("marks every field required and shows the greyed mobile placeholder", () => {
     render(<ApplicantRegistrationForm />);
-    for (const label of ["Email", "Mobile Number", "Last Name", "First Name", "Middle Name", "Qualifier", "Birthdate", "Password", "Confirm Password"]) {
+    for (const label of ["Email", "Mobile Number", "Last Name", "First Name", "Qualifier", "Birthdate", "Password", "Confirm Password"]) {
       expect(screen.getByText(label, { selector: "label" })).toHaveTextContent(`${label}*`);
     }
+    expect(screen.getByText("Middle Name", { selector: "label" })).not.toHaveTextContent("*");
     expect(screen.getByLabelText(/^mobile number/i)).toHaveAttribute("placeholder", "+639XXXXXXXXX");
     expect(screen.getByRole("option", { name: "None" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "IX" })).toBeInTheDocument();
@@ -122,7 +123,7 @@ describe("ApplicantRegistrationForm", { timeout: 20_000 }, () => {
 
     expect(screen.getByText("First name is required.")).toBeVisible();
     expect(screen.getByLabelText(/^first name/i)).toHaveAttribute("aria-invalid", "true");
-    expect(screen.getByText("Middle name is required.")).toBeVisible();
+    expect(screen.queryByText("Middle name is required.")).not.toBeInTheDocument();
     expect(screen.getByText("Mobile number is required.")).toBeVisible();
     expect(screen.getByText("Choose a qualifier, or None.")).toBeVisible();
     expect(screen.getByText("Birthdate is required.")).toBeVisible();
