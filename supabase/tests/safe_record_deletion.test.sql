@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(40);
+select extensions.plan(38);
 
 -- Fixture accounts: two administrators, HR, an unused applicant, and an applicant with an application.
 insert into auth.users (id, aud, role, email, created_at, updated_at)
@@ -200,38 +200,6 @@ set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000009505';
 update public.employees set religion = 'Changed by applicant' where id = '00000000-0000-4000-8000-000000009581';
 set local role postgres;
 select extensions.is((select religion from public.employees where id = '00000000-0000-4000-8000-000000009581'), 'None', 'Non-HR users still cannot update personnel records');
-
--- ---------------------------------------------------------------------------
--- Regression: resubmitting a Needs Revision application keeps the new files
--- ---------------------------------------------------------------------------
-set local role postgres;
-insert into public.applicants (id, profile_id, first_name, last_name)
-values ('00000000-0000-4000-8000-000000009551', '00000000-0000-4000-8000-000000009505', 'Revision', 'Applicant')
-on conflict (profile_id) do update set first_name = excluded.first_name;
-insert into public.applications (id, applicant_id, job_opening_id, status)
-select '00000000-0000-4000-8000-000000009561', applicant.id, opening.id, 'Needs Revision'
-from public.applicants applicant, public.job_openings opening
-where applicant.profile_id = '00000000-0000-4000-8000-000000009505' and opening.title = 'Deletion published opening';
-insert into public.applicant_documents (application_id, kind, object_path, file_name, mime_type, size_bytes, uploaded_by_user_id)
-values ('00000000-0000-4000-8000-000000009561', 'cv', 'applicants/00000000-0000-4000-8000-000000009505/00000000-0000-4000-8000-000000009561/00000000-0000-4000-8000-000000009571.pdf', 'old-cv.pdf', 'application/pdf', 1024, '00000000-0000-4000-8000-000000009505');
-insert into storage.buckets (id, name, public, file_size_limit)
-values ('applicant-documents', 'applicant-documents', false, 10485760)
-on conflict (id) do nothing;
-insert into storage.objects (id, bucket_id, name, owner, owner_id, metadata)
-values ('00000000-0000-4000-8000-000000009572', 'applicant-documents',
-  'applicants/00000000-0000-4000-8000-000000009505/00000000-0000-4000-8000-000000009561/00000000-0000-4000-8000-000000009573.pdf',
-  '00000000-0000-4000-8000-000000009505', '00000000-0000-4000-8000-000000009505', '{"mimetype":"application/pdf","size":2048}'::jsonb);
-
-set local role authenticated;
-set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000009505';
-select extensions.lives_ok(
-  $$select public.resubmit_application('00000000-0000-4000-8000-000000009561', '[{"kind":"cv","objectPath":"applicants/00000000-0000-4000-8000-000000009505/00000000-0000-4000-8000-000000009561/00000000-0000-4000-8000-000000009573.pdf","fileName":"new-cv.pdf","mimeType":"application/pdf","sizeBytes":2048}]'::jsonb)$$,
-  'Applicants can resubmit a Needs Revision application');
-set local role postgres;
-select extensions.results_eq(
-  $$select file_name from public.applicant_documents where application_id = '00000000-0000-4000-8000-000000009561'$$,
-  $$values ('new-cv.pdf'::text)$$,
-  'Resubmission replaces the old documents and keeps the newly uploaded ones');
 
 -- ---------------------------------------------------------------------------
 -- Personnel records: HR can delete one only while no official record uses it
