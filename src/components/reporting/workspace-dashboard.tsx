@@ -17,7 +17,6 @@ import { StatStrip } from "@/components/ui/stat-strip";
 import { PageContainer } from "@/components/workspace-shell/page-container";
 import { useRecentApplications } from "@/hooks/use-recruitment";
 import { useHrDashboard, useManagementDashboard } from "@/hooks/use-reporting";
-import { useWorkspaceCount } from "@/hooks/use-workspace-counts";
 import { attendanceStatusLabel } from "@/lib/attendance-status";
 import { formatDate } from "@/lib/format-date";
 import { PIPELINE_STAGES } from "@/lib/recruitment/application-stages";
@@ -158,8 +157,6 @@ export function WorkspaceDashboard({ role }: { role: DashboardRole }) {
   const hrQuery = useHrDashboard(range, isHr);
   const managementQuery = useManagementDashboard(range, !isHr);
   const query = isHr ? hrQuery : managementQuery;
-  const awaitingReview = useWorkspaceCount("applicationsAwaitingReview", isHr);
-  const unmatched = useWorkspaceCount("unmatchedAttendance", isHr);
   const recent = useRecentApplications(isHr);
 
   return (
@@ -171,18 +168,16 @@ export function WorkspaceDashboard({ role }: { role: DashboardRole }) {
         title="Dashboard"
       />
       {query.isLoading ? <DashboardSkeleton /> : query.error ? <ErrorState message={query.error.message} onRetry={() => void query.refetch()} /> : query.data ? (
-        <DashboardBody awaitingReview={awaitingReview} data={query.data} isHr={isHr} recent={recent} unmatched={unmatched} />
+        <DashboardBody data={query.data} isHr={isHr} recent={recent} />
       ) : null}
     </PageContainer>
   );
 }
 
-type CountQuery = { data?: number; isError: boolean };
 type RecentQuery = ReturnType<typeof useRecentApplications>;
 
-function DashboardBody({ awaitingReview, data, isHr, recent, unmatched }: { data: DashboardSummary; isHr: boolean; awaitingReview: CountQuery; unmatched: CountQuery; recent: RecentQuery }) {
+function DashboardBody({ data, isHr, recent }: { data: DashboardSummary; isHr: boolean; recent: RecentQuery }) {
   const metric = (key: string) => data.metrics[key] ?? 0;
-  const countOf = (query: CountQuery) => (query.isError || query.data === undefined ? null : query.data);
   const workforce = metric("activeWorkforce");
   const onDutyShare = workforce ? Math.round((metric("attendanceToday") / workforce) * 100) : 0;
   const stats = [
