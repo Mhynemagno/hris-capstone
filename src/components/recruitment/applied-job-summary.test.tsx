@@ -22,7 +22,7 @@ const job: AppliedJob = {
 
 describe("AppliedJobSummary", () => {
   it("shows the job, department, rank, and details the applicant applied for", () => {
-    render(<AppliedJobSummary job={job} status="Under Review" submittedAt="2026-09-20T08:00:00Z" />);
+    render(<AppliedJobSummary job={job} status="Application Submission" submittedAt="2026-09-20T08:00:00Z" />);
 
     expect(screen.getByRole("heading", { name: "What you applied for" })).toBeInTheDocument();
     expect(screen.getByText("Investigator")).toBeInTheDocument();
@@ -30,14 +30,14 @@ describe("AppliedJobSummary", () => {
     expect(screen.getByText("PCpl — Police Corporal")).toBeInTheDocument();
     expect(screen.getByText("Main station")).toBeInTheDocument();
     expect(screen.getByText("Handles case files for the station.")).toBeInTheDocument();
-    expect(screen.getByText("Under Review")).toBeInTheDocument();
+    expect(screen.getByText("Application Submission")).toBeInTheDocument();
     expect(screen.getByText("Deadline of Application")).toBeInTheDocument();
     expect(screen.getByText("October 31, 2026")).toBeInTheDocument();
     expect(screen.getByText(/^September 20, 2026.*4:00/)).toBeInTheDocument();
   });
 
   it("leaves out department and rank when the job posting has none", () => {
-    render(<AppliedJobSummary job={{ ...job, departments: null, ranks: null }} status="Under Review" submittedAt="2026-09-20T08:00:00Z" />);
+    render(<AppliedJobSummary job={{ ...job, departments: null, ranks: null }} status="Application Submission" submittedAt="2026-09-20T08:00:00Z" />);
 
     expect(screen.queryByText("Department")).not.toBeInTheDocument();
     expect(screen.queryByText("Rank")).not.toBeInTheDocument();
@@ -45,16 +45,16 @@ describe("AppliedJobSummary", () => {
   });
 
   it("lists the qualification criteria in order and marks the required ones", () => {
-    render(<AppliedJobSummary job={job} status="Under Review" submittedAt="2026-09-20T08:00:00Z" />);
+    render(<AppliedJobSummary job={job} status="Application Submission" submittedAt="2026-09-20T08:00:00Z" />);
 
     const items = within(screen.getByRole("list", { name: "Qualifications" })).getAllByRole("listitem");
     expect(items.map((item) => item.textContent)).toEqual(["Bachelor's degree (required)", "Report writing"]);
   });
 
   it("explains when the job details are no longer available", () => {
-    render(<AppliedJobSummary job={null} status="Submitted" submittedAt="2026-09-20T08:00:00Z" />);
+    render(<AppliedJobSummary job={null} status="Application Submission" submittedAt="2026-09-20T08:00:00Z" />);
 
     expect(screen.getByText(/job details are no longer available/i)).toBeInTheDocument();
-    expect(screen.getByText("Submitted")).toBeInTheDocument();
+    expect(screen.getByText("Application Submission")).toBeInTheDocument();
   });
 });

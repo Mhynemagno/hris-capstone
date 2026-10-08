@@ -38,7 +38,7 @@ describe("ApplicantProfileDocuments", { timeout: 20_000 }, () => {
     expect(screen.getByLabelText("Upload PSA birth certificate document")).toHaveAttribute("accept", "application/pdf");
   });
 
-  it("does not upload on pick; shows the chosen file and saves only on Save", async () => {
+  it("does not upload on pick and saves all staged files only from the final Save documents action", async () => {
     const user = userEvent.setup();
     mocks.documents = [];
     mocks.save.mockResolvedValue(undefined);
@@ -46,10 +46,11 @@ describe("ApplicantProfileDocuments", { timeout: 20_000 }, () => {
     await user.upload(screen.getByLabelText("Upload Eligibility document"), new File(["pdf"], "eligibility.pdf", { type: "application/pdf" }));
     expect(mocks.save).not.toHaveBeenCalled();
     expect(screen.getByText(/Selected: eligibility\.pdf/)).toBeVisible();
-    await user.click(screen.getByRole("button", { name: "Save Eligibility document" }));
-    await waitFor(() => expect(mocks.save).toHaveBeenCalledWith([expect.objectContaining({ kind: "eligibility" })]));
-    expect(await screen.findByRole("status")).toHaveTextContent("Eligibility document saved.");
     expect(screen.queryByRole("button", { name: "Save Eligibility document" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Save documents" }));
+    await waitFor(() => expect(mocks.save).toHaveBeenCalledWith(expect.objectContaining({ eligibility: expect.any(File) })));
+    expect(await screen.findByRole("status")).toHaveTextContent("Documents saved.");
+    expect(screen.queryByRole("button", { name: "Save documents" })).not.toBeInTheDocument();
   });
 
   it("shows a wrong format under the card and never offers Save for it", async () => {

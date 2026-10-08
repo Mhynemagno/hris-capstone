@@ -4,15 +4,9 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { ErrorState } from "@/components/ui/error-state";
-import { FormField } from "@/components/ui/form-field";
-import { Input } from "@/components/ui/input";
 import { useApplicantProfileDocuments, useMyApplicationForJob, useSubmitApplication } from "@/hooks/use-recruitment";
 import { requiredDocumentStatus } from "@/lib/recruitment/required-documents";
 import { ApplicantProfileRequiredError, loadMyProfileDocumentFile } from "@/queries/recruitment";
-
-function isNonEmptyFile(value: FormDataEntryValue | null): value is File {
-  return typeof value === "object" && value !== null && "size" in value && value.size > 0;
-}
 
 export function ApplicantApplicationForm({ jobId, hasUnsavedDocuments = false }: { jobId: number; hasUnsavedDocuments?: boolean }) {
   const existing = useMyApplicationForJob(jobId);
@@ -38,8 +32,6 @@ export function ApplicantApplicationForm({ jobId, hasUnsavedDocuments = false }:
       return;
     }
 
-    const data = new FormData(form);
-    const credentials = Array.from(data.getAll("credentials")).filter(isNonEmptyFile);
     setPreparing(true);
     try {
       // The saved CV / Resume becomes this application's CV, so the applicant uploads it only once.
@@ -47,11 +39,7 @@ export function ApplicantApplicationForm({ jobId, hasUnsavedDocuments = false }:
       const applicationId = await submit.mutateAsync({
         applicationId: crypto.randomUUID(),
         jobId,
-        coverNote: String(data.get("coverNote") ?? ""),
-        documents: [
-          { kind: "cv" as const, file: cv },
-          ...credentials.map((file) => ({ kind: "credential" as const, file })),
-        ],
+        documents: [{ kind: "cv" as const, file: cv }],
       });
       form.reset();
       setSubmittedApplicationId(applicationId);
@@ -88,13 +76,6 @@ export function ApplicantApplicationForm({ jobId, hasUnsavedDocuments = false }:
         <h2 className="font-heading text-lg font-bold">Submit application</h2>
         <p className="mt-1 text-sm text-muted-foreground">Your saved CV / Resume and required documents are included.</p>
       </div>
-      <FormField htmlFor="application-credentials" label="Additional credentials (optional)">
-        <Input accept=".pdf,.png,.jpg,.jpeg" aria-describedby="application-credentials-help" id="application-credentials" multiple name="credentials" type="file" />
-      </FormField>
-      <p className="text-sm text-muted-foreground" id="application-credentials-help">Add certificates or other supporting documents as PDF, PNG, or JPEG files up to 10 MB each.</p>
-      <FormField htmlFor="application-cover-note" label="Cover note (optional)">
-        <textarea className="min-h-28 w-full rounded-lg border bg-background p-3 text-base leading-6" id="application-cover-note" name="coverNote" />
-      </FormField>
       {profileAction && error ? (
         <div className="rounded-lg border border-primary/30 bg-primary/5 p-4" role="alert">
           <p className="text-sm font-medium text-foreground">{error}</p>

@@ -33,7 +33,6 @@ export function ApplicantProfileDocuments({ onPendingChange }: { onPendingChange
   const remove = useRemoveMyApplicantProfileDocument();
   const [pending, setPending] = useState<Partial<Record<DocumentKind, File>>>({});
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<DocumentKind, string>>>({});
-  const [savingKind, setSavingKind] = useState<DocumentKind | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const busy = save.isPending || remove.isPending;
@@ -64,20 +63,16 @@ export function ApplicantProfileDocuments({ onPendingChange }: { onPendingChange
     setPending((current) => ({ ...current, [kind]: validated.data }));
   }
 
-  async function saveDocument(kind: DocumentKind, label: string) {
-    const file = pending[kind];
-    if (!file) return;
+  async function saveDocuments() {
+    if (!hasPending) return;
     setError(null);
     setNotice(null);
-    setSavingKind(kind);
     try {
-      await save.mutateAsync([{ kind, file }]);
-      setPending((current) => without(current, kind));
-      setNotice(`${label} document saved.`);
+      await save.mutateAsync(pending);
+      setPending({});
+      setNotice("Documents saved.");
     } catch (caught) {
-      setFieldErrors((current) => ({ ...current, [kind]: caught instanceof Error ? caught.message : "Unable to save the document." }));
-    } finally {
-      setSavingKind(null);
+      setError(caught instanceof Error ? caught.message : "Unable to save the documents.");
     }
   }
 
@@ -133,19 +128,17 @@ export function ApplicantProfileDocuments({ onPendingChange }: { onPendingChange
               <Button aria-label={`Remove ${label} document`} disabled={busy} onClick={() => void removeDocument(kind, label)} size="sm" type="button" variant="outline"><Trash2 aria-hidden="true" /> Remove</Button>
             </div>
           </div> : <p className="mt-2 text-sm text-muted-foreground">Not saved yet</p>}
-          <p aria-hidden="true" className="mt-3 text-sm font-medium">{document ? "Replace file" : "Choose file"}</p>
+          <p aria-hidden="true" className="mt-3 text-sm font-medium">Choose file</p>
           <Input accept={accept} aria-describedby={fieldError ? `upload-${kind}-error` : undefined} aria-invalid={fieldError ? true : undefined} aria-label={`Upload ${label} document`} className="mt-1" disabled={busy} id={`upload-${kind}`} onChange={(event) => { pick(kind, event.target.files?.[0]); event.target.value = ""; }} type="file" />
           {fieldError ? <p className="mt-2 text-sm text-destructive" id={`upload-${kind}-error`} role="alert">{fieldError}</p> : null}
           {chosen ? <div className="mt-3 space-y-2 rounded-lg border border-primary/30 bg-primary/5 p-3">
             <p className="break-all text-sm">Selected: {chosen.name} ({formatSize(chosen.size)})</p>
-            <div className="flex flex-wrap gap-2">
-              <Button aria-label={`Save ${label} document`} className="min-h-11" disabled={busy} onClick={() => void saveDocument(kind, label)} type="button"><Save aria-hidden="true" /> {savingKind === kind ? "Saving…" : "Save"}</Button>
-              <Button aria-label={`Cancel ${label} upload`} className="min-h-11" disabled={savingKind === kind} onClick={() => setPending((current) => without(current, kind))} type="button" variant="outline"><X aria-hidden="true" /> Cancel</Button>
-            </div>
+            <Button aria-label={`Cancel ${label} upload`} className="min-h-11" disabled={busy} onClick={() => setPending((current) => without(current, kind))} type="button" variant="outline"><X aria-hidden="true" /> Cancel</Button>
           </div> : null}
         </li>;
       })}
     </ul>
+    {hasPending ? <div className="mt-4"><Button className="min-h-11" disabled={busy} onClick={() => void saveDocuments()} type="button"><Save aria-hidden="true" /> {save.isPending ? "Saving documents…" : "Save documents"}</Button></div> : null}
     {error ? <p className="mt-3 text-sm text-destructive" role="alert">{error}</p> : null}
     {notice ? <p className="mt-3 text-sm text-muted-foreground" role="status">{notice}</p> : null}
   </section>;
