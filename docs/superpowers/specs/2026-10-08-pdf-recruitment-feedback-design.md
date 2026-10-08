@@ -1,7 +1,7 @@
 # PDF recruitment feedback implementation design
 
-**Date:** 2026-10-08  
-**Branch:** `codex/pdf-request-changes`  
+**Date:** 2026-10-08
+**Branch:** `codex/pdf-request-changes`
 **Status:** approved in brainstorming; awaiting specification review
 
 ## Goal
