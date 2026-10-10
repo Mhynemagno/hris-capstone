@@ -145,6 +145,8 @@ export type Employee = {
   sss_number: string | null;
   /** Digits only (12); shown as 12-345678901-2. */
   philhealth_number: string | null;
+  gsis_number: string | null;
+  pagibig_number: string | null;
   department_id: number | null;
   rank_id: number | null;
   employment_status: "active" | "retired";

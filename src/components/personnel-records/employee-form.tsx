@@ -6,12 +6,12 @@ import { BadgeNumberInput } from "@/components/ui/badge-number-input";
 import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
 import { FormField } from "@/components/ui/form-field";
+import { GovernmentIdInput } from "@/components/ui/government-id-input";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { useUnitStations } from "@/hooks/use-personnel-records";
 import type { Employee, UnlinkedEmployeeAccount } from "@/lib/types/database";
-import { formatPhilHealthNumber, formatSssNumber } from "@/lib/government-ids";
 import { cn } from "@/lib/utils";
 import { BADGE_NUMBER_PATTERN } from "@/schemas/common";
 import { employeeSchema, RELIGIONS, type EmployeeInput } from "@/schemas/personnel-records";
@@ -154,12 +154,6 @@ export function EmployeeForm({ employee, account, onSaved, pending = false }: Em
         <FormField error={e.phone} htmlFor="phone" label="Phone number" required>
           <PhoneInput defaultValue={employee?.phone} id="phone" name="phone" required />
         </FormField>
-        <FormField description="Optional. 10 digits, e.g. 34-1234567-8" error={e.sssNumber} htmlFor="sss-number" label="SSS number">
-          <Input className="h-11" defaultValue={formatSssNumber(employee?.sss_number)} id="sss-number" inputMode="numeric" name="sssNumber" />
-        </FormField>
-        <FormField description="Optional. 12 digits, e.g. 12-345678901-2" error={e.philhealthNumber} htmlFor="philhealth-number" label="PhilHealth number">
-          <Input className="h-11" defaultValue={formatPhilHealthNumber(employee?.philhealth_number)} id="philhealth-number" inputMode="numeric" name="philhealthNumber" />
-        </FormField>
         <div className="@md:col-span-2 @xl:col-span-3">
           <FormField error={e.address} htmlFor="address" label="Home address" required>
             <Input className="h-11" defaultValue={employee?.address ?? ""} id="address" name="address" autoComplete="street-address" required />
@@ -207,6 +201,18 @@ export function EmployeeForm({ employee, account, onSaved, pending = false }: Em
         </FormField>
         <FormField description="Optional. For retired personnel." error={e.employmentEndedOn} htmlFor="employment-ended-on" label="Inclusive Dates (To)">
           <Input className="h-11" defaultValue={employee?.employment_ended_on ?? ""} id="employment-ended-on" name="employmentEndedOn" type="date" />
+        </FormField>
+      </FormSection>
+
+      <FormSection title="IV. Government Identification">
+        <FormField description="Optional." error={e.philhealthNumber} htmlFor="philhealth-number" label="PhilHealth number">
+          <GovernmentIdInput defaultValue={employee?.philhealth_number} id="philhealth-number" kind="philhealth" name="philhealthNumber" />
+        </FormField>
+        <FormField description="Optional." error={e.gsisNumber} htmlFor="gsis-number" label="GSIS number">
+          <GovernmentIdInput defaultValue={employee?.gsis_number} id="gsis-number" kind="gsis" name="gsisNumber" />
+        </FormField>
+        <FormField description="Optional." error={e.pagibigNumber} htmlFor="pagibig-number" label="Pag-IBIG number">
+          <GovernmentIdInput defaultValue={employee?.pagibig_number} id="pagibig-number" kind="pagibig" name="pagibigNumber" />
         </FormField>
       </FormSection>
 

@@ -113,12 +113,13 @@ export async function removeMyEmployeeProfilePhoto(employee: ProfilePhotoEmploye
   return { cleanupError: cleanupError?.message ?? null };
 }
 
-/** The signed-in employee saves their own SSS and PhilHealth numbers (no HR approval step). */
+/** The signed-in employee saves their own PhilHealth, GSIS and Pag-IBIG numbers (no HR approval step). */
 export async function updateMyGovernmentIds(input: GovernmentIdsInput) {
   const parsed = governmentIdsSchema.parse(input);
   const { error } = await createBrowserSupabaseClient().rpc("update_my_government_ids", {
-    target_sss_number: parsed.sssNumber ?? "",
     target_philhealth_number: parsed.philhealthNumber ?? "",
+    target_gsis_number: parsed.gsisNumber ?? "",
+    target_pagibig_number: parsed.pagibigNumber ?? "",
   });
   throwIfError(error);
 }
@@ -138,7 +139,8 @@ function employeePayload(input: EmployeeInput) {
     unit_station: input.unitStation ?? null, personal_email: input.personalEmail,
     phone: input.phone ?? null, address: input.address ?? null, emergency_contact_name: input.emergencyContactName ?? null,
     emergency_contact_phone: input.emergencyContactPhone ?? null,
-    sss_number: input.sssNumber ?? null, philhealth_number: input.philhealthNumber ?? null, department_id: input.departmentId ?? null,
+    philhealth_number: input.philhealthNumber ?? null, gsis_number: input.gsisNumber ?? null, pagibig_number: input.pagibigNumber ?? null,
+    department_id: input.departmentId ?? null,
     rank_id: input.rankId ?? null, employment_status: input.employmentStatus,
     employment_started_on: input.employmentStartedOn, employment_ended_on: input.employmentEndedOn ?? null,
   };

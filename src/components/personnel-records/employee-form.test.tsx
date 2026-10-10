@@ -52,6 +52,8 @@ const existingEmployee = {
   emergency_contact_phone: null,
   sss_number: null,
   philhealth_number: null,
+  gsis_number: null,
+  pagibig_number: null,
   department_id: 3,
   rank_id: 8,
   employment_status: "active" as const,
@@ -197,27 +199,29 @@ describe("EmployeeForm", () => {
     }));
   });
 
-  it("lets HR record the SSS and PhilHealth numbers, saved as digits", async () => {
+  it("lets HR record PhilHealth, GSIS and Pag-IBIG numbers, formatted as typed and saved as digits", async () => {
     const onSaved = vi.fn();
     const user = userEvent.setup();
     render(<EmployeeForm employee={{ ...completeEmployee, philhealth_number: "123456789012" }} onSaved={onSaved} />);
 
     expect(screen.getByLabelText(/^PhilHealth number/i)).toHaveValue("12-345678901-2");
-    await user.type(screen.getByLabelText(/^SSS number/i), "34-1234567-8");
+    await user.type(screen.getByLabelText(/^Pag-IBIG number/i), "1234567890129999");
+    expect(screen.getByLabelText(/^Pag-IBIG number/i)).toHaveValue("1234-5678-9012");
+    await user.type(screen.getByLabelText(/^GSIS number/i), "12345678901");
     await user.click(screen.getByRole("button", { name: /save employee/i }));
 
-    expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({ sssNumber: "3412345678", philhealthNumber: "123456789012" }));
+    expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({ philhealthNumber: "123456789012", gsisNumber: "12345678901", pagibigNumber: "123456789012" }));
   });
 
-  it("explains an SSS number with the wrong number of digits", async () => {
+  it("explains a GSIS number with the wrong number of digits", async () => {
     const onSaved = vi.fn();
     const user = userEvent.setup();
     render(<EmployeeForm employee={completeEmployee} onSaved={onSaved} />);
 
-    await user.type(screen.getByLabelText(/^SSS number/i), "12345");
+    await user.type(screen.getByLabelText(/^GSIS number/i), "12345");
     await user.click(screen.getByRole("button", { name: /save employee/i }));
 
-    expect(screen.getByText("Enter a 10-digit SSS number.")).toBeVisible();
+    expect(screen.getByText("Enter an 11-digit GSIS number.")).toBeVisible();
     expect(onSaved).not.toHaveBeenCalled();
   });
 
@@ -388,5 +392,13 @@ describe("EmployeeForm", () => {
     expect(screen.getByLabelText(/^Date Entered Service/)).toHaveAttribute("type", "date");
     expect(screen.getByLabelText(/^Inclusive Dates \(To\)/)).not.toBeRequired();
     expect(screen.queryByText("Employment start date")).not.toBeInTheDocument();
+  });
+  it("groups PhilHealth, GSIS and Pag-IBIG under IV. Government Identification with in-box formats", () => {
+    render(<EmployeeForm onSaved={() => undefined} />);
+    const section = screen.getByRole("group", { name: "IV. Government Identification" });
+    expect(within(section).getByLabelText(/^PhilHealth number/)).toHaveAttribute("placeholder", "12-345678901-2");
+    expect(within(section).getByLabelText(/^GSIS number/)).toHaveAttribute("placeholder", "XXXXXXXXXXX");
+    expect(within(section).getByLabelText(/^Pag-IBIG number/)).toHaveAttribute("placeholder", "XXXX-XXXX-XXXX");
+    expect(screen.queryByLabelText(/^SSS number/)).not.toBeInTheDocument();
   });
 });

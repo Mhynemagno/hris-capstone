@@ -37,8 +37,10 @@ const governmentIdNumber = (digits: number, message: string) =>
 
 export const sssNumberSchema = governmentIdNumber(10, "Enter a 10-digit SSS number.");
 export const philhealthNumberSchema = governmentIdNumber(12, "Enter a 12-digit PhilHealth number.");
+export const gsisNumberSchema = governmentIdNumber(11, "Enter an 11-digit GSIS number.");
+export const pagibigNumberSchema = governmentIdNumber(12, "Enter a 12-digit Pag-IBIG number.");
 
-export const governmentIdsSchema = z.object({ sssNumber: sssNumberSchema, philhealthNumber: philhealthNumberSchema });
+export const governmentIdsSchema = z.object({ philhealthNumber: philhealthNumberSchema, gsisNumber: gsisNumberSchema, pagibigNumber: pagibigNumberSchema });
 
 /** Same format as `philippineMobileSchema` in auth, with the wording HR sees on the employee form. */
 const requiredMobile = (message: string) =>
@@ -118,8 +120,9 @@ export const employeeSchema = z
     address: requiredText(500, "Enter the home address."),
     emergencyContactName: requiredText(160, "Enter the emergency contact."),
     emergencyContactPhone: requiredMobile("Enter the emergency contact phone."),
-    sssNumber: sssNumberSchema,
     philhealthNumber: philhealthNumberSchema,
+    gsisNumber: gsisNumberSchema,
+    pagibigNumber: pagibigNumberSchema,
     departmentId: z.coerce.number({ error: "Choose a unit / section." }).int().positive("Choose a unit / section."),
     rankId: z.coerce.number({ error: "Choose a rank." }).int().positive("Choose a rank."),
     employmentStatus: z.enum(employmentStatuses).default("active"),

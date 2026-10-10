@@ -39,6 +39,8 @@ const employee = {
   emergency_contact_phone: null,
   sss_number: null,
   philhealth_number: null,
+  gsis_number: null,
+  pagibig_number: null,
   department_id: null,
   rank_id: 9,
   employment_status: "active" as const,
@@ -56,7 +58,7 @@ describe("EmployeeProfile", () => {
     expect(screen.getByAltText("Default profile avatar")).toBeInTheDocument();
     expect(screen.getByText("Badge number")).toBeInTheDocument();
     expect(screen.getByText("PCPT — Police Captain")).toBeInTheDocument();
-    expect(screen.getAllByText("Not provided")).toHaveLength(11); // includes the SSS and PhilHealth numbers
+    expect(screen.getAllByText("Not provided")).toHaveLength(12); // includes the PhilHealth, GSIS and Pag-IBIG numbers
     expect(screen.getByText("Not assigned")).toBeInTheDocument();
   });
 

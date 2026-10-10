@@ -12,6 +12,7 @@ import { LoadingState } from "@/components/ui/loading-state";
 import { useDepartmentOptions, useRankOptions } from "@/hooks/use-administration";
 import { useEmployee, usePersonnelEntries, useSavePersonnelEntry } from "@/hooks/use-personnel-records";
 import { formatDate, formatDateRange } from "@/lib/format-date";
+import { formatGovernmentId } from "@/lib/government-ids";
 import { rankLabel } from "@/lib/ranks";
 import type { Certification, Employee, Qualification, ServiceHistory, TrainingRecord } from "@/lib/types/database";
 import type { DeletableEntityType } from "@/queries/deletion";
@@ -215,6 +216,11 @@ function OfficialDetails({ record, departmentName, rankName }: { record: Employe
         { label: "Employment status", value: record.employment_status === "retired" ? "Retired" : "Active" },
         { label: "Date Entered Service", value: formatDate(record.employment_started_on) },
         { label: "Inclusive Dates (To)", value: formatDate(record.employment_ended_on) },
+      ]} />
+      <DetailSection title="IV. Government Identification" rows={[
+        { label: "PhilHealth number", value: record.philhealth_number ? <span className="tabular-nums">{formatGovernmentId("philhealth", record.philhealth_number)}</span> : null },
+        { label: "GSIS number", value: record.gsis_number ? <span className="tabular-nums">{formatGovernmentId("gsis", record.gsis_number)}</span> : null },
+        { label: "Pag-IBIG number", value: record.pagibig_number ? <span className="tabular-nums">{formatGovernmentId("pagibig", record.pagibig_number)}</span> : null },
       ]} />
     </div>
   );
