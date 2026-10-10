@@ -6,6 +6,7 @@ import { useState, type FormEvent } from "react";
 
 import { ErrorState } from "@/components/ui/error-state";
 import { FormField } from "@/components/ui/form-field";
+import { DUPLICATE_EMAIL_MESSAGE, isDuplicateEmailError, isObfuscatedExistingUser } from "@/lib/auth/duplicate-email";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { APPLICANT_QUALIFIERS, applicantRegistrationSchema } from "@/schemas/auth";
 
@@ -15,9 +16,11 @@ type RegistrationErrors = Partial<Record<RegistrationField, string>>;
 const inputClassName =
   "h-11 w-full rounded-md border bg-white px-3 text-slate-950 outline-none placeholder:text-slate-400 focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/20 aria-invalid:border-destructive";
 
+/** Confirmation links return through the callback, which knows a sign-up link may be opened in another browser. */
 function confirmationRedirect(nextPath: string) {
   const callback = new URL("/auth/callback", window.location.origin);
   callback.searchParams.set("next", nextPath);
+  callback.searchParams.set("flow", "signup");
   return callback.toString();
 }
 
@@ -72,11 +75,16 @@ export function ApplicantRegistrationForm({ loginHref = "/login", nextPath = nul
             date_of_birth: result.data.birthdate,
             full_name: result.data.fullName,
           },
-          ...(nextPath ? { emailRedirectTo: confirmationRedirect(nextPath) } : {}),
+          emailRedirectTo: confirmationRedirect(nextPath ?? "/jobs"),
         },
       });
       if (authError) {
-        setError("We could not create your account. Please try again.");
+        if (isDuplicateEmailError(authError)) setFieldErrors({ email: DUPLICATE_EMAIL_MESSAGE });
+        else setError("We could not create your account. Please try again.");
+        return;
+      }
+      if (isObfuscatedExistingUser(data.user)) {
+        setFieldErrors({ email: DUPLICATE_EMAIL_MESSAGE });
         return;
       }
       if (!data.session) {

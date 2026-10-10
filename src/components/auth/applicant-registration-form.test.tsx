@@ -72,7 +72,10 @@ describe("ApplicantRegistrationForm", { timeout: 20_000 }, () => {
         },
       }),
     }));
-    expect(mocks.signUp.mock.calls[0]?.[0].options).not.toHaveProperty("emailRedirectTo");
+    const redirect = new URL(mocks.signUp.mock.calls[0]?.[0].options.emailRedirectTo);
+    expect(redirect.pathname).toBe("/auth/callback");
+    expect(redirect.searchParams.get("next")).toBe("/jobs");
+    expect(redirect.searchParams.get("flow")).toBe("signup");
     expect(mocks.replace).toHaveBeenCalledWith("/jobs");
     expect(mocks.refresh).toHaveBeenCalledOnce();
   });
@@ -97,6 +100,7 @@ describe("ApplicantRegistrationForm", { timeout: 20_000 }, () => {
     const redirect = new URL(mocks.signUp.mock.calls[0]?.[0].options.emailRedirectTo);
     expect(redirect.pathname).toBe("/auth/callback");
     expect(redirect.searchParams.get("next")).toBe("/applicant/applications?jobId=5");
+    expect(redirect.searchParams.get("flow")).toBe("signup");
     expect(await screen.findByRole("link", { name: "Return to sign in" })).toHaveAttribute("href", "/login?next=%2Fapplicant%2Fapplications%3FjobId%3D5");
   });
 
@@ -107,6 +111,27 @@ describe("ApplicantRegistrationForm", { timeout: 20_000 }, () => {
     fillValidForm();
     await user.click(screen.getByRole("button", { name: "Register" }));
     expect(mocks.replace).toHaveBeenCalledWith("/jobs/7");
+  });
+
+  it("shows the duplicate-email message on the email field when the address is taken", async () => {
+    const user = userEvent.setup();
+    mocks.signUp.mockResolvedValue({ data: { user: null, session: null }, error: { code: "user_already_exists", message: "User already registered" } });
+    render(<ApplicantRegistrationForm />);
+    fillValidForm();
+    await user.click(screen.getByRole("button", { name: "Register" }));
+    expect(await screen.findByText("This email is already registered.")).toBeVisible();
+    expect(screen.getByLabelText(/^email/i)).toHaveAttribute("aria-invalid", "true");
+    expect(mocks.replace).not.toHaveBeenCalled();
+  });
+
+  it("treats an identity-less sign-up result as an existing email", async () => {
+    const user = userEvent.setup();
+    mocks.signUp.mockResolvedValue({ data: { user: { id: "u", identities: [] }, session: null }, error: null });
+    render(<ApplicantRegistrationForm />);
+    fillValidForm();
+    await user.click(screen.getByRole("button", { name: "Register" }));
+    expect(await screen.findByText("This email is already registered.")).toBeVisible();
+    expect(screen.queryByText("Check your email")).not.toBeInTheDocument();
   });
 
   it("rejects an invalid mobile number and mismatched passwords", async () => {
