@@ -8,7 +8,7 @@ import { useApplicantProfileDocuments, useMyApplicationForJob, useSubmitApplicat
 import { requiredDocumentStatus } from "@/lib/recruitment/required-documents";
 import { ApplicantProfileRequiredError, loadMyProfileDocumentFile } from "@/queries/recruitment";
 
-export function ApplicantApplicationForm({ jobId, hasUnsavedDocuments = false }: { jobId: number; hasUnsavedDocuments?: boolean }) {
+export function ApplicantApplicationForm({ jobId, hasUnsavedDocuments = false, onMissingDocuments }: { jobId: number; hasUnsavedDocuments?: boolean; onMissingDocuments?: () => void }) {
   const existing = useMyApplicationForJob(jobId);
   const documents = useApplicantProfileDocuments();
   const submit = useSubmitApplication();
@@ -24,7 +24,8 @@ export function ApplicantApplicationForm({ jobId, hasUnsavedDocuments = false }:
     setProfileAction(null);
     setSubmittedApplicationId(null);
     if (!status.complete || !savedResume) {
-      setError("Save all 5 required documents to submit.");
+      setError(`Please submit all required documents. Still needed: ${status.missing.map(({ label }) => label).join(", ")}.`);
+      onMissingDocuments?.();
       return;
     }
     if (hasUnsavedDocuments) {
@@ -60,8 +61,6 @@ export function ApplicantApplicationForm({ jobId, hasUnsavedDocuments = false }:
   if (existing.data) return <section className="rounded-xl border bg-card p-5 shadow-sm"><h2 className="font-heading text-lg font-bold">Application already submitted</h2><p className="mt-1 text-sm text-muted-foreground">Your current application status is {existing.data.status}.</p><Link className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-primary underline-offset-4 hover:underline" href={`/applicant/applications/${existing.data.id}`}>Open existing application</Link></section>;
 
   const submitting = preparing || submit.isPending;
-  // A chosen replacement that is not saved yet would otherwise be skipped in favour of the older saved file.
-  const blockedReason = !status.complete ? "Save all 5 required documents to submit." : hasUnsavedDocuments ? "Save or cancel the file you chose above before submitting." : null;
 
   return (
     <form
@@ -83,10 +82,7 @@ export function ApplicantApplicationForm({ jobId, hasUnsavedDocuments = false }:
         </div>
       ) : error ? <ErrorState message={error} /> : null}
       {submittedApplicationId ? <div aria-live="polite" className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-emerald-950" role="status"><p className="font-semibold">Application submitted</p><p className="mt-1 text-sm">Your application and documents were received.</p><Link className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold underline underline-offset-4" href={`/applicant/applications/${submittedApplicationId}`}>Track application</Link></div> : null}
-      <div className="space-y-2">
-        <button aria-describedby={blockedReason ? "application-submit-help" : undefined} className="min-h-11 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50" disabled={Boolean(blockedReason) || submitting} type="submit">{submitting ? "Submitting…" : "Submit application"}</button>
-        {blockedReason ? <p className="text-sm text-muted-foreground" id="application-submit-help">{blockedReason}</p> : null}
-      </div>
+      <button className="min-h-11 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50" disabled={submitting} type="submit">{submitting ? "Submitting…" : "Submit application"}</button>
     </form>
   );
 }

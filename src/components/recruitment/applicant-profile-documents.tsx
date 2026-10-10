@@ -11,6 +11,7 @@ import { useApplicantProfileDocuments, useSaveApplicantProfileDocuments } from "
 import { formatDate } from "@/lib/format-date";
 import { requiredDocumentStatus } from "@/lib/recruitment/required-documents";
 import type { ApplicantProfileDocumentKind } from "@/lib/types/database";
+import { cn } from "@/lib/utils";
 import { getApplicantProfileDocumentUrl } from "@/queries/recruitment";
 import { APPLICANT_PROFILE_DOCUMENT_KINDS, profileDocumentFileSchemaFor } from "@/schemas/applicant-portal";
 
@@ -27,7 +28,7 @@ function without<T extends object>(record: T, key: keyof T): T {
 }
 
 /** `onPendingChange` reports whether a chosen file is still unsaved, so the apply form can wait for it. */
-export function ApplicantProfileDocuments({ onPendingChange }: { onPendingChange?: (pending: boolean) => void } = {}) {
+export function ApplicantProfileDocuments({ onPendingChange, highlightMissing = false }: { onPendingChange?: (pending: boolean) => void; highlightMissing?: boolean } = {}) {
   const documents = useApplicantProfileDocuments();
   const save = useSaveApplicantProfileDocuments();
   const remove = useRemoveMyApplicantProfileDocument();
@@ -114,12 +115,14 @@ export function ApplicantProfileDocuments({ onPendingChange }: { onPendingChange
         const document = documents.data?.find((item) => item.kind === kind);
         const chosen = pending[kind];
         const fieldError = fieldErrors[kind];
-        return <li className="rounded-xl border p-4" key={kind}>
+        const flagged = highlightMissing && !document && !chosen;
+        return <li className={cn("rounded-xl border p-4", flagged && "border-destructive ring-1 ring-destructive/30")} key={kind}>
           <div className="flex items-center gap-2">
             {document ? <CheckCircle2 aria-hidden="true" className="size-5 text-emerald-600" /> : <CircleDashed aria-hidden="true" className="size-5 text-muted-foreground" />}
             <p className="font-medium">{label} <span aria-hidden="true" className="text-destructive">*</span><span className="sr-only">(required)</span></p>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">{formats}</p>
+          {flagged ? <p className="mt-1 text-xs font-medium text-destructive">Required — not saved yet</p> : null}
           {document ? <div className="mt-2 space-y-2">
             <p className="break-all text-sm">{document.file_name}</p>
             <p className="text-sm font-medium text-emerald-700">Saved {formatDate(document.updated_at)}</p>
