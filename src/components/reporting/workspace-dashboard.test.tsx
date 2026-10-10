@@ -12,7 +12,7 @@ vi.mock("next/navigation", () => ({
 const summary = {
   generatedAt: "2026-10-08T00:00:00Z",
   range: { startsOn: "2026-09-09", endsOn: "2026-10-08" },
-  metrics: { totalPersonnel: 160, attendanceToday: 142, activeWorkforce: 160, onLeave: 4, activeDeployments: 7, openJobs: 2, hiredApplicants: 1, pendingLeave: 2, attendanceExceptions: 5, trainingNeeds: 0 },
+  metrics: { recruitmentApplications: 6, totalPersonnel: 160, attendanceToday: 142, activeWorkforce: 160, onLeave: 4, activeDeployments: 7, openJobs: 2, hiredApplicants: 1, pendingLeave: 2, attendanceExceptions: 5, trainingNeeds: 0 },
   breakdowns: {
     recruitmentPipeline: [{ label: "Application Submission", count: 3 }, { label: "Panel Interview", count: 1 }, { label: "Not Selected", count: 2 }],
     attendanceTrend: [{ label: "2026-10-07", count: 140 }],
@@ -36,6 +36,28 @@ import { WorkspaceDashboard } from "./workspace-dashboard";
 
 describe("WorkspaceDashboard", () => {
   beforeEach(() => navigation.replace.mockReset());
+
+  it("gives every HR stat a colored icon tile", () => {
+    render(<WorkspaceDashboard role="hr_personnel" />);
+    for (const name of ["Personnel", "On duty today", "On leave today", "Active deployments", "Open job postings"]) {
+      expect(within(screen.getByRole("article", { name })).getByTestId("stat-icon")).toBeInTheDocument();
+    }
+  });
+
+  it("offers HR quick actions with icons and live counts", () => {
+    render(<WorkspaceDashboard role="hr_personnel" />);
+    const actions = screen.getByRole("region", { name: "Quick actions" });
+    expect(within(actions).getByRole("link", { name: /Manage employees.*160 personnel/ })).toHaveAttribute("href", "/hr/employees");
+    expect(within(actions).getByRole("link", { name: /Recruitment.*6 applications/ })).toHaveAttribute("href", "/hr/applications");
+    expect(within(actions).getByRole("link", { name: /Leave applications.*2 pending/ })).toHaveAttribute("href", "/hr/leave-requests");
+    expect(within(actions).getByRole("link", { name: /Deployments.*7 active/ })).toHaveAttribute("href", "/hr/deployments");
+    expect(within(actions).getByRole("link", { name: /Reports.*View analytics/ })).toHaveAttribute("href", "/reports");
+  });
+
+  it("keeps quick actions off the management dashboard", () => {
+    render(<WorkspaceDashboard role="management" />);
+    expect(screen.queryByRole("region", { name: "Quick actions" })).not.toBeInTheDocument();
+  });
 
   it("keeps HR dashboard data visible by default and moves review queues to their own tab", async () => {
     const user = userEvent.setup();

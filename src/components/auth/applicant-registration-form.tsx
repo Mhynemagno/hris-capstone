@@ -127,8 +127,13 @@ export function ApplicantRegistrationForm({ loginHref = "/login", nextPath = nul
         <FormField error={fieldErrors.birthdate} htmlFor="registration-birthdate" label="Birthdate" required>
           <input autoComplete="bday" className={inputClassName} id="registration-birthdate" name="birthdate" required type="date" />
         </FormField>
-        <PasswordField autoComplete="new-password" error={fieldErrors.password} id="registration-password" label="Password" name="password" />
-        <PasswordField autoComplete="new-password" error={fieldErrors.confirmPassword} id="registration-confirm-password" label="Confirm Password" name="confirmPassword" />
+        {/* Both password fields sit in the right column so Confirm Password is directly under Password. */}
+        <div className="md:col-start-2" data-registration-field>
+          <PasswordField autoComplete="new-password" error={fieldErrors.password} id="registration-password" label="Password" name="password" />
+        </div>
+        <div className="md:col-start-2" data-registration-field>
+          <PasswordField autoComplete="new-password" error={fieldErrors.confirmPassword} id="registration-confirm-password" label="Confirm Password" name="confirmPassword" />
+        </div>
       </div>
       {error ? <ErrorState message={error} /> : null}
       <button className="h-11 w-full rounded-md bg-primary px-4 font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60" disabled={pending} type="submit">
