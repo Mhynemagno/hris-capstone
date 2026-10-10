@@ -1,6 +1,8 @@
 begin;
 
 set local role postgres;
+-- Leave rows are added directly here; run the deferred attachment check per statement so later ALTERs are allowed.
+set constraints all immediate;
 set local search_path = extensions, public;
 
 select extensions.plan(21);

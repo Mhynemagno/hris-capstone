@@ -140,10 +140,16 @@ describe("RecordEntryForm", () => {
     await user.selectOptions(screen.getByLabelText(/^eligibility/i), "Licensed Criminologist (RA 6506)");
     await user.type(screen.getByLabelText(/date awarded/i), "2024-03-01");
     await user.click(screen.getByRole("button", { name: "Add eligibility" }));
+    expect(screen.getByText("Upload a supporting document showing you passed.")).toBeInTheDocument();
+    expect(onSaved).not.toHaveBeenCalled();
+
+    const file = new File(["%PDF"], "prc.pdf", { type: "application/pdf" });
+    await user.upload(screen.getByLabelText(/^Supporting document/), file);
+    await user.click(screen.getByRole("button", { name: "Add eligibility" }));
     await waitFor(() => expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({
       name: "Licensed Criminologist (RA 6506)",
       awardedOn: "2024-03-01",
-    }), undefined));
+    }), undefined, file));
   });
 
   it("offers PNP credentials as dropdowns and asks for a choice when none is made", async () => {
@@ -170,9 +176,9 @@ describe("RecordEntryForm", () => {
     unmount();
 
     const onQualification = vi.fn();
-    const { unmount: unmountQualification } = render(<RecordEntryForm employeeId={employeeId} kind="qualification" onSaved={onQualification} qualification={{ id: "00000000-0000-4000-8000-000000000021", employee_id: employeeId, name: "Civil Service Professional Examination", institution: "CSC", qualification_level: "Bachelor's Degree", field_of_study: "Criminology", awarded_on: "2015-12-10", notes: null } as never} />);
+    const { unmount: unmountQualification } = render(<RecordEntryForm employeeId={employeeId} kind="qualification" onSaved={onQualification} qualification={{ id: "00000000-0000-4000-8000-000000000021", employee_id: employeeId, name: "Civil Service Professional Examination", institution: "CSC", qualification_level: "Bachelor's Degree", field_of_study: "Criminology", awarded_on: "2015-12-10", notes: null, document_path: "qualifications/x/csc.pdf", document_name: "csc.pdf", document_mime_type: "application/pdf", document_size_bytes: 4 } as never} />);
     await user.click(screen.getByRole("button", { name: "Save eligibility" }));
-    await waitFor(() => expect(onQualification).toHaveBeenCalledWith(expect.objectContaining({ institution: "CSC", qualificationLevel: "Bachelor's Degree", fieldOfStudy: "Criminology" }), "00000000-0000-4000-8000-000000000021"));
+    await waitFor(() => expect(onQualification).toHaveBeenCalledWith(expect.objectContaining({ institution: "CSC", qualificationLevel: "Bachelor's Degree", fieldOfStudy: "Criminology" }), "00000000-0000-4000-8000-000000000021", null));
     unmountQualification();
 
     const onService = vi.fn();
@@ -186,5 +192,13 @@ describe("RecordEntryForm", () => {
     expect(groups).toEqual(["Mandatory Course", "Specialized Training"]);
     expect(screen.getByRole("option", { name: "Public Safety Basic Recruit Course (PSBRC)" }).parentElement).toHaveAttribute("label", "Mandatory Course");
     expect(screen.getByRole("option", { name: "Cybercrime Investigation Seminar" }).parentElement).toHaveAttribute("label", "Specialized Training");
+  });
+  it("does not ask again for a document when updating an eligibility that already has one", async () => {
+    const user = userEvent.setup();
+    const onSaved = vi.fn().mockResolvedValue(undefined);
+    render(<RecordEntryForm employeeId={employeeId} kind="qualification" onSaved={onSaved} qualification={{ id: "00000000-0000-4000-8000-000000000031", employee_id: employeeId, name: "Civil Service Professional Examination", institution: null, qualification_level: null, field_of_study: null, awarded_on: "2015-12-10", notes: null, document_path: "qualifications/x/csc.pdf", document_name: "csc.pdf", document_mime_type: "application/pdf", document_size_bytes: 4 }} />);
+    expect(screen.getByText(/Current document: csc\.pdf/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Save eligibility" }));
+    await waitFor(() => expect(onSaved).toHaveBeenCalledWith(expect.anything(), "00000000-0000-4000-8000-000000000031", null));
   });
 });

@@ -159,18 +159,18 @@ describe("EmployeeLeaveRequestForm", () => {
     expect(mocks.submit).not.toHaveBeenCalled();
   });
 
-  it("submits without notes or evidence and clears the form", async () => {
+  it("submits a type that needs no document without notes and clears the form", async () => {
     mocks.submit.mockResolvedValue(undefined);
     const user = userEvent.setup();
     render(<EmployeeLeaveRequestForm />);
-    await user.selectOptions(screen.getByRole("combobox", { name: /Leave type/ }), "33333333-3333-4333-8333-333333333333");
+    await user.selectOptions(screen.getByRole("combobox", { name: /Leave type/ }), "11111111-1111-4111-8111-111111111111");
     await user.type(screen.getByLabelText(/Start date/), isoDate(1));
     await user.type(screen.getByLabelText(/End date/), isoDate(2));
     expect(screen.getByLabelText("Notes")).not.toBeRequired();
     await user.click(screen.getByRole("button", { name: "Submit request" }));
 
     expect(await screen.findByRole("status")).toHaveTextContent("Leave request submitted.");
-    expect(mocks.submit).toHaveBeenCalledWith({ draft: expect.objectContaining({ leaveTypeId: "33333333-3333-4333-8333-333333333333", reason: "" }), files: [] });
+    expect(mocks.submit).toHaveBeenCalledWith({ draft: expect.objectContaining({ leaveTypeId: "11111111-1111-4111-8111-111111111111", reason: "" }), files: [] });
     expect(screen.getByRole("combobox", { name: /Leave type/ })).toHaveValue("");
     expect(screen.getByLabelText(/Start date/)).toHaveValue("");
   });
@@ -201,5 +201,22 @@ describe("EmployeeLeaveRequestForm", () => {
     render(<EmployeeLeaveRequestForm />);
     fireEvent.change(screen.getByLabelText(/^Start date/), { target: { value: "0001-01-10" } });
     expect(mocks.balanceYears).not.toHaveBeenCalledWith(1);
+  });
+  it("asks for a supporting document for Sick Leave and sends it with the request", async () => {
+    mocks.submit.mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    render(<EmployeeLeaveRequestForm />);
+    expect(screen.queryByLabelText(/^Supporting document/)).not.toBeInTheDocument();
+    await user.selectOptions(screen.getByRole("combobox", { name: /Leave type/ }), "33333333-3333-4333-8333-333333333333");
+    await user.type(screen.getByLabelText(/Start date/), isoDate(1));
+    await user.type(screen.getByLabelText(/End date/), isoDate(2));
+    await user.click(screen.getByRole("button", { name: "Submit request" }));
+    expect(await screen.findByText("Attach a supporting document, such as a medical certificate.")).toBeVisible();
+    expect(mocks.submit).not.toHaveBeenCalled();
+
+    const file = new File(["%PDF"], "medical.pdf", { type: "application/pdf" });
+    await user.upload(screen.getByLabelText(/^Supporting document/), file);
+    await user.click(screen.getByRole("button", { name: "Submit request" }));
+    expect(mocks.submit).toHaveBeenCalledWith(expect.objectContaining({ files: [file] }));
   });
 });

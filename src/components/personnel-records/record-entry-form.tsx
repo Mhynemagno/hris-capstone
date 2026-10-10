@@ -42,7 +42,8 @@ const errorFieldFor: Record<string, string> = {
 type RecordEntryFormProps = {
   employeeId: string;
   kind: PersonnelKind;
-  onSaved: (input: unknown, id?: string) => void | Promise<void>;
+  /** `document` is the eligibility supporting document chosen in this form, if any. */
+  onSaved: (input: unknown, id?: string, document?: File | null) => void | Promise<void>;
   pending?: boolean;
   training?: TrainingRecord;
   /** Optional existing qualification to edit. */
@@ -76,6 +77,7 @@ export function RecordEntryForm({ employeeId, kind, onSaved, pending = false, tr
   const [rankId, setRankId] = useState(serviceHistory?.rank_id ? String(serviceHistory.rank_id) : "");
   const [startDate, setStartDate] = useState(training?.completed_on ?? qualification?.awarded_on ?? certification?.issued_on ?? serviceHistory?.started_on ?? "");
   const unitStations = useUnitStations();
+  const [documentFile, setDocumentFile] = useState<File | null>(null);
   const config = fields[kind];
   const kindChoices = choices[kind];
   const savedPrimary = training?.course_name ?? qualification?.name ?? certification?.name;
@@ -115,8 +117,15 @@ export function RecordEntryForm({ employeeId, kind, onSaved, pending = false, tr
       if (errors.form) setError(errors.form);
       return;
     }
+    // Eligibility needs proof it was passed; an entry that already has a document keeps it unless replaced.
+    if (kind === "qualification" && !documentFile && !qualification?.document_path) {
+      setFieldErrors({ document: "Upload a supporting document showing you passed." });
+      return;
+    }
     try {
-      await onSaved(parsed.data, editId);
+      if (kind === "qualification") await onSaved(parsed.data, editId, documentFile);
+      else await onSaved(parsed.data, editId);
+      setDocumentFile(null);
       if (!editId) {
         formElement.reset();
         setDepartmentId("");
@@ -202,6 +211,19 @@ export function RecordEntryForm({ employeeId, kind, onSaved, pending = false, tr
         <FormField error={e.hours} htmlFor="training-hours" label="Hours">
           <Input className="h-11" defaultValue={training?.hours ?? ""} id="training-hours" max="9999.99" min="0" name="hours" step="0.25" type="number" />
         </FormField>
+      ) : null}
+      {kind === "qualification" ? (
+        <div className="sm:col-span-2">
+          <FormField
+            description={qualification?.document_path ? `Current document: ${qualification.document_name}. Choose a file only to replace it.` : "Required. Proof the exam was passed (PDF or image, up to 10 MB)."}
+            error={e.document}
+            htmlFor="qualification-document"
+            label="Supporting document"
+            required={!qualification?.document_path}
+          >
+            <Input accept="application/pdf,image/png,image/jpeg,image/webp" className="h-11" id="qualification-document" onChange={(event) => setDocumentFile(event.target.files?.[0] ?? null)} type="file" />
+          </FormField>
+        </div>
       ) : null}
       <div className="sm:col-span-2">
         <FormField error={e.notes} htmlFor={`${kind}-notes`} label="Remarks">

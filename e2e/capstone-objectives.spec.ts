@@ -144,6 +144,7 @@ test.describe("Objective 1: centralized personnel records", () => {
     await expect(page.getByRole("tabpanel", { name: "Eligibility" }).getByRole("alert").filter({ hasText: "This field is required." }).first()).toBeVisible();
     await expect(page.getByText(/Invalid ISO date|Too small|expected string/)).toHaveCount(0);
     await page.getByLabel(/^Date awarded/).fill("2014-04-10");
+    await page.locator("#qualification-document").setInputFiles({ name: "napolcom.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4 rating") });
     await page.getByRole("button", { name: "Add eligibility" }).click();
     await expect(page.getByRole("status").filter({ hasText: "Eligibility added." })).toBeVisible();
 

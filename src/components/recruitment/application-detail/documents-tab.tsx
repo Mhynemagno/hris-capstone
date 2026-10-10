@@ -12,7 +12,7 @@ import { getApplicantDocumentUrl, getApplicantProfileDocumentUrl, getStageDocume
 import { APPLICANT_PROFILE_DOCUMENT_KINDS } from "@/schemas/applicant-portal";
 
 import { documentKindLabels } from "../application-status-tracker";
-import { openSignedUrl } from "./open-signed-url";
+import { openSignedUrl } from "@/lib/open-signed-url";
 import type { ProfileDocument } from "./overview-tab";
 
 type Row = { key: string; label: string; fileName: string | null; date: string | null; open: (() => Promise<string>) | null };

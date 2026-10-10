@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Activity, ArrowLeft, Award, BadgeCheck, BookOpenCheck, Building2, Cake, CheckCircle2, Clock, GraduationCap, History, MapPin, Pencil, ShieldCheck, TrendingUp, UserRound, X, type LucideIcon } from "lucide-react";
+import { Activity, ArrowLeft, Award, BadgeCheck, BookOpenCheck, Building2, Cake, CheckCircle2, Clock, FileText, GraduationCap, History, MapPin, Pencil, ShieldCheck, TrendingUp, UserRound, X, type LucideIcon } from "lucide-react";
 
 import { DeleteRecordDialog } from "@/components/deletion/delete-record-dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -13,9 +13,10 @@ import { useDepartmentOptions, useRankOptions } from "@/hooks/use-administration
 import { useEmployee, usePersonnelEntries, useSavePersonnelEntry } from "@/hooks/use-personnel-records";
 import { formatDate, formatDateRange } from "@/lib/format-date";
 import { formatGovernmentId } from "@/lib/government-ids";
+import { openSignedUrl } from "@/lib/open-signed-url";
 import { rankLabel } from "@/lib/ranks";
 import type { Certification, Employee, Qualification, ServiceHistory, TrainingRecord } from "@/lib/types/database";
-import type { PersonnelKind } from "@/queries/personnel-records";
+import { getPersonnelDocumentUrl, type PersonnelKind } from "@/queries/personnel-records";
 
 import { EmployeeEditor } from "./employee-editor";
 import { EmployeeProfilePhotoControl } from "./employee-profile-photo-control";
@@ -51,6 +52,12 @@ function entryDetail(kind: PersonnelKind, entry: Record<string, unknown>) {
 
 function titleCase(value: string | null | undefined) {
   return value ? value.replaceAll("_", " ").replace(/^\w/, (letter) => letter.toUpperCase()) : null;
+}
+
+/** An eligibility's supporting document, if it has one. */
+function qualificationDocument(entry: object) {
+  const record = entry as Partial<Qualification>;
+  return record.document_path && record.document_name ? { path: record.document_path, name: record.document_name } : null;
 }
 
 function useRankTitles() {
@@ -100,9 +107,14 @@ function Records({ employeeId, kind, editable }: { employeeId: string; kind: Per
                 <p className="font-semibold">{title}</p>
                 {detail ? <p className="text-sm text-muted-foreground">{detail}</p> : null}
               </div>
+              <div className="flex flex-wrap gap-2">
+              {qualificationDocument(entry) ? (
+                <Button aria-label={`View document ${qualificationDocument(entry)!.name}`} onClick={() => void openSignedUrl(() => getPersonnelDocumentUrl(qualificationDocument(entry)!.path)).catch((cause) => setNotice(cause instanceof Error ? cause.message : "Unable to open the document."))} size="sm" type="button" variant="ghost"><FileText aria-hidden />View document</Button>
+              ) : null}
               {editable ? (
                 <Button aria-label={`Update ${noun} ${title}`} onClick={() => { setNotice(null); setEditing(entry.id); }} size="sm" type="button" variant="outline">Update</Button>
               ) : null}
+              </div>
             </li>
           );
         }) : <li className={emptyItemClassName}>No {titles[kind].toLowerCase()} recorded.</li>}
@@ -115,14 +127,14 @@ function Records({ employeeId, kind, editable }: { employeeId: string; kind: Per
             employeeId={employeeId}
             key={editingEntry.id}
             kind={kind}
-            onSaved={async (input, id) => { await save.mutateAsync({ id, input: input as never }); setEditing(null); setNotice(`The ${noun} was updated.`); }}
+            onSaved={async (input, id, document) => { await save.mutateAsync({ id, input: input as never, document }); setEditing(null); setNotice(`The ${noun} was updated.`); }}
             pending={save.isPending}
             qualification={kind === "qualification" ? editingEntry as Qualification : undefined}
             serviceHistory={kind === "serviceHistory" ? editingEntry as ServiceHistory : undefined}
           />
         </div>
       ) : (
-        <RecordEntryForm employeeId={employeeId} kind={kind} onSaved={async (input) => { await save.mutateAsync({ input: input as never }); }} pending={save.isPending} />
+        <RecordEntryForm employeeId={employeeId} kind={kind} onSaved={async (input, _id, document) => { await save.mutateAsync({ input: input as never, document }); }} pending={save.isPending} />
       )}
     </InfoCard>
   );

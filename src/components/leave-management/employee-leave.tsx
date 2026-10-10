@@ -154,7 +154,7 @@ export function EmployeeLeaveList() {
   );
 }
 
-type LeaveFieldErrors = Partial<Record<"leaveTypeId" | "startsOn" | "endsOn" | "reason", string>>;
+type LeaveFieldErrors = Partial<Record<"leaveTypeId" | "startsOn" | "endsOn" | "reason" | "document", string>>;
 
 export function EmployeeLeaveRequestForm() {
   const types = useRequestableLeaveTypes();
@@ -164,6 +164,7 @@ export function EmployeeLeaveRequestForm() {
   const [startsOn, setStartsOn] = useState("");
   const [endsOn, setEndsOn] = useState("");
   const [notes, setNotes] = useState("");
+  const [document, setDocument] = useState<File | null>(null);
   const [fieldErrors, setFieldErrors] = useState<LeaveFieldErrors>({});
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -179,6 +180,7 @@ export function EmployeeLeaveRequestForm() {
   const loadError = types.error ?? employee.error;
   if (loadError) return <ErrorState message={loadError.message} />;
   const activeTypes = requestableLeaveTypes(types.data ?? [], employee.data?.gender);
+  const selectedType = activeTypes.find((type) => type.id === leaveTypeId);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -197,14 +199,16 @@ export function EmployeeLeaveRequestForm() {
     if (parsed.success && remaining !== null && !balance?.excess_deducted_from_retirement && leaveDays(startsOn, endsOn) > remaining) {
       nextErrors.endsOn = remaining === 0 ? `You have already used all your days of this leave for ${year}.` : `You have ${dayCount(remaining)} of this leave left for ${year}. Shorten the request to fit.`;
     }
+    if (selectedType?.requires_attachment && !document) nextErrors.document = "Attach a supporting document, such as a medical certificate.";
     setFieldErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
     try {
-      await submit.mutateAsync({ draft: { requestId: crypto.randomUUID(), ...draft }, files: [] });
+      await submit.mutateAsync({ draft: { requestId: crypto.randomUUID(), ...draft }, files: document ? [document] : [] });
       setLeaveTypeId("");
       setStartsOn("");
       setEndsOn("");
       setNotes("");
+      setDocument(null);
       setSuccess("Leave request submitted. HR will review it and you will be notified of the decision.");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Unable to submit leave request.");
@@ -262,6 +266,11 @@ export function EmployeeLeaveRequestForm() {
           />
         </FormField>
       </div>
+      {selectedType?.requires_attachment ? (
+        <FormField description="Required for this leave type, e.g. a medical certificate (PDF or image, up to 10 MB)." error={fieldErrors.document} htmlFor="leave-document" label="Supporting document" required>
+          <Input accept="application/pdf,image/png,image/jpeg,image/webp" id="leave-document" onChange={(event) => setDocument(event.target.files?.[0] ?? null)} type="file" />
+        </FormField>
+      ) : null}
       <FormField error={fieldErrors.reason} htmlFor="leave-notes" label="Notes">
         <Textarea id="leave-notes" maxLength={2000} name="reason" onChange={(event) => setNotes(event.target.value)} rows={4} value={notes} />
       </FormField>

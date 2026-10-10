@@ -185,6 +185,11 @@ export type Qualification = {
   field_of_study: string | null;
   awarded_on: string;
   notes: string | null;
+  /** Supporting document proving the exam was passed (client round 5); older entries may have none. */
+  document_path?: string | null;
+  document_name?: string | null;
+  document_mime_type?: string | null;
+  document_size_bytes?: number | null;
 };
 
 export type Certification = {
@@ -481,6 +486,8 @@ export type DeploymentHistory = {
   metadata: Record<string, unknown>;
   created_at: string;
 };
+
+export type DeploymentReport = { id: string; deployment_id: string; notes: string | null; object_path: string; file_name: string; mime_type: string; size_bytes: number; submitted_by_user_id: string; created_at: string };
 
 export type PromotionCriterion = {
   id: string;

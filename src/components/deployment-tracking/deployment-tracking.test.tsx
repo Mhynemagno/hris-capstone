@@ -11,6 +11,8 @@ vi.mock("@/hooks/use-deployment-tracking", () => ({
   useMyDeployments: () => ({ isLoading: false, error: null, data: { rows: [row], count: 1 } }),
   useHrDeployments: () => ({ isLoading: false, error: null, data: { rows: [row], count: 1 } }),
   useEmployeeOptions: () => ({ isLoading: false, error: null, data: [{ id: "e1", fullName: "Ana One", employeeNumber: "PAT-001" }] }),
+  useDeploymentReports: () => ({ isLoading: false, error: null, data: [] }),
+  useSubmitDeploymentReport: () => ({ isPending: false, mutateAsync: vi.fn() }),
 }));
 vi.mock("next/link", () => ({ default: ({ children, href, ...props }: { children: ReactNode; href: string }) => <a href={href} {...props}>{children}</a> }));
 vi.mock("next/navigation", () => ({ usePathname: () => "/hr/deployments", useRouter: () => ({ replace: vi.fn() }), useSearchParams: () => new URLSearchParams("") }));
@@ -40,5 +42,10 @@ describe("deployment tracking presentation", () => {
     expect(screen.queryByRole("columnheader", { name: "Role" })).not.toBeInTheDocument();
     expect(screen.getByText("September 23, 2026 – October 9, 2026")).toBeInTheDocument();
     expect(screen.queryByText(/2026-09-23/)).not.toBeInTheDocument();
+  });
+  it("lets the employee submit a report / proof of attendance for each deployment", () => {
+    render(<EmployeeDeploymentList />);
+    expect(screen.getByText("Report / proof of attendance")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Submit report" })).toBeInTheDocument();
   });
 });
