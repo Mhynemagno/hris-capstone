@@ -2,6 +2,7 @@ import { CircleCheck, CircleX, Clock } from "lucide-react";
 
 import type { ApplicantDocument, ApplicationStatusHistory } from "@/lib/types/database";
 import { PIPELINE_STAGES } from "@/lib/recruitment/application-stages";
+import { stageResultHistoryLabel } from "@/lib/recruitment/stage-results";
 import { cn } from "@/lib/utils";
 import type { ApplicationStatus } from "@/schemas/recruitment";
 
@@ -9,8 +10,8 @@ import type { ApplicationStatus } from "@/schemas/recruitment";
 export const documentKindLabels: Record<ApplicantDocument["kind"], string> = { cv: "CV", credential: "Credential", bmi_proof: "BMI proof" };
 
 /** A history row that keeps the status is a progress remark (add_application_remark, submit_bmi_proof). */
-export function historyEntryLabel(entry: Pick<ApplicationStatusHistory, "previous_status" | "next_status">) {
-  return entry.previous_status === entry.next_status ? "Remark" : entry.next_status;
+export function historyEntryLabel(entry: Pick<ApplicationStatusHistory, "previous_status" | "next_status" | "result">) {
+  return stageResultHistoryLabel(entry) ?? (entry.previous_status === entry.next_status ? "Remark" : entry.next_status);
 }
 
 export type TrackerStepState = "done" | "waiting" | "rejected";

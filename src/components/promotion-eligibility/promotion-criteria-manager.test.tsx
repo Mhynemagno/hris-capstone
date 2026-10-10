@@ -56,6 +56,8 @@ describe("PromotionCriteriaManager", () => {
     expect(requirement).toBeRequired();
     expect(within(requirement).getAllByRole("option").map((option) => option.textContent)).toEqual(["Choose a certification / training", ...PNP_CERTIFICATIONS]);
     expect(screen.queryByRole("button", { name: /Remove requirement/ })).not.toBeInTheDocument();
+    expect(within(requirement).getByRole("option", { name: "Public Safety Basic Recruit Course (PSBRC)" }).parentElement).toHaveAttribute("label", "Mandatory Course");
+    expect(within(requirement).getByRole("option", { name: "Special Weapons and Tactics (SWAT) Course" }).parentElement).toHaveAttribute("label", "Specialized Training");
   });
 
   it("summarizes existing criteria without a rating minimum", () => {

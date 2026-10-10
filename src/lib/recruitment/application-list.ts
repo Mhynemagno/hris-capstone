@@ -4,11 +4,14 @@ import type { HrRegisteredApplicant, HrShortlistApplication } from "@/lib/types/
 import { parseSort, type SortState } from "@/lib/workspace/table";
 import { applicationStatusSchema, type ApplicationStatus } from "@/schemas/recruitment";
 
-export type QuickView = "active" | "hired" | "not-selected" | "not-yet-applied" | "all";
+import type { StageResult } from "./stage-results";
+
+export type QuickView = "active" | "candidates" | "hired" | "not-selected" | "not-yet-applied" | "all";
 export const QUICK_VIEWS: { value: QuickView; label: string }[] = [
   { value: "active", label: "Active" },
+  { value: "candidates", label: "Candidates" },
   { value: "hired", label: "Hired" },
-  { value: "not-selected", label: "Not selected" },
+  { value: "not-selected", label: "Disqualified" },
   { value: "not-yet-applied", label: "Not yet applied" },
   { value: "all", label: "All" },
 ];
@@ -17,7 +20,7 @@ export type AiStatus = HrShortlistApplication["ai_score_status"];
 const AI_STATUSES: readonly AiStatus[] = ["queued", "processing", "completed", "failed", "unscored"];
 
 export type ApplicationListRow =
-  | { kind: "application"; id: string; name: string; applicantNumber: string | null; jobId: number; jobTitle: string | null; status: ApplicationStatus; submittedAt: string; aiStatus: AiStatus; aiScore: number | null }
+  | { kind: "application"; id: string; name: string; applicantNumber: string | null; jobId: number; jobTitle: string | null; status: ApplicationStatus; stageResult: StageResult; submittedAt: string; aiStatus: AiStatus; aiScore: number | null }
   | { kind: "registered"; id: string; name: string; applicantNumber: string | null; submittedAt: string; applicant: HrRegisteredApplicant };
 
 export type ApplicationListParams = { quick: QuickView; stage: ApplicationStatus | ""; job: number | null; q: string; ai: AiStatus | ""; minScore: number | undefined; sort: SortState; page: number };
@@ -48,6 +51,7 @@ function registeredName(applicant: HrRegisteredApplicant) {
 
 function quickMatches(quick: QuickView, status: ApplicationStatus) {
   if (quick === "active") return ACTIVE_STAGES.includes(status);
+  if (quick === "candidates") return status === "Shortlisted";
   if (quick === "hired") return status === "Hired";
   if (quick === "not-selected") return status === "Not Selected";
   return quick === "all";
@@ -70,6 +74,7 @@ export function buildApplicationRows(applications: HrShortlistApplication[], reg
       jobId: application.job_opening_id,
       jobTitle: application.job_title ?? null,
       status: application.status,
+      stageResult: application.stage_result ?? "pending",
       submittedAt: application.submitted_at,
       aiStatus: application.ai_score_status,
       aiScore: application.ai_score,

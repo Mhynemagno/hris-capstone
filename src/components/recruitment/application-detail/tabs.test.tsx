@@ -2,9 +2,9 @@ import userEvent from "@testing-library/user-event";
 import { render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ remark: vi.fn(), retry: vi.fn(), notify: vi.fn(), scoreError: null as Error | null, scores: [] as Array<Record<string, unknown>>, profileUrl: vi.fn(), appUrl: vi.fn() }));
+const mocks = vi.hoisted(() => ({ remark: vi.fn(), retry: vi.fn(), notify: vi.fn(), scoreError: null as Error | null, scores: [] as Array<Record<string, unknown>>, profileUrl: vi.fn(), appUrl: vi.fn(), stageUrl: vi.fn() }));
 vi.mock("@/components/ui/toaster", () => ({ notifySuccess: mocks.notify }));
-vi.mock("@/queries/recruitment", () => ({ getApplicantProfileDocumentUrl: mocks.profileUrl, getApplicantDocumentUrl: mocks.appUrl }));
+vi.mock("@/queries/recruitment", () => ({ getApplicantProfileDocumentUrl: mocks.profileUrl, getApplicantDocumentUrl: mocks.appUrl, getStageDocumentUrl: mocks.stageUrl }));
 vi.mock("@/hooks/use-recruitment", () => ({
   useApplicationAiScores: () => ({ data: mocks.scores, error: mocks.scoreError }),
   useRetryApplicationAnalysis: () => ({ isPending: false, mutateAsync: mocks.retry }),
@@ -59,6 +59,18 @@ describe("applicant detail tabs", () => {
     expect(within(required).getByRole("button", { name: "View CV / Resume: resume.pdf" })).toBeInTheDocument();
     expect(within(required).getAllByText("Not uploaded")).toHaveLength(4);
     expect(within(screen.getByRole("region", { name: "Submitted with this application" })).getByRole("button", { name: "View BMI proof: bmi.pdf" })).toBeInTheDocument();
+  });
+
+  it("lists HR's stage supporting documents with their stage and result", () => {
+    render(<DocumentsTab applicationDocuments={[]} profileDocuments={profileDocuments} stageDocuments={[{ id: "s1", application_id: id, stage: "Physical Agility Test", result: "passed", object_path: `applications/${id}/a.pdf`, file_name: "agility.pdf", mime_type: "application/pdf", size_bytes: 10, uploaded_by_user_id: "u", created_at: "2026-10-04T00:00:00Z" }]} />);
+    const stage = screen.getByRole("region", { name: "Stage supporting documents" });
+    expect(within(stage).getByRole("button", { name: "View Physical Agility Test · Passed: agility.pdf" })).toBeInTheDocument();
+  });
+
+  it("names recorded results in the history", () => {
+    render(<ActivityTab applicationId={id} history={[{ id: "r1", application_id: id, actor_user_id: null, previous_status: "Physical Agility Test", next_status: "Physical & Medical Examination", note: null, result: "passed", created_at: "2026-10-04T00:00:00Z" }]} />);
+    expect(screen.getByText("Passed: Physical Agility Test")).toBeInTheDocument();
+    expect(screen.queryByText(/^Moved to/)).not.toBeInTheDocument();
   });
 
   it("adds a remark from the Activity tab and lists the history newest first", async () => {

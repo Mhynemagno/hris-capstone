@@ -59,3 +59,6 @@ export async function updateLeaveType(input:unknown){const parsed=leaveTypeUpdat
 export async function setLeaveTypeAllotment(input:unknown){const parsed=leaveTypeAllotmentSchema.parse(input);const{error}=await createBrowserSupabaseClient().rpc("set_leave_type_allotment",{target_type_id:parsed.id,type_days_per_year:parsed.daysPerYear,type_excess_deducted:parsed.excessDeductedFromRetirement});throwIfError(error);}
 /** The caller's used days per active leave type in a calendar year. */
 export async function getMyLeaveBalances(year:number){const{data,error}=await createBrowserSupabaseClient().rpc("get_my_leave_balances",{target_year:year});throwIfError(error);return (data??[]) as LeaveBalance[];}
+
+/** HR: an employee's used days per leave type for a year (gender-specific types they cannot take are left out). */
+export async function getEmployeeLeaveBalances(employeeId: string, year: number) { const id = uuidSchema.parse(employeeId); const { data, error } = await createBrowserSupabaseClient().rpc("get_employee_leave_balances", { target_employee_id: id, target_year: year }); throwIfError(error); return (data ?? []) as LeaveBalance[]; }

@@ -10,6 +10,7 @@ import { useDeployment } from "@/hooks/use-deployment-tracking";
 import { describeDeploymentEvent } from "@/lib/deployment-tracking/history-labels";
 import { formatDate, formatDateTime } from "@/lib/format-date";
 
+import { DeploymentReports } from "./deployment-reports";
 import { DeploymentStatusBadge } from "./deployment-status-badge";
 
 function Detail({ label, children, wide = false }: { label: string; children: ReactNode; wide?: boolean }) {
@@ -56,6 +57,7 @@ export function HrDeploymentDetails({ deploymentId }: { deploymentId: string }) 
           ))}
         </ol>
       </section>
+      <DeploymentReports deploymentId={deployment.id} />
     </section>
   );
 }

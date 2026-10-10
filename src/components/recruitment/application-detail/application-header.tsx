@@ -4,10 +4,12 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { ApplicationStageBadge } from "@/components/recruitment/application-stage-badge";
-import { HireDialog, MoveStageDialog, NotSelectedDialog } from "@/components/recruitment/stage-dialogs";
+import { HireDialog, StageResultDialog } from "@/components/recruitment/stage-dialogs";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/format-date";
 import { stageActions } from "@/lib/recruitment/application-stages";
+import { applicationStatusLabel, RESULT_LABELS, stageResultActions, type RecordableResult, type StageResult } from "@/lib/recruitment/stage-results";
 import type { ApplicationStatus } from "@/schemas/recruitment";
 
 function timeAtStage(since: string | null) {
@@ -27,13 +29,15 @@ type HeaderProps = {
   jobTitle: string | null;
   submittedAt: string;
   status: ApplicationStatus;
+  stageResult?: StageResult;
   stageSince: string | null;
 };
 
 export function ApplicationHeader(props: HeaderProps) {
-  const [dialog, setDialog] = useState<"move" | "reject" | "hire" | null>(null);
+  const [dialog, setDialog] = useState<RecordableResult | "hire" | null>(null);
   const action = stageActions(props.status);
-  const canReject = "canReject" in action && action.canReject;
+  const results = stageResultActions(props.status, props.stageResult);
+  const statusLabel = applicationStatusLabel(props.status, props.stageResult);
 
   return (
     <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -51,6 +55,7 @@ export function ApplicationHeader(props: HeaderProps) {
           </p>
           <p className="flex flex-wrap items-center gap-2 pt-1">
             <ApplicationStageBadge status={props.status} />
+            <Badge variant={statusLabel.variant}>{statusLabel.label}</Badge>
             {action.kind === "closed"
               ? (props.stageSince ? <span className="text-sm text-muted-foreground">on {formatDate(props.stageSince)}</span> : null)
               : <span className="text-sm text-muted-foreground">in {props.status} {timeAtStage(props.stageSince)}</span>}
@@ -58,12 +63,14 @@ export function ApplicationHeader(props: HeaderProps) {
         </div>
       </div>
       <div className="flex shrink-0 flex-wrap items-center gap-2">
-        {canReject ? <Button onClick={() => setDialog("reject")} variant="outline">Not selected</Button> : null}
-        {action.kind === "advance" ? <Button onClick={() => setDialog("move")}>Move to next stage</Button> : null}
+        {results.map((result) => (
+          <Button key={result} onClick={() => setDialog(result)} variant={result === "passed" ? "default" : result === "failed" ? "destructive" : "outline"}>{RESULT_LABELS[result]}</Button>
+        ))}
         {action.kind === "hire" ? <Button onClick={() => setDialog("hire")}>Hire applicant</Button> : null}
       </div>
-      <MoveStageDialog applicationId={props.applicationId} onOpenChange={(open) => setDialog(open ? "move" : null)} open={dialog === "move"} status={props.status} />
-      <NotSelectedDialog applicationId={props.applicationId} onOpenChange={(open) => setDialog(open ? "reject" : null)} open={dialog === "reject"} />
+      {results.map((result) => (
+        <StageResultDialog applicationId={props.applicationId} key={result} onOpenChange={(open) => setDialog(open ? result : null)} open={dialog === result} result={result} status={props.status} />
+      ))}
       <HireDialog applicantNumber={props.applicantNumber} applicationId={props.applicationId} onOpenChange={(open) => setDialog(open ? "hire" : null)} open={dialog === "hire"} />
     </header>
   );

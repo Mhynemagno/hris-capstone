@@ -185,6 +185,11 @@ export type Qualification = {
   field_of_study: string | null;
   awarded_on: string;
   notes: string | null;
+  /** Supporting document proving the exam was passed (client round 5); older entries may have none. */
+  document_path?: string | null;
+  document_name?: string | null;
+  document_mime_type?: string | null;
+  document_size_bytes?: number | null;
 };
 
 export type Certification = {
@@ -196,6 +201,8 @@ export type Certification = {
   issued_on: string;
   expires_on: string | null;
   notes: string | null;
+  /** Set by the database from the course name; drives the performance rubric. */
+  category?: "mandatory_course" | "specialized_training" | null;
 };
 
 export type TrainingRecord = {
@@ -326,6 +333,8 @@ export type Application = {
   applicant_id: string;
   job_opening_id: number;
   status: "Application Submission" | "Physical Agility Test" | "Physical & Medical Examination" | "Neuro-Psychiatric Examination" | "Drug Test" | "Character & Background Investigation" | "Panel Interview" | "Final Evaluation" | "Shortlisted" | "Not Selected" | "Hired";
+  /** Pending / For Evaluation, Verified or Scheduled within the current stage. */
+  stage_result?: "pending" | "verified" | "scheduled";
   cover_note: string | null;
   submitted_at: string;
   reviewed_at: string | null;
@@ -342,9 +351,12 @@ export type ApplicationStatusHistory = {
   /** Equal to previous_status for a remark, which records progress without changing the status. */
   next_status: Application["status"];
   note: string | null;
+  /** The stage result HR recorded, when the entry came from record_stage_result. */
+  result?: "verified" | "scheduled" | "passed" | "failed" | null;
   created_at: string;
 };
 export type ApplicationAiScore = { id: string; application_id: string; status: "queued" | "processing" | "completed" | "failed"; score: number | null; explanation: string | null; provider: string | null; model: string | null; model_version: string | null; failure_code: string | null; completed_at: string | null; created_at: string; };
+export type ApplicationStageDocument = { id: string; application_id: string; stage: Application["status"]; result: "passed" | "failed"; object_path: string; file_name: string; mime_type: string; size_bytes: number; uploaded_by_user_id: string; created_at: string };
 export type HrShortlistApplication = Application & { ai_score_id: string | null; ai_score_status: "queued" | "processing" | "completed" | "failed" | "unscored"; ai_score: number | null; ai_explanation: string | null; ai_model: string | null; applicant_name?: string | null; applicant_number?: number | null; job_title?: string | null; };
 
 export type ApplicantDocument = {
@@ -475,6 +487,8 @@ export type DeploymentHistory = {
   created_at: string;
 };
 
+export type DeploymentReport = { id: string; deployment_id: string; notes: string | null; object_path: string; file_name: string; mime_type: string; size_bytes: number; submitted_by_user_id: string; created_at: string };
+
 export type PromotionCriterion = {
   id: string;
   target_rank_id: number;
@@ -505,6 +519,14 @@ export type PerformanceRating = {
   review_period_starts_on: string;
   review_period_ends_on: string;
   notes: string | null;
+  /** Rubric breakdown; null on ratings recorded before the rubric (2026-10-10). */
+  years_of_service?: number | null;
+  service_points?: number | null;
+  mandatory_points?: number | null;
+  specialized_points?: number | null;
+  total_points?: number | null;
+  grade_equivalent?: string | null;
+  descriptive_rating?: string | null;
   created_by_user_id: string | null;
   updated_by_user_id: string | null;
   created_at: string;

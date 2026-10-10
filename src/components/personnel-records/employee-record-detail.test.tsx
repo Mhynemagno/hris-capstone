@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   deleteEntry: vi.fn(),
   saveEntry: vi.fn(),
+  documentUrl: vi.fn(),
   impact: vi.fn(),
   useEmployee: vi.fn(),
   useEntries: vi.fn(),
@@ -37,6 +38,8 @@ vi.mock("@/hooks/use-administration", () => ({
   useRankOptions: () => ({ data: [{ id: 9, name: "Police Corporal", code: "PCPL", sort_order: 3, is_active: true, created_at: "2026-01-01T00:00:00Z", updated_at: "2026-01-01T00:00:00Z" }], isLoading: false, error: null }),
 }));
 vi.mock("./employee-editor", () => ({ EmployeeEditor: () => <div>Employee editor</div> }));
+
+vi.mock("@/queries/personnel-records", () => ({ getPersonnelDocumentUrl: mocks.documentUrl }));
 
 import { EmployeeRecordDetail } from "./employee-record-detail";
 
@@ -203,5 +206,19 @@ describe("EmployeeRecordDetail", () => {
     expect(screen.getByRole("tab", { name: "Official record" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("heading", { name: "Official record" })).toBeVisible();
     expect(screen.queryByRole("heading", { name: "Eligibility" })).not.toBeInTheDocument();
+  });
+  it("opens an eligibility's supporting document", async () => {
+    const user = userEvent.setup();
+    mocks.search = "tab=qualifications";
+    mocks.documentUrl.mockResolvedValue("https://example.test/csc.pdf");
+    const open = vi.spyOn(window, "open").mockReturnValue({ opener: null, location: { href: "" }, close: vi.fn() } as unknown as Window);
+    mocks.useEntries.mockImplementation((kind: string) => ({
+      data: kind === "qualification" ? [{ id: "q1", employee_id: employeeId, name: "Civil Service Professional Examination", institution: null, qualification_level: null, field_of_study: null, awarded_on: "2015-12-10", notes: null, document_path: "qualifications/x/csc.pdf", document_name: "csc.pdf", document_mime_type: "application/pdf", document_size_bytes: 4 }] : [],
+      isLoading: false,
+    }));
+    render(<EmployeeRecordDetail employeeId={employeeId} />);
+    await user.click(screen.getByRole("button", { name: "View document csc.pdf" }));
+    expect(mocks.documentUrl).toHaveBeenCalledWith("qualifications/x/csc.pdf");
+    open.mockRestore();
   });
 });

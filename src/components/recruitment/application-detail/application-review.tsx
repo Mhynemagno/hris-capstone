@@ -10,7 +10,7 @@ import { TabPanel, Tabs, useUrlTab } from "@/components/ui/tabs";
 import { useBreadcrumbTrail } from "@/components/workspace-shell/breadcrumbs";
 import { PageContainer } from "@/components/workspace-shell/page-container";
 import { useHrRegisteredApplicants } from "@/hooks/use-applicant-portal";
-import { useApplicantProfileDocumentsFor, useApplicantProfilePhotoUrl, useMyApplication } from "@/hooks/use-recruitment";
+import { useApplicantProfileDocumentsFor, useApplicantProfilePhotoUrl, useApplicationStageDocuments, useMyApplication } from "@/hooks/use-recruitment";
 import { formatApplicantNumber } from "@/lib/recruitment/applicant-number";
 import { endedAtStage } from "@/lib/recruitment/application-stages";
 import type { Applicant } from "@/lib/types/database";
@@ -30,6 +30,7 @@ export function HrApplicationReview({ applicationId }: { applicationId: string }
   const application = result.data?.application;
   const applicant = (application as unknown as { applicants?: Applicant | null } | undefined)?.applicants ?? null;
   const profileDocuments = useApplicantProfileDocumentsFor(application?.applicant_id);
+  const stageDocuments = useApplicationStageDocuments(applicationId);
   const photo = useApplicantProfilePhotoUrl(applicant?.profile_image_path ?? null);
   const registered = useHrRegisteredApplicants();
   const [tab, setTab] = useUrlTab("tab", TABS, "overview");
@@ -68,6 +69,7 @@ export function HrApplicationReview({ applicationId }: { applicationId: string }
         jobTitle={job?.title ?? null}
         name={name}
         photoUrl={photo.data ?? null}
+        stageResult={application.stage_result}
         stageSince={lastChange}
         status={application.status}
         submittedAt={application.submitted_at}
@@ -88,7 +90,7 @@ export function HrApplicationReview({ applicationId }: { applicationId: string }
           >
             <TabPanel value="overview"><OverviewTab applicationId={applicationId} coverNote={application.cover_note} history={history} onShowDocuments={() => setTab("documents")} profileDocuments={profileDocs} /></TabPanel>
             <TabPanel value="profile"><ProfileTab applicant={applicant} /></TabPanel>
-            <TabPanel value="documents">{profileDocuments.error ? <ErrorState message={profileDocuments.error.message} onRetry={() => void profileDocuments.refetch()} /> : <DocumentsTab applicationDocuments={documents} profileDocuments={profileDocs} />}</TabPanel>
+            <TabPanel value="documents">{profileDocuments.error ? <ErrorState message={profileDocuments.error.message} onRetry={() => void profileDocuments.refetch()} /> : <DocumentsTab applicationDocuments={documents} profileDocuments={profileDocs} stageDocuments={stageDocuments.data ?? []} />}</TabPanel>
             <TabPanel value="activity"><ActivityTab applicationId={applicationId} history={history} /></TabPanel>
           </Tabs>
         </div>

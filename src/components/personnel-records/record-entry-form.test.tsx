@@ -100,20 +100,26 @@ describe("RecordEntryForm", () => {
 
     expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual([
       "Select a certification / training",
-      "Criminal Investigation Course",
-      "Police Intelligence Operations Course",
-      "Drug Enforcement Operations Course",
-      "Leadership and Management Course",
-      "Senior Police Leadership and Command Course",
+      "Public Safety Basic Recruit Course (PSBRC)",
+      "Public Safety Junior Leadership Course (PSJLC)",
+      "Public Safety Senior Leadership Course (PSSLC)",
+      "Public Safety Officers Candidate Course (PSOCC)",
+      "Public Safety Officers Basic Course (PSOBC)",
+      "Public Safety Officers Advance Course (PSOAC)",
+      "Criminal Investigation Course (CIC) / SOCO",
+      "Special Weapons and Tactics (SWAT) Course",
+      "Special Action Force (SAF) Commando Course",
+      "Traffic Management / Tactical Driving Course",
+      "Cybercrime Investigation Seminar",
     ]);
     expect(screen.queryByLabelText(/issuer/i)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/expiry date/i)).not.toBeInTheDocument();
-    await user.selectOptions(screen.getByLabelText(/^certification \/ training/i), "Criminal Investigation Course");
+    await user.selectOptions(screen.getByLabelText(/^certification \/ training/i), "Criminal Investigation Course (CIC) / SOCO");
     await user.type(screen.getByLabelText(/completion date/i), "2025-05-01");
     await user.click(screen.getByRole("button", { name: "Add certification / training" }));
 
     await waitFor(() => expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({
-      name: "Criminal Investigation Course",
+      name: "Criminal Investigation Course (CIC) / SOCO",
       issuedOn: "2025-05-01",
     }), undefined));
   });
@@ -134,10 +140,16 @@ describe("RecordEntryForm", () => {
     await user.selectOptions(screen.getByLabelText(/^eligibility/i), "Licensed Criminologist (RA 6506)");
     await user.type(screen.getByLabelText(/date awarded/i), "2024-03-01");
     await user.click(screen.getByRole("button", { name: "Add eligibility" }));
+    expect(screen.getByText("Upload a supporting document showing you passed.")).toBeInTheDocument();
+    expect(onSaved).not.toHaveBeenCalled();
+
+    const file = new File(["%PDF"], "prc.pdf", { type: "application/pdf" });
+    await user.upload(screen.getByLabelText(/^Supporting document/), file);
+    await user.click(screen.getByRole("button", { name: "Add eligibility" }));
     await waitFor(() => expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({
       name: "Licensed Criminologist (RA 6506)",
       awardedOn: "2024-03-01",
-    }), undefined));
+    }), undefined, file));
   });
 
   it("offers PNP credentials as dropdowns and asks for a choice when none is made", async () => {
@@ -164,14 +176,29 @@ describe("RecordEntryForm", () => {
     unmount();
 
     const onQualification = vi.fn();
-    const { unmount: unmountQualification } = render(<RecordEntryForm employeeId={employeeId} kind="qualification" onSaved={onQualification} qualification={{ id: "00000000-0000-4000-8000-000000000021", employee_id: employeeId, name: "Civil Service Professional Examination", institution: "CSC", qualification_level: "Bachelor's Degree", field_of_study: "Criminology", awarded_on: "2015-12-10", notes: null } as never} />);
+    const { unmount: unmountQualification } = render(<RecordEntryForm employeeId={employeeId} kind="qualification" onSaved={onQualification} qualification={{ id: "00000000-0000-4000-8000-000000000021", employee_id: employeeId, name: "Civil Service Professional Examination", institution: "CSC", qualification_level: "Bachelor's Degree", field_of_study: "Criminology", awarded_on: "2015-12-10", notes: null, document_path: "qualifications/x/csc.pdf", document_name: "csc.pdf", document_mime_type: "application/pdf", document_size_bytes: 4 } as never} />);
     await user.click(screen.getByRole("button", { name: "Save eligibility" }));
-    await waitFor(() => expect(onQualification).toHaveBeenCalledWith(expect.objectContaining({ institution: "CSC", qualificationLevel: "Bachelor's Degree", fieldOfStudy: "Criminology" }), "00000000-0000-4000-8000-000000000021"));
+    await waitFor(() => expect(onQualification).toHaveBeenCalledWith(expect.objectContaining({ institution: "CSC", qualificationLevel: "Bachelor's Degree", fieldOfStudy: "Criminology" }), "00000000-0000-4000-8000-000000000021", null));
     unmountQualification();
 
     const onService = vi.fn();
     render(<RecordEntryForm employeeId={employeeId} kind="serviceHistory" onSaved={onService} serviceHistory={{ id: "00000000-0000-4000-8000-000000000022", employee_id: employeeId, department_id: 3, rank_id: 7, unit_station: null, employment_title: "Desk officer", started_on: "2017-10-10", ended_on: null, notes: null }} />);
     await user.click(screen.getByRole("button", { name: "Save service history" }));
     await waitFor(() => expect(onService).toHaveBeenCalledWith(expect.objectContaining({ employmentTitle: "Desk officer" }), "00000000-0000-4000-8000-000000000022"));
+  });
+  it("groups Certification / Training choices into Mandatory Course and Specialized Training", () => {
+    const { container } = render(<RecordEntryForm employeeId="00000000-0000-4000-8000-000000000010" kind="certification" onSaved={() => undefined} />);
+    const groups = [...container.querySelectorAll("#certification-primary optgroup")].map((group) => group.getAttribute("label"));
+    expect(groups).toEqual(["Mandatory Course", "Specialized Training"]);
+    expect(screen.getByRole("option", { name: "Public Safety Basic Recruit Course (PSBRC)" }).parentElement).toHaveAttribute("label", "Mandatory Course");
+    expect(screen.getByRole("option", { name: "Cybercrime Investigation Seminar" }).parentElement).toHaveAttribute("label", "Specialized Training");
+  });
+  it("does not ask again for a document when updating an eligibility that already has one", async () => {
+    const user = userEvent.setup();
+    const onSaved = vi.fn().mockResolvedValue(undefined);
+    render(<RecordEntryForm employeeId={employeeId} kind="qualification" onSaved={onSaved} qualification={{ id: "00000000-0000-4000-8000-000000000031", employee_id: employeeId, name: "Civil Service Professional Examination", institution: null, qualification_level: null, field_of_study: null, awarded_on: "2015-12-10", notes: null, document_path: "qualifications/x/csc.pdf", document_name: "csc.pdf", document_mime_type: "application/pdf", document_size_bytes: 4 }} />);
+    expect(screen.getByText(/Current document: csc\.pdf/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Save eligibility" }));
+    await waitFor(() => expect(onSaved).toHaveBeenCalledWith(expect.anything(), "00000000-0000-4000-8000-000000000031", null));
   });
 });

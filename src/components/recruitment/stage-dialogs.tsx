@@ -2,104 +2,88 @@
 
 import { useState } from "react";
 
-import { ConfirmDialog } from "@/components/ui/alert-dialog";
 import { BadgeNumberInput } from "@/components/ui/badge-number-input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent } from "@/components/ui/dialog";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
-import { RadioGroup } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { notifySuccess } from "@/components/ui/toaster";
-import { useHireApplication, useTransitionApplicationStatus } from "@/hooks/use-recruitment";
+import { useHireApplication, useRecordStageResult } from "@/hooks/use-recruitment";
 import { formatApplicantNumber } from "@/lib/recruitment/applicant-number";
-import { allowedNextStatuses } from "@/lib/recruitment/application-stages";
+import { needsStageDocument, RESULT_LABELS, type RecordableResult } from "@/lib/recruitment/stage-results";
 import { hiringDecisionSchema, type ApplicationStatus } from "@/schemas/recruitment";
 
 const errorText = (cause: unknown, fallback: string) => (cause instanceof Error ? cause.message : fallback);
 
 type OpenProps = { open: boolean; onOpenChange: (open: boolean) => void };
 
-function forwardStages(status: ApplicationStatus) {
-  return allowedNextStatuses[status].filter((next) => next !== "Not Selected");
-}
+const resultDescriptions: Record<RecordableResult, string> = {
+  verified: "Confirms the submitted documents were checked.",
+  scheduled: "Tells the applicant this stage has been scheduled.",
+  passed: "Moves the applicant to the next stage.",
+  failed: "This ends the application as Disqualified.",
+};
 
-export function MoveStageDialog({ applicationId, initialStage, onOpenChange, open, status }: OpenProps & { applicationId: string; status: ApplicationStatus; initialStage?: ApplicationStatus }) {
-  const transition = useTransitionApplicationStatus();
-  const options = forwardStages(status);
-  const defaultStage = initialStage ?? (options.length === 1 ? options[0]! : "");
-  const [stage, setStage] = useState<string>(defaultStage);
+/** Records Verified / Scheduled / Passed / Failed for the current stage; Passed and Failed need proof after Application Submission. */
+export function StageResultDialog({ applicationId, onOpenChange, open, result, status }: OpenProps & { applicationId: string; status: ApplicationStatus; result: RecordableResult }) {
+  const record = useRecordStageResult();
   const [note, setNote] = useState("");
+  const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
-  // Start fresh each time the dialog opens, without an effect.
   const [wasOpen, setWasOpen] = useState(open);
   if (open !== wasOpen) {
     setWasOpen(open);
-    if (open) { setStage(defaultStage); setNote(""); setError(null); }
+    if (open) { setNote(""); setFile(null); setError(null); }
   }
+  const label = RESULT_LABELS[result];
+  const documentRequired = needsStageDocument(status, result);
+  const description = result === "passed" && status === "Final Evaluation" ? "The applicant becomes a Candidate (shortlisted)." : resultDescriptions[result];
 
   async function confirm() {
-    if (!stage || transition.isPending) return;
+    if (record.isPending) return;
     setError(null);
+    if (documentRequired && !file) {
+      setError("Upload a supporting document for this result.");
+      return;
+    }
     try {
-      await transition.mutateAsync({ applicationId, nextStatus: stage as ApplicationStatus, note: note.trim() || undefined });
-      notifySuccess(`Moved to ${stage} · applicant notified`);
+      await record.mutateAsync({ applicationId, result, note: note.trim() || undefined, file });
+      notifySuccess(`${status}: ${label} · applicant notified`);
       onOpenChange(false);
     } catch (cause) {
-      setError(errorText(cause, "We could not update this application."));
+      setError(errorText(cause, "We could not record this result."));
     }
   }
 
   return (
-    <Dialog onOpenChange={(next) => { if (!transition.isPending) onOpenChange(next); }} open={open}>
+    <Dialog onOpenChange={(next) => { if (!record.isPending) onOpenChange(next); }} open={open}>
       <DialogContent
-        description={`Currently ${status}. Only the stages allowed next are listed.`}
+        description={description}
         footer={<>
-          <DialogClose render={<Button disabled={transition.isPending} variant="outline" />}>Cancel</DialogClose>
-          <Button disabled={!stage} loading={transition.isPending} onClick={() => void confirm()} type="button">{stage ? `Move to ${stage}` : "Move"}</Button>
+          <DialogClose render={<Button disabled={record.isPending} variant="outline" />}>Cancel</DialogClose>
+          <Button loading={record.isPending} onClick={() => void confirm()} type="button" variant={result === "failed" ? "destructive" : "default"}>{`Mark as ${label}`}</Button>
         </>}
-        title="Move to next stage"
+        title={`Mark ${status} as ${label}`}
       >
         <div className="space-y-4">
-          <RadioGroup legend="Next stage" name="next-stage" onValueChange={setStage} options={options.map((value) => ({ value, label: value }))} value={stage} />
-          <FormField description="Included in the applicant's notification." htmlFor="move-note" label="Note to applicant">
-            <Textarea id="move-note" maxLength={2000} onChange={(event) => setNote(event.target.value)} rows={3} value={note} />
+          {result === "passed" || result === "failed" ? (
+            <FormField
+              description={documentRequired ? "Required. Proof this stage was carried out, e.g. the result sheet (PDF or image, up to 10 MB)." : "Optional. PDF or image, up to 10 MB."}
+              htmlFor="stage-document"
+              label="Supporting document"
+              required={documentRequired}
+            >
+              <Input accept="application/pdf,image/png,image/jpeg,image/webp" id="stage-document" onChange={(event) => setFile(event.target.files?.[0] ?? null)} type="file" />
+            </FormField>
+          ) : null}
+          <FormField description="Included in the applicant's notification." htmlFor="stage-note" label="Note to applicant">
+            <Textarea id="stage-note" maxLength={2000} onChange={(event) => setNote(event.target.value)} rows={3} value={note} />
           </FormField>
           {error ? <p className="rounded-md bg-destructive-subtle px-3 py-2 text-sm text-destructive" role="alert">{error}</p> : null}
         </div>
       </DialogContent>
     </Dialog>
-  );
-}
-
-export function NotSelectedDialog({ applicationId, onOpenChange, open }: OpenProps & { applicationId: string }) {
-  const transition = useTransitionApplicationStatus();
-  const [note, setNote] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [wasOpen, setWasOpen] = useState(open);
-  if (open !== wasOpen) {
-    setWasOpen(open);
-    if (open) { setNote(""); setError(null); }
-  }
-
-  async function confirm() {
-    if (transition.isPending) return;
-    setError(null);
-    try {
-      await transition.mutateAsync({ applicationId, nextStatus: "Not Selected", note: note.trim() || undefined });
-      notifySuccess("Marked as not selected · applicant notified");
-      onOpenChange(false);
-    } catch (cause) {
-      setError(errorText(cause, "We could not update this application."));
-    }
-  }
-
-  return (
-    <ConfirmDialog confirmLabel="Mark as not selected" description="This ends the application. The applicant will be notified." error={error} onConfirm={confirm} onOpenChange={onOpenChange} open={open} pending={transition.isPending} title="Mark as not selected?" tone="danger">
-      <FormField description="Optional. Included in the applicant's notification." htmlFor="not-selected-note" label="Note to applicant">
-        <Textarea id="not-selected-note" maxLength={2000} onChange={(event) => setNote(event.target.value)} rows={3} value={note} />
-      </FormField>
-    </ConfirmDialog>
   );
 }
 

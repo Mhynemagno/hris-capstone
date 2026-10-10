@@ -11,7 +11,7 @@ import { FormField } from "@/components/ui/form-field";
 import { LoadingState } from "@/components/ui/loading-state";
 import { nativeSelectClassName } from "@/components/ui/native-select";
 import { useRankOptions } from "@/hooks/use-administration";
-import { PNP_CERTIFICATIONS } from "@/lib/pnp-catalogue";
+import { PNP_CERTIFICATION_GROUPS, PNP_CERTIFICATIONS } from "@/lib/pnp-catalogue";
 import { rankLabel } from "@/lib/ranks";
 import { useCreatePromotionCriterion, usePromotionCriteria, useSetPromotionCriterionActive } from "@/hooks/use-promotion-eligibility";
 import type { PromotionCriterionRequirement } from "@/lib/types/database";
@@ -135,7 +135,12 @@ function CriterionForm({ rankOptions, takenRankIds }: { rankOptions: { value: st
                     value={row.name}
                   >
                     <option value="">Choose a certification / training</option>
-                    {PNP_CERTIFICATIONS.filter((name) => name === row.name || !chosenNames.has(name)).map((name) => <option key={name} value={name}>{name}</option>)}
+                    {row.name && !(PNP_CERTIFICATIONS as readonly string[]).includes(row.name) ? <option value={row.name}>{row.name}</option> : null}
+                    {PNP_CERTIFICATION_GROUPS.map((group) => (
+                      <optgroup key={group.label} label={group.label}>
+                        {group.choices.filter((name) => name === row.name || !chosenNames.has(name)).map((name) => <option key={name} value={name}>{name}</option>)}
+                      </optgroup>
+                    ))}
                   </select>
                 </FormField>
               </div>
