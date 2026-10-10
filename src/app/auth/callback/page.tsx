@@ -28,8 +28,10 @@ function AuthCallback() {
     let active = true;
 
     async function complete() {
+      // Sign-up links belong to applicants; invitation and reset links to staff.
+      const loginPage = signupFlow ? "/login?as=applicant" : "/login?as=employee";
       if (linkError) {
-        if (active) router.replace("/login?error=invitation_expired");
+        if (active) router.replace(`${loginPage}&error=invitation_expired`);
         return;
       }
       const supabase = createBrowserSupabaseClient();
@@ -54,7 +56,7 @@ function AuthCallback() {
       if (!error) router.replace(nextPath);
       // Supabase only redirects with a code after it confirmed the email, so a sign-up code that cannot be
       // exchanged here (opened in another browser) still means the account is confirmed.
-      else router.replace(signupFlow && code ? "/login?message=email_confirmed" : "/login?error=invitation_expired");
+      else router.replace(signupFlow && code ? `${loginPage}&message=email_confirmed` : `${loginPage}&error=invitation_expired`);
     }
 
     void complete();

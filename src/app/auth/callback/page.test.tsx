@@ -75,7 +75,7 @@ describe("AuthCallbackPage", () => {
   it("shows the invalid-link error straight away when Supabase reports an expired link", async () => {
     mocks.searchParams = new URLSearchParams("error=access_denied&error_code=otp_expired&flow=signup&next=/jobs");
     render(<AuthCallbackPage />);
-    await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith("/login?error=invitation_expired"));
+    await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith("/login?as=applicant&error=invitation_expired"));
     expect(mocks.exchangeCodeForSession).not.toHaveBeenCalled();
   });
 
@@ -84,7 +84,7 @@ describe("AuthCallbackPage", () => {
     mocks.exchangeCodeForSession.mockResolvedValue({ error: new Error("code verifier missing") });
     mocks.getSession.mockResolvedValue({ data: { session: null }, error: null });
     render(<AuthCallbackPage />);
-    await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith("/login?message=email_confirmed"));
+    await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith("/login?as=applicant&message=email_confirmed"));
   });
 
   it("keeps the invalid-link error for a failed non-sign-up code", async () => {
@@ -92,7 +92,7 @@ describe("AuthCallbackPage", () => {
     mocks.exchangeCodeForSession.mockResolvedValue({ error: new Error("bad code") });
     mocks.getSession.mockResolvedValue({ data: { session: null }, error: null });
     render(<AuthCallbackPage />);
-    await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith("/login?error=invitation_expired"));
+    await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith("/login?as=employee&error=invitation_expired"));
   });
 
   it("continues when the exchange fails but this browser is already signed in", async () => {

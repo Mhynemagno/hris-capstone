@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { openLoginAndSignIn } from "./demo-accounts";
 
 // Objective 9 is a user-based evaluation against ISO/IEC 25010:2023. These checks supply
 // automated evidence for the characteristics software can measure on its own; the usability
@@ -18,10 +19,7 @@ const accounts = {
 } as const;
 
 async function signIn(page: Page, account: { email: string; home: string }) {
-  await page.goto("/login");
-  await page.getByLabel("Email").fill(account.email);
-  await page.getByRole("textbox", { name: "Password" }).fill(demoPassword);
-  await page.getByRole("button", { name: "Login" }).click();
+  await openLoginAndSignIn(page, account.email, demoPassword);
   await expect(page).toHaveURL(new RegExp(`${account.home}$`), { timeout: 30_000 });
 }
 

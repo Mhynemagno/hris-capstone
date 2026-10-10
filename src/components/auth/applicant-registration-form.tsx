@@ -39,7 +39,7 @@ function PasswordField({ autoComplete, error, id, label, name }: { autoComplete:
 }
 
 /** `nextPath` is an already-validated /applicant or /jobs destination to continue to after registering. */
-export function ApplicantRegistrationForm({ loginHref = "/login", nextPath = null }: { loginHref?: string; nextPath?: string | null }) {
+export function ApplicantRegistrationForm({ loginHref = "/login?as=applicant", nextPath = null }: { loginHref?: string; nextPath?: string | null }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<RegistrationErrors>({});

@@ -1,6 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { LoginForm } from "@/components/auth/login-form";
 import { getSafeNextPath } from "@/lib/auth/safe-redirect";
@@ -19,9 +20,9 @@ function isRecruitmentPath(path: string) {
   return ["/applicant", "/jobs"].some((root) => pathname === root || pathname.startsWith(`${root}/`));
 }
 
-function loginMode(as: string | undefined, nextPath: string): LoginMode | null {
-  if (as === "employee" || as === "applicant") return as;
-  return isRecruitmentPath(nextPath) ? "applicant" : null;
+/** The login a visitor without "?as=" belongs on: applicants come from recruitment pages or sign-up confirmation. */
+function defaultMode(nextPath: string, message: string | undefined): LoginMode {
+  return isRecruitmentPath(nextPath) || message === "email_confirmed" ? "applicant" : "employee";
 }
 
 function switchHref(mode: LoginMode, nextPath: string) {
@@ -59,7 +60,15 @@ function BrandPanel() {
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ as?: string; error?: string; message?: string; next?: string }> }) {
   const { as, error, message, next } = await searchParams;
   const nextPath = getSafeNextPath(next);
-  const mode = loginMode(as, nextPath);
+  // There is no generic login any more: every visit lands on the employee or the applicant login.
+  if (as !== "employee" && as !== "applicant") {
+    const params = new URLSearchParams({ as: defaultMode(nextPath, message) });
+    if (nextPath !== "/") params.set("next", nextPath);
+    if (error) params.set("error", error);
+    if (message) params.set("message", message);
+    redirect(`/login?${params.toString()}`);
+  }
+  const mode: LoginMode = as;
   const errorMessage = error === "invalid_credentials"
     ? "We could not sign you in. Check your details and try again."
     : error === "account_disabled"
@@ -69,7 +78,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       : undefined;
   const notice = message === "email_confirmed" ? "Email confirmed. Please log in." : undefined;
   const registerHref = nextPath === "/" ? "/applicant/register" : `/applicant/register?next=${encodeURIComponent(nextPath)}`;
-  const title = mode === "employee" ? "Employee login" : mode === "applicant" ? "Applicant login" : "Login";
+  const title = mode === "employee" ? "Employee login" : "Applicant login";
   const eyebrow = mode === "applicant" ? "PNP San Juan Recruitment" : "San Juan City Police HRIS";
 
   return (
@@ -92,12 +101,10 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             ) : (
               <>
                 <p className="mt-6 text-center text-sm text-muted-foreground">Don&apos;t have an account?{" "}<Link className="inline-flex items-center gap-1 font-semibold text-primary underline-offset-4 hover:underline" href={registerHref}>Sign up<ArrowRight aria-hidden="true" className="size-4" /></Link></p>
-                {mode === "applicant" ? (
-                  <p className="mt-2 text-center text-sm text-muted-foreground">
-                    Station personnel?{" "}
-                    <Link className="font-semibold text-primary underline-offset-4 hover:underline" href={switchHref("employee", nextPath)}>Login as Employee</Link>
-                  </p>
-                ) : null}
+                <p className="mt-2 text-center text-sm text-muted-foreground">
+                  Station personnel?{" "}
+                  <Link className="font-semibold text-primary underline-offset-4 hover:underline" href={switchHref("employee", nextPath)}>Login as Employee</Link>
+                </p>
               </>
             )}
           </div>

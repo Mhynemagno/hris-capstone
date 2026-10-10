@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { formatDate } from "../src/lib/format-date";
+import { openLoginAndSignIn, type LoginAccount } from "./demo-accounts";
 
 // One end-to-end journey per capstone objective (see docs/capstone-objectives-verification.md).
 // Every test creates its own uniquely named records in the LOCAL Supabase stack only
@@ -29,11 +30,8 @@ const pdf = (name: string) => ({
   buffer: Buffer.from("%PDF-1.4\n1 0 obj << /Type /Catalog >> endobj\ntrailer << /Root 1 0 R >>\n%%EOF\n"),
 });
 
-async function signIn(page: Page, email: string, home: string, password = demoPassword) {
-  await page.goto("/login");
-  await page.getByLabel("Email").fill(email);
-  await page.getByRole("textbox", { name: "Password" }).fill(password);
-  await page.getByRole("button", { name: "Login" }).click();
+async function signIn(page: Page, account: string | LoginAccount, home: string, password = demoPassword) {
+  await openLoginAndSignIn(page, account, password);
   await expect(page).toHaveURL(new RegExp(`${home}$`), { timeout: 30_000 });
 }
 
@@ -204,6 +202,8 @@ test.describe("Objective 2: recruitment management", () => {
     // Bachelor's Degree education (qualifier, birthdate and mobile number come from registration;
     // citizenship defaults to Filipino).
     await page.goto("/applicant/profile");
+    // Applicants sign in with their applicant number (emailed after sign-up and shown on the profile).
+    const applicantNumber = (await page.getByText("Applicant number", { exact: true }).locator("xpath=following-sibling::p[1]").innerText()).trim();
     await page.getByLabel(/^Place of birth/).fill("San Juan City");
     await page.getByLabel(/^Gender/).selectOption("female");
     await page.getByLabel(/^Civil status/).selectOption("single");
@@ -293,7 +293,7 @@ test.describe("Objective 2: recruitment management", () => {
     await signOut(page);
 
     // The applicant is kept informed of every status change.
-    await signIn(page, applicantEmail, "/applicant");
+    await signIn(page, { mode: "applicant", identifier: applicantNumber }, "/applicant");
     await page.goto("/notifications");
     await expect(page.getByText("Application updated").first()).toBeVisible();
   });
