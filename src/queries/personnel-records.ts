@@ -1,4 +1,5 @@
 import type { Certification, Employee, Qualification, ServiceHistory, TrainingRecord, UnlinkedEmployeeAccount, UnitStation } from "@/lib/types/database";
+import { DUPLICATE_EMAIL_MESSAGE } from "@/lib/auth/duplicate-email";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import {
   certificationSchema,
@@ -152,6 +153,9 @@ export async function saveEmployee(input: EmployeeInput, employeeId?: string) {
   const result = employeeId
     ? await client.from("employees").update(parsed.profileId ? { ...values, profile_id: parsed.profileId } : values).eq("id", employeeId).select("*").single()
     : await client.from("employees").insert({ ...values, profile_id: parsed.profileId ?? null }).select("*").single();
+  if (result.error?.code === "23505" && result.error.message.includes("employees_personal_email_unique_idx")) {
+    throw new Error(DUPLICATE_EMAIL_MESSAGE);
+  }
   throwIfError(result.error);
   return result.data as Employee;
 }

@@ -96,6 +96,14 @@ describe("personnel-record queries", () => {
       return { update, insert, eq };
     }
 
+    it("explains a duplicate personal email in the client's words", async () => {
+      const single = vi.fn().mockResolvedValue({ data: null, error: { code: "23505", message: 'duplicate key value violates unique constraint "employees_personal_email_unique_idx"' } });
+      const select = vi.fn(() => ({ single }));
+      from.mockReturnValue({ insert: vi.fn(() => ({ select })) });
+
+      await expect(saveEmployee({ ...baseInput, departmentId: 3, rankId: 7 })).rejects.toThrow("This email is already registered.");
+    });
+
     it("keeps department and rank on edit and never sends profile_id when no link is supplied", async () => {
       const table = mockTable();
 
