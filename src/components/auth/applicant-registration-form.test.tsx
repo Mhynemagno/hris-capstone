@@ -43,6 +43,15 @@ describe("ApplicantRegistrationForm", { timeout: 20_000 }, () => {
     expect(screen.queryByText("Show password")).not.toBeInTheDocument();
   });
 
+  it("puts Confirm Password directly under Password", () => {
+    render(<ApplicantRegistrationForm />);
+    const password = screen.getByLabelText(/^password/i).closest("[data-registration-field]");
+    const confirm = screen.getByLabelText(/^confirm password/i).closest("[data-registration-field]");
+    expect(password).toHaveClass("md:col-start-2");
+    expect(confirm).toHaveClass("md:col-start-2");
+    expect(password?.nextElementSibling).toBe(confirm);
+  });
+
   it("groups registration fields into two columns on wider screens", () => {
     const { container } = render(<ApplicantRegistrationForm />);
 

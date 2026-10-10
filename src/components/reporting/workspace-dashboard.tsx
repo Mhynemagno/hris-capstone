@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronDown, Plus } from "lucide-react";
+import { BriefcaseBusiness, CalendarCheck, CalendarClock, ChartLine, ChevronDown, MapPinned, Plus, UserCheck, UserPlus, Users, UsersRound, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { ApplicationStageBadge } from "@/components/recruitment/application-stage-badge";
@@ -39,6 +39,26 @@ function Panel({ children, id, title, footer }: { id: string; title: string; chi
       <h2 className="border-b px-5 py-3 text-lg font-semibold" id={id}>{title}</h2>
       <div className="flex-1 p-5">{children}</div>
       {footer ? <div className="border-t px-5 py-3 text-sm text-muted-foreground">{footer}</div> : null}
+    </section>
+  );
+}
+
+/** HR shortcuts with an icon and a live count, like the client's reference dashboard. */
+function QuickActions({ actions }: { actions: { href: string; icon: LucideIcon; label: string; detail: string }[] }) {
+  return (
+    <section aria-labelledby="quick-actions-heading" className="space-y-3">
+      <h2 className="text-lg font-semibold" id="quick-actions-heading">Quick actions</h2>
+      <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        {actions.map(({ href, icon: Icon, label, detail }) => (
+          <li key={href}>
+            <Link className="flex h-full flex-col items-center gap-2 rounded-xl border bg-card px-4 py-5 text-center shadow-sm transition-colors hover:bg-muted" href={href}>
+              <Icon aria-hidden className="size-8 text-brand-command-red" />
+              <span className="font-semibold">{label}</span>
+              <span className="text-sm text-muted-foreground">{detail}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }
@@ -182,11 +202,11 @@ function DashboardBody({ data, isHr, recent }: { data: DashboardSummary; isHr: b
   const workforce = metric("activeWorkforce");
   const onDutyShare = workforce ? Math.round((metric("attendanceToday") / workforce) * 100) : 0;
   const stats = [
-    { key: "personnel", label: "Personnel", value: formatCount(metric("totalPersonnel")), href: isHr ? "/hr/employees" : undefined },
-    { key: "onDuty", label: "On duty today", value: `${formatCount(metric("attendanceToday"))} / ${formatCount(workforce)}`, hint: `${onDutyShare}% of active personnel`, href: isHr ? "/hr/attendance" : undefined },
-    { key: "onLeave", label: "On leave today", value: formatCount(metric("onLeave")), href: isHr ? "/hr/leave-requests?status=approved" : undefined },
-    { key: "deployments", label: "Active deployments", value: formatCount(metric("activeDeployments")), href: isHr ? "/hr/deployments" : undefined },
-    { key: "openJobs", label: "Open job postings", value: formatCount(metric("openJobs")), href: isHr ? "/hr/jobs?status=published" : undefined },
+    { key: "personnel", label: "Personnel", value: formatCount(metric("totalPersonnel")), href: isHr ? "/hr/employees" : undefined, icon: Users, tone: "blue" as const },
+    { key: "onDuty", label: "On duty today", value: `${formatCount(metric("attendanceToday"))} / ${formatCount(workforce)}`, hint: `${onDutyShare}% of active personnel`, href: isHr ? "/hr/attendance" : undefined, icon: UserCheck, tone: "violet" as const },
+    { key: "onLeave", label: "On leave today", value: formatCount(metric("onLeave")), href: isHr ? "/hr/leave-requests?status=approved" : undefined, icon: CalendarClock, tone: "orange" as const },
+    { key: "deployments", label: "Active deployments", value: formatCount(metric("activeDeployments")), href: isHr ? "/hr/deployments" : undefined, icon: MapPinned, tone: "emerald" as const },
+    { key: "openJobs", label: "Open job postings", value: formatCount(metric("openJobs")), href: isHr ? "/hr/jobs?status=published" : undefined, icon: BriefcaseBusiness, tone: "rose" as const },
   ];
   const breakdown = (key: string) => data.breakdowns[key] ?? [];
 
@@ -195,6 +215,13 @@ function DashboardBody({ data, isHr, recent }: { data: DashboardSummary; isHr: b
       <StatStrip items={stats} label="Today" />
       {isHr ? (
         <>
+          <QuickActions actions={[
+            { href: "/hr/employees", icon: UsersRound, label: "Manage employees", detail: `${formatCount(metric("totalPersonnel"))} personnel` },
+            { href: "/hr/applications", icon: UserPlus, label: "Recruitment", detail: `${formatCount(metric("recruitmentApplications"))} applications` },
+            { href: "/hr/leave-requests", icon: CalendarCheck, label: "Leave applications", detail: `${formatCount(metric("pendingLeave"))} pending` },
+            { href: "/hr/deployments", icon: MapPinned, label: "Deployments", detail: `${formatCount(metric("activeDeployments"))} active` },
+            { href: "/reports", icon: ChartLine, label: "Reports", detail: "View analytics" },
+          ]} />
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1.75fr)_minmax(19rem,0.85fr)]">
             <ChartCard data={breakdown("workforceByDepartment")} id="personnel-distribution" labelHeading="Unit / Section" subtitle="View staffing by unit or section" title="Personnel distribution"><HorizontalBarChart data={breakdown("workforceByDepartment")} /></ChartCard>
             <StationPulse data={data} />
