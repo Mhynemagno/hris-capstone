@@ -5,7 +5,7 @@ import { LoginForm } from "./login-form";
 
 describe("LoginForm", () => {
   it("shows a pending label and disables sign-in while the native post is in flight", () => {
-    render(<LoginForm nextPath="/hr" />);
+    render(<LoginForm mode="employee" nextPath="/hr" />);
     const button = screen.getByRole("button", { name: "Login" });
     const form = button.closest("form")!;
     const submitEvent = new Event("submit", { bubbles: true, cancelable: true });
@@ -17,15 +17,17 @@ describe("LoginForm", () => {
   });
 
   it("clears the pending state when the page is restored from the back-forward cache", () => {
-    render(<LoginForm nextPath="/hr" />);
+    render(<LoginForm mode="employee" nextPath="/hr" />);
     fireEvent.submit(screen.getByRole("button", { name: "Login" }).closest("form")!);
     fireEvent(window, new Event("pageshow"));
     expect(screen.getByRole("button", { name: "Login" })).toBeEnabled();
   });
 
   it("labels the fields, links to password recovery, and toggles the password inside its input", () => {
-    render(<LoginForm nextPath="/" />);
-    expect(screen.getByLabelText("Email or badge number")).toHaveAttribute("type", "text");
+    render(<LoginForm mode="employee" nextPath="/" />);
+    expect(screen.getByLabelText("Badge Number")).toHaveAttribute("type", "text");
+    expect(screen.queryByLabelText("Email or badge number")).not.toBeInTheDocument();
+    expect(document.querySelector('input[name="as"]')).toHaveValue("employee");
     const password = screen.getByLabelText("Password");
     expect(password).toHaveAttribute("type", "password");
     expect(screen.getByRole("link", { name: "Forgot your password?" })).toHaveAttribute("href", "/forgot-password");

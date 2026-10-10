@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { formatDate } from "../src/lib/format-date";
+import { openLoginAndSignIn } from "./demo-accounts";
 
 // These journeys create and remove their own uniquely named records in the
 // LOCAL Supabase stack only (playwright.config.ts refuses non-local URLs).
@@ -12,10 +13,7 @@ const runId = `${Date.now().toString(36)}${Math.floor(Math.random() * 1000)}`;
 test.describe.configure({ timeout: 90_000 });
 
 async function signIn(page: Page, email: string, home: string) {
-  await page.goto("/login");
-  await page.getByLabel("Email").fill(email);
-  await page.getByRole("textbox", { name: "Password" }).fill(demoPassword);
-  await page.getByRole("button", { name: "Login" }).click();
+  await openLoginAndSignIn(page, email, demoPassword);
   await expect(page).toHaveURL(new RegExp(`${home}$`));
 }
 

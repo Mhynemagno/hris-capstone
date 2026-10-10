@@ -64,6 +64,15 @@ on conflict (profile_id) do update set first_name = excluded.first_name, last_na
   emergency_contact_name = coalesce(public.employees.emergency_contact_name, excluded.emergency_contact_name),
   emergency_contact_phone = coalesce(public.employees.emergency_contact_phone, excluded.emergency_contact_phone);
 
+-- Staff sign in with their badge number (there is no email login), so the demo administrator, HR and
+-- management accounts have personnel records too, as every staff account does in production.
+insert into public.employees (profile_id, employee_number, first_name, last_name, personal_email, employment_status, employment_started_on)
+values
+  ('00000000-0000-4000-8000-000000008101', '0-00004', 'Demo', 'Administrator', 'demo.admin@example.test', 'active', '2020-01-01'),
+  ('00000000-0000-4000-8000-000000008102', '0-00002', 'Demo', 'Human Resources', 'demo.hr@example.test', 'active', '2020-01-01'),
+  ('00000000-0000-4000-8000-000000008105', '0-00003', 'Demo', 'Management', 'demo.management@example.test', 'active', '2020-01-01')
+on conflict (profile_id) do nothing;
+
 insert into public.leave_types (name, description, requires_attachment, created_by_user_id, updated_by_user_id)
 select 'Demo leave', 'Fictitious demo leave type', false, '00000000-0000-4000-8000-000000008102'::uuid, '00000000-0000-4000-8000-000000008102'::uuid
 where not exists (select 1 from public.leave_types where name = 'Demo leave');

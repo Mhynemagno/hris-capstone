@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { openLoginAndSignIn } from "./demo-accounts";
 
 // Every role's main screens must fit a 390px phone without page-level
 // horizontal scrolling (wide tables scroll inside their own container).
@@ -20,10 +21,7 @@ for (const [email, home, paths] of sets) {
     const minFont = home === "/applicant" ? APPLICANT_MIN_FONT : WORKSPACE_MIN_FONT;
     const widths = home === "/hr" ? [390, 1024, 1366] : [390];
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/login");
-    await page.getByLabel("Email").fill(email);
-    await page.getByRole("textbox", { name: "Password" }).fill(process.env.HRIS_E2E_PASSWORD ?? "DemoPass!2026");
-    await page.getByRole("button", { name: "Login" }).click();
+    await openLoginAndSignIn(page, email, process.env.HRIS_E2E_PASSWORD ?? "DemoPass!2026");
     await page.waitForURL(new RegExp(home + "$"));
     const bad: string[] = [];
     for (const width of widths) {

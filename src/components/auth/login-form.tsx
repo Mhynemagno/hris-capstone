@@ -13,7 +13,8 @@ type LoginFormProps = {
   error?: string;
   notice?: string;
   /** Which login the visitor chose; kept so a failed attempt returns to the same page. */
-  mode?: "employee" | "applicant" | null;
+  /** There is no generic login: staff sign in with their badge number, applicants with their applicant number. */
+  mode: "employee" | "applicant";
   nextPath: string;
 };
 
@@ -38,8 +39,8 @@ export function LoginForm({ error, mode, nextPath, notice }: LoginFormProps) {
       onSubmit={() => setPending(true)}
     >
       <input name="next" type="hidden" value={nextPath} />
-      {mode ? <input name="as" type="hidden" value={mode} /> : null}
-      <FormField htmlFor="login-identifier" label={mode === "applicant" ? "Applicant Number" : mode === "employee" ? "Badge Number" : "Email or badge number"}>
+      <input name="as" type="hidden" value={mode} />
+      <FormField htmlFor="login-identifier" label={mode === "applicant" ? "Applicant Number" : "Badge Number"}>
         <input
           autoComplete="username"
           className="h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-slate-950 shadow-sm outline-none focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/20"

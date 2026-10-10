@@ -1,10 +1,11 @@
 import { expect, test } from "@playwright/test";
+import { fillLogin } from "./demo-accounts";
 
 const demoPassword = process.env.HRIS_E2E_PASSWORD ?? "DemoPass!2026";
 const roles = [
   { label: "System Administrator", email: "demo.admin@example.test", home: "/admin", denied: "/hr" },
   { label: "HR Personnel", email: "demo.hr@example.test", home: "/hr", denied: "/admin" },
-  { label: "Applicant", email: "demo.applicant@example.test", identifier: "202604", inputLabel: "Applicant Number", home: "/applicant", denied: "/hr" },
+  { label: "Applicant", email: "demo.applicant@example.test", home: "/applicant", denied: "/hr" },
   { label: "Employee", email: "demo.employee@example.test", home: "/employee", denied: "/hr" },
   { label: "Management", email: "demo.management@example.test", home: "/management", denied: "/hr" },
 ] as const;
@@ -14,9 +15,7 @@ for (const role of roles) {
     await page.goto(role.home);
     await expect(page).toHaveURL(/\/login\?/);
 
-    await page.getByLabel("inputLabel" in role ? role.inputLabel : "Email").fill("identifier" in role ? role.identifier : role.email);
-    await page.getByRole("textbox", { name: "Password" }).fill(demoPassword);
-    await page.getByRole("button", { name: "Login" }).click();
+    await fillLogin(page, role.email, demoPassword);
     await expect(page).toHaveURL(new RegExp(`${role.home}$`));
     await expect(page.getByRole("button", { name: new RegExp(`Account menu for ${role.email}`) })).toBeVisible();
 

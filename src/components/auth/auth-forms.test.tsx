@@ -22,7 +22,7 @@ describe("authentication forms", () => {
 
   it("posts sign-in credentials to the secure login route", async () => {
     const user = userEvent.setup();
-    render(<LoginForm nextPath="/hr" />);
+    render(<LoginForm mode="employee" nextPath="/hr" />);
 
     const form = screen.getByRole("button", { name: "Login" }).closest("form");
     expect(form).toHaveAttribute("action", "/auth/login");

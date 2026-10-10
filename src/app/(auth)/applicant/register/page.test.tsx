@@ -14,7 +14,7 @@ describe("ApplicantRegistrationPage", () => {
   it("shows a centered Login link back to sign-in", async () => {
     await renderRegister();
     const link = screen.getByRole("link", { name: "Login" });
-    expect(link).toHaveAttribute("href", "/login");
+    expect(link).toHaveAttribute("href", "/login?as=applicant");
     expect(link.parentElement).toHaveTextContent("Already have an account? Login");
     expect(link.parentElement).toHaveClass("text-center");
   });
@@ -22,11 +22,11 @@ describe("ApplicantRegistrationPage", () => {
   it("keeps a safe recruitment next path on the Login link", async () => {
     const next = "/applicant/applications?jobId=5";
     await renderRegister({ next });
-    expect(screen.getByRole("link", { name: "Login" })).toHaveAttribute("href", `/login?next=${encodeURIComponent(next)}`);
+    expect(screen.getByRole("link", { name: "Login" })).toHaveAttribute("href", `/login?as=applicant&next=${encodeURIComponent(next)}`);
   });
 
   it("drops unsafe next paths", async () => {
     await renderRegister({ next: "https://evil.example/applicant" });
-    expect(screen.getByRole("link", { name: "Login" })).toHaveAttribute("href", "/login");
+    expect(screen.getByRole("link", { name: "Login" })).toHaveAttribute("href", "/login?as=applicant");
   });
 });

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { fillLogin } from "./demo-accounts";
 
 // Chromium's synthetic camera shows a test pattern, not a face. These journeys prove the models
 // load from the production bundle, the camera starts and stops, and detection runs with the
@@ -33,9 +34,7 @@ async function waitRecoveringFromFakeCamera(page: Page, expected: RegExp | strin
 
 async function signInAsHr(page: Page, destination: string) {
   await page.goto(destination);
-  await page.getByLabel("Email").fill("demo.hr@example.test");
-  await page.getByRole("textbox", { name: "Password" }).fill(demoPassword);
-  await page.getByRole("button", { name: "Login" }).click();
+  await fillLogin(page, "demo.hr@example.test", demoPassword);
   await expect(page).toHaveURL(new RegExp(`${destination}$`));
 }
 
@@ -77,9 +76,7 @@ test("face registration requires consent and guides the capture", async ({ page 
 
 test("an employee reaches face attendance with their own login, without HR", async ({ page }) => {
   await page.goto("/employee/attendance/scan");
-  await page.getByLabel("Email").fill("demo.employee@example.test");
-  await page.getByRole("textbox", { name: "Password" }).fill(demoPassword);
-  await page.getByRole("button", { name: "Login" }).click();
+  await fillLogin(page, "demo.employee@example.test", demoPassword);
   await expect(page).toHaveURL(/\/employee\/attendance\/scan$/);
   // The demo employee has no face registration, so the page explains how to get one.
   await expect(page.getByText(/Face registration needed|Record attendance with your face/)).toBeVisible();
