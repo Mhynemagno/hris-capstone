@@ -74,6 +74,8 @@ export function ApplicantRegistrationForm({ loginHref = "/login", nextPath = nul
             phone: result.data.mobileNumber,
             date_of_birth: result.data.birthdate,
             full_name: result.data.fullName,
+            // Marks a self-registration so the applicant number is emailed (invited staff accounts are not).
+            registration: "applicant",
           },
           emailRedirectTo: confirmationRedirect(nextPath ?? "/jobs"),
         },
@@ -105,6 +107,7 @@ export function ApplicantRegistrationForm({ loginHref = "/login", nextPath = nul
       <div aria-live="polite" className="space-y-3 rounded-lg border border-primary/25 bg-accent p-4 text-foreground" role="status">
         <p className="font-semibold">Check your email</p>
         <p className="text-sm text-slate-700">We created your account. Open the confirmation link we sent before signing in.</p>
+        <p className="text-sm text-slate-700">We also emailed your applicant number. You will use it with your password to log in.</p>
         <a className="inline-flex min-h-11 items-center font-medium text-primary underline underline-offset-4" href={loginHref}>
           Return to sign in
         </a>
