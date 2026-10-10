@@ -18,7 +18,9 @@ import {
   useRequestableLeaveTypes,
   useSubmitLeaveRequest,
 } from "@/hooks/use-leave-management";
+import { useEmployeeForCurrentUser } from "@/hooks/use-personnel-records";
 import { formatDateRange } from "@/lib/format-date";
+import { requestableLeaveTypes } from "@/lib/leave/requestable-types";
 import type { LeaveBalance } from "@/lib/types/database";
 import { leaveRequestDraftSchema } from "@/schemas/leave-management";
 
@@ -148,6 +150,7 @@ type LeaveFieldErrors = Partial<Record<"leaveTypeId" | "startsOn" | "endsOn" | "
 
 export function EmployeeLeaveRequestForm() {
   const types = useRequestableLeaveTypes();
+  const employee = useEmployeeForCurrentUser();
   const submit = useSubmitLeaveRequest();
   const [leaveTypeId, setLeaveTypeId] = useState("");
   const [startsOn, setStartsOn] = useState("");
@@ -160,9 +163,10 @@ export function EmployeeLeaveRequestForm() {
   const balances = useMyLeaveBalances(year);
   const balance = balances.data?.find((entry) => entry.leave_type_id === leaveTypeId);
 
-  if (types.isLoading) return <LoadingState label="Loading leave types…" />;
-  if (types.error) return <ErrorState message={types.error.message} />;
-  const activeTypes = (types.data ?? []).filter((type) => type.is_active);
+  if (types.isLoading || employee.isLoading) return <LoadingState label="Loading leave types…" />;
+  const loadError = types.error ?? employee.error;
+  if (loadError) return <ErrorState message={loadError.message} />;
+  const activeTypes = requestableLeaveTypes(types.data ?? [], employee.data?.gender);
   const minDate = today();
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {

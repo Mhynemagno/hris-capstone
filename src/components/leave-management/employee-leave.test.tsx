@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   cancel: vi.fn(),
   leaveRequestFilters: vi.fn(),
   submit: vi.fn(),
+  gender: "male" as "female" | "male" | null,
 }));
 
 vi.mock("@/hooks/use-leave-management", () => ({
@@ -20,6 +21,10 @@ vi.mock("@/hooks/use-leave-management", () => ({
   useRequestableLeaveTypes: () => ({ isLoading: false, error: null, data: mocks.types }),
   useSubmitLeaveRequest: () => ({ isPending: false, mutateAsync: mocks.submit }),
   useMyLeaveBalances: () => ({ isLoading: false, error: null, data: mocks.balances }),
+}));
+
+vi.mock("@/hooks/use-personnel-records", () => ({
+  useEmployeeForCurrentUser: () => ({ isLoading: false, error: null, data: { gender: mocks.gender } }),
 }));
 
 import { EmployeeLeaveList, EmployeeLeaveRequestForm } from "./employee-leave";
@@ -90,11 +95,12 @@ describe("EmployeeLeaveRequestForm", () => {
   beforeEach(() => {
     mocks.submit.mockReset();
     mocks.types = [
-      { id: "11111111-1111-4111-8111-111111111111", name: "Annual leave", requires_attachment: false, is_active: true },
-      { id: "22222222-2222-4222-8222-222222222222", name: "Retired leave", requires_attachment: false, is_active: false },
-      { id: "33333333-3333-4333-8333-333333333333", name: "Sick leave", requires_attachment: true, is_active: true },
+      { id: "11111111-1111-4111-8111-111111111111", name: "Annual leave", requires_attachment: false, is_active: true, eligible_gender: null },
+      { id: "22222222-2222-4222-8222-222222222222", name: "Retired leave", requires_attachment: false, is_active: false, eligible_gender: null },
+      { id: "33333333-3333-4333-8333-333333333333", name: "Sick leave", requires_attachment: true, is_active: true, eligible_gender: null },
     ];
     mocks.balances = [];
+    mocks.gender = "male";
   });
 
   it("shows the days left and blocks a request longer than what is left", async () => {
@@ -165,5 +171,15 @@ describe("EmployeeLeaveRequestForm", () => {
     expect(mocks.submit).toHaveBeenCalledWith({ draft: expect.objectContaining({ leaveTypeId: "33333333-3333-4333-8333-333333333333", reason: "" }), files: [] });
     expect(screen.getByRole("combobox", { name: /Leave type/ })).toHaveValue("");
     expect(screen.getByLabelText(/Start date/)).toHaveValue("");
+  });
+  it("lists Paternity but not Maternity for a male employee", () => {
+    mocks.types = [
+      { id: "44444444-4444-4444-8444-444444444444", name: "Maternity Leave", requires_attachment: false, is_active: true, eligible_gender: "female" },
+      { id: "55555555-5555-4555-8555-555555555555", name: "Paternity Leave", requires_attachment: false, is_active: true, eligible_gender: "male" },
+    ];
+    render(<EmployeeLeaveRequestForm />);
+    const select = screen.getByLabelText(/^Leave type/);
+    expect(within(select).getByRole("option", { name: "Paternity Leave" })).toBeInTheDocument();
+    expect(within(select).queryByRole("option", { name: "Maternity Leave" })).not.toBeInTheDocument();
   });
 });

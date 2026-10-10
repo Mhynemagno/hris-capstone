@@ -382,6 +382,8 @@ export type LeaveType = {
   days_per_year: number | null;
   /** Days beyond the allotment are allowed and deducted from retirement benefits (Paternity Leave). */
   excess_deducted_from_retirement: boolean;
+  /** Maternity Leave is for female and Paternity Leave for male employees; null means everyone. */
+  eligible_gender: "female" | "male" | null;
   created_by_user_id: string | null;
   updated_by_user_id: string | null;
   created_at: string;
