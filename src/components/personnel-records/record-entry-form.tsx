@@ -59,6 +59,11 @@ function article(noun = "") {
   return `${/^[aeiou]/.test(lower) ? "an" : "a"} ${lower}`;
 }
 
+/** Only the saved values that exist, so a new entry carries no hidden keys. */
+function kept(values: Record<string, string | null | undefined>) {
+  return Object.fromEntries(Object.entries(values).filter(([, value]) => value));
+}
+
 function text(value: FormDataEntryValue | undefined) {
   return typeof value === "string" ? value : "";
 }
@@ -85,12 +90,13 @@ export function RecordEntryForm({ employeeId, kind, onSaved, pending = false, tr
     setSuccess(null);
     setFieldErrors({});
     const form = Object.fromEntries(new FormData(formElement));
+    // Updates write every column, so values this form does not show are carried through unchanged.
     const base = kind === "serviceHistory"
-      ? { employeeId, departmentId: form.departmentId || undefined, rankId: form.rankId || undefined, unitStation: text(form.unitStation), notes: text(form.notes), startedOn: form.date, endedOn: form.expiry || undefined }
+      ? { employeeId, departmentId: form.departmentId || undefined, rankId: form.rankId || undefined, unitStation: text(form.unitStation), ...kept({ employmentTitle: serviceHistory?.employment_title }), notes: text(form.notes), startedOn: form.date, endedOn: form.expiry || undefined }
       : kind === "qualification"
-        ? { employeeId, name: form.primary, awardedOn: form.date, notes: text(form.notes) }
+        ? { employeeId, name: form.primary, ...kept({ institution: qualification?.institution, qualificationLevel: qualification?.qualification_level, fieldOfStudy: qualification?.field_of_study }), awardedOn: form.date, notes: text(form.notes) }
         : kind === "certification"
-          ? { employeeId, name: form.primary, issuedOn: form.date, notes: text(form.notes) }
+          ? { employeeId, name: form.primary, ...kept({ issuer: certification?.issuer, credentialId: certification?.credential_id, expiresOn: certification?.expires_on }), issuedOn: form.date, notes: text(form.notes) }
           : { employeeId, courseName: form.primary, provider: form.secondary, completedOn: form.date, expiresOn: form.expiry || undefined, hours: form.hours || undefined, notes: text(form.notes) };
     const schema = kind === "serviceHistory" ? serviceHistorySchema : kind === "qualification" ? qualificationSchema : kind === "certification" ? certificationSchema : trainingRecordSchema;
     const parsed = schema.safeParse(base);

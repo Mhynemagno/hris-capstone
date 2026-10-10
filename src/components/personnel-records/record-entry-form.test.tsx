@@ -154,4 +154,24 @@ describe("RecordEntryForm", () => {
     expect(screen.getByText("Select a provider.")).toBeInTheDocument();
     expect(onSaved).not.toHaveBeenCalled();
   });
+  it("keeps the fields the form does not show when a record is updated", async () => {
+    const user = userEvent.setup();
+    const employeeId = "00000000-0000-4000-8000-000000000010";
+    const onCertification = vi.fn();
+    const { unmount } = render(<RecordEntryForm certification={{ id: "00000000-0000-4000-8000-000000000020", employee_id: employeeId, name: "Criminal Investigation Course", issuer: "PNP Training Service", credential_id: "CIC-1", issued_on: "2020-01-01", expires_on: "2025-01-01", notes: null } as never} employeeId={employeeId} kind="certification" onSaved={onCertification} />);
+    await user.click(screen.getByRole("button", { name: "Save certification / training" }));
+    await waitFor(() => expect(onCertification).toHaveBeenCalledWith(expect.objectContaining({ issuer: "PNP Training Service", credentialId: "CIC-1", expiresOn: "2025-01-01" }), "00000000-0000-4000-8000-000000000020"));
+    unmount();
+
+    const onQualification = vi.fn();
+    const { unmount: unmountQualification } = render(<RecordEntryForm employeeId={employeeId} kind="qualification" onSaved={onQualification} qualification={{ id: "00000000-0000-4000-8000-000000000021", employee_id: employeeId, name: "Civil Service Professional Examination", institution: "CSC", qualification_level: "Bachelor's Degree", field_of_study: "Criminology", awarded_on: "2015-12-10", notes: null } as never} />);
+    await user.click(screen.getByRole("button", { name: "Save eligibility" }));
+    await waitFor(() => expect(onQualification).toHaveBeenCalledWith(expect.objectContaining({ institution: "CSC", qualificationLevel: "Bachelor's Degree", fieldOfStudy: "Criminology" }), "00000000-0000-4000-8000-000000000021"));
+    unmountQualification();
+
+    const onService = vi.fn();
+    render(<RecordEntryForm employeeId={employeeId} kind="serviceHistory" onSaved={onService} serviceHistory={{ id: "00000000-0000-4000-8000-000000000022", employee_id: employeeId, department_id: 3, rank_id: 7, unit_station: null, employment_title: "Desk officer", started_on: "2017-10-10", ended_on: null, notes: null }} />);
+    await user.click(screen.getByRole("button", { name: "Save service history" }));
+    await waitFor(() => expect(onService).toHaveBeenCalledWith(expect.objectContaining({ employmentTitle: "Desk officer" }), "00000000-0000-4000-8000-000000000022"));
+  });
 });
