@@ -69,6 +69,7 @@ describe("ApplicantRegistrationForm", { timeout: 20_000 }, () => {
           phone: "+639171234567",
           date_of_birth: "1998-04-12",
           full_name: "Juan Dela Cruz",
+          registration: "applicant",
         },
       }),
     }));
@@ -88,6 +89,7 @@ describe("ApplicantRegistrationForm", { timeout: 20_000 }, () => {
     await user.click(screen.getByRole("button", { name: "Register" }));
     expect(mocks.signUp.mock.calls[0]?.[0].options.data.qualifier).toBeNull();
     expect(await screen.findByRole("status")).toHaveTextContent("Check your email");
+    expect(screen.getByRole("status")).toHaveTextContent("We also emailed your applicant number. You will use it with your password to log in.");
     expect(mocks.replace).not.toHaveBeenCalled();
   });
 
