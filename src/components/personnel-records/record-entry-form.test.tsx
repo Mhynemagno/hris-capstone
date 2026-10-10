@@ -4,6 +4,10 @@ import { describe, expect, it, vi } from "vitest";
 
 import { RecordEntryForm } from "./record-entry-form";
 
+vi.mock("@/hooks/use-personnel-records", () => ({
+  useUnitStations: () => ({ data: [{ id: 1, name: "San Juan Police Station", is_active: true }], error: null }),
+}));
+
 const stamp = { created_at: "2026-01-01T00:00:00Z", updated_at: "2026-01-01T00:00:00Z" };
 vi.mock("@/hooks/use-administration", () => ({
   useDepartmentOptions: () => ({

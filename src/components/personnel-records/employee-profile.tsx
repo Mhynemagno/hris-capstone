@@ -115,7 +115,7 @@ export function EmployeeProfile({ employee, trainings, qualifications, serviceHi
           <RecordList emptyMessage="" items={byNewest(serviceHistory, (row) => row.started_on).map((row) => {
             const entryRank = row.rank_id ? ranks.data?.find((option) => option.id === row.rank_id) : undefined;
             const entryDepartment = row.department_id ? departments.data?.find((option) => option.id === row.department_id) : undefined;
-            return { id: row.id, title: row.employment_title || (entryRank ? rankLabel(entryRank) : "Service entry"), detail: [entryDepartment?.name, `${formatDay(row.started_on) ?? row.started_on} – ${row.ended_on ? formatDay(row.ended_on) ?? row.ended_on : "present"}`].filter(Boolean).join(" · ") };
+            return { id: row.id, title: [entryRank ? rankLabel(entryRank) : null, row.unit_station].filter(Boolean).join(" · ") || row.employment_title || "Service entry", detail: [entryDepartment?.name, `${formatDay(row.started_on) ?? row.started_on} – ${row.ended_on ? formatDay(row.ended_on) ?? row.ended_on : "present"}`].filter(Boolean).join(" · ") };
           })} />
         </InfoCard> : null}
         {certifications.length ? <InfoCard className="md:col-span-2" icon={Award} id="profile-certifications" title="Certification / Training">

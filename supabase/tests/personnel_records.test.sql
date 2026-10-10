@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(42);
+select extensions.plan(43);
 
 select extensions.has_table('public', 'employees', 'Employee records table exists');
 select extensions.has_table('public', 'service_history', 'Service history table exists');
@@ -305,6 +305,8 @@ select extensions.throws_ok(
     values ('00000000-0000-4000-8000-000000002301', 'GEN-001', 'Gender', 'Check', 'gender-check@example.test', '2024-01-01', 'prefer_not_to_say')$$,
   '23514', null, 'Personnel gender no longer accepts prefer not to say'
 );
+
+select extensions.has_column('public', 'service_history', 'unit_station', 'Service history records the Unit / Station');
 
 select * from extensions.finish();
 

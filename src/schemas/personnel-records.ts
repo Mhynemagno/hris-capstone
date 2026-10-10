@@ -141,6 +141,7 @@ export const serviceHistorySchema = z
     employeeId: uuidSchema,
     departmentId: z.coerce.number({ error: "Choose a unit / section." }).int().positive("Choose a unit / section."),
     rankId: z.coerce.number({ error: "Choose a rank." }).int().positive("Choose a rank."),
+    unitStation: optionalText(160),
     employmentTitle: optionalText(160),
     startedOn: isoDateSchema,
     endedOn: optionalDate,

@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { PNP_CERTIFICATIONS, PNP_QUALIFICATIONS, PNP_TRAINING_PROVIDERS, PNP_TRAININGS, withSavedValue } from "@/lib/pnp-catalogue";
-import type { Qualification, TrainingRecord } from "@/lib/types/database";
+import { useUnitStations } from "@/hooks/use-personnel-records";
+import type { Certification, Qualification, ServiceHistory, TrainingRecord } from "@/lib/types/database";
 import type { PersonnelKind } from "@/queries/personnel-records";
 import { certificationSchema, qualificationSchema, serviceHistorySchema, trainingRecordSchema } from "@/schemas/personnel-records";
 
@@ -35,7 +36,7 @@ const errorFieldFor: Record<string, string> = {
   notes: "notes", provider: "secondary",
   startedOn: "date", awardedOn: "date", issuedOn: "date", completedOn: "date",
   endedOn: "expiry", expiresOn: "expiry",
-  departmentId: "departmentId", rankId: "rankId", hours: "hours",
+  departmentId: "departmentId", rankId: "rankId", hours: "hours", unitStation: "unitStation",
 };
 
 type RecordEntryFormProps = {
@@ -46,6 +47,10 @@ type RecordEntryFormProps = {
   training?: TrainingRecord;
   /** Optional existing qualification to edit. */
   qualification?: Qualification;
+  /** Optional existing certification / training to edit. */
+  certification?: Certification;
+  /** Optional existing service history entry to edit. */
+  serviceHistory?: ServiceHistory;
 };
 
 /** "an Eligibility", "a Certification / Training" — for "Select …" prompts. */
@@ -58,20 +63,20 @@ function text(value: FormDataEntryValue | undefined) {
   return typeof value === "string" ? value : "";
 }
 
-export function RecordEntryForm({ employeeId, kind, onSaved, pending = false, training, qualification }: RecordEntryFormProps) {
+export function RecordEntryForm({ employeeId, kind, onSaved, pending = false, training, qualification, certification, serviceHistory }: RecordEntryFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [success, setSuccess] = useState<string | null>(null);
-  const [departmentId, setDepartmentId] = useState("");
-  const [rankId, setRankId] = useState("");
-  const [startDate, setStartDate] = useState(training?.completed_on ?? qualification?.awarded_on ?? "");
+  const [departmentId, setDepartmentId] = useState(serviceHistory?.department_id ? String(serviceHistory.department_id) : "");
+  const [rankId, setRankId] = useState(serviceHistory?.rank_id ? String(serviceHistory.rank_id) : "");
+  const [startDate, setStartDate] = useState(training?.completed_on ?? qualification?.awarded_on ?? certification?.issued_on ?? serviceHistory?.started_on ?? "");
+  const unitStations = useUnitStations();
   const config = fields[kind];
   const kindChoices = choices[kind];
-  const savedPrimary = training?.course_name ?? qualification?.name;
+  const savedPrimary = training?.course_name ?? qualification?.name ?? certification?.name;
   const savedSecondary = training?.provider;
-  const isTrainingEdit = kind === "training" && Boolean(training);
-  const isQualificationEdit = kind === "qualification" && Boolean(qualification);
-  const editId = isTrainingEdit ? training?.id : isQualificationEdit ? qualification?.id : undefined;
+  const editing = kind === "training" ? training : kind === "qualification" ? qualification : kind === "certification" ? certification : serviceHistory;
+  const editId = editing?.id;
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -81,7 +86,7 @@ export function RecordEntryForm({ employeeId, kind, onSaved, pending = false, tr
     setFieldErrors({});
     const form = Object.fromEntries(new FormData(formElement));
     const base = kind === "serviceHistory"
-      ? { employeeId, departmentId: form.departmentId || undefined, rankId: form.rankId || undefined, notes: text(form.notes), startedOn: form.date, endedOn: form.expiry || undefined }
+      ? { employeeId, departmentId: form.departmentId || undefined, rankId: form.rankId || undefined, unitStation: text(form.unitStation), notes: text(form.notes), startedOn: form.date, endedOn: form.expiry || undefined }
       : kind === "qualification"
         ? { employeeId, name: form.primary, awardedOn: form.date, notes: text(form.notes) }
         : kind === "certification"
@@ -124,6 +129,7 @@ export function RecordEntryForm({ employeeId, kind, onSaved, pending = false, tr
   return (
     <form className="mt-4 grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-2" noValidate onSubmit={submit}>
       {isServiceHistory ? (
+        <>
         <DepartmentRankFields
           departmentError={e.departmentId}
           departmentId={departmentId}
@@ -137,7 +143,17 @@ export function RecordEntryForm({ employeeId, kind, onSaved, pending = false, tr
           rankId={rankId}
           rankName="rankId"
           required
+          savedDepartmentId={serviceHistory?.department_id}
+          savedRankId={serviceHistory?.rank_id}
         />
+          <FormField error={e.unitStation} htmlFor={`${kind}-unit-station`} label="Unit / Station">
+            <NativeSelect key={unitStations.data ? "catalogue" : "loading"} defaultValue={serviceHistory?.unit_station ?? ""} id={`${kind}-unit-station`} name="unitStation">
+              <option value="">Select a unit / station</option>
+              {serviceHistory?.unit_station && !unitStations.data?.some((unit) => unit.name === serviceHistory.unit_station) ? <option value={serviceHistory.unit_station}>{serviceHistory.unit_station}</option> : null}
+              {unitStations.data?.map((unit) => <option key={unit.id} value={unit.name}>{unit.name}</option>)}
+            </NativeSelect>
+          </FormField>
+        </>
       ) : null}
       {config.primary ? (
         <FormField error={e.primary} htmlFor={`${kind}-primary`} label={config.primary} required>
@@ -164,7 +180,7 @@ export function RecordEntryForm({ employeeId, kind, onSaved, pending = false, tr
       </FormField>
       {config.expiry ? (
         <FormField error={e.expiry} htmlFor={`${kind}-expiry`} label={config.expiry}>
-          <Input className="h-11" defaultValue={training?.expires_on ?? ""} id={`${kind}-expiry`} min={startDate || undefined} name="expiry" type="date" />
+          <Input className="h-11" defaultValue={training?.expires_on ?? serviceHistory?.ended_on ?? ""} id={`${kind}-expiry`} min={startDate || undefined} name="expiry" type="date" />
         </FormField>
       ) : null}
       {kind === "training" ? (
@@ -174,7 +190,7 @@ export function RecordEntryForm({ employeeId, kind, onSaved, pending = false, tr
       ) : null}
       <div className="sm:col-span-2">
         <FormField error={e.notes} htmlFor={`${kind}-notes`} label="Remarks">
-          <Textarea defaultValue={training?.notes ?? qualification?.notes ?? ""} id={`${kind}-notes`} maxLength={2000} name="notes" />
+          <Textarea defaultValue={training?.notes ?? qualification?.notes ?? certification?.notes ?? serviceHistory?.notes ?? ""} id={`${kind}-notes`} maxLength={2000} name="notes" />
         </FormField>
       </div>
       {error ? <div className="sm:col-span-2"><ErrorState message={error} /></div> : null}

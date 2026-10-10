@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   deleteEntry: vi.fn(),
+  saveEntry: vi.fn(),
   impact: vi.fn(),
   useEmployee: vi.fn(),
   useEntries: vi.fn(),
@@ -28,11 +29,12 @@ vi.mock("@/hooks/use-personnel-records", () => ({
   useRemoveMyEmployeeProfilePhoto: () => ({ isPending: false, mutateAsync: vi.fn() }),
   useReplaceMyEmployeeProfilePhoto: () => ({ isPending: false, mutateAsync: vi.fn() }),
   usePersonnelEntries: mocks.useEntries,
-  useSavePersonnelEntry: () => ({ isPending: false, mutateAsync: vi.fn() }),
+  useSavePersonnelEntry: () => ({ isPending: false, mutateAsync: mocks.saveEntry }),
+  useUnitStations: () => ({ data: [{ id: 1, name: "San Juan Police Station", is_active: true }], error: null }),
 }));
 vi.mock("@/hooks/use-administration", () => ({
   useDepartmentOptions: () => ({ data: [], isLoading: false, error: null }),
-  useRankOptions: () => ({ data: [], isLoading: false, error: null }),
+  useRankOptions: () => ({ data: [{ id: 9, name: "Police Corporal", code: "PCPL", sort_order: 3, is_active: true, created_at: "2026-01-01T00:00:00Z", updated_at: "2026-01-01T00:00:00Z" }], isLoading: false, error: null }),
 }));
 vi.mock("./employee-editor", () => ({ EmployeeEditor: () => <div>Employee editor</div> }));
 
@@ -62,32 +64,27 @@ describe("EmployeeRecordDetail", () => {
     }));
   });
 
-  it("requires confirmation before deleting a certification / training entry", async () => {
+  it("updates a certification / training instead of deleting it", async () => {
     const user = userEvent.setup();
     mocks.search = "tab=certifications&mode=edit";
+    mocks.saveEntry.mockResolvedValue({});
     render(<EmployeeRecordDetail employeeId={employeeId} />);
 
-    await user.click(screen.getByRole("button", { name: "Delete certification / training Leadership and Management Course" }));
-    expect(await screen.findByRole("alertdialog")).toHaveTextContent("Delete Leadership and Management Course?");
-    await user.click(screen.getByRole("button", { name: "Delete certification / training" }));
-
-    await waitFor(() => expect(mocks.deleteEntry).toHaveBeenCalledWith({ entityId: "00000000-0000-4000-8000-000000000020", force: false }));
-    expect(await screen.findByRole("status")).toHaveTextContent("The certification / training was deleted successfully.");
+    expect(screen.queryByRole("button", { name: /^Delete/ })).not.toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: "Update certification / training Leadership and Management Course" }));
+    expect(screen.getAllByLabelText(/^Certification \/ Training/, { selector: "select" })[0]).toHaveValue("Leadership and Management Course");
+    await user.click(screen.getByRole("button", { name: "Save certification / training" }));
+    await waitFor(() => expect(mocks.saveEntry).toHaveBeenCalledWith(expect.objectContaining({ id: "00000000-0000-4000-8000-000000000020" })));
   });
 
-  it("offers a force delete once the blocking records are acknowledged", async () => {
-    const user = userEvent.setup();
-    mocks.search = "tab=certifications&mode=edit";
-    mocks.impact.mockReturnValue({ entityType: "certification", entityId: "00000000-0000-4000-8000-000000000020", label: "Leadership and Management Course", canDelete: false, canForce: true, blockers: [{ label: "promotion evidence", count: 1 }], reasons: [], removes: [], alternative: null });
+  it("shows the rank and assignment of each service history entry", async () => {
+    mocks.search = "tab=service-history";
+    mocks.useEntries.mockImplementation((kind: string) => ({
+      data: kind === "serviceHistory" ? [{ id: "00000000-0000-4000-8000-000000000030", employee_id: employeeId, department_id: null, rank_id: 9, unit_station: "San Juan Police Station", employment_title: null, started_on: "2018-10-10", ended_on: "2019-10-10", notes: null }] : [],
+      isLoading: false,
+    }));
     render(<EmployeeRecordDetail employeeId={employeeId} />);
-
-    await user.click(screen.getByRole("button", { name: "Delete certification / training Leadership and Management Course" }));
-    const force = await screen.findByRole("button", { name: "Force delete" });
-    expect(force).toBeDisabled();
-    await user.click(screen.getByRole("checkbox", { name: /Force delete anyway/ }));
-    await user.click(force);
-
-    await waitFor(() => expect(mocks.deleteEntry).toHaveBeenCalledWith({ entityId: "00000000-0000-4000-8000-000000000020", force: true }));
+    expect(within(screen.getByRole("tabpanel")).getByText("PCPL — Police Corporal · San Juan Police Station")).toBeVisible();
   });
 
   it("shows only the section named in the URL and switches tabs through the URL", async () => {

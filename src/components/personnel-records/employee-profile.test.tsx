@@ -115,7 +115,7 @@ describe("EmployeeProfile", () => {
     expect(screen.queryByRole("region", { name: "Service history" })).not.toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Certification / Training" })).not.toBeInTheDocument();
 
-    rerender(<EmployeeProfile certifications={[{ id: "c1", employee_id: employee.id, name: "First Aid", issuer: "Red Cross", credential_id: null, issued_on: "2025-02-01", expires_on: null, notes: null }]} employee={employee} qualifications={[]} serviceHistory={[{ id: "s1", employee_id: employee.id, department_id: 3, rank_id: 9, employment_title: null, started_on: "2024-01-01", ended_on: null, notes: null }]} trainings={[]} />);
+    rerender(<EmployeeProfile certifications={[{ id: "c1", employee_id: employee.id, name: "First Aid", issuer: "Red Cross", credential_id: null, issued_on: "2025-02-01", expires_on: null, notes: null }]} employee={employee} qualifications={[]} serviceHistory={[{ id: "s1", employee_id: employee.id, department_id: 3, rank_id: 9, unit_station: null, employment_title: null, started_on: "2024-01-01", ended_on: null, notes: null }]} trainings={[]} />);
 
     expect(screen.getByRole("region", { name: "Eligibility" })).toHaveTextContent("No eligibility recorded.");
     expect(screen.getByRole("region", { name: "Service history" })).toHaveTextContent("PCPT — Police Captain");
@@ -127,5 +127,9 @@ describe("EmployeeProfile", () => {
   it("hides eligibility when it is not provided (administrator view)", () => {
     render(<EmployeeProfile employee={employee} trainings={[]} />);
     expect(screen.queryByRole("region", { name: "Eligibility" })).not.toBeInTheDocument();
+  });
+  it("shows the rank held and the Unit / Station for each service history entry", () => {
+    render(<EmployeeProfile employee={employee} serviceHistory={[{ id: "sh1", employee_id: employee.id, department_id: null, rank_id: 9, unit_station: "San Juan Police Station", employment_title: null, started_on: "2018-10-10", ended_on: "2019-10-10", notes: null }]} trainings={[]} />);
+    expect(screen.getByText("PCPT — Police Captain · San Juan Police Station")).toBeInTheDocument();
   });
 });

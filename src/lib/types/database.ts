@@ -169,6 +169,7 @@ export type ServiceHistory = {
   employee_id: string;
   department_id: number | null;
   rank_id: number | null;
+  unit_station: string | null;
   employment_title: string | null;
   started_on: string;
   ended_on: string | null;
