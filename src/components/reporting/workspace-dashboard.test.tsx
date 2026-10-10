@@ -27,7 +27,7 @@ vi.mock("@/hooks/use-reporting", () => ({
 }));
 vi.mock("@/hooks/use-workspace-counts", () => ({ useWorkspaceCount: (key: string) => ({ data: key === "applicationsAwaitingReview" ? 3 : 0, isError: false }) }));
 vi.mock("@/hooks/use-recruitment", () => ({
-  useRecentApplications: () => ({ isLoading: false, error: null, data: [{ id: "a1", status: "Application Submission", submitted_at: "2026-10-07T00:00:00Z", applicant_name: "Aplica Candidate", job_title: "Patrol 2026" }] }),
+  useRecentApplications: () => ({ isLoading: false, error: null, data: [{ id: "a1", status: "Application Submission", submitted_at: "2026-10-07T00:00:00Z", applicant_name: "Aplica Candidate", job_title: "Patrol 2026" }, { id: "a2", status: "Not Selected", submitted_at: "2026-09-25T00:00:00Z", applicant_name: "Jason Dy", job_title: "SAN JUAN CITY RECRUITMENT - CY 2026" }] }),
 }));
 vi.mock("@/hooks/use-leave-management", () => ({ useHrLeaveRequests: () => ({ isLoading: false, error: null, data: { rows: [], count: 0 } }) }));
 vi.mock("@/hooks/use-attendance-integration", () => ({ useHrAttendanceLogs: () => ({ isLoading: false, error: null, data: { rows: [], count: 0 } }) }));
@@ -57,6 +57,15 @@ describe("WorkspaceDashboard", () => {
   it("keeps quick actions off the management dashboard", () => {
     render(<WorkspaceDashboard role="management" />);
     expect(screen.queryByRole("region", { name: "Quick actions" })).not.toBeInTheDocument();
+  });
+
+  it("lays out each recent application as name and status, then job, then date", () => {
+    render(<WorkspaceDashboard role="hr_personnel" />);
+    const recent = screen.getByRole("region", { name: "Recent applications" });
+    const row = within(recent).getByRole("link", { name: "Jason Dy" }).closest("li")!;
+    const lines = [...row.children].map((child) => child.textContent);
+    expect(lines).toEqual(["Jason DyDisqualified", "SAN JUAN CITY RECRUITMENT - CY 2026", "September 25, 2026"]);
+    expect(within(recent).queryByText("Not Selected")).not.toBeInTheDocument();
   });
 
   it("keeps HR dashboard data visible by default and moves review queues to their own tab", async () => {

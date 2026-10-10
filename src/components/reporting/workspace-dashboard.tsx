@@ -5,6 +5,7 @@ import { BriefcaseBusiness, CalendarCheck, CalendarClock, ChartLine, ChevronDown
 import type { ReactNode } from "react";
 
 import { ApplicationStageBadge } from "@/components/recruitment/application-stage-badge";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -21,8 +22,10 @@ import { useHrDashboard, useManagementDashboard } from "@/hooks/use-reporting";
 import { attendanceStatusLabel } from "@/lib/attendance-status";
 import { formatDate } from "@/lib/format-date";
 import { PIPELINE_STAGES } from "@/lib/recruitment/application-stages";
+import { applicationStatusLabel } from "@/lib/recruitment/stage-results";
 import { resolvePeriod } from "@/lib/workspace/date-range";
 import { useListParams } from "@/lib/workspace/list-params";
+import type { ApplicationStatus } from "@/schemas/recruitment";
 import type { DashboardSummary } from "@/schemas/reporting";
 
 import { HrDashboardAttention } from "./hr-dashboard-attention";
@@ -61,6 +64,13 @@ function QuickActions({ actions }: { actions: { href: string; icon: LucideIcon; 
       </ul>
     </section>
   );
+}
+
+/** Open applications show their stage; closed ones use the client's words (Candidate, Disqualified, Hired). */
+function RecentApplicationBadge({ status }: { status: ApplicationStatus }) {
+  if (status !== "Shortlisted" && status !== "Not Selected" && status !== "Hired") return <ApplicationStageBadge status={status} />;
+  const label = applicationStatusLabel(status, null);
+  return <Badge className="shrink-0" variant={label.variant}>{label.label}</Badge>;
 }
 
 function PeriodPicker({ preset, startsOn, endsOn, onChange }: { preset: string; startsOn: string; endsOn: string; onChange: (patch: { period?: string; from?: string; to?: string }) => void }) {
@@ -242,11 +252,13 @@ function DashboardBody({ data, isHr, recent }: { data: DashboardSummary; isHr: b
               {recent.isLoading ? <Skeleton className="h-32 w-full" /> : recent.error ? <ErrorState message={recent.error.message} /> : recent.data?.length ? (
                 <ul className="-my-2 divide-y">
                   {recent.data.map((application) => (
-                    <li className="flex flex-wrap items-center gap-x-4 gap-y-1 py-2.5" key={application.id}>
-                      <Link className="min-w-40 flex-1 font-medium hover:underline" href={`/hr/applications/${application.id}`}>{application.applicant_name ?? `Application ${application.id.slice(0, 8)}`}</Link>
-                      <span className="min-w-32 text-muted-foreground">{application.job_title ?? "—"}</span>
-                      <ApplicationStageBadge status={application.status} />
-                      <span className="w-40 text-right text-sm text-muted-foreground tabular-nums">{formatDate(application.submitted_at)}</span>
+                    <li className="space-y-1 py-3" key={application.id}>
+                      <div className="flex items-start justify-between gap-3">
+                        <Link className="min-w-0 font-medium break-words hover:underline" href={`/hr/applications/${application.id}`}>{application.applicant_name ?? `Application ${application.id.slice(0, 8)}`}</Link>
+                        <RecentApplicationBadge status={application.status} />
+                      </div>
+                      <p className="truncate text-sm text-muted-foreground" title={application.job_title ?? undefined}>{application.job_title ?? "—"}</p>
+                      <p className="text-sm text-muted-foreground tabular-nums">{formatDate(application.submitted_at)}</p>
                     </li>
                   ))}
                 </ul>
