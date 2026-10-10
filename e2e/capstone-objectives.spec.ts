@@ -90,15 +90,15 @@ function uniqueDeploymentDay() {
 }
 
 /** HR creates a deployment for the demo employee through the UI at the given (unique) location. */
-async function createDeployment(page: Page, location: string) {
+async function createDeployment(page: Page, location: string, { startDay = uniqueDeploymentDay(), status = "ongoing" }: { startDay?: number; status?: string } = {}) {
   await page.goto("/hr/deployments/new");
   await chooseComboboxOption(page, /^Employee/, "0-00001", /Demo Employee/);
   await page.getByLabel(/^Location/).fill(location);
   await page.getByLabel(/^Remarks/).fill("Initial assignment");
-  await page.getByLabel(/^Start date/).fill(isoDate(uniqueDeploymentDay()));
+  await page.getByLabel(/^Start date/).fill(isoDate(startDay));
   await page.getByLabel(/^Deployment type/).selectOption("Public Assembly");
   await page.getByLabel(/^Event \/ Operation/).selectOption("Rally");
-  await page.getByLabel(/^Status/).selectOption("ongoing");
+  await page.getByLabel(/^Status/).selectOption(status);
   await page.getByRole("button", { name: "Save deployment" }).click();
   await expect(page).toHaveURL(/\/hr\/deployments\/[0-9a-f-]{36}$/, { timeout: 30_000 });
 }
@@ -321,12 +321,15 @@ test.describe("Objective 3: deployment tracking", () => {
     await expect(page.getByText("Remarks are required.").first()).toBeVisible();
 
     await createDeployment(page, role);
+    await expect(page.getByText("Deployment created by").first()).toBeVisible();
+    await expect(page.getByRole("textbox")).toHaveCount(0);
+    await page.getByRole("link", { name: "Update" }).click();
+    await expect(page).toHaveURL(/\/hr\/deployments\/[0-9a-f-]{36}\/edit$/);
     await page.getByLabel(/^Remarks/).fill(`Oplan Ligtas ${runId}`);
     await page.getByRole("button", { name: "Save deployment" }).click();
-    await expect(page.getByRole("status").filter({ hasText: "Deployment saved." })).toBeVisible();
-    await page.reload();
-    await expect(page.getByLabel(/^Remarks/)).toHaveValue(`Oplan Ligtas ${runId}`);
-    await expect(page.getByText(/History/).first()).toBeVisible();
+    await expect(page).toHaveURL(/\/hr\/deployments\/[0-9a-f-]{36}$/, { timeout: 30_000 });
+    await expect(page.getByText(`Oplan Ligtas ${runId}`)).toBeVisible();
+    await expect(page.getByText("Details updated by").first()).toBeVisible();
 
     await page.goto("/hr/deployments");
     await expect(page.getByRole("link", { name: new RegExp(`View details for ${role}`) })).toBeVisible({ timeout: 15_000 });
@@ -528,7 +531,8 @@ test.describe("Objective 8: automated reports", () => {
   test("HR generates, filters, and downloads reports; management reads them", async ({ page }) => {
     const role = `E2E Report ${runId}`;
     await signIn(page, HR.email, HR.home);
-    await createDeployment(page, role);
+    // Dated today so it falls in the report's default 30-day range; completed so it never double-books.
+    await createDeployment(page, role, { startDay: 0, status: "completed" });
 
     await page.goto("/reports");
     for (const report of ["applicant tracking", "hiring decisions", "employee performance", "deployments", "attendance leave", "promotion training needs"]) {

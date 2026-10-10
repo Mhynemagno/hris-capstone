@@ -7,7 +7,9 @@ function throwIfError(error: { message: string } | null) { if (error) throw new 
 
 export function deploymentFilters(input: unknown = {}) { return deploymentFiltersSchema.parse(input); }
 
-export type DeploymentWithHistory = Deployment & { deployment_history: DeploymentHistory[] };
+export type DeploymentHistoryEntry = DeploymentHistory & { actor: { full_name: string | null } | null };
+export type DeploymentEmployee = { id: string; employee_number: string; first_name: string; middle_name: string | null; last_name: string };
+export type DeploymentWithHistory = Deployment & { deployment_history: DeploymentHistoryEntry[]; employee: DeploymentEmployee | null };
 
 export async function listHrDeployments(input: Partial<DeploymentFilters> = {}): Promise<PaginatedResult<Deployment, DeploymentFilters>> {
   const filters = deploymentFilters(input); const from = (filters.page - 1) * filters.pageSize;
@@ -32,7 +34,11 @@ export async function listMyDeployments(input: Partial<DeploymentFilters> = {}):
 
 export async function getDeployment(deploymentId: string) {
   const id = uuidSchema.parse(deploymentId);
-  const { data, error } = await createBrowserSupabaseClient().from("deployments").select("*, deployment_history(*)").eq("id", id).maybeSingle();
+  const { data, error } = await createBrowserSupabaseClient()
+    .from("deployments")
+    .select("*, employee:employees(id, employee_number, first_name, middle_name, last_name), deployment_history(*, actor:profiles(full_name))")
+    .eq("id", id)
+    .maybeSingle();
   throwIfError(error);
   if (!data) return null;
   const deployment = data as DeploymentWithHistory;
