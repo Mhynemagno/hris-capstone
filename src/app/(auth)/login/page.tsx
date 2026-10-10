@@ -56,8 +56,8 @@ function BrandPanel() {
   );
 }
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ as?: string; error?: string; next?: string }> }) {
-  const { as, error, next } = await searchParams;
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ as?: string; error?: string; message?: string; next?: string }> }) {
+  const { as, error, message, next } = await searchParams;
   const nextPath = getSafeNextPath(next);
   const mode = loginMode(as, nextPath);
   const errorMessage = error === "invalid_credentials"
@@ -67,6 +67,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     : error === "invitation_expired"
       ? "This confirmation or invitation link is invalid or has expired. Request a new link and try again."
       : undefined;
+  const notice = message === "email_confirmed" ? "Email confirmed. Please log in." : undefined;
   const registerHref = nextPath === "/" ? "/applicant/register" : `/applicant/register?next=${encodeURIComponent(nextPath)}`;
   const title = mode === "employee" ? "Employee login" : mode === "applicant" ? "Applicant login" : "Login";
   const eyebrow = mode === "applicant" ? "PNP San Juan Recruitment" : "San Juan City Police HRIS";
@@ -82,7 +83,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             </div>
             <p className="mt-6 text-sm font-semibold tracking-[0.18em] text-primary uppercase lg:mt-0">{eyebrow}</p>
             <h1 className="mt-2 text-3xl font-bold tracking-tight">{title}</h1>
-            <div className="mt-8"><LoginForm error={errorMessage} mode={mode} nextPath={nextPath} /></div>
+            <div className="mt-8"><LoginForm error={errorMessage} mode={mode} nextPath={nextPath} notice={notice} /></div>
             {mode === "employee" ? (
               <p className="mt-6 text-center text-sm text-muted-foreground">
                 Accounts are created by your administrator.{" "}

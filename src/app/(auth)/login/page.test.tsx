@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import LoginPage from "./page";
 
-async function renderLogin(params: { as?: string; error?: string; next?: string } = {}) {
+async function renderLogin(params: { as?: string; error?: string; message?: string; next?: string } = {}) {
   render(await LoginPage({ searchParams: Promise.resolve(params) }));
 }
 
@@ -43,5 +43,10 @@ describe("LoginPage", () => {
   it("explains a disabled account", async () => {
     await renderLogin({ error: "account_disabled" });
     expect(screen.getByText(/This account can no longer sign in/)).toBeVisible();
+  });
+  it("confirms a verified email instead of showing an error", async () => {
+    await renderLogin({ message: "email_confirmed" });
+    expect(screen.getByRole("status")).toHaveTextContent("Email confirmed. Please log in.");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 });
