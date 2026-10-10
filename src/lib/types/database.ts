@@ -196,6 +196,8 @@ export type Certification = {
   issued_on: string;
   expires_on: string | null;
   notes: string | null;
+  /** Set by the database from the course name; drives the performance rubric. */
+  category?: "mandatory_course" | "specialized_training" | null;
 };
 
 export type TrainingRecord = {
@@ -505,6 +507,14 @@ export type PerformanceRating = {
   review_period_starts_on: string;
   review_period_ends_on: string;
   notes: string | null;
+  /** Rubric breakdown; null on ratings recorded before the rubric (2026-10-10). */
+  years_of_service?: number | null;
+  service_points?: number | null;
+  mandatory_points?: number | null;
+  specialized_points?: number | null;
+  total_points?: number | null;
+  grade_equivalent?: string | null;
+  descriptive_rating?: string | null;
   created_by_user_id: string | null;
   updated_by_user_id: string | null;
   created_at: string;

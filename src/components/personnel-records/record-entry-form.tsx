@@ -8,7 +8,7 @@ import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
-import { PNP_CERTIFICATIONS, PNP_QUALIFICATIONS, PNP_TRAINING_PROVIDERS, PNP_TRAININGS, withSavedValue } from "@/lib/pnp-catalogue";
+import { PNP_CERTIFICATION_GROUPS, PNP_CERTIFICATIONS, PNP_QUALIFICATIONS, PNP_TRAINING_PROVIDERS, PNP_TRAININGS, withSavedValue } from "@/lib/pnp-catalogue";
 import { useUnitStations } from "@/hooks/use-personnel-records";
 import type { Certification, Qualification, ServiceHistory, TrainingRecord } from "@/lib/types/database";
 import type { PersonnelKind } from "@/queries/personnel-records";
@@ -166,7 +166,16 @@ export function RecordEntryForm({ employeeId, kind, onSaved, pending = false, tr
           {kindChoices ? (
             <NativeSelect defaultValue={savedPrimary ?? ""} id={`${kind}-primary`} name="primary" required>
               <option value="">Select {article(config.primary)}</option>
-              {withSavedValue(kindChoices.primary, savedPrimary).map((choice) => <option key={choice} value={choice}>{choice}</option>)}
+              {kind === "certification" ? (
+                <>
+                  {withSavedValue(kindChoices.primary, savedPrimary).filter((choice) => !(PNP_CERTIFICATIONS as readonly string[]).includes(choice)).map((choice) => <option key={choice} value={choice}>{choice}</option>)}
+                  {PNP_CERTIFICATION_GROUPS.map((group) => (
+                    <optgroup key={group.label} label={group.label}>
+                      {group.choices.map((choice) => <option key={choice} value={choice}>{choice}</option>)}
+                    </optgroup>
+                  ))}
+                </>
+              ) : withSavedValue(kindChoices.primary, savedPrimary).map((choice) => <option key={choice} value={choice}>{choice}</option>)}
             </NativeSelect>
           ) : (
             <Input className="h-11" id={`${kind}-primary`} name="primary" required />

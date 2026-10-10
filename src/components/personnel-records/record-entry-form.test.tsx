@@ -100,20 +100,26 @@ describe("RecordEntryForm", () => {
 
     expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual([
       "Select a certification / training",
-      "Criminal Investigation Course",
-      "Police Intelligence Operations Course",
-      "Drug Enforcement Operations Course",
-      "Leadership and Management Course",
-      "Senior Police Leadership and Command Course",
+      "Public Safety Basic Recruit Course (PSBRC)",
+      "Public Safety Junior Leadership Course (PSJLC)",
+      "Public Safety Senior Leadership Course (PSSLC)",
+      "Public Safety Officers Candidate Course (PSOCC)",
+      "Public Safety Officers Basic Course (PSOBC)",
+      "Public Safety Officers Advance Course (PSOAC)",
+      "Criminal Investigation Course (CIC) / SOCO",
+      "Special Weapons and Tactics (SWAT) Course",
+      "Special Action Force (SAF) Commando Course",
+      "Traffic Management / Tactical Driving Course",
+      "Cybercrime Investigation Seminar",
     ]);
     expect(screen.queryByLabelText(/issuer/i)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/expiry date/i)).not.toBeInTheDocument();
-    await user.selectOptions(screen.getByLabelText(/^certification \/ training/i), "Criminal Investigation Course");
+    await user.selectOptions(screen.getByLabelText(/^certification \/ training/i), "Criminal Investigation Course (CIC) / SOCO");
     await user.type(screen.getByLabelText(/completion date/i), "2025-05-01");
     await user.click(screen.getByRole("button", { name: "Add certification / training" }));
 
     await waitFor(() => expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({
-      name: "Criminal Investigation Course",
+      name: "Criminal Investigation Course (CIC) / SOCO",
       issuedOn: "2025-05-01",
     }), undefined));
   });
@@ -173,5 +179,12 @@ describe("RecordEntryForm", () => {
     render(<RecordEntryForm employeeId={employeeId} kind="serviceHistory" onSaved={onService} serviceHistory={{ id: "00000000-0000-4000-8000-000000000022", employee_id: employeeId, department_id: 3, rank_id: 7, unit_station: null, employment_title: "Desk officer", started_on: "2017-10-10", ended_on: null, notes: null }} />);
     await user.click(screen.getByRole("button", { name: "Save service history" }));
     await waitFor(() => expect(onService).toHaveBeenCalledWith(expect.objectContaining({ employmentTitle: "Desk officer" }), "00000000-0000-4000-8000-000000000022"));
+  });
+  it("groups Certification / Training choices into Mandatory Course and Specialized Training", () => {
+    const { container } = render(<RecordEntryForm employeeId="00000000-0000-4000-8000-000000000010" kind="certification" onSaved={() => undefined} />);
+    const groups = [...container.querySelectorAll("#certification-primary optgroup")].map((group) => group.getAttribute("label"));
+    expect(groups).toEqual(["Mandatory Course", "Specialized Training"]);
+    expect(screen.getByRole("option", { name: "Public Safety Basic Recruit Course (PSBRC)" }).parentElement).toHaveAttribute("label", "Mandatory Course");
+    expect(screen.getByRole("option", { name: "Cybercrime Investigation Seminar" }).parentElement).toHaveAttribute("label", "Specialized Training");
   });
 });

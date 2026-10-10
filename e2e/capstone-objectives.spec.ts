@@ -148,7 +148,7 @@ test.describe("Objective 1: centralized personnel records", () => {
     await expect(page.getByRole("status").filter({ hasText: "Eligibility added." })).toBeVisible();
 
     await sections.getByRole("tab", { name: "Certification / Training" }).click();
-    await page.locator("#certification-primary").selectOption("Leadership and Management Course");
+    await page.locator("#certification-primary").selectOption("Public Safety Basic Recruit Course (PSBRC)");
     await page.getByLabel(/^Completion date/).fill("2019-08-01");
     await page.getByRole("button", { name: "Add certification / training" }).click();
     await expect(page.getByRole("status").filter({ hasText: "Certification / Training added." })).toBeVisible();
@@ -346,8 +346,8 @@ test.describe("Objective 3: deployment tracking", () => {
 });
 
 test.describe("Objective 4: promotion eligibility tracker", () => {
-  test("HR evaluates service years, a performance rating, and a training credential", async ({ page }) => {
-    const credential = "Criminal Investigation Course";
+  test("HR evaluates service years, a rubric performance evaluation, and a training credential", async ({ page }) => {
+    const credential = "Criminal Investigation Course (CIC) / SOCO";
     await signIn(page, HR.email, HR.home);
     const employee = await createEmployee(page, "PROMO", "2014-01-06");
     // Records are added in edit mode; viewing a record is read-only.
@@ -381,12 +381,15 @@ test.describe("Objective 4: promotion eligibility tracker", () => {
     await page.goto(`/hr/employees/${employee.id}`);
     await page.getByRole("link", { name: "Promotion review" }).click();
     await expect(page).toHaveURL(new RegExp(`/hr/promotions/${employee.id}$`));
-    await page.getByLabel(/^Overall rating/).selectOption({ label: "4 – Very satisfactory" });
+    // The rubric: 12+ years of service (45) + one specialized training (10) = 55, graded 3.00 Poor.
+    const rubric = page.getByRole("region", { name: "Performance evaluation" });
+    await expect(rubric.getByRole("row", { name: /Specialized unit training/ })).toContainText("10 / 20");
     await page.getByLabel(/^Review period start/).fill("2025-01-01");
     await page.getByLabel(/^Review period end/).fill("2025-12-31");
     await page.locator("#rating-notes").fill(`Rated by the objective tests ${runId}`);
-    await page.getByRole("button", { name: "Save rating" }).click();
-    await expect(page.getByRole("status").filter({ hasText: "Performance rating saved." })).toBeVisible();
+    await page.getByRole("button", { name: "Save evaluation" }).click();
+    await expect(page.getByRole("status").filter({ hasText: "Performance evaluation saved." })).toBeVisible();
+    await expect(page.getByText(/55 \/ 100 · 3\.00 Poor/).first()).toBeVisible();
 
     const criterion = page.locator("#criterion option", { hasText: "PCPL" }).first();
     await page.locator("#criterion").selectOption(await criterion.getAttribute("value") as string);
