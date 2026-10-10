@@ -47,12 +47,18 @@ export function completedYears(startedOn: string, asOf: string) {
   return Math.max(years, 0);
 }
 
-type RubricCertification = { name: string; category: CourseCategory | null; expires_on: string | null };
+type RubricCertification = { name: string; category: CourseCategory | null; expires_on: string | null; issued_on?: string | null };
+
+/** One course under its old and new names counts once (mirrors private.certification_course_key). */
+function courseKey(name: string) {
+  const key = name.trim().toLowerCase();
+  return key === "criminal investigation course" ? "criminal investigation course (cic) / soco" : key;
+}
 
 export function computePerformanceRubric({ employmentStartedOn, asOf, certifications }: { employmentStartedOn: string; asOf: string; certifications: readonly RubricCertification[] }) {
   const yearsOfService = completedYears(employmentStartedOn, asOf);
-  const valid = certifications.filter((course) => course.category && (!course.expires_on || course.expires_on >= asOf));
-  const distinct = (category: CourseCategory) => new Set(valid.filter((course) => course.category === category).map((course) => course.name.toLowerCase())).size;
+  const valid = certifications.filter((course) => course.category && (!course.issued_on || course.issued_on <= asOf) && (!course.expires_on || course.expires_on >= asOf));
+  const distinct = (category: CourseCategory) => new Set(valid.filter((course) => course.category === category).map((course) => courseKey(course.name))).size;
   const mandatoryCount = distinct("mandatory_course");
   const specializedCount = distinct("specialized_training");
   const mandatoryPoints = Math.min(mandatoryCount * COURSE_POINTS.mandatory_course.perCourse, COURSE_POINTS.mandatory_course.cap);

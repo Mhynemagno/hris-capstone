@@ -330,7 +330,8 @@ test.describe("Objective 3: deployment tracking", () => {
 
     await createDeployment(page, role);
     await expect(page.getByText("Deployment created by").first()).toBeVisible();
-    await expect(page.getByRole("textbox")).toHaveCount(0);
+    // Details are read-only: the assignment fields are only on the Update page (the report form has its own Notes box).
+    await expect(page.getByLabel(/^Remarks/)).toHaveCount(0);
     await page.getByRole("link", { name: "Update" }).click();
     await expect(page).toHaveURL(/\/hr\/deployments\/[0-9a-f-]{36}\/edit$/);
     await page.getByLabel(/^Remarks/).fill(`Oplan Ligtas ${runId}`);

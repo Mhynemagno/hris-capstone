@@ -46,3 +46,18 @@ describe("computePerformanceRubric", () => {
     expect(result).toMatchObject({ yearsOfService: 0, servicePoints: 5, specializedCount: 0, totalPoints: 5, rating: "Poor" });
   });
 });
+
+describe("computePerformanceRubric review fixes", () => {
+  it("counts the old and new CIC names once and ignores courses issued after the as-of date", () => {
+    const result = computePerformanceRubric({
+      employmentStartedOn: "2020-01-15",
+      asOf: "2024-12-31",
+      certifications: [
+        { name: "Criminal Investigation Course", category: "specialized_training", expires_on: null, issued_on: "2021-01-01" },
+        { name: "Criminal Investigation Course (CIC) / SOCO ", category: "specialized_training", expires_on: null, issued_on: "2022-01-01" },
+        { name: "Cybercrime Investigation Seminar", category: "specialized_training", expires_on: null, issued_on: "2025-06-01" },
+      ],
+    });
+    expect(result.specializedCount).toBe(1);
+  });
+});

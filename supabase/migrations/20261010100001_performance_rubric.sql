@@ -22,12 +22,26 @@ returns text language sql immutable set search_path = '' as $$
     ) then 'mandatory_course'
     when lower(btrim(target_name)) in (
       'criminal investigation course (cic) / soco',
-      'criminal investigation course',
       'special weapons and tactics (swat) course',
       'special action force (saf) commando course',
       'traffic management / tactical driving course',
-      'cybercrime investigation seminar'
+      'cybercrime investigation seminar',
+      -- Courses from the previous Certification / Training list keep their points as specialized training.
+      'criminal investigation course',
+      'police intelligence operations course',
+      'drug enforcement operations course',
+      'leadership and management course',
+      'senior police leadership and command course'
     ) then 'specialized_training'
+  end;
+$$;
+
+-- One course under its old and new names counts once (the previous "Criminal Investigation Course").
+create function private.certification_course_key(target_name text)
+returns text language sql immutable set search_path = '' as $$
+  select case lower(btrim(target_name))
+    when 'criminal investigation course' then 'criminal investigation course (cic) / soco'
+    else lower(btrim(target_name))
   end;
 $$;
 
@@ -39,11 +53,15 @@ begin
 end;
 $$;
 
+-- Runs on every insert and update so the category always follows the name and cannot be set by hand.
 create trigger certifications_set_category
-  before insert or update of name on public.certifications
+  before insert or update on public.certifications
   for each row execute function private.set_certification_category();
 
-update public.certifications set category = private.certification_category(name);
+-- Backfill only rows that gain a category, without writing personnel record history for it.
+alter table public.certifications disable trigger certifications_write_record_history;
+update public.certifications set category = private.certification_category(name) where private.certification_category(name) is not null;
+alter table public.certifications enable trigger certifications_write_record_history;
 
 alter table public.performance_ratings
   add column years_of_service integer check (years_of_service is null or years_of_service >= 0),
@@ -70,14 +88,16 @@ begin
   if started_on is null then
     raise exception 'Employee was not found.' using errcode = 'P0001';
   end if;
+  -- A review period that ends in the future is scored as of today.
+  target_as_of := least(target_as_of, current_date);
   years := greatest(extract(year from age(target_as_of, started_on))::integer, 0);
   service := case when years >= 15 then 50 when years >= 10 then 45 when years >= 7 then 35 when years >= 4 then 25 when years >= 1 then 15 else 5 end;
   select
-    count(distinct lower(name)) filter (where category = 'mandatory_course'),
-    count(distinct lower(name)) filter (where category = 'specialized_training')
+    count(distinct private.certification_course_key(name)) filter (where category = 'mandatory_course'),
+    count(distinct private.certification_course_key(name)) filter (where category = 'specialized_training')
   into mandatory_count, specialized_count
   from public.certifications
-  where employee_id = target_employee_id and (expires_on is null or expires_on >= target_as_of);
+  where employee_id = target_employee_id and issued_on <= target_as_of and (expires_on is null or expires_on >= target_as_of);
   mandatory := least(mandatory_count * 15, 30);
   specialized := least(specialized_count * 10, 20);
   total := service + mandatory + specialized;
@@ -135,6 +155,6 @@ begin
 end;
 $$;
 
-revoke all on function private.certification_category(text), private.set_certification_category(), private.performance_rubric(uuid, date) from public, anon, authenticated;
+revoke all on function private.certification_category(text), private.certification_course_key(text), private.set_certification_category(), private.performance_rubric(uuid, date) from public, anon, authenticated;
 revoke all on function public.get_performance_rubric(uuid, date), public.record_performance_evaluation(uuid, date, date, text) from public, anon;
 grant execute on function public.get_performance_rubric(uuid, date), public.record_performance_evaluation(uuid, date, date, text) to authenticated;

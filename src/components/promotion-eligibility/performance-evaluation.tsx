@@ -24,7 +24,7 @@ export function ratingSummary(rating: Pick<PerformanceRating, "rating" | "total_
 const today = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
 
 type FieldErrors = Partial<Record<"reviewPeriodStartsOn" | "reviewPeriodEndsOn" | "notes", string>>;
-type RubricCertification = Pick<Certification, "name" | "expires_on"> & { category?: Certification["category"] };
+type RubricCertification = Pick<Certification, "name" | "expires_on"> & { category?: Certification["category"]; issued_on?: string | null };
 
 /** The client's points rubric: a live score from service years and courses, the saved evaluations, and the form to record one. */
 export function PerformanceEvaluation({ employeeId, employmentStartedOn, certifications, ratings }: { employeeId: string; employmentStartedOn: string; certifications: RubricCertification[]; ratings: PerformanceRating[] }) {
@@ -33,7 +33,7 @@ export function PerformanceEvaluation({ employeeId, employmentStartedOn, certifi
   const [errors, setErrors] = useState<FieldErrors>({});
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const score = computePerformanceRubric({ employmentStartedOn, asOf: today(), certifications: certifications.map((course) => ({ name: course.name, category: course.category ?? null, expires_on: course.expires_on })) });
+  const score = computePerformanceRubric({ employmentStartedOn, asOf: today(), certifications: certifications.map((course) => ({ name: course.name, category: course.category ?? null, expires_on: course.expires_on, issued_on: course.issued_on ?? null })) });
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

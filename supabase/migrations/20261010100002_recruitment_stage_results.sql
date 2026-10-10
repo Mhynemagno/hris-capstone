@@ -60,6 +60,11 @@ create policy recruitment_stage_documents_read_hr
     and (select private.current_user_has_role('hr_personnel'::public.app_role))
   );
 
+-- The uploader can remove their own file when recording the result fails (clean-up in the app).
+create policy recruitment_stage_documents_delete_own_upload
+  on storage.objects for delete to authenticated
+  using (bucket_id = 'recruitment-stage-documents' and owner_id = (select auth.uid())::text);
+
 create function private.record_stage_result(target_application_id uuid, target_result text, target_note text, target_document jsonb)
 returns void language plpgsql security definer set search_path = '' as $$
 declare
@@ -72,13 +77,13 @@ declare
   needs_document boolean;
   message text;
 begin
+  if target_result is null or target_result not in ('verified', 'scheduled', 'passed', 'failed') then raise exception 'Choose a valid result.' using errcode = '22023'; end if;
   select * into application_row from public.applications where id = target_application_id for update;
   if application_row.id is null then raise exception 'Application was not found.' using errcode = 'P0001'; end if;
   if application_row.status not in (
     'Application Submission', 'Physical Agility Test', 'Physical & Medical Examination', 'Neuro-Psychiatric Examination',
     'Drug Test', 'Character & Background Investigation', 'Panel Interview', 'Final Evaluation'
   ) then raise exception 'This application is no longer in the recruitment process.' using errcode = '22023'; end if;
-  if target_result not in ('verified', 'scheduled', 'passed', 'failed') then raise exception 'Choose a valid result.' using errcode = '22023'; end if;
   if target_result = 'verified' and application_row.status <> 'Application Submission' then raise exception 'Verified applies only to Application Submission.' using errcode = '22023'; end if;
   if target_result = 'scheduled' and application_row.status = 'Application Submission' then raise exception 'Application Submission is verified, not scheduled.' using errcode = '22023'; end if;
   if clean_note is not null and char_length(clean_note) > 2000 then raise exception 'Notes must be at most 2000 characters.' using errcode = '22023'; end if;

@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(12);
+select extensions.plan(17);
 
 select extensions.has_column('public', 'qualifications', 'document_path', 'Eligibility keeps a supporting document');
 select extensions.has_table('public', 'deployment_reports', 'Deployments keep reports / proof of attendance');
@@ -72,6 +72,32 @@ select extensions.throws_ok(
   $$select public.submit_leave_request('00000000-0000-4000-8000-000000002741'::uuid,
       (select id from public.leave_types where lower(name) = 'sick leave'), current_date + 5, current_date + 6, 'Flu', '[]'::jsonb)$$,
   '22023', 'Attach a supporting document for Sick Leave.', 'Sick leave without a document is rejected'
+);
+
+-- Storage policies, exercised as real users.
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000002702';
+select extensions.lives_ok(
+  $$insert into storage.objects (bucket_id, name, owner_id) values ('deployment-reports', 'deployments/00000000-0000-4000-8000-000000002791/mine.pdf', '00000000-0000-4000-8000-000000002702')$$,
+  'The deployed employee can upload into their own deployment folder'
+);
+-- Direct SQL deletes are blocked by Supabase Storage; its API deletes under these uploader-only policies.
+select extensions.is(
+  (select count(*) from pg_policies where schemaname = 'storage' and tablename = 'objects' and cmd = 'DELETE'
+     and policyname in ('deployment_reports_delete_own_upload', 'personnel_documents_delete_own_upload', 'recruitment_stage_documents_delete_own_upload')),
+  3::bigint, 'Uploaders can remove their own failed uploads in all three buckets'
+);
+select extensions.throws_ok(
+  $$insert into storage.objects (bucket_id, name, owner_id) values ('personnel-documents', 'qualifications/00000000-0000-4000-8000-000000002711/self.pdf', '00000000-0000-4000-8000-000000002702')$$,
+  '42501', null, 'An employee cannot upload eligibility documents'
+);
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000002703';
+select extensions.throws_ok(
+  $$insert into storage.objects (bucket_id, name, owner_id) values ('deployment-reports', 'deployments/00000000-0000-4000-8000-000000002791/not-mine.pdf', '00000000-0000-4000-8000-000000002703')$$,
+  '42501', null, 'Another employee cannot upload into someone else''s deployment folder'
+);
+select extensions.is(
+  (select count(*) from storage.objects where bucket_id in ('deployment-reports', 'personnel-documents')),
+  0::bigint, 'Another employee cannot see someone else''s reports or eligibility documents'
 );
 
 select * from extensions.finish();

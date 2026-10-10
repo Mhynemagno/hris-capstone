@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(15);
+select extensions.plan(18);
 
 select extensions.has_function('public', 'record_stage_result', array['uuid', 'text', 'text', 'jsonb'], 'HR records Passed / Failed / Scheduled / Verified results');
 select extensions.has_table('public', 'application_stage_documents', 'Stage supporting documents are stored');
@@ -86,6 +86,30 @@ select extensions.throws_ok(
   '42501', null, 'Applicants cannot record stage results'
 );
 select extensions.is((select count(*) from public.application_stage_documents), 0::bigint, 'Applicants cannot read HR stage documents');
+
+-- Review fixes: a missing result is rejected, and only HR can use the stage documents bucket.
+set local role postgres;
+insert into public.applications (id, applicant_id, job_opening_id, status)
+select '00000000-0000-4000-8000-000000028002', applicant.id, opening.id, 'Physical Agility Test'
+from public.applicants applicant
+join public.job_openings opening on opening.title = 'Stage result test opening'
+where applicant.profile_id = '00000000-0000-4000-8000-000000008104'
+on conflict do nothing;
+set local role authenticated;
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000008102';
+select extensions.throws_ok(
+  $$select public.record_stage_result('00000000-0000-4000-8000-000000028001', null, null, null)$$,
+  '22023', 'Choose a valid result.', 'A missing result is rejected instead of advancing the stage'
+);
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000008104';
+select extensions.throws_ok(
+  $$insert into storage.objects (bucket_id, name, owner_id) values ('recruitment-stage-documents', 'applications/00000000-0000-4000-8000-000000028001/fake.pdf', '00000000-0000-4000-8000-000000008104')$$,
+  '42501', null, 'An applicant cannot upload into the stage documents bucket'
+);
+select extensions.is(
+  (select count(*) from storage.objects where bucket_id = 'recruitment-stage-documents'),
+  0::bigint, 'An applicant cannot see stage documents in storage'
+);
 
 select * from extensions.finish();
 

@@ -37,6 +37,11 @@ create policy personnel_documents_read
     )
   );
 
+-- The uploader can remove their own file when saving the eligibility fails (clean-up in the app).
+create policy personnel_documents_delete_own_upload
+  on storage.objects for delete to authenticated
+  using (bucket_id = 'personnel-documents' and owner_id = (select auth.uid())::text);
+
 create function private.check_qualification_document()
 returns trigger language plpgsql security definer set search_path = '' as $$
 begin
@@ -110,6 +115,11 @@ create policy deployment_reports_read
     bucket_id = 'deployment-reports'
     and (select private.can_access_deployment(((storage.foldername(name))[2])::uuid))
   );
+
+-- The uploader can remove their own file when the report is refused (clean-up in the app).
+create policy deployment_reports_delete_own_upload
+  on storage.objects for delete to authenticated
+  using (bucket_id = 'deployment-reports' and owner_id = (select auth.uid())::text);
 
 create function public.submit_deployment_report(target_deployment_id uuid, target_notes text, target_document jsonb)
 returns uuid language plpgsql security definer set search_path = '' as $$
