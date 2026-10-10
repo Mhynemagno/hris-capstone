@@ -21,12 +21,14 @@ import {
   listRecentApplications,
   listApplicantProfileDocuments,
   listApplicantProfileDocumentsFor,
+  listApplicationStageDocuments,
   listMyApplications,
   listPublishedJobs,
   saveApplicantProfile,
   saveApplicantProfileDocuments,
   replaceMyApplicantProfilePhoto,
   removeMyApplicantProfilePhoto,
+  recordStageResult,
   retryApplicationAnalysis,
   resubmitApplication,
   saveJobOpening,
@@ -46,7 +48,7 @@ import type {
   JobFilters,
   JobOpeningInput,
 } from "@/schemas/recruitment";
-import type { JobPostingImageChange, ResubmitApplicationInput } from "@/queries/recruitment";
+import type { JobPostingImageChange, ResubmitApplicationInput, StageResultInput } from "@/queries/recruitment";
 import type { HrShortlistApplication } from "@/lib/types/database";
 
 export function usePublishedJobs(filters: Partial<JobFilters> = {}) {
@@ -233,6 +235,25 @@ export function useTransitionApplicationStatus() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.application(input.applicationId) });
     },
   });
+}
+
+export function useRecordStageResult() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: StageResultInput) => recordStageResult(input),
+    onSuccess: (_, input) => {
+      void queryClient.invalidateQueries({ queryKey: ["workspace", "count"] });
+      void queryClient.invalidateQueries({ queryKey: ["recruitment", "applications"] });
+      void queryClient.invalidateQueries({ queryKey: ["recruitment", "my-applications"] });
+      void queryClient.invalidateQueries({ queryKey: ["recruitment", "stage-documents", input.applicationId] });
+      void queryClient.invalidateQueries({ queryKey: ["reporting"] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.application(input.applicationId) });
+    },
+  });
+}
+
+export function useApplicationStageDocuments(applicationId: string) {
+  return useQuery({ queryKey: ["recruitment", "stage-documents", applicationId] as const, queryFn: () => listApplicationStageDocuments(applicationId), enabled: Boolean(applicationId) });
 }
 
 export function useHireApplication() {

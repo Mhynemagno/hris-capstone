@@ -4,13 +4,11 @@ import Link from "next/link";
 import { MoreHorizontal, SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
 
-import { ApplicationStageBadge } from "@/components/recruitment/application-stage-badge";
 import { RegisteredApplicantDrawer } from "@/components/recruitment/hr-registered-applicants";
-import { MoveStageDialog, NotSelectedDialog } from "@/components/recruitment/stage-dialogs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { FormField } from "@/components/ui/form-field";
@@ -23,12 +21,12 @@ import { useHrRegisteredApplicants } from "@/hooks/use-applicant-portal";
 import { useAllHrApplications, useAllHrJobs } from "@/hooks/use-recruitment";
 import { formatDate } from "@/lib/format-date";
 import { APPLICATION_SORT_ACCESSORS, buildApplicationRows, parseApplicationListParams, QUICK_VIEWS, type ApplicationListRow } from "@/lib/recruitment/application-list";
-import { allowedNextStatuses } from "@/lib/recruitment/application-stages";
+import { applicationStatusLabel } from "@/lib/recruitment/stage-results";
 import type { HrRegisteredApplicant } from "@/lib/types/database";
 import { cn } from "@/lib/utils";
 import { useListParams } from "@/lib/workspace/list-params";
 import { formatSort, paginate, sortRows } from "@/lib/workspace/table";
-import { applicationStatusSchema, type ApplicationStatus } from "@/schemas/recruitment";
+import { applicationStatusSchema } from "@/schemas/recruitment";
 
 const KEYS = ["quick", "stage", "job", "q", "ai", "minScore", "sort", "page"] as const;
 const AI_LABELS: Record<string, string> = { queued: "Queued", processing: "Analyzing", completed: "Completed", failed: "Failed", unscored: "Not analyzed" };
@@ -56,8 +54,6 @@ export function HrApplications() {
   const applications = useAllHrApplications({ aiStatus: params.ai || undefined, minimumScore: params.minScore });
   const registered = useHrRegisteredApplicants();
   const jobs = useAllHrJobs();
-  const [moving, setMoving] = useState<{ id: string; status: ApplicationStatus; stage: ApplicationStatus } | null>(null);
-  const [rejecting, setRejecting] = useState<string | null>(null);
   const [drawer, setDrawer] = useState<HrRegisteredApplicant | null>(null);
 
   const rows = buildApplicationRows(applications.data ?? [], registered.data ?? [], params);
@@ -85,21 +81,21 @@ export function HrApplications() {
       </div>
     ) },
     { key: "job", header: "Job posting", hideBelow: "md", cell: (row) => <span className="text-secondary-foreground">{row.kind === "application" ? (row.jobTitle ?? "—") : "—"}</span> },
-    { key: "stage", header: "Stage", cell: (row) => row.kind === "application" ? <ApplicationStageBadge status={row.status} /> : <Badge variant="warning">Not yet applied</Badge> },
+    { key: "stage", header: "Status", cell: (row) => {
+      if (row.kind !== "application") return <Badge variant="warning">Not yet applied</Badge>;
+      const status = applicationStatusLabel(row.status, row.stageResult);
+      return <div className="space-y-1"><Badge variant={status.variant}>{status.label}</Badge><p className="text-sm text-muted-foreground">{row.status}</p></div>;
+    } },
     { key: "ai", header: "AI match", sortable: true, cell: (row) => row.kind === "application" ? <AiMatch row={row} /> : <span className="text-muted-foreground">—</span> },
     { key: "submitted", header: "Submitted", sortable: true, hideBelow: "lg", cell: (row) => <span className="tabular-nums text-secondary-foreground">{formatDate(row.submittedAt)}</span> },
     { key: "actions", header: "Actions", align: "right", cell: (row) => {
       if (row.kind !== "application") return null;
-      const allowed = allowedNextStatuses[row.status];
-      const forward = allowed.filter((next) => next !== "Not Selected");
       return (
         <DropdownMenu>
           <DropdownMenuTrigger render={<Button aria-label={`Actions for ${row.name}`} size="icon-sm" variant="ghost" />}><MoreHorizontal aria-hidden="true" /></DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem render={<a href={`/hr/applications/${row.id}`} rel="noreferrer" target="_blank" />}>Open in new tab</DropdownMenuItem>
-            {forward.length ? <DropdownMenuSeparator /> : null}
-            {forward.map((stage) => <DropdownMenuItem key={stage} onClick={() => setMoving({ id: row.id, status: row.status, stage })}>Move to {stage}</DropdownMenuItem>)}
-            {allowed.includes("Not Selected") ? <><DropdownMenuSeparator /><DropdownMenuItem onClick={() => setRejecting(row.id)} variant="destructive">Mark as not selected</DropdownMenuItem></> : null}
+            <DropdownMenuItem render={<Link href={`/hr/applications/${row.id}`} />}>Open application</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       );
@@ -160,8 +156,6 @@ export function HrApplications() {
         rows={page.rows}
         sort={params.sort}
       />
-      {moving ? <MoveStageDialog applicationId={moving.id} initialStage={moving.stage} onOpenChange={(open) => { if (!open) setMoving(null); }} open status={moving.status} /> : null}
-      <NotSelectedDialog applicationId={rejecting ?? ""} onOpenChange={(open) => { if (!open) setRejecting(null); }} open={Boolean(rejecting)} />
       <RegisteredApplicantDrawer applicant={drawer} onClose={() => setDrawer(null)} />
     </div>
   );

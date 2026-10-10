@@ -2,54 +2,54 @@ import userEvent from "@testing-library/user-event";
 import { render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ transition: vi.fn(), hire: vi.fn(), notify: vi.fn(), pending: false }));
+const mocks = vi.hoisted(() => ({ record: vi.fn(), hire: vi.fn(), notify: vi.fn(), pending: false }));
 vi.mock("@/components/ui/toaster", () => ({ notifySuccess: mocks.notify }));
 vi.mock("@/hooks/use-recruitment", () => ({
-  useTransitionApplicationStatus: () => ({ isPending: mocks.pending, mutateAsync: mocks.transition }),
+  useRecordStageResult: () => ({ isPending: mocks.pending, mutateAsync: mocks.record }),
   useHireApplication: () => ({ isPending: mocks.pending, mutateAsync: mocks.hire }),
 }));
 
-import { HireDialog, MoveStageDialog, NotSelectedDialog } from "./stage-dialogs";
+import { HireDialog, StageResultDialog } from "./stage-dialogs";
 
 const id = "00000000-0000-0000-0000-000000000001";
 
 describe("stage dialogs", () => {
-  beforeEach(() => { mocks.transition.mockReset(); mocks.hire.mockReset(); mocks.notify.mockReset(); mocks.pending = false; });
+  beforeEach(() => { mocks.record.mockReset(); mocks.hire.mockReset(); mocks.notify.mockReset(); mocks.pending = false; });
 
-  it("moves to a chosen allowed stage with an optional note and confirms with a toast", async () => {
-    mocks.transition.mockResolvedValue(undefined);
+  it("marks a test as scheduled with a note and confirms with a toast", async () => {
+    mocks.record.mockResolvedValue(undefined);
     const onOpenChange = vi.fn();
-    render(<MoveStageDialog applicationId={id} onOpenChange={onOpenChange} open status="Physical Agility Test" />);
-    const dialog = screen.getByRole("dialog", { name: "Move to next stage" });
-    expect(within(dialog).queryByRole("radio", { name: "Not Selected" })).not.toBeInTheDocument();
-    await userEvent.click(within(dialog).getByRole("radio", { name: "Physical & Medical Examination" }));
-    await userEvent.type(within(dialog).getByLabelText("Note to applicant"), "See you Monday");
-    await userEvent.click(within(dialog).getByRole("button", { name: "Move to Physical & Medical Examination" }));
-    expect(mocks.transition).toHaveBeenCalledWith({ applicationId: id, nextStatus: "Physical & Medical Examination", note: "See you Monday" });
-    expect(mocks.notify).toHaveBeenCalledWith("Moved to Physical & Medical Examination · applicant notified");
+    render(<StageResultDialog applicationId={id} onOpenChange={onOpenChange} open result="scheduled" status="Drug Test" />);
+    const dialog = screen.getByRole("dialog", { name: "Mark Drug Test as Scheduled" });
+    expect(within(dialog).queryByLabelText(/^Supporting document/)).not.toBeInTheDocument();
+    await userEvent.type(within(dialog).getByLabelText("Note to applicant"), "Monday 8 AM");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Mark as Scheduled" }));
+    expect(mocks.record).toHaveBeenCalledWith({ applicationId: id, result: "scheduled", note: "Monday 8 AM", file: null });
+    expect(mocks.notify).toHaveBeenCalledWith("Drug Test: Scheduled · applicant notified");
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
-  it("keeps the dialog open and shows the server error inside it", async () => {
-    mocks.transition.mockRejectedValue(new Error("Only the next recruitment stage can be selected."));
-    render(<MoveStageDialog applicationId={id} initialStage="Panel Interview" onOpenChange={() => undefined} open status="Character & Background Investigation" />);
-    await userEvent.click(screen.getByRole("button", { name: "Move to Panel Interview" }));
-    expect(within(screen.getByRole("dialog")).getByRole("alert")).toHaveTextContent("Only the next recruitment stage can be selected.");
+  it("requires a supporting document before passing a test stage", async () => {
+    mocks.record.mockResolvedValue(undefined);
+    render(<StageResultDialog applicationId={id} onOpenChange={() => undefined} open result="passed" status="Drug Test" />);
+    const dialog = screen.getByRole("dialog", { name: "Mark Drug Test as Passed" });
+    await userEvent.click(within(dialog).getByRole("button", { name: "Mark as Passed" }));
+    expect(within(dialog).getByRole("alert")).toHaveTextContent("Upload a supporting document for this result.");
+    expect(mocks.record).not.toHaveBeenCalled();
+
+    const file = new File(["%PDF"], "drug-test.pdf", { type: "application/pdf" });
+    await userEvent.upload(within(dialog).getByLabelText(/^Supporting document/), file);
+    await userEvent.click(within(dialog).getByRole("button", { name: "Mark as Passed" }));
+    expect(mocks.record).toHaveBeenCalledWith(expect.objectContaining({ result: "passed", file }));
   });
 
-  it("disables confirmation while a change is in flight", () => {
-    mocks.pending = true;
-    render(<MoveStageDialog applicationId={id} initialStage="Panel Interview" onOpenChange={() => undefined} open status="Character & Background Investigation" />);
-    expect(screen.getByRole("button", { name: /Move to Panel Interview/ })).toBeDisabled();
-  });
-
-  it("asks for confirmation before marking not selected", async () => {
-    mocks.transition.mockResolvedValue(undefined);
-    render(<NotSelectedDialog applicationId={id} onOpenChange={() => undefined} open />);
-    const dialog = screen.getByRole("alertdialog", { name: "Mark as not selected?" });
-    expect(dialog).toHaveTextContent("This ends the application. The applicant will be notified.");
-    await userEvent.click(within(dialog).getByRole("button", { name: "Mark as not selected" }));
-    expect(mocks.transition).toHaveBeenCalledWith({ applicationId: id, nextStatus: "Not Selected", note: undefined });
+  it("explains that Failed ends the application and shows server errors inside the dialog", async () => {
+    mocks.record.mockRejectedValue(new Error("This application is no longer in the recruitment process."));
+    render(<StageResultDialog applicationId={id} onOpenChange={() => undefined} open result="failed" status="Application Submission" />);
+    const dialog = screen.getByRole("dialog", { name: "Mark Application Submission as Failed" });
+    expect(dialog).toHaveTextContent("This ends the application as Disqualified.");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Mark as Failed" }));
+    expect(within(dialog).getByRole("alert")).toHaveTextContent("This application is no longer in the recruitment process.");
   });
 
   it("requires a badge number before hiring", async () => {

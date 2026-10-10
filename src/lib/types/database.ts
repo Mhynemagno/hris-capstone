@@ -328,6 +328,8 @@ export type Application = {
   applicant_id: string;
   job_opening_id: number;
   status: "Application Submission" | "Physical Agility Test" | "Physical & Medical Examination" | "Neuro-Psychiatric Examination" | "Drug Test" | "Character & Background Investigation" | "Panel Interview" | "Final Evaluation" | "Shortlisted" | "Not Selected" | "Hired";
+  /** Pending / For Evaluation, Verified or Scheduled within the current stage. */
+  stage_result?: "pending" | "verified" | "scheduled";
   cover_note: string | null;
   submitted_at: string;
   reviewed_at: string | null;
@@ -344,9 +346,12 @@ export type ApplicationStatusHistory = {
   /** Equal to previous_status for a remark, which records progress without changing the status. */
   next_status: Application["status"];
   note: string | null;
+  /** The stage result HR recorded, when the entry came from record_stage_result. */
+  result?: "verified" | "scheduled" | "passed" | "failed" | null;
   created_at: string;
 };
 export type ApplicationAiScore = { id: string; application_id: string; status: "queued" | "processing" | "completed" | "failed"; score: number | null; explanation: string | null; provider: string | null; model: string | null; model_version: string | null; failure_code: string | null; completed_at: string | null; created_at: string; };
+export type ApplicationStageDocument = { id: string; application_id: string; stage: Application["status"]; result: "passed" | "failed"; object_path: string; file_name: string; mime_type: string; size_bytes: number; uploaded_by_user_id: string; created_at: string };
 export type HrShortlistApplication = Application & { ai_score_id: string | null; ai_score_status: "queued" | "processing" | "completed" | "failed" | "unscored"; ai_score: number | null; ai_explanation: string | null; ai_model: string | null; applicant_name?: string | null; applicant_number?: number | null; job_title?: string | null; };
 
 export type ApplicantDocument = {

@@ -1,5 +1,6 @@
 import { RECRUITMENT_RANK } from "@/lib/pnp-catalogue";
 import { JOB_POSTING_IMAGE_BUCKET } from "@/lib/recruitment/job-posting-image";
+import type { RecordableResult } from "@/lib/recruitment/stage-results";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { APPLICANT_PROFILE_DOCUMENT_KINDS, profileDocumentFileSchemaFor } from "@/schemas/applicant-portal";
 import {
@@ -26,7 +27,7 @@ import {
   type JobFilters,
   type JobOpeningInput,
 } from "@/schemas/recruitment";
-import type { Applicant, ApplicantProfileDocument, Application, AppliedJob, ApplicationAiScore, ApplicantDocument, ApplicationStatusHistory, HrShortlistApplication, JobOpening, JobQualificationCriterion, PaginatedResult } from "@/lib/types/database";
+import type { Applicant, ApplicantProfileDocument, Application, AppliedJob, ApplicationAiScore, ApplicantDocument, ApplicationStageDocument, ApplicationStatusHistory, HrShortlistApplication, JobOpening, JobQualificationCriterion, PaginatedResult } from "@/lib/types/database";
 
 type PendingApplicantDocument = {
   kind: "cv" | "credential";
@@ -389,11 +390,14 @@ async function fetchShortlist(filters: ShortlistFilters, from: number, to: numbe
   throwIfError(error);
   const shortlist = (data ?? []) as { application_id: string; applicant_id: string; job_opening_id: number; application_status: Application["status"]; submitted_at: string; ai_score_id: string | null; ai_score_status: HrShortlistApplication["ai_score_status"] | null; ai_score: number | null; ai_explanation: string | null; ai_model: string | null }[];
   // The shortlist RPC returns ids only; HR can read applicants and openings, so name them in two batched reads.
-  const { applicants, jobs } = await shortlistNames(shortlist.map((row) => row.applicant_id), shortlist.map((row) => row.job_opening_id));
+  const [{ applicants, jobs }, stageResults] = await Promise.all([
+    shortlistNames(shortlist.map((row) => row.applicant_id), shortlist.map((row) => row.job_opening_id)),
+    shortlistStageResults(shortlist.map((row) => row.application_id)),
+  ]);
   return shortlist.map((row) => {
     const applicant = applicants.get(row.applicant_id);
     return {
-      id: row.application_id, applicant_id: row.applicant_id, job_opening_id: row.job_opening_id, status: row.application_status, submitted_at: row.submitted_at,
+      id: row.application_id, applicant_id: row.applicant_id, job_opening_id: row.job_opening_id, status: row.application_status, stage_result: stageResults.get(row.application_id) ?? "pending", submitted_at: row.submitted_at,
       ai_score_id: row.ai_score_id, ai_score_status: row.ai_score_status ?? "unscored", ai_score: row.ai_score, ai_explanation: row.ai_explanation, ai_model: row.ai_model,
       applicant_name: applicant ? [applicant.first_name, applicant.last_name].filter(Boolean).join(" ") || null : null,
       applicant_number: applicant?.applicant_number ?? null,
@@ -412,6 +416,15 @@ export async function listHrApplications(input: Partial<ApplicationAiFilters> = 
 /** Every application for the HR list, which filters, sorts and pages on the client. Move to server paging if volumes grow past ~1000. */
 export async function listAllHrApplications(filters: Omit<ShortlistFilters, "status"> = {}) {
   return fetchShortlist(filters, 0, 999);
+}
+
+/** Pending / Verified / Scheduled for each listed application (the shortlist RPC predates stage results). */
+async function shortlistStageResults(applicationIds: string[]) {
+  const ids = [...new Set(applicationIds)];
+  if (!ids.length) return new Map<string, NonNullable<Application["stage_result"]>>();
+  const { data, error } = await createBrowserSupabaseClient().from("applications").select("id, stage_result").in("id", ids);
+  throwIfError(error);
+  return new Map(((data ?? []) as { id: string; stage_result: NonNullable<Application["stage_result"]> }[]).map((row) => [row.id, row.stage_result]));
 }
 
 async function shortlistNames(applicantIds: string[], jobIds: number[]) {
@@ -456,6 +469,48 @@ export async function transitionApplicationStatus(input: ApplicationStatusTransi
     transition_note: values.note ?? null,
   });
   throwIfError(error);
+}
+
+const stageDocumentBucket = "recruitment-stage-documents";
+const stageDocumentTypes: Record<string, string> = { "application/pdf": "pdf", "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" };
+
+export type StageResultInput = { applicationId: string; result: RecordableResult; note?: string; file?: File | null };
+
+/**
+ * Records Verified / Scheduled / Passed / Failed for the application's current stage. A supporting document is
+ * uploaded first (under applications/<id>/) and removed again if the result cannot be recorded.
+ */
+export async function recordStageResult({ applicationId, result, note, file }: StageResultInput) {
+  const id = applicationStatusTransitionSchema.shape.applicationId.parse(applicationId);
+  const client = createBrowserSupabaseClient();
+  let document: { objectPath: string; fileName: string; mimeType: string; sizeBytes: number } | null = null;
+  if (file) {
+    const extension = stageDocumentTypes[file.type];
+    if (!extension || file.size < 1 || file.size > 10 * 1024 * 1024) throw new Error("Use a PDF, PNG, JPEG, or WebP file up to 10 MB.");
+    const objectPath = `applications/${id}/${crypto.randomUUID()}.${extension}`;
+    const { error: uploadError } = await client.storage.from(stageDocumentBucket).upload(objectPath, file, { contentType: file.type, upsert: false });
+    throwIfError(uploadError);
+    document = { objectPath, fileName: file.name.slice(0, 255), mimeType: file.type, sizeBytes: file.size };
+  }
+  const { error } = await client.rpc("record_stage_result", { target_application_id: id, target_result: result, target_note: note?.trim() || null, target_document: document });
+  if (error) {
+    if (document) await client.storage.from(stageDocumentBucket).remove([document.objectPath]).catch(() => undefined);
+    throw new Error(error.message);
+  }
+}
+
+export async function listApplicationStageDocuments(applicationId: string) {
+  const id = applicationStatusTransitionSchema.shape.applicationId.parse(applicationId);
+  const { data, error } = await createBrowserSupabaseClient().from("application_stage_documents").select("*").eq("application_id", id).order("created_at", { ascending: true });
+  throwIfError(error);
+  return (data ?? []) as ApplicationStageDocument[];
+}
+
+export async function getStageDocumentUrl(objectPath: string) {
+  const { data, error } = await createBrowserSupabaseClient().storage.from(stageDocumentBucket).createSignedUrl(objectPath, 60);
+  throwIfError(error);
+  if (!data?.signedUrl) throw new Error("Unable to open the supporting document.");
+  return data.signedUrl;
 }
 
 export async function getApplicationAiScores(applicationId: string) {

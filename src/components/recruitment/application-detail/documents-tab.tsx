@@ -6,8 +6,9 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
 import { formatDate } from "@/lib/format-date";
-import type { ApplicantDocument } from "@/lib/types/database";
-import { getApplicantDocumentUrl, getApplicantProfileDocumentUrl } from "@/queries/recruitment";
+import { RESULT_LABELS } from "@/lib/recruitment/stage-results";
+import type { ApplicantDocument, ApplicationStageDocument } from "@/lib/types/database";
+import { getApplicantDocumentUrl, getApplicantProfileDocumentUrl, getStageDocumentUrl } from "@/queries/recruitment";
 import { APPLICANT_PROFILE_DOCUMENT_KINDS } from "@/schemas/applicant-portal";
 
 import { documentKindLabels } from "../application-status-tracker";
@@ -40,7 +41,7 @@ function DocumentGroup({ id, onError, rows, title }: { id: string; title: string
   );
 }
 
-export function DocumentsTab({ applicationDocuments, profileDocuments }: { profileDocuments: ProfileDocument[]; applicationDocuments: ApplicantDocument[] }) {
+export function DocumentsTab({ applicationDocuments, profileDocuments, stageDocuments = [] }: { profileDocuments: ProfileDocument[]; applicationDocuments: ApplicantDocument[]; stageDocuments?: ApplicationStageDocument[] }) {
   const [error, setError] = useState<string | null>(null);
   const required: Row[] = APPLICANT_PROFILE_DOCUMENT_KINDS.map(({ kind, label }) => {
     const document = profileDocuments.find((item) => item.kind === kind);
@@ -57,11 +58,19 @@ export function DocumentsTab({ applicationDocuments, profileDocuments }: { profi
       return url;
     },
   }));
+  const stage: Row[] = stageDocuments.map((document) => ({
+    key: document.id,
+    label: `${document.stage} · ${RESULT_LABELS[document.result]}`,
+    fileName: document.file_name,
+    date: document.created_at,
+    open: () => getStageDocumentUrl(document.object_path),
+  }));
   return (
     <div className="space-y-4">
       {error ? <ErrorState message={error} /> : null}
       <DocumentGroup id="required-documents-heading" onError={setError} rows={required} title="Required profile documents" />
       <DocumentGroup id="application-documents-heading" onError={setError} rows={submitted} title="Submitted with this application" />
+      {stage.length ? <DocumentGroup id="stage-documents-heading" onError={setError} rows={stage} title="Stage supporting documents" /> : null}
     </div>
   );
 }

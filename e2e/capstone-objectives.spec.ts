@@ -253,17 +253,12 @@ test.describe("Objective 2: recruitment management", () => {
     await page.getByRole("tab", { name: /Documents/ }).click();
     await expect(page.getByRole("heading", { name: "Required profile documents" })).toBeVisible();
     await expect(page.getByRole("button", { name: /^View CV \/ Resume: / })).toBeVisible();
-    const advance = async (statuses: string[]) => {
-      for (const status of statuses) {
-        await page.getByRole("button", { name: "Move to next stage" }).click();
-        const dialog = page.getByRole("dialog", { name: "Move to next stage" });
-        await dialog.getByRole("radio", { name: status }).click();
-        await dialog.getByRole("button", { name: `Move to ${status}` }).click();
-        await expect(page.getByRole("status").filter({ hasText: `Moved to ${status}` }).first()).toBeVisible();
-        await expect(dialog).toBeHidden();
-      }
-    };
-    await advance([
+    // HR records each stage's result: Verified for the submitted documents, then Passed with proof at every stage.
+    await page.getByRole("button", { name: "Verified" }).click();
+    await page.getByRole("dialog", { name: "Mark Application Submission as Verified" }).getByRole("button", { name: "Mark as Verified" }).click();
+    await expect(page.getByRole("status").filter({ hasText: "Application Submission: Verified" }).first()).toBeVisible();
+    const stages = [
+      "Application Submission",
       "Physical Agility Test",
       "Physical & Medical Examination",
       "Neuro-Psychiatric Examination",
@@ -271,8 +266,20 @@ test.describe("Objective 2: recruitment management", () => {
       "Character & Background Investigation",
       "Panel Interview",
       "Final Evaluation",
-      "Shortlisted",
-    ]);
+    ];
+    for (const stage of stages) {
+      await page.getByRole("button", { name: "Passed", exact: true }).click();
+      const dialog = page.getByRole("dialog", { name: `Mark ${stage} as Passed` });
+      if (stage !== "Application Submission") {
+        await dialog.getByLabel(/^Supporting document/).setInputFiles({ name: "result.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4 result") });
+      }
+      await dialog.getByRole("button", { name: "Mark as Passed" }).click();
+      await expect(page.getByRole("status").filter({ hasText: `${stage}: Passed` }).first()).toBeVisible();
+      await expect(dialog).toBeHidden();
+    }
+    await expect(page.getByText("Candidate", { exact: true }).first()).toBeVisible();
+    await page.getByRole("tab", { name: /Documents/ }).click();
+    await expect(page.getByRole("heading", { name: "Stage supporting documents" })).toBeVisible();
     await page.getByRole("button", { name: "Hire applicant" }).click();
     const hireDialog = page.getByRole("dialog", { name: "Hire applicant" });
     await hireDialog.getByLabel(/^Badge number/).fill(badge);
