@@ -28,7 +28,7 @@ vi.mock("@/hooks/use-personnel-records", () => ({
   useEmployeeForCurrentUser: () => ({ isLoading: false, error: null, data: { gender: mocks.gender } }),
 }));
 
-import { EmployeeLeaveList, EmployeeLeaveRequestForm } from "./employee-leave";
+import { EmployeeLeaveCredits, EmployeeLeaveList, EmployeeLeaveRequestForm } from "./employee-leave";
 import { maxLeaveDate } from "@/schemas/leave-management";
 
 const isoDate = (offsetDays: number) => {
@@ -218,5 +218,20 @@ describe("EmployeeLeaveRequestForm", () => {
     await user.upload(screen.getByLabelText(/^Supporting document/), file);
     await user.click(screen.getByRole("button", { name: "Submit request" }));
     expect(mocks.submit).toHaveBeenCalledWith(expect.objectContaining({ files: [file] }));
+  });
+});
+
+describe("EmployeeLeaveCredits", () => {
+  it("shows the leave types the employee can take as cards with days left this year", () => {
+    mocks.gender = "male";
+    mocks.types = [
+      { id: "11111111-1111-4111-8111-111111111111", name: "Vacation Leave", description: "Subject to prior approval & unit clearance.", days_per_year: 15, excess_deducted_from_retirement: false, requires_attachment: false, is_active: true, eligible_gender: null },
+      { id: "44444444-4444-4444-8444-444444444444", name: "Maternity Leave", description: null, days_per_year: 105, excess_deducted_from_retirement: false, requires_attachment: false, is_active: true, eligible_gender: "female" },
+    ];
+    mocks.balances = [{ leave_type_id: "11111111-1111-4111-8111-111111111111", days_per_year: 15, excess_deducted_from_retirement: false, used_days: 3 }];
+    render(<EmployeeLeaveCredits />);
+    expect(screen.getByRole("heading", { name: "My leave credits" })).toBeInTheDocument();
+    expect(screen.getByRole("article", { name: "Vacation Leave" })).toHaveTextContent(/12 days left in \d{4}/);
+    expect(screen.queryByRole("article", { name: "Maternity Leave" })).not.toBeInTheDocument();
   });
 });

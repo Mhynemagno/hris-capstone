@@ -11,11 +11,12 @@ import { LoadingState } from "@/components/ui/loading-state";
 import { nativeSelectClassName } from "@/components/ui/native-select";
 import { Pagination } from "@/components/ui/pagination";
 import { Textarea } from "@/components/ui/textarea";
-import { useDecideLeaveRequest, useHrLeaveRequests, useLeaveRequest } from "@/hooks/use-leave-management";
+import { useDecideLeaveRequest, useEmployeeLeaveBalances, useHrLeaveRequests, useLeaveRequest } from "@/hooks/use-leave-management";
 import { formatDate, formatDateRange } from "@/lib/format-date";
 import type { LeaveRequestStatus, LeaveRequestWithEmployee } from "@/lib/types/database";
 import { getLeaveAttachmentUrl } from "@/queries/leave-management";
 
+import { leaveDays } from "./employee-leave";
 import { LeaveStatusBadge } from "./leave-status-badge";
 import { LeaveRequestTable } from "./leave-request-table";
 
@@ -108,6 +109,7 @@ function AttachmentButton({ objectPath, fileName }: { objectPath: string; fileNa
 
 export function HrLeaveDetail({ requestId }: { requestId: string }) {
   const request = useLeaveRequest(requestId);
+  const balances = useEmployeeLeaveBalances(request.data?.employee_id, Number((request.data?.starts_on ?? "2000").slice(0, 4)));
   const decide = useDecideLeaveRequest();
   const [note, setNote] = useState("");
   const [pendingDecision, setPendingDecision] = useState<"approved" | "rejected" | null>(null);
@@ -140,50 +142,47 @@ export function HrLeaveDetail({ requestId }: { requestId: string }) {
     }
   }
 
+  const days = leaveDays(data.starts_on, data.ends_on);
+  const creditYear = Number(data.starts_on.slice(0, 4));
+  const credit = balances.data?.find((entry) => entry.leave_type_id === data.leave_type_id);
+
   return (
-    <section className="max-w-3xl space-y-5">
+    <section className="max-w-4xl space-y-5">
       <Link className="text-sm font-medium text-primary underline underline-offset-4" href="/hr/leave-requests">
         Back to leave requests
       </Link>
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-3xl font-bold tracking-tight">{data.leave_type_name}</h1>
-        <LeaveStatusBadge status={data.status} />
-      </div>
-      <dl className="grid gap-3 text-sm sm:grid-cols-2">
-        <div className="sm:col-span-2">
-          <dt className="font-semibold text-muted-foreground">Employee</dt>
-          <dd>
-            {employeeName(data)}
-            {data.employees?.employee_number ? <span className="text-muted-foreground"> · Badge no. {data.employees.employee_number}</span> : null}
-          </dd>
+      <div className="rounded-2xl border bg-card p-5 shadow-sm">
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-3xl font-bold tracking-tight">{data.leave_type_name}</h1>
+          <LeaveStatusBadge status={data.status} />
         </div>
-        <div>
-          <dt className="font-semibold text-muted-foreground">Dates</dt>
-          <dd>{formatDateRange(data.starts_on, data.ends_on)}</dd>
-        </div>
-        <div>
-          <dt className="font-semibold text-muted-foreground">Submitted</dt>
-          <dd>{formatDate(data.created_at)}</dd>
-        </div>
+        <p className="mt-1 text-muted-foreground">
+          {employeeName(data)}
+          {data.employees?.employee_number ? <span> · Badge no. {data.employees.employee_number}</span> : null}
+        </p>
+        <dl className="mt-4 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-lg bg-muted/60 p-3"><dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Dates</dt><dd className="mt-1 font-medium">{formatDateRange(data.starts_on, data.ends_on)}</dd></div>
+          <div className="rounded-lg bg-muted/60 p-3"><dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Length</dt><dd className="mt-1 font-medium tabular-nums">{days} {days === 1 ? "day" : "days"}</dd></div>
+          <div className="rounded-lg bg-muted/60 p-3"><dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Submitted</dt><dd className="mt-1 font-medium">{formatDate(data.created_at)}</dd></div>
+        </dl>
         {data.excess_days > 0 ? (
-          <div className="sm:col-span-2">
-            <dt className="font-semibold text-muted-foreground">Beyond the yearly limit</dt>
-            <dd>{data.excess_days} {data.excess_days === 1 ? "day" : "days"}, deducted from the employee&apos;s retirement benefits</dd>
-          </div>
+          <p className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100">
+            {data.excess_days} {data.excess_days === 1 ? "day is" : "days are"} beyond the yearly limit and will be deducted from the employee&apos;s retirement benefits.
+          </p>
         ) : null}
-        <div className="sm:col-span-2">
-          <dt className="font-semibold text-muted-foreground">Notes</dt>
-          <dd className="mt-1 rounded-lg bg-muted p-3 whitespace-pre-line">{data.reason || "No notes provided."}</dd>
-        </div>
-        {data.decision_note ? (
-          <div className="sm:col-span-2">
-            <dt className="font-semibold text-muted-foreground">Notes from HR</dt>
-            <dd className="mt-1 whitespace-pre-line">{data.decision_note}</dd>
-          </div>
-        ) : null}
-        <div className="sm:col-span-2">
-          <dt className="font-semibold text-muted-foreground">Supporting evidence</dt>
-          <dd className="mt-1">
+      </div>
+      <div className="grid gap-4 md:grid-cols-2">
+        <section aria-labelledby="leave-credits-heading" className="rounded-xl border p-4">
+          <h2 className="font-bold" id="leave-credits-heading">Leave credits</h2>
+          <p className="mt-2 text-sm">
+            {balances.isLoading ? "Loading…" : credit && credit.days_per_year !== null
+              ? `${Math.max(credit.days_per_year - credit.used_days, 0)} of ${credit.days_per_year} days left in ${creditYear}, counting requests for approval and approved ones.`
+              : `${data.leave_type_name} has no yearly limit.`}
+          </p>
+        </section>
+        <section aria-labelledby="leave-documents-heading" className="rounded-xl border p-4">
+          <h2 className="font-bold" id="leave-documents-heading">Supporting documents</h2>
+          <div className="mt-2 text-sm">
             {attachments.length ? (
               <ul className="flex flex-wrap gap-2">
                 {attachments.map((attachment) => (
@@ -192,12 +191,20 @@ export function HrLeaveDetail({ requestId }: { requestId: string }) {
                   </li>
                 ))}
               </ul>
-            ) : (
-              "No documents attached."
-            )}
-          </dd>
-        </div>
-      </dl>
+            ) : "No documents attached."}
+          </div>
+        </section>
+      </div>
+      <section aria-labelledby="leave-notes-heading" className="rounded-xl border p-4">
+        <h2 className="font-bold" id="leave-notes-heading">Employee notes</h2>
+        <p className="mt-2 rounded-lg bg-muted p-3 text-sm whitespace-pre-line">{data.reason || "No notes provided."}</p>
+        {data.decision_note ? (
+          <>
+            <h3 className="mt-4 font-semibold">Notes from HR</h3>
+            <p className="mt-1 text-sm whitespace-pre-line">{data.decision_note}</p>
+          </>
+        ) : null}
+      </section>
       {success ? (
         <p className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm" role="status">
           {success}

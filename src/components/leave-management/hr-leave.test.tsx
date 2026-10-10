@@ -20,7 +20,10 @@ vi.mock("@/hooks/use-leave-management", () => ({
     error: null,
     data: {
       id: "123e4567-e89b-42d3-a456-426614174000",
+      employee_id: "e1",
+      leave_type_id: "t-sick",
       leave_type_name: "Annual leave",
+      excess_days: 0,
       starts_on: "2026-10-01",
       ends_on: "2026-10-02",
       reason: "Family event",
@@ -32,6 +35,7 @@ vi.mock("@/hooks/use-leave-management", () => ({
     },
   }),
   useDecideLeaveRequest: () => ({ isPending: false, mutateAsync: mocks.decide }),
+  useEmployeeLeaveBalances: () => ({ isLoading: false, error: null, data: [{ leave_type_id: "t-sick", days_per_year: 15, excess_deducted_from_retirement: false, used_days: 6 }] }),
 }));
 
 const navigation = vi.hoisted(() => ({ search: "" }));
@@ -140,5 +144,12 @@ describe("HrLeaveWorkspace", () => {
     expect(screen.getByRole("tab", { name: /requests/i })).toHaveAttribute("aria-selected", "true");
     expect(mocks.hrQueueInput).toHaveBeenLastCalledWith(expect.objectContaining({ page: 2, pageSize: 10, status: "pending" }));
     navigation.search = "";
+  });
+  it("summarises the request in a header card with the day count and the employee's remaining credits", () => {
+    render(<HrLeaveDetail requestId="123e4567-e89b-42d3-a456-426614174000" />);
+    expect(screen.getByText("2 days")).toBeInTheDocument();
+    const credits = screen.getByRole("region", { name: "Leave credits" });
+    expect(credits).toHaveTextContent("9 of 15 days left in 2026");
+    expect(screen.getByRole("region", { name: "Supporting documents" })).toHaveTextContent("No documents attached.");
   });
 });

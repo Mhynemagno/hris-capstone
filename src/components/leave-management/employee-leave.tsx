@@ -24,6 +24,7 @@ import { requestableLeaveTypes } from "@/lib/leave/requestable-types";
 import type { LeaveBalance } from "@/lib/types/database";
 import { leaveRequestDraftSchema, maxLeaveDate } from "@/schemas/leave-management";
 
+import { LeaveCreditCards } from "./leave-credit-cards";
 import { LeaveStatusBadge } from "./leave-status-badge";
 
 const today = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
@@ -150,6 +151,23 @@ export function EmployeeLeaveList() {
         </p>
       )}
       <Pagination from={rows.length ? (page - 1) * 10 + 1 : 0} noun="leave requests" onPageChange={setPage} page={page} pageCount={Math.max(1, Math.ceil(total / 10))} to={Math.min(page * 10, total)} total={total} />
+    </section>
+  );
+}
+
+/** The leave types the employee can take, as cards with the days left this year. */
+export function EmployeeLeaveCredits() {
+  const types = useRequestableLeaveTypes();
+  const employee = useEmployeeForCurrentUser();
+  const year = Number(today().slice(0, 4));
+  const balances = useMyLeaveBalances(year);
+  if (types.isLoading || employee.isLoading) return <LoadingState label="Loading leave credits…" />;
+  const loadError = types.error ?? employee.error ?? balances.error;
+  if (loadError) return <ErrorState message={loadError.message} />;
+  return (
+    <section aria-labelledby="my-leave-credits" className="space-y-3">
+      <h2 className="text-xl font-bold" id="my-leave-credits">My leave credits</h2>
+      <LeaveCreditCards balances={balances.data ?? []} types={requestableLeaveTypes(types.data ?? [], employee.data?.gender)} year={year} />
     </section>
   );
 }
