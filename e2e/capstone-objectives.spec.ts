@@ -144,11 +144,12 @@ test.describe("Objective 1: centralized personnel records", () => {
     await expect(page.getByRole("tabpanel", { name: "Eligibility" }).getByRole("alert").filter({ hasText: "This field is required." }).first()).toBeVisible();
     await expect(page.getByText(/Invalid ISO date|Too small|expected string/)).toHaveCount(0);
     await page.getByLabel(/^Date awarded/).fill("2014-04-10");
+    await page.locator("#qualification-document").setInputFiles({ name: "napolcom.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4 rating") });
     await page.getByRole("button", { name: "Add eligibility" }).click();
     await expect(page.getByRole("status").filter({ hasText: "Eligibility added." })).toBeVisible();
 
     await sections.getByRole("tab", { name: "Certification / Training" }).click();
-    await page.locator("#certification-primary").selectOption("Leadership and Management Course");
+    await page.locator("#certification-primary").selectOption("Public Safety Basic Recruit Course (PSBRC)");
     await page.getByLabel(/^Completion date/).fill("2019-08-01");
     await page.getByRole("button", { name: "Add certification / training" }).click();
     await expect(page.getByRole("status").filter({ hasText: "Certification / Training added." })).toBeVisible();
@@ -253,17 +254,12 @@ test.describe("Objective 2: recruitment management", () => {
     await page.getByRole("tab", { name: /Documents/ }).click();
     await expect(page.getByRole("heading", { name: "Required profile documents" })).toBeVisible();
     await expect(page.getByRole("button", { name: /^View CV \/ Resume: / })).toBeVisible();
-    const advance = async (statuses: string[]) => {
-      for (const status of statuses) {
-        await page.getByRole("button", { name: "Move to next stage" }).click();
-        const dialog = page.getByRole("dialog", { name: "Move to next stage" });
-        await dialog.getByRole("radio", { name: status }).click();
-        await dialog.getByRole("button", { name: `Move to ${status}` }).click();
-        await expect(page.getByRole("status").filter({ hasText: `Moved to ${status}` }).first()).toBeVisible();
-        await expect(dialog).toBeHidden();
-      }
-    };
-    await advance([
+    // HR records each stage's result: Verified for the submitted documents, then Passed with proof at every stage.
+    await page.getByRole("button", { name: "Verified" }).click();
+    await page.getByRole("dialog", { name: "Mark Application Submission as Verified" }).getByRole("button", { name: "Mark as Verified" }).click();
+    await expect(page.getByRole("status").filter({ hasText: "Application Submission: Verified" }).first()).toBeVisible();
+    const stages = [
+      "Application Submission",
       "Physical Agility Test",
       "Physical & Medical Examination",
       "Neuro-Psychiatric Examination",
@@ -271,8 +267,20 @@ test.describe("Objective 2: recruitment management", () => {
       "Character & Background Investigation",
       "Panel Interview",
       "Final Evaluation",
-      "Shortlisted",
-    ]);
+    ];
+    for (const stage of stages) {
+      await page.getByRole("button", { name: "Passed", exact: true }).click();
+      const dialog = page.getByRole("dialog", { name: `Mark ${stage} as Passed` });
+      if (stage !== "Application Submission") {
+        await dialog.getByLabel(/^Supporting document/).setInputFiles({ name: "result.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4 result") });
+      }
+      await dialog.getByRole("button", { name: "Mark as Passed" }).click();
+      await expect(page.getByRole("status").filter({ hasText: `${stage}: Passed` }).first()).toBeVisible();
+      await expect(dialog).toBeHidden();
+    }
+    await expect(page.getByText("Candidate", { exact: true }).first()).toBeVisible();
+    await page.getByRole("tab", { name: /Documents/ }).click();
+    await expect(page.getByRole("heading", { name: "Stage supporting documents" })).toBeVisible();
     await page.getByRole("button", { name: "Hire applicant" }).click();
     const hireDialog = page.getByRole("dialog", { name: "Hire applicant" });
     await hireDialog.getByLabel(/^Badge number/).fill(badge);
@@ -322,7 +330,8 @@ test.describe("Objective 3: deployment tracking", () => {
 
     await createDeployment(page, role);
     await expect(page.getByText("Deployment created by").first()).toBeVisible();
-    await expect(page.getByRole("textbox")).toHaveCount(0);
+    // Details are read-only: the assignment fields are only on the Update page (the report form has its own Notes box).
+    await expect(page.getByLabel(/^Remarks/)).toHaveCount(0);
     await page.getByRole("link", { name: "Update" }).click();
     await expect(page).toHaveURL(/\/hr\/deployments\/[0-9a-f-]{36}\/edit$/);
     await page.getByLabel(/^Remarks/).fill(`Oplan Ligtas ${runId}`);
@@ -346,8 +355,8 @@ test.describe("Objective 3: deployment tracking", () => {
 });
 
 test.describe("Objective 4: promotion eligibility tracker", () => {
-  test("HR evaluates service years, a performance rating, and a training credential", async ({ page }) => {
-    const credential = "Criminal Investigation Course";
+  test("HR evaluates service years, a rubric performance evaluation, and a training credential", async ({ page }) => {
+    const credential = "Criminal Investigation Course (CIC) / SOCO";
     await signIn(page, HR.email, HR.home);
     const employee = await createEmployee(page, "PROMO", "2014-01-06");
     // Records are added in edit mode; viewing a record is read-only.
@@ -381,12 +390,15 @@ test.describe("Objective 4: promotion eligibility tracker", () => {
     await page.goto(`/hr/employees/${employee.id}`);
     await page.getByRole("link", { name: "Promotion review" }).click();
     await expect(page).toHaveURL(new RegExp(`/hr/promotions/${employee.id}$`));
-    await page.getByLabel(/^Overall rating/).selectOption({ label: "4 – Very satisfactory" });
+    // The rubric: 12+ years of service (45) + one specialized training (10) = 55, graded 3.00 Poor.
+    const rubric = page.getByRole("region", { name: "Performance evaluation" });
+    await expect(rubric.getByRole("row", { name: /Specialized unit training/ })).toContainText("10 / 20");
     await page.getByLabel(/^Review period start/).fill("2025-01-01");
     await page.getByLabel(/^Review period end/).fill("2025-12-31");
     await page.locator("#rating-notes").fill(`Rated by the objective tests ${runId}`);
-    await page.getByRole("button", { name: "Save rating" }).click();
-    await expect(page.getByRole("status").filter({ hasText: "Performance rating saved." })).toBeVisible();
+    await page.getByRole("button", { name: "Save evaluation" }).click();
+    await expect(page.getByRole("status").filter({ hasText: "Performance evaluation saved." })).toBeVisible();
+    await expect(page.getByText(/55 \/ 100 · 3\.00 Poor/).first()).toBeVisible();
 
     const criterion = page.locator("#criterion option", { hasText: "PCPL" }).first();
     await page.locator("#criterion").selectOption(await criterion.getAttribute("value") as string);

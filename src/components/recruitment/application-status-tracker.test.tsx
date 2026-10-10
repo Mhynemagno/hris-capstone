@@ -49,4 +49,8 @@ describe("ApplicationStatusTracker", () => {
     const finalStep = applicationStatusSteps("Final Evaluation").find((step) => step.label === "Final Evaluation");
     expect(finalStep?.detail).toBe("Under Final Deliberation");
   });
+  it("names HR's recorded results in the applicant's history", () => {
+    expect(historyEntryLabel({ previous_status: "Drug Test", next_status: "Character & Background Investigation", result: "passed" })).toBe("Passed: Drug Test");
+    expect(historyEntryLabel({ previous_status: "Panel Interview", next_status: "Panel Interview", result: "scheduled" })).toBe("Scheduled: Panel Interview");
+  });
 });

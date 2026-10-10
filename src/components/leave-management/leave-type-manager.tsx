@@ -2,7 +2,6 @@
 
 import { type FormEvent, useState } from "react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
 import { FormField } from "@/components/ui/form-field";
@@ -13,6 +12,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useLeaveTypes, useSetLeaveTypeAllotment, useUpdateLeaveType } from "@/hooks/use-leave-management";
 import type { LeaveType } from "@/lib/types/database";
 import { leaveTypeAllotmentSchema } from "@/schemas/leave-management";
+
+import { LeaveCreditCards } from "./leave-credit-cards";
 
 export function LeaveTypeSummary({ name }: { name: string }) {
   return <span>{name}</span>;
@@ -93,6 +94,7 @@ export function LeaveTypeManager({ onPageChange, page = 1 }: { onPageChange?: (p
 
   if (types.isLoading) return <LoadingState label="Loading leave types…" />;
   if (types.error) return <ErrorState message={types.error.message} />;
+  const editing = types.data?.rows.find((type) => type.id === editingId);
 
   return (
     <section aria-labelledby="leave-types-heading" className="space-y-4 rounded-xl border bg-card p-5">
@@ -101,26 +103,18 @@ export function LeaveTypeManager({ onPageChange, page = 1 }: { onPageChange?: (p
         <p className="text-sm text-muted-foreground">Update a leave type&apos;s name, description, or yearly days. Leave types cannot be added or removed.</p>
       </div>
       <p aria-live="polite" className="text-sm font-medium text-emerald-700 dark:text-emerald-400" role="status">{notice ?? ""}</p>
-      {types.data?.rows.length ? (
-        <ul className="space-y-2">
-          {types.data.rows.map((type) => (
-            <li className="rounded-lg border bg-background px-4 py-3" key={type.id}>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-semibold">{type.name}</span>
-                  <Badge variant={type.is_active ? "secondary" : "outline"}>{type.is_active ? "Active" : "Inactive"}</Badge>
-                </div>
-                <Button aria-expanded={editingId === type.id} aria-label={`Update ${type.name}`} onClick={() => setEditingId(editingId === type.id ? null : type.id)} size="sm" type="button" variant="outline">Update</Button>
-              </div>
-              <p className="mt-1 text-sm">{allotmentLabel(type)}</p>
-              {type.description ? <p className="mt-1 text-sm text-muted-foreground">{type.description}</p> : null}
-              {editingId === type.id ? <EditLeaveTypeForm onDone={(message) => { setNotice(message); setEditingId(null); }} type={type} /> : null}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="rounded-lg border border-dashed px-4 py-6 text-center text-muted-foreground">No leave types are set up.</p>
-      )}
+      <LeaveCreditCards
+        action={(type) => (
+          <Button aria-expanded={editingId === type.id} aria-label={`Update ${type.name}`} className="w-full" onClick={() => setEditingId(editingId === type.id ? null : type.id)} size="sm" type="button" variant="outline">Update</Button>
+        )}
+        types={types.data?.rows ?? []}
+      />
+      {editing ? (
+        <div className="rounded-xl border bg-background p-4">
+          <h3 className="font-bold">Update {editing.name}</h3>
+          <EditLeaveTypeForm key={editing.id} onDone={(message) => { setNotice(message); setEditingId(null); }} type={editing} />
+        </div>
+      ) : null}
       {onPageChange && types.data ? <Pagination from={types.data.rows.length ? (page - 1) * 10 + 1 : 0} noun="leave types" onPageChange={onPageChange} page={page} pageCount={Math.max(1, Math.ceil(types.data.count / 10))} to={Math.min(page * 10, types.data.count)} total={types.data.count} /> : null}
     </section>
   );

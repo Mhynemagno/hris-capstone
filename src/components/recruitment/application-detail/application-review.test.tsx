@@ -2,12 +2,11 @@ import userEvent from "@testing-library/user-event";
 import { render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const state = vi.hoisted(() => ({ status: "Application Submission", documents: [] as Array<Record<string, unknown>>, missing: false, history: [] as Array<Record<string, unknown>> }));
+const state = vi.hoisted(() => ({ status: "Application Submission", stageResult: "pending", documents: [] as Array<Record<string, unknown>>, missing: false, history: [] as Array<Record<string, unknown>> }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn(), push: vi.fn() }), usePathname: () => "/hr/applications/x", useSearchParams: () => new URLSearchParams("") }));
 vi.mock("@/components/workspace-shell/breadcrumbs", () => ({ useBreadcrumbTrail: vi.fn() }));
 vi.mock("@/components/recruitment/stage-dialogs", () => ({
-  MoveStageDialog: ({ open }: { open: boolean }) => (open ? <div aria-label="Move to next stage" role="dialog" /> : null),
-  NotSelectedDialog: ({ open }: { open: boolean }) => (open ? <div aria-label="Mark as not selected?" role="alertdialog" /> : null),
+  StageResultDialog: ({ open, result }: { open: boolean; result: string }) => (open ? <div aria-label={`Record ${result}`} role="dialog" /> : null),
   HireDialog: ({ open }: { open: boolean }) => (open ? <div aria-label="Hire applicant" role="dialog" /> : null),
 }));
 vi.mock("./overview-tab", () => ({ OverviewTab: () => <p>overview content</p> }));
@@ -19,7 +18,7 @@ vi.mock("@/hooks/use-recruitment", () => ({
   useMyApplication: () => (state.missing ? { isLoading: false, error: null, data: null } : {
     isLoading: false, error: null,
     data: {
-      application: { id: "00000000-0000-0000-0000-000000000001", applicant_id: "a1", job_opening_id: 4, status: state.status, submitted_at: "2026-10-01T00:00:00Z", cover_note: null,
+      application: { id: "00000000-0000-0000-0000-000000000001", applicant_id: "a1", job_opening_id: 4, status: state.status, stage_result: state.stageResult, submitted_at: "2026-10-01T00:00:00Z", cover_note: null,
         applicants: { first_name: "Ana", middle_name: "Santos", last_name: "Reyes", qualifier: null, applicant_number: 12345, phone: "0917", profile_image_path: null },
         job_openings: { id: 4, title: "Patrol North" } },
       history: state.history,
@@ -28,12 +27,13 @@ vi.mock("@/hooks/use-recruitment", () => ({
   }),
   useApplicantProfileDocumentsFor: () => ({ isLoading: false, error: null, data: [] }),
   useApplicantProfilePhotoUrl: () => ({ data: null }),
+  useApplicationStageDocuments: () => ({ data: [] }),
 }));
 
 import { HrApplicationReview } from "./application-review";
 
 describe("HrApplicationReview", () => {
-  beforeEach(() => { state.status = "Application Submission"; state.documents = []; state.missing = false; state.history = [{ id: "h", previous_status: null, next_status: "Application Submission", created_at: new Date(Date.now() - 4 * 86_400_000).toISOString(), note: null }]; });
+  beforeEach(() => { state.status = "Application Submission"; state.stageResult = "pending"; state.documents = []; state.missing = false; state.history = [{ id: "h", previous_status: null, next_status: "Application Submission", created_at: new Date(Date.now() - 4 * 86_400_000).toISOString(), note: null }]; });
 
   it("names the applicant, links the job and shows how long they have been at this stage", () => {
     render(<HrApplicationReview applicationId="00000000-0000-0000-0000-000000000001" />);
@@ -46,28 +46,32 @@ describe("HrApplicationReview", () => {
   });
 
   it.each([
-    ["Application Submission", ["Move to next stage"], ["Not selected", "Hire applicant"]],
-    ["Final Evaluation", ["Move to next stage", "Not selected"], ["Hire applicant"]],
-    ["Shortlisted", ["Hire applicant"], ["Move to next stage", "Not selected"]],
-    ["Hired", [], ["Move to next stage", "Hire applicant", "Not selected"]],
-    ["Not Selected", [], ["Move to next stage", "Hire applicant", "Not selected"]],
-  ])("shows the right actions at %s", (status, present, absent) => {
+    ["Application Submission", "pending", ["Verified", "Passed", "Failed"], ["Scheduled", "Hire applicant"]],
+    ["Physical Agility Test", "pending", ["Scheduled", "Passed", "Failed"], ["Verified", "Hire applicant"]],
+    ["Final Evaluation", "scheduled", ["Passed", "Failed"], ["Scheduled", "Hire applicant"]],
+    ["Shortlisted", "pending", ["Hire applicant"], ["Passed", "Failed"]],
+    ["Hired", "pending", [], ["Passed", "Failed", "Hire applicant"]],
+    ["Not Selected", "pending", [], ["Passed", "Failed", "Hire applicant"]],
+  ])("shows the right actions at %s (%s)", (status, stageResult, present, absent) => {
     state.status = status;
+    state.stageResult = stageResult;
     render(<HrApplicationReview applicationId="00000000-0000-0000-0000-000000000001" />);
     for (const name of present) expect(screen.getByRole("button", { name })).toBeInTheDocument();
     for (const name of absent) expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
   });
 
-  it("offers the immediate next stage without a BMI-proof gate", () => {
-    state.status = "Physical & Medical Examination";
+  it("shows the client's status word next to the stage", () => {
+    state.status = "Drug Test";
+    state.stageResult = "scheduled";
     render(<HrApplicationReview applicationId="00000000-0000-0000-0000-000000000001" />);
-    expect(screen.getByRole("button", { name: "Move to next stage" })).toBeEnabled();
+    expect(screen.getByText("Scheduled", { selector: "[data-slot=badge], span" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Move to next stage" })).not.toBeInTheDocument();
   });
 
-  it("opens the move dialog", async () => {
+  it("opens the result dialog for the chosen result", async () => {
     render(<HrApplicationReview applicationId="00000000-0000-0000-0000-000000000001" />);
-    await userEvent.click(screen.getByRole("button", { name: "Move to next stage" }));
-    expect(screen.getByRole("dialog", { name: "Move to next stage" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Passed" }));
+    expect(screen.getByRole("dialog", { name: "Record passed" })).toBeInTheDocument();
   });
 
   it("switches tabs", () => {

@@ -10,30 +10,16 @@ import { LoadingState } from "@/components/ui/loading-state";
 import { nativeSelectClassName } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { useRankOptions } from "@/hooks/use-administration";
-import { formatDate, formatDateRange } from "@/lib/format-date";
+import { formatDate } from "@/lib/format-date";
 import { rankLabel } from "@/lib/ranks";
 import {
-  useCreatePerformanceRating,
   useCreatePromotionEvaluation,
   useHrPromotionEmployee,
   usePromotionCriteria,
   usePromotionReadiness,
 } from "@/hooks/use-promotion-eligibility";
-import { performanceRatingSchema } from "@/schemas/promotion-eligibility";
 
-/** performance_ratings.rating is a smallint checked 1..5. */
-export const PERFORMANCE_RATING_OPTIONS = [
-  { value: 1, label: "Poor" },
-  { value: 2, label: "Needs improvement" },
-  { value: 3, label: "Satisfactory" },
-  { value: 4, label: "Very satisfactory" },
-  { value: 5, label: "Outstanding" },
-] as const;
-
-export function ratingLabel(rating: number) {
-  const option = PERFORMANCE_RATING_OPTIONS.find((item) => item.value === rating);
-  return option ? `${rating} – ${option.label}` : String(rating);
-}
+import { PerformanceEvaluation } from "./performance-evaluation";
 
 const recommendationLabels = {
   recommended: "Recommended",
@@ -41,19 +27,12 @@ const recommendationLabels = {
   not_recommended: "Not recommended",
 } as const;
 
-type RatingFieldErrors = Partial<Record<"rating" | "reviewPeriodStartsOn" | "reviewPeriodEndsOn" | "notes", string>>;
-
 export function HrPromotionReview({ employeeId }: { employeeId: string }) {
   const detail = useHrPromotionEmployee(employeeId);
   const criteria = usePromotionCriteria({ isActive: true });
   const readiness = usePromotionReadiness(employeeId);
   const ranks = useRankOptions();
-  const createRating = useCreatePerformanceRating();
   const createEvaluation = useCreatePromotionEvaluation();
-  const [ratingStart, setRatingStart] = useState("");
-  const [ratingErrors, setRatingErrors] = useState<RatingFieldErrors>({});
-  const [ratingError, setRatingError] = useState<string | null>(null);
-  const [ratingSuccess, setRatingSuccess] = useState<string | null>(null);
   const [criterionError, setCriterionError] = useState<string | undefined>();
   const [evaluationError, setEvaluationError] = useState<string | null>(null);
   const [evaluationSuccess, setEvaluationSuccess] = useState<string | null>(null);
@@ -68,47 +47,6 @@ export function HrPromotionReview({ employeeId }: { employeeId: string }) {
     const rank = ranks.data?.find((row) => row.id === rankId);
     return rank ? rankLabel(rank) : ranks.isLoading ? "Loading rank…" : `Rank #${rankId}`;
   };
-
-  async function submitRating(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setRatingError(null);
-    setRatingSuccess(null);
-    const formElement = event.currentTarget;
-    const form = Object.fromEntries(new FormData(formElement));
-    const input = {
-      employeeId,
-      rating: form.rating === "" ? undefined : form.rating,
-      reviewPeriodStartsOn: form.startsOn,
-      reviewPeriodEndsOn: form.endsOn,
-      notes: form.notes,
-    };
-    const parsed = performanceRatingSchema.safeParse(input);
-    if (!parsed.success) {
-      const next: RatingFieldErrors = {};
-      for (const issue of parsed.error.issues) {
-        const key = issue.path[0] as keyof RatingFieldErrors;
-        if (!next[key]) {
-          next[key] =
-            key === "rating"
-              ? "Choose a rating from 1 to 5."
-              : key === "reviewPeriodStartsOn" || (key === "reviewPeriodEndsOn" && !form.endsOn)
-                ? "Enter a valid date."
-                : issue.message;
-        }
-      }
-      setRatingErrors(next);
-      return;
-    }
-    setRatingErrors({});
-    try {
-      await createRating.mutateAsync(input);
-      formElement.reset();
-      setRatingStart("");
-      setRatingSuccess("Performance rating saved.");
-    } catch (cause) {
-      setRatingError(cause instanceof Error ? cause.message : "Unable to save the performance rating.");
-    }
-  }
 
   async function submitEvaluation(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -150,7 +88,7 @@ export function HrPromotionReview({ employeeId }: { employeeId: string }) {
           </dd>
         </div>
         <div>
-          <dt className="text-sm text-muted-foreground">Employment started</dt>
+          <dt className="text-sm text-muted-foreground">Date Entered Service</dt>
           <dd className="font-medium">{formatDate(data.employee.employment_started_on) ?? "—"}</dd>
         </div>
       </dl>
@@ -178,63 +116,7 @@ export function HrPromotionReview({ employeeId }: { employeeId: string }) {
           {data.qualifications.length} eligibility · {data.certifications.length + data.training.length} certification / training
         </p>
       </section>
-      <section className="space-y-3">
-        <h2 className="text-lg font-bold">Performance ratings</h2>
-        {data.ratings.length ? (
-          <ul className="space-y-2">
-            {data.ratings.map((rating) => (
-              <li className="rounded-lg border p-3 text-sm" key={rating.id}>
-                <span className="font-medium">{ratingLabel(rating.rating)}</span> · {formatDateRange(rating.review_period_starts_on, rating.review_period_ends_on)}
-                {rating.notes ? <p className="mt-1 whitespace-pre-line text-muted-foreground">{rating.notes}</p> : null}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-sm text-muted-foreground">No performance ratings have been recorded.</p>
-        )}
-        <form className="grid gap-4 rounded-xl border p-4 sm:grid-cols-2" noValidate onSubmit={submitRating}>
-          <h3 className="font-bold sm:col-span-2">Record a performance rating</h3>
-          <FormField error={ratingErrors.rating} htmlFor="rating" label="Overall rating" required>
-            <select className={nativeSelectClassName} defaultValue="" id="rating" name="rating" required>
-              <option value="">Choose a rating</option>
-              {PERFORMANCE_RATING_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.value} – {option.label}
-                </option>
-              ))}
-            </select>
-          </FormField>
-          <div className="hidden sm:block" />
-          <FormField error={ratingErrors.reviewPeriodStartsOn} htmlFor="rating-start" label="Review period start" required>
-            <Input id="rating-start" name="startsOn" onChange={(event) => setRatingStart(event.target.value)} required type="date" />
-          </FormField>
-          <FormField
-            description="Must be on or after the start date."
-            error={ratingErrors.reviewPeriodEndsOn}
-            htmlFor="rating-end"
-            label="Review period end"
-            required
-          >
-            <Input id="rating-end" min={ratingStart || undefined} name="endsOn" required type="date" />
-          </FormField>
-          <div className="sm:col-span-2">
-            <FormField error={ratingErrors.notes} htmlFor="rating-notes" label="HR notes">
-              <Textarea id="rating-notes" maxLength={2000} name="notes" />
-            </FormField>
-          </div>
-          <div className="space-y-3 sm:col-span-2">
-            {ratingError ? <ErrorState message={ratingError} /> : null}
-            {ratingSuccess ? (
-              <p className="text-sm font-medium text-primary" role="status">
-                {ratingSuccess}
-              </p>
-            ) : null}
-            <Button disabled={createRating.isPending} type="submit">
-              {createRating.isPending ? "Saving rating…" : "Save rating"}
-            </Button>
-          </div>
-        </form>
-      </section>
+      <PerformanceEvaluation certifications={data.certifications} employeeId={employeeId} employmentStartedOn={data.employee.employment_started_on} ratings={data.ratings} />
       <section className="space-y-3">
         <h2 className="text-lg font-bold">Promotion recommendation</h2>
         <form className="grid gap-4 rounded-xl border p-4 sm:grid-cols-2" onSubmit={submitEvaluation}>

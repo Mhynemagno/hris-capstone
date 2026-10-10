@@ -18,14 +18,36 @@ export const PNP_QUALIFICATIONS = [
   "Philippine National Police Academy (PNPA)",
 ] as const;
 
-/** Certification / Training courses (stored as certifications); also the promotion requirements. */
-export const PNP_CERTIFICATIONS = [
-  "Criminal Investigation Course",
-  "Police Intelligence Operations Course",
-  "Drug Enforcement Operations Course",
-  "Leadership and Management Course",
-  "Senior Police Leadership and Command Course",
+/** Mandatory career courses (client round 5): 15 rubric points each, up to 30. */
+export const PNP_MANDATORY_COURSES = [
+  "Public Safety Basic Recruit Course (PSBRC)",
+  "Public Safety Junior Leadership Course (PSJLC)",
+  "Public Safety Senior Leadership Course (PSSLC)",
+  "Public Safety Officers Candidate Course (PSOCC)",
+  "Public Safety Officers Basic Course (PSOBC)",
+  "Public Safety Officers Advance Course (PSOAC)",
 ] as const;
+
+/** Specialized unit trainings (client round 5): 10 rubric points each, up to 20. */
+export const PNP_SPECIALIZED_TRAININGS = [
+  "Criminal Investigation Course (CIC) / SOCO",
+  "Special Weapons and Tactics (SWAT) Course",
+  "Special Action Force (SAF) Commando Course",
+  "Traffic Management / Tactical Driving Course",
+  "Cybercrime Investigation Seminar",
+] as const;
+
+/**
+ * Certification / Training choices (stored as certifications), grouped for dropdowns; also the promotion
+ * requirements. The database sets each record's rubric category from these names
+ * (private.certification_category in 20261010100001_performance_rubric.sql).
+ */
+export const PNP_CERTIFICATION_GROUPS = [
+  { label: "Mandatory Course", choices: PNP_MANDATORY_COURSES },
+  { label: "Specialized Training", choices: PNP_SPECIALIZED_TRAININGS },
+] as const;
+
+export const PNP_CERTIFICATIONS = [...PNP_MANDATORY_COURSES, ...PNP_SPECIALIZED_TRAININGS] as const;
 
 export const PNP_TRAININGS = [
   "Public Safety Basic Recruit Course (PSBRC)",

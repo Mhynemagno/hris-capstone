@@ -8,13 +8,9 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/hr/applications",
   useSearchParams: () => new URLSearchParams(nav.search),
 }));
-vi.mock("@/components/recruitment/stage-dialogs", () => ({
-  MoveStageDialog: ({ open, initialStage }: { open: boolean; initialStage?: string }) => (open ? <div role="dialog">Move dialog {initialStage}</div> : null),
-  NotSelectedDialog: ({ open }: { open: boolean }) => (open ? <div role="alertdialog">Not selected dialog</div> : null),
-}));
 const rows = [
-  { id: "11111111-0000-0000-0000-000000000001", applicant_id: "a1", job_opening_id: 1, status: "Final Evaluation", submitted_at: "2026-10-01T00:00:00Z", ai_score_status: "completed", ai_score: 82, applicant_name: "Ana Reyes", applicant_number: 12345, job_title: "Patrol North" },
-  { id: "11111111-0000-0000-0000-000000000002", applicant_id: "a2", job_opening_id: 1, status: "Application Submission", submitted_at: "2026-10-03T00:00:00Z", ai_score_status: "failed", ai_score: null, applicant_name: "Carlo Diaz", applicant_number: 12346, job_title: "Patrol North" },
+  { id: "11111111-0000-0000-0000-000000000001", applicant_id: "a1", job_opening_id: 1, status: "Final Evaluation", stage_result: "scheduled", submitted_at: "2026-10-01T00:00:00Z", ai_score_status: "completed", ai_score: 82, applicant_name: "Ana Reyes", applicant_number: 12345, job_title: "Patrol North" },
+  { id: "11111111-0000-0000-0000-000000000002", applicant_id: "a2", job_opening_id: 1, status: "Application Submission", stage_result: "pending", submitted_at: "2026-10-03T00:00:00Z", ai_score_status: "failed", ai_score: null, applicant_name: "Carlo Diaz", applicant_number: 12346, job_title: "Patrol North" },
 ];
 vi.mock("@/hooks/use-recruitment", () => ({
   useAllHrApplications: () => ({ isLoading: false, error: null, refetch: vi.fn(), data: rows }),
@@ -50,12 +46,21 @@ describe("HrApplications", () => {
     expect(screen.getByRole("button", { name: "Remove filter Job: Patrol North" })).toBeInTheDocument();
   });
 
-  it("offers only the allowed next stages from the row menu", async () => {
+  it("shows a Status column with the client's status words and the stage underneath", () => {
+    render(<HrApplications />);
+    expect(screen.getByRole("columnheader", { name: "Status" })).toBeInTheDocument();
+    expect(screen.queryByRole("columnheader", { name: "Stage" })).not.toBeInTheDocument();
+    const [first, second] = screen.getAllByRole("row").slice(1);
+    expect(first).toHaveTextContent("Scheduled");
+    expect(first).toHaveTextContent("Final Evaluation");
+    expect(second).toHaveTextContent("Pending / For Evaluation");
+  });
+
+  it("opens the application from the row menu instead of moving stages there", async () => {
     render(<HrApplications />);
     await userEvent.click(screen.getByRole("button", { name: "Actions for Ana Reyes" }));
-    expect(await screen.findByRole("menuitem", { name: "Move to Shortlisted" })).toBeInTheDocument();
-    expect(screen.queryByRole("menuitem", { name: "Move to Panel Interview" })).not.toBeInTheDocument();
-    await userEvent.click(screen.getByRole("menuitem", { name: "Mark as not selected" }));
-    expect(screen.getByRole("alertdialog")).toHaveTextContent("Not selected dialog");
+    expect(await screen.findByRole("menuitem", { name: "Open application" })).toBeInTheDocument();
+    expect(screen.queryByRole("menuitem", { name: /^Move to / })).not.toBeInTheDocument();
+    expect(screen.queryByRole("menuitem", { name: "Mark as not selected" })).not.toBeInTheDocument();
   });
 });

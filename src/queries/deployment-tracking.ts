@@ -1,5 +1,5 @@
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
-import type { Deployment, DeploymentHistory, Employee, PaginatedResult } from "@/lib/types/database";
+import type { Deployment, DeploymentHistory, DeploymentReport, Employee, PaginatedResult } from "@/lib/types/database";
 import { uuidSchema } from "@/schemas/common";
 import { deploymentFiltersSchema, deploymentInputSchema, deploymentUpdateSchema, type DeploymentFilters } from "@/schemas/deployment-tracking";
 
@@ -82,4 +82,41 @@ export async function createDeployment(input: unknown) {
 
 export async function updateDeployment(input: unknown) {
   const values = deploymentUpdateSchema.parse(input); const { error } = await createBrowserSupabaseClient().rpc("update_deployment", { target_deployment_id: values.id, expected_updated_at: values.expectedUpdatedAt, ...rpcPayload(values) }); throwIfError(error);
+}
+
+const deploymentReportBucket = "deployment-reports";
+const reportExtensions: Record<string, string> = { "application/pdf": "pdf", "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" };
+
+export type DeploymentReportInput = { deploymentId: string; notes?: string; file: File | null };
+
+/** The deployed employee (or HR) submits a report / proof of attendance; the file is removed again if the report is refused. */
+export async function submitDeploymentReport({ deploymentId, notes, file }: DeploymentReportInput) {
+  const id = uuidSchema.parse(deploymentId);
+  if (!file) throw new Error("Attach the report or proof of attendance.");
+  const extension = reportExtensions[file.type];
+  if (!extension || file.size < 1 || file.size > 10 * 1024 * 1024) throw new Error("Use a PDF, PNG, JPEG, or WebP file up to 10 MB.");
+  const client = createBrowserSupabaseClient();
+  const objectPath = `deployments/${id}/${crypto.randomUUID()}.${extension}`;
+  const { error: uploadError } = await client.storage.from(deploymentReportBucket).upload(objectPath, file, { contentType: file.type, upsert: false });
+  throwIfError(uploadError);
+  const { data, error } = await client.rpc("submit_deployment_report", { target_deployment_id: id, target_notes: notes?.trim() || null, target_document: { objectPath, fileName: file.name.slice(0, 255), mimeType: file.type, sizeBytes: file.size } });
+  if (error) {
+    await client.storage.from(deploymentReportBucket).remove([objectPath]).catch(() => undefined);
+    throw new Error(error.message);
+  }
+  return data as string;
+}
+
+export async function listDeploymentReports(deploymentId: string) {
+  const id = uuidSchema.parse(deploymentId);
+  const { data, error } = await createBrowserSupabaseClient().from("deployment_reports").select("*").eq("deployment_id", id).order("created_at", { ascending: false });
+  throwIfError(error);
+  return (data ?? []) as DeploymentReport[];
+}
+
+export async function getDeploymentReportUrl(objectPath: string) {
+  const { data, error } = await createBrowserSupabaseClient().storage.from(deploymentReportBucket).createSignedUrl(objectPath, 60);
+  throwIfError(error);
+  if (!data?.signedUrl) throw new Error("Unable to open the report.");
+  return data.signedUrl;
 }

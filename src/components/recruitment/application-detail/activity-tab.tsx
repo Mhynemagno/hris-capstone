@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { notifySuccess } from "@/components/ui/toaster";
 import { useAddApplicationRemark } from "@/hooks/use-recruitment";
 import { formatDateTime } from "@/lib/format-date";
+import { stageResultHistoryLabel } from "@/lib/recruitment/stage-results";
 import type { ApplicationStatusHistory } from "@/lib/types/database";
 import { cn } from "@/lib/utils";
 
@@ -45,7 +46,7 @@ export function ActivityTab({ applicationId, history }: { applicationId: string;
           return (
             <li className="relative" key={entry.id}>
               <span aria-hidden="true" className={cn("absolute top-1.5 -left-[25px] size-2.5 rounded-full border-2 border-card", isRemark ? "bg-muted-foreground" : "bg-primary")} />
-              <p className="text-base font-medium">{isRemark ? "Remark" : `Moved to ${historyEntryLabel(entry)}`}</p>
+              <p className="text-base font-medium">{stageResultHistoryLabel(entry) ?? (isRemark ? "Remark" : `Moved to ${historyEntryLabel(entry)}`)}</p>
               {entry.note ? <p className="text-base text-secondary-foreground">{entry.note}</p> : null}
               <p className="text-sm text-muted-foreground">{formatDateTime(entry.created_at)}</p>
             </li>

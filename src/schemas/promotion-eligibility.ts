@@ -48,6 +48,16 @@ export const performanceRatingSchema = z.object({
   if (value.reviewPeriodEndsOn < value.reviewPeriodStartsOn) context.addIssue({ code: "custom", path: ["reviewPeriodEndsOn"], message: "Review period end must be on or after its start." });
 });
 
+/** A rubric evaluation: the score is computed by the server from service years and courses. */
+export const performanceEvaluationSchema = z.object({
+  employeeId: uuidSchema,
+  reviewPeriodStartsOn: isoDateSchema,
+  reviewPeriodEndsOn: isoDateSchema,
+  notes: optionalText(2000),
+}).superRefine((value, context) => {
+  if (value.reviewPeriodEndsOn < value.reviewPeriodStartsOn) context.addIssue({ code: "custom", path: ["reviewPeriodEndsOn"], message: "Review period end must be on or after its start." });
+});
+
 export const performanceRatingUpdateSchema = performanceRatingSchema.extend({
   id: uuidSchema,
   expectedUpdatedAt: z.string().datetime({ offset: true }),
@@ -107,6 +117,7 @@ export type PromotionCriterionInput = z.infer<typeof promotionCriterionSchema>;
 export type PromotionCriterionUpdateInput = z.infer<typeof promotionCriterionUpdateSchema>;
 export type PerformanceRatingInput = z.infer<typeof performanceRatingSchema>;
 export type PerformanceRatingUpdateInput = z.infer<typeof performanceRatingUpdateSchema>;
+export type PerformanceEvaluationInput = z.infer<typeof performanceEvaluationSchema>;
 export type PromotionEvidenceInput = z.infer<typeof promotionEvidenceSchema>;
 export type PromotionEvaluationInput = z.infer<typeof promotionEvaluationSchema>;
 export type PromotionEvaluationUpdateInput = z.infer<typeof promotionEvaluationUpdateSchema>;

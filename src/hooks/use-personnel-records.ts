@@ -91,7 +91,7 @@ type ChildInput = ServiceHistoryInput | QualificationInput | CertificationInput 
 export function useSavePersonnelEntry(kind: PersonnelKind, employeeId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ input, id }: { input: ChildInput; id?: string }) => savePersonnelEntry(kind, input, id),
+    mutationFn: ({ input, id, document }: { input: ChildInput; id?: string; document?: File | null }) => savePersonnelEntry(kind, input, id, document),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.personnelRecords.detail(employeeId) });
       void queryClient.invalidateQueries({ queryKey: personnelEntriesKey(kind, employeeId) });

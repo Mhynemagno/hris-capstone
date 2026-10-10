@@ -1,7 +1,7 @@
 "use client";
 import { useMutation,useQuery,useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-keys";
-import { cancelLeaveRequest,createLeaveType,decideLeaveRequest,getLeaveAttachmentUrl,getLeaveRequest,getMyLeaveBalances,leaveRequestFilters,leaveTypeFilters,listActiveLeaveTypes,listHrLeaveRequests,listLeaveTypes,listMyLeaveRequests,setLeaveTypeAllotment,submitLeaveRequest,updateLeaveType } from "@/queries/leave-management";
+import { cancelLeaveRequest,createLeaveType,decideLeaveRequest,getEmployeeLeaveBalances,getLeaveAttachmentUrl,getLeaveRequest,getMyLeaveBalances,leaveRequestFilters,leaveTypeFilters,listActiveLeaveTypes,listHrLeaveRequests,listLeaveTypes,listMyLeaveRequests,setLeaveTypeAllotment,submitLeaveRequest,updateLeaveType } from "@/queries/leave-management";
 import type { LeaveRequestFilters, LeaveTypeFilters } from "@/schemas/leave-management";
 /** All leave types visible to the caller, including inactive ones (HR admin list). */
 export function useLeaveTypes(input:Partial<LeaveTypeFilters>={}){const filters=leaveTypeFilters(input);return useQuery({queryKey:queryKeys.leaveManagement.types(filters),queryFn:()=>listLeaveTypes(filters)});}
@@ -20,3 +20,4 @@ export function useDecideLeaveRequest(){const invalidate=useInvalidate();return 
 export function useCreateLeaveType(){const invalidate=useInvalidate();return useMutation({mutationFn:createLeaveType,onSuccess:invalidate});}
 export function useUpdateLeaveType(){const invalidate=useInvalidate();return useMutation({mutationFn:updateLeaveType,onSuccess:invalidate});}
 export function useSetLeaveTypeAllotment(){const invalidate=useInvalidate();return useMutation({mutationFn:setLeaveTypeAllotment,onSuccess:invalidate});}
+export function useEmployeeLeaveBalances(employeeId: string | undefined, year: number) { return useQuery({ queryKey: [...queryKeys.leaveManagement.types(), "employee-balances", employeeId, year], queryFn: () => getEmployeeLeaveBalances(employeeId as string, year), enabled: Boolean(employeeId) }); }

@@ -10,7 +10,7 @@ const deployment = {
   deployment_history: [{ id: 1, deployment_id: "00000000-0000-4000-8000-000000000901", actor_user_id: "u1", event_type: "created", metadata: {}, created_at: "2026-10-09T10:12:00Z", actor: { full_name: "Juan Dela Cruz" } }],
 };
 
-vi.mock("@/hooks/use-deployment-tracking", () => ({ useDeployment: () => ({ data: deployment, isLoading: false, error: null }) }));
+vi.mock("@/hooks/use-deployment-tracking", () => ({ useDeployment: () => ({ data: deployment, isLoading: false, error: null }), useDeploymentReports: () => ({ data: [], isLoading: false, error: null }), useSubmitDeploymentReport: () => ({ isPending: false, mutateAsync: vi.fn() }) }));
 
 import { HrDeploymentDetails } from "./hr-deployment-details";
 
@@ -19,7 +19,7 @@ describe("HrDeploymentDetails", () => {
     render(<HrDeploymentDetails deploymentId={deployment.id} />);
     expect(screen.getByText("Maria Balneg")).toBeVisible();
     expect(screen.getByText("Whiteplains, EDSA")).toBeVisible();
-    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Reports / proof of attendance" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Update" })).toHaveAttribute("href", `/hr/deployments/${deployment.id}/edit`);
     expect(screen.getByText("Deployment created by Juan Dela Cruz")).toBeVisible();
     expect(screen.queryByText(/^created$/)).not.toBeInTheDocument();

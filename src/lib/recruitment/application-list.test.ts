@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { HrRegisteredApplicant, HrShortlistApplication } from "@/lib/types/database";
 
-import { buildApplicationRows, parseApplicationListParams } from "./application-list";
+import { buildApplicationRows, parseApplicationListParams, QUICK_VIEWS } from "./application-list";
 
 const app = (overrides: Partial<HrShortlistApplication>): HrShortlistApplication => ({
   id: "11111111-aaaa-bbbb-cccc-000000000001", applicant_id: "a1", job_opening_id: 1, status: "Application Submission", cover_note: null, submitted_at: "2026-10-01T00:00:00Z",
@@ -32,6 +32,14 @@ describe("application list", () => {
     expect(buildApplicationRows(apps, people, { ...base, quick: "hired" }).map((row) => row.id)).toEqual(["2"]);
     expect(buildApplicationRows(apps, people, { ...base, quick: "not-yet-applied" }).map((row) => row.kind)).toEqual(["registered"]);
     expect(buildApplicationRows(apps, people, { ...base, quick: "all" })).toHaveLength(4);
+  });
+
+  it("offers Candidates (shortlisted at Final Evaluation) and Disqualified views", () => {
+    const apps = [app({ id: "1", status: "Final Evaluation" }), app({ id: "2", status: "Shortlisted" }), app({ id: "3", status: "Not Selected" })];
+    const base = parseApplicationListParams({});
+    expect(buildApplicationRows(apps, [], { ...base, quick: "candidates" }).map((row) => row.id)).toEqual(["2"]);
+    expect(buildApplicationRows(apps, [], { ...base, quick: "not-selected" }).map((row) => row.id)).toEqual(["3"]);
+    expect(QUICK_VIEWS.map((view) => view.label)).toEqual(["Active", "Candidates", "Hired", "Disqualified", "Not yet applied", "All"]);
   });
 
   it("lets an explicit stage or job override the quick view and never matches registered rows", () => {
