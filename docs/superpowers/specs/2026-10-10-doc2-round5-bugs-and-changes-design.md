@@ -9,7 +9,7 @@
 
 Apply the small and medium items from the round-5 client notes: correctness bugs (duplicate emails, the post-registration "invalid link" error, double-booked deployments, year-0001 leave dates), wording changes, and the employee-form, profile-record, attendance and leave-admin adjustments. Larger features are deferred to Branch 2 (see the end of this document).
 
-No new roles are created. The tester's "supervisor" is HR; HR's monitoring need is met by the attendance improvements below.
+No new roles are created. All supervisor-related items from the PDF (the supervisor role, team monitoring and attendance filters for it) are **excluded** by decision on 2026-10-10.
 
 ## 1. Accounts
 
@@ -71,7 +71,6 @@ The actor name is resolved from `actor_user_id` (HR can read profiles). Event la
 
 - Add a **Name** column (full name, badge number beneath). The data is already joined by `listHrAttendanceLogs`.
 - Add a **View** action linking to `/hr/employees/{employee_id}`.
-- Add a **Date** filter and a **Status** filter (all stored `attendance_logs.status` values, e.g. present, late, incomplete/"Partial", absent), passed as URL search params, so HR can see who was present on a given day. Pagination respects the filters.
 
 ## 5. Employee form
 
@@ -86,7 +85,7 @@ The actor name is resolved from `actor_user_id` (HR can read profiles). Event la
     - PhilHealth: 12 digits, `12-345678901-2`
     - Pag-IBIG: 12 digits, `XXXX-XXXX-XXXX`
     - GSIS: 11 digits (BP number), `XXXXXXXXXXX`
-  - All three are optional. Stored values keep the dashed display format, and validation accepts exactly that format.
+  - All three are optional. Values are stored as digits only, matching the existing PhilHealth column, and are shown with dashes. The self-service RPC becomes `update_my_government_ids(target_philhealth_number, target_gsis_number, target_pagibig_number)` and leaves the hidden SSS value untouched.
 - **Phone:** the placeholder `+639XXXXXXXXX` goes inside the box. The helper text below is removed. Normalisation is unchanged.
 - **Date Entered Service:** relabels "Employment start date" everywhere it is displayed.
 - **Inclusive Dates (To):** an optional, visible date field bound to the existing `employment_ended_on`, intended for retired personnel. It must be on or after Date Entered Service.
@@ -97,7 +96,7 @@ The actor name is resolved from `actor_user_id` (HR can read profiles). Event la
 
 - **Update instead of Delete:** in edit mode each Certification / Training, Eligibility and Service history row shows **Update** (and no Delete). Update opens the entry form pre-filled for that record and saves through `savePersonnelEntry` with the record id. `DeleteRecordDialog` is no longer rendered for these lists.
 - **Service history detail:**
-  - Add an optional **Unit / Station** assignment, a new nullable `unit_station_id` column on `service_history` referencing the existing unit-station catalogue, to the form.
+  - Add an optional **Unit / Station** assignment, a new nullable `unit_station` text column on `service_history`, chosen from the unit-station catalogue and stored by name the same way `employees.unit_station` is, to the form.
   - Each entry renders as a timeline card, in the style of the tester's Certification card example:
     - eyebrow "SERVICE HISTORY"
     - bold title: rank at the time · Unit / Station
@@ -118,7 +117,7 @@ The actor name is resolved from `actor_user_id` (HR can read profiles). Event la
 - **Date bug** (`employee-leave.tsx`):
   - Start and end inputs get `min` (today) and `max` (today + 2 years).
   - The schema validates on change, so an out-of-range date shows an inline error immediately.
-  - The balance hint and its year query run only once a complete, in-range start date exists.
+  - The balance year comes from the start date only when that date is complete and in range; otherwise it is the current year, so no year-1 query is ever made.
 
 ## 8. Promotion label
 
@@ -130,7 +129,7 @@ In `promotion-criteria-manager.tsx` and wherever else it is displayed, "Minimum 
 2. Deployment overlap check in the create/update RPCs.
 3. Gender: null out `prefer_not_to_say`, then a new CHECK.
 4. `gsis_number` and `pagibig_number` columns, grants, and `update_my_government_ids`.
-5. `service_history.unit_station_id`.
+5. `service_history.unit_station`.
 6. `leave_types.eligible_gender`, seeds, and the `submit_leave_request` check.
 7. Final Evaluation notification text.
 
