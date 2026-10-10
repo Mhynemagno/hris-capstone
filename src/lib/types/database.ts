@@ -131,7 +131,7 @@ export type Employee = {
   qualifier: string | null;
   place_of_birth: string | null;
   date_of_birth: string | null;
-  gender: "female" | "male" | "prefer_not_to_say" | null;
+  gender: "female" | "male" | null;
   civil_status: "single" | "married" | "widowed" | "separated" | "divorced" | null;
   religion: string | null;
   unit_station: string | null;

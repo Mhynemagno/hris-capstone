@@ -85,7 +85,7 @@ async function fillPersonalFields(user: UserEvent) {
   await user.type(screen.getByLabelText(/^place of birth/i), "Quezon City");
   await user.type(screen.getByLabelText(/^date of birth/i), "1990-05-01");
   await user.selectOptions(screen.getByLabelText(/^gender/i), "female");
-  await user.type(screen.getByLabelText(/^religion/i), "Roman Catholic");
+  await user.selectOptions(screen.getByLabelText(/^religion/i), "Roman Catholic");
   await user.type(personalPhone(), "09171234567");
   await user.type(screen.getByLabelText(/^home address/i), "12 Mabini St.");
   await user.type(screen.getByLabelText(/^name/i, { selector: "#emergency-contact-name" }), "Jose Reyes");
@@ -111,8 +111,7 @@ describe("EmployeeForm", () => {
     expect(screen.getByLabelText(/^gender/i)).toBeInTheDocument();
     expect(screen.queryByLabelText("Sex")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Position")).not.toBeInTheDocument();
-    expect(screen.getByLabelText(/employment start date/i)).toBeInTheDocument();
-    expect(screen.getByText("The date they started in the service.")).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Date Entered Service/)).toBeInTheDocument();
     expect(screen.queryByLabelText(/employment end date/i)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /save employee/i })).toHaveClass("w-full");
   });
@@ -123,7 +122,7 @@ describe("EmployeeForm", () => {
     const marked = [...container.querySelectorAll("label")].filter((label) => label.querySelector(".text-destructive")).map((label) => label.textContent?.replace("*", ""));
     expect(marked).toEqual(expect.arrayContaining([
       "Rank", "Badge number", "Personal email", "First name", "Last name", "Place of birth", "Date of birth", "Gender", "Civil status",
-      "Religion", "Phone number", "Home address", "Name", "Unit / Section", "Employment status", "Employment start date",
+      "Religion", "Phone number", "Home address", "Name", "Unit / Section", "Employment status", "Date Entered Service",
     ]));
     expect(marked).not.toContain("Middle name");
   });
@@ -137,7 +136,7 @@ describe("EmployeeForm", () => {
 
     expect(onSaved).not.toHaveBeenCalled();
     expect(screen.getByText("Complete the required fields marked with * before saving.")).toBeInTheDocument();
-    for (const message of ["Enter the place of birth.", "Enter the date of birth.", "Choose a gender.", "Enter the religion.", "Enter the phone number.", "Enter the home address.", "Enter the emergency contact.", "Enter the emergency contact phone.", "Choose a civil status."]) {
+    for (const message of ["Enter the place of birth.", "Enter the date of birth.", "Choose a gender.", "Choose a religion.", "Enter the phone number.", "Enter the home address.", "Enter the emergency contact.", "Enter the emergency contact phone.", "Choose a civil status."]) {
       expect(screen.getByText(message)).toBeInTheDocument();
     }
   });
@@ -172,10 +171,12 @@ describe("EmployeeForm", () => {
     const user = userEvent.setup();
     const { container } = render(<EmployeeForm employee={{ ...completeEmployee, employment_ended_on: "2030-01-01" }} onSaved={onSaved} />);
 
-    for (const label of [/badge number/i, /^first name/i, /^middle name/i, /^last name/i, /^qualifier/i, /^date of birth/i, /^place of birth/i, /^religion/i, /employment start date/i]) {
+    for (const label of [/badge number/i, /^first name/i, /^middle name/i, /^last name/i, /^qualifier/i, /^date of birth/i, /^place of birth/i, /^Date Entered Service/]) {
       expect(screen.getByLabelText(label)).toHaveAttribute("readonly");
       expect(screen.getByLabelText(label)).toHaveClass("bg-muted");
     }
+    expect(screen.getByLabelText(/^religion/i)).toBeDisabled();
+    expect(container.querySelector('input[type="hidden"][name="religion"]')).toHaveValue("Roman Catholic");
     expect(screen.getByLabelText(/^gender/i)).toBeDisabled();
     expect(container.querySelector('input[type="hidden"][name="gender"]')).toHaveValue("female");
     expect(personalPhone()).not.toHaveAttribute("readonly");
@@ -191,7 +192,7 @@ describe("EmployeeForm", () => {
       gender: "female",
       phone: "+639171234567",
       employmentStartedOn: "2024-01-01",
-      // The hidden end date field keeps the saved value untouched.
+      // Inclusive Dates (To) keeps the saved value.
       employmentEndedOn: "2030-01-01",
     }));
   });
@@ -224,18 +225,20 @@ describe("EmployeeForm", () => {
     render(<EmployeeForm employee={existingEmployee} onSaved={() => undefined} />);
 
     expect(screen.getByLabelText(/badge number/i)).toHaveAttribute("readonly");
-    for (const label of [/^date of birth/i, /^place of birth/i, /^religion/i]) {
+    for (const label of [/^date of birth/i, /^place of birth/i]) {
       expect(screen.getByLabelText(label)).not.toHaveAttribute("readonly");
     }
+    expect(screen.getByLabelText(/^religion/i)).toBeEnabled();
     expect(screen.getByLabelText(/^gender/i)).toBeEnabled();
   });
 
   it("lets every field be edited when creating a new employee", () => {
     render(<EmployeeForm onSaved={() => undefined} />);
 
-    for (const label of [/badge number/i, /^first name/i, /^middle name/i, /^last name/i, /^qualifier/i, /^date of birth/i, /^place of birth/i, /^religion/i, /employment start date/i]) {
+    for (const label of [/badge number/i, /^first name/i, /^middle name/i, /^last name/i, /^qualifier/i, /^date of birth/i, /^place of birth/i, /^Date Entered Service/]) {
       expect(screen.getByLabelText(label)).not.toHaveAttribute("readonly");
     }
+    expect(screen.getByLabelText(/^religion/i)).toBeEnabled();
     expect(screen.getByLabelText(/^gender/i)).toBeEnabled();
   });
 
@@ -262,7 +265,7 @@ describe("EmployeeForm", () => {
 
     await user.type(screen.getByLabelText(/badge number/i), "a1b23456789");
     expect(screen.getByLabelText(/badge number/i)).toHaveValue("1-23456");
-    await user.type(screen.getByLabelText(/employment start date/i), "2024-01-01");
+    await user.type(screen.getByLabelText(/^Date Entered Service/), "2024-01-01");
     await fillPersonalFields(user);
     await user.click(screen.getByRole("button", { name: /save employee/i }));
 
@@ -358,5 +361,32 @@ describe("EmployeeForm", () => {
 
     expect(personalPhone()).toHaveAttribute("type", "tel");
     expect(emergencyPhone()).toHaveAttribute("type", "tel");
+  });
+  it("offers the client's religion list as a dropdown", () => {
+    render(<EmployeeForm onSaved={() => undefined} />);
+    const religion = screen.getByLabelText(/^Religion/);
+    expect(religion.tagName).toBe("SELECT");
+    expect(within(religion).getAllByRole("option").map((option) => option.textContent)).toEqual([
+      "Select a religion", "Roman Catholic", "Islam", "Iglesia ni Cristo (INC)", "Christian", "Seventh-Day Adventist", "Baptist", "Jehovah's Witnesses", "Others",
+    ]);
+  });
+
+  it("offers only Female and Male", () => {
+    render(<EmployeeForm onSaved={() => undefined} />);
+    expect(within(screen.getByLabelText(/^Gender/)).queryByRole("option", { name: "Prefer not to say" })).not.toBeInTheDocument();
+  });
+
+  it("lets HR set a gender that was cleared even on a saved record", () => {
+    render(<EmployeeForm employee={{ ...completeEmployee, gender: null }} onSaved={() => undefined} />);
+    expect(screen.getByLabelText(/^Gender/)).toBeEnabled();
+  });
+
+  it("puts the phone format inside the box and renames the service dates", () => {
+    render(<EmployeeForm onSaved={() => undefined} />);
+    expect(personalPhone()).toHaveAttribute("placeholder", "+639XXXXXXXXX");
+    expect(screen.queryByText("Format: +639XXXXXXXXX")).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/^Date Entered Service/)).toHaveAttribute("type", "date");
+    expect(screen.getByLabelText(/^Inclusive Dates \(To\)/)).not.toBeRequired();
+    expect(screen.queryByText("Employment start date")).not.toBeInTheDocument();
   });
 });

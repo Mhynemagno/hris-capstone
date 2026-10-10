@@ -49,8 +49,20 @@ const requiredMobile = (message: string) =>
 
 const employmentStatuses = ["active", "retired"] as const;
 const profilePhotoMimeTypes = ["image/png", "image/jpeg", "image/webp"] as const;
-const genders = ["female", "male", "prefer_not_to_say"] as const;
+const genders = ["female", "male"] as const;
 const civilStatuses = ["single", "married", "widowed", "separated", "divorced"] as const;
+
+/** Religion choices requested by the adviser (2026-10-10). Older free-text values stay valid and are shown as-is. */
+export const RELIGIONS = [
+  "Roman Catholic",
+  "Islam",
+  "Iglesia ni Cristo (INC)",
+  "Christian",
+  "Seventh-Day Adventist",
+  "Baptist",
+  "Jehovah's Witnesses",
+  "Others",
+] as const;
 
 export const profilePhotoFileSchema = z.custom<File>(
   (value) => typeof File !== "undefined" && value instanceof File,
@@ -99,7 +111,7 @@ export const employeeSchema = z
     dateOfBirth: z.iso.date({ error: (issue) => (issue.input === undefined || issue.input === "" ? "Enter the date of birth." : "Enter a valid date of birth.") }),
     gender: z.enum(genders, { error: "Choose a gender." }),
     civilStatus: z.enum(civilStatuses, { error: "Choose a civil status." }),
-    religion: requiredText(120, "Enter the religion."),
+    religion: requiredText(120, "Choose a religion."),
     unitStation: optionalText(160),
     personalEmail: z.string().trim().toLowerCase().pipe(z.email()),
     phone: requiredMobile("Enter the phone number."),
@@ -111,12 +123,12 @@ export const employeeSchema = z
     departmentId: z.coerce.number({ error: "Choose a unit / section." }).int().positive("Choose a unit / section."),
     rankId: z.coerce.number({ error: "Choose a rank." }).int().positive("Choose a rank."),
     employmentStatus: z.enum(employmentStatuses).default("active"),
-    employmentStartedOn: z.iso.date({ error: (issue) => (issue.input === undefined || issue.input === "" ? "Enter the employment start date." : "Enter a valid date.") }),
-    // Not shown on the form; an existing end date is carried through unchanged.
+    employmentStartedOn: z.iso.date({ error: (issue) => (issue.input === undefined || issue.input === "" ? "Enter the date entered service." : "Enter a valid date.") }),
+    // Inclusive Dates (To): optional, for retired personnel.
     employmentEndedOn: optionalDate,
   })
   .refine(hasValidDateRange("employmentStartedOn", "employmentEndedOn"), {
-    message: "Employment end date cannot be before the start date.",
+    message: "Inclusive Dates (To) cannot be before the Date Entered Service.",
     path: ["employmentEndedOn"],
   });
 

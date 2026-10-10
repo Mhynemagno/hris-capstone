@@ -141,7 +141,7 @@ describe("EmployeeRecordDetail", () => {
     expect(official.querySelectorAll("input, select, textarea")).toHaveLength(0);
     expect(official).toHaveTextContent("Place of birthQuezon City");
     expect(official).toHaveTextContent("Date of birthSeptember 23, 1990");
-    expect(official).toHaveTextContent("Employment start dateJanuary 1, 2024");
+    expect(official).toHaveTextContent("Date Entered ServiceJanuary 1, 2024");
     expect(official).toHaveTextContent("Religion" + "Not provided");
     for (const section of ["I. Personal Information", "II. Emergency Contact", "III. Employment"]) {
       expect(within(official).getByRole("region", { name: section })).toBeInTheDocument();

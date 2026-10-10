@@ -161,7 +161,7 @@ function useRecordActivity(employeeId: string, rankTitles: Map<number, string>, 
   };
 }
 
-const genderLabels: Record<NonNullable<Employee["gender"]>, string> = { female: "Female", male: "Male", prefer_not_to_say: "Prefer not to say" };
+const genderLabels: Record<NonNullable<Employee["gender"]>, string> = { female: "Female", male: "Male" };
 const savedMessages = { created: "Employee account has been saved.", edited: "Employee account has been edited successfully." } as const;
 
 type DetailRow = { label: string; value: ReactNode; wide?: boolean };
@@ -213,7 +213,8 @@ function OfficialDetails({ record, departmentName, rankName }: { record: Employe
         { label: "Unit / Section", value: departmentName },
         { label: "Unit / Station", value: record.unit_station },
         { label: "Employment status", value: record.employment_status === "retired" ? "Retired" : "Active" },
-        { label: "Employment start date", value: formatDate(record.employment_started_on) },
+        { label: "Date Entered Service", value: formatDate(record.employment_started_on) },
+        { label: "Inclusive Dates (To)", value: formatDate(record.employment_ended_on) },
       ]} />
     </div>
   );

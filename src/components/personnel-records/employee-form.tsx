@@ -14,7 +14,7 @@ import type { Employee, UnlinkedEmployeeAccount } from "@/lib/types/database";
 import { formatPhilHealthNumber, formatSssNumber } from "@/lib/government-ids";
 import { cn } from "@/lib/utils";
 import { BADGE_NUMBER_PATTERN } from "@/schemas/common";
-import { employeeSchema, type EmployeeInput } from "@/schemas/personnel-records";
+import { employeeSchema, RELIGIONS, type EmployeeInput } from "@/schemas/personnel-records";
 
 import { DepartmentField, RankField } from "./department-rank-fields";
 
@@ -97,8 +97,6 @@ export function EmployeeForm({ employee, account, onSaved, pending = false }: Em
   return (
     <form className="space-y-8" noValidate onSubmit={submit}>
       {linkedProfileId ? <input name="profileId" type="hidden" value={linkedProfileId} /> : null}
-      {/* The end date is no longer edited here; an existing value is carried through unchanged. */}
-      {employee?.employment_ended_on ? <input name="employmentEndedOn" type="hidden" value={employee.employment_ended_on} /> : null}
 
       <FormSection title="I. Personal Details">
         <RankField error={e.rankId} idPrefix="employee" name="rankId" onChange={setRankId} required savedId={employee?.rank_id} value={rankId} />
@@ -132,7 +130,6 @@ export function EmployeeForm({ employee, account, onSaved, pending = false }: Em
             <option value="">Select a gender</option>
             <option value="female">Female</option>
             <option value="male">Male</option>
-            <option value="prefer_not_to_say">Prefer not to say</option>
           </NativeSelect>
         </FormField>
         {locked.gender && employee?.gender ? <input name="gender" type="hidden" value={employee.gender} /> : null}
@@ -147,9 +144,14 @@ export function EmployeeForm({ employee, account, onSaved, pending = false }: Em
           </NativeSelect>
         </FormField>
         <FormField description={locked.religion ? lockedNote : undefined} error={e.religion} htmlFor="religion" label="Religion" required>
-          <Input className={cn("h-11", locked.religion && lockedClassName)} defaultValue={employee?.religion ?? ""} id="religion" name="religion" readOnly={locked.religion} required />
+          <NativeSelect className={cn(locked.religion && lockedClassName)} defaultValue={employee?.religion ?? ""} disabled={locked.religion} id="religion" name={locked.religion ? undefined : "religion"} required>
+            <option value="">Select a religion</option>
+            {RELIGIONS.map((religion) => <option key={religion} value={religion}>{religion}</option>)}
+            {employee?.religion && !(RELIGIONS as readonly string[]).includes(employee.religion) ? <option value={employee.religion}>{employee.religion}</option> : null}
+          </NativeSelect>
         </FormField>
-        <FormField description="Format: +639XXXXXXXXX" error={e.phone} htmlFor="phone" label="Phone number" required>
+        {locked.religion && employee?.religion ? <input name="religion" type="hidden" value={employee.religion} /> : null}
+        <FormField error={e.phone} htmlFor="phone" label="Phone number" required>
           <PhoneInput defaultValue={employee?.phone} id="phone" name="phone" required />
         </FormField>
         <FormField description="Optional. 10 digits, e.g. 34-1234567-8" error={e.sssNumber} htmlFor="sss-number" label="SSS number">
@@ -169,7 +171,7 @@ export function EmployeeForm({ employee, account, onSaved, pending = false }: Em
         <FormField error={e.emergencyContactName} htmlFor="emergency-contact-name" label="Name" required>
           <Input className="h-11" defaultValue={employee?.emergency_contact_name ?? ""} id="emergency-contact-name" name="emergencyContactName" required />
         </FormField>
-        <FormField description="Format: +639XXXXXXXXX" error={e.emergencyContactPhone} htmlFor="emergency-contact-phone" label="Phone number" required>
+        <FormField error={e.emergencyContactPhone} htmlFor="emergency-contact-phone" label="Phone number" required>
           <PhoneInput autoComplete="off" defaultValue={employee?.emergency_contact_phone} id="emergency-contact-phone" name="emergencyContactPhone" required />
         </FormField>
       </FormSection>
@@ -195,13 +197,16 @@ export function EmployeeForm({ employee, account, onSaved, pending = false }: Em
           </NativeSelect>
         </FormField>
         <FormField
-          description={locked.employmentStartedOn ? `The date they started in the service. ${lockedNote}` : "The date they started in the service."}
+          description={locked.employmentStartedOn ? lockedNote : undefined}
           error={e.employmentStartedOn}
           htmlFor="employment-started-on"
-          label="Employment start date"
+          label="Date Entered Service"
           required
         >
           <Input className={cn("h-11", locked.employmentStartedOn && lockedClassName)} defaultValue={employee?.employment_started_on ?? ""} id="employment-started-on" name="employmentStartedOn" readOnly={locked.employmentStartedOn} required type="date" />
+        </FormField>
+        <FormField description="Optional. For retired personnel." error={e.employmentEndedOn} htmlFor="employment-ended-on" label="Inclusive Dates (To)">
+          <Input className="h-11" defaultValue={employee?.employment_ended_on ?? ""} id="employment-ended-on" name="employmentEndedOn" type="date" />
         </FormField>
       </FormSection>
 

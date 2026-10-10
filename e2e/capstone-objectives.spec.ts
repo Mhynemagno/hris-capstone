@@ -61,13 +61,13 @@ async function createEmployee(page: Page, suffix: string, startedOn = "2015-06-0
   await page.getByLabel(/^Date of birth/).fill("1995-05-15");
   await page.getByLabel(/^Gender/).selectOption("female");
   await page.getByLabel(/^Civil status/).selectOption("single");
-  await page.getByLabel(/^Religion/).fill("Roman Catholic");
+  await page.getByLabel(/^Religion/).selectOption("Roman Catholic");
   await page.locator("#phone").fill("+639171234567");
   await page.getByLabel(/^Home address/).fill("1 Test St., San Juan City");
   await page.locator("#emergency-contact-name").fill("Test Contact");
   await page.locator("#emergency-contact-phone").fill("+639181234567");
   await page.getByLabel(/^Unit \/ Section/).selectOption({ label: "Office of the Chief of Police" });
-  await page.getByLabel(/^Employment start date/).fill(startedOn);
+  await page.getByLabel(/^Date Entered Service/).fill(startedOn);
   await page.getByRole("button", { name: "Save employee" }).click();
   await expect(page).toHaveURL(/\/hr\/employees\/[0-9a-f-]{36}\?tab=official&saved=created$/, { timeout: 30_000 });
   await expect(page.getByRole("status").filter({ hasText: "Employee account has been saved." })).toBeVisible();
@@ -206,7 +206,7 @@ test.describe("Objective 2: recruitment management", () => {
     await page.getByLabel(/^Place of birth/).fill("San Juan City");
     await page.getByLabel(/^Gender/).selectOption("female");
     await page.getByLabel(/^Civil status/).selectOption("single");
-    await page.getByLabel(/^Religion/).fill("Roman Catholic");
+    await page.getByLabel(/^Religion/).selectOption("Roman Catholic");
     await page.getByLabel(/^Home address/).fill("12 Mabini St., San Juan City");
     for (const [level, school, course, year] of [["Primary", "San Juan Elementary School", "Primary Education", "2010"], ["Secondary", "San Juan National High School", "Senior High School", "2016"], ["Bachelor's Degree", "Polytechnic University of the Philippines", "BS Criminology", "2020"]]) {
       const group = page.getByRole("group", { name: level, exact: true });
