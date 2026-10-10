@@ -206,7 +206,7 @@ test.describe("Objective 2: recruitment management", () => {
     await page.getByLabel(/^Place of birth/).fill("San Juan City");
     await page.getByLabel(/^Gender/).selectOption("female");
     await page.getByLabel(/^Civil status/).selectOption("single");
-    await page.getByLabel(/^Religion/).selectOption("Roman Catholic");
+    await page.getByLabel(/^Religion/).fill("Roman Catholic");
     await page.getByLabel(/^Home address/).fill("12 Mabini St., San Juan City");
     for (const [level, school, course, year] of [["Primary", "San Juan Elementary School", "Primary Education", "2010"], ["Secondary", "San Juan National High School", "Senior High School", "2016"], ["Bachelor's Degree", "Polytechnic University of the Philippines", "BS Criminology", "2020"]]) {
       const group = page.getByRole("group", { name: level, exact: true });
