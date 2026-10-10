@@ -26,7 +26,17 @@ describe("DeploymentForm", () => {
     await waitFor(() => expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({ unit: "Station 1" })));
   });
 
-  it("offers a searchable employee picker without a unit or an end date input", async () => {
+  it("lets HR set an optional end date and sends it", async () => {
+    const onSaved = vi.fn();
+    const user = userEvent.setup();
+    const deployment = { id: "d1", employee_id: "123e4567-e89b-42d3-a456-426614174000", location: "San Juan", unit: null, project: null, assignment_role: "San Juan", starts_on: "2026-09-25", ends_on: null, status: "scheduled", deployment_type: "Special Event", event_operation: "Fiesta / Major Event", notes: "Relief duty", updated_at: "2026-09-25T00:00:00Z" };
+    render(<DeploymentForm deployment={deployment as never} onSaved={onSaved} />);
+    await user.type(screen.getByLabelText(/^End date/), "2026-09-27");
+    await user.click(screen.getByRole("button", { name: "Save deployment" }));
+    await waitFor(() => expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({ endsOn: "2026-09-27" })));
+  });
+
+  it("offers a searchable employee picker without a unit input", async () => {
     const user = userEvent.setup();
     render(<DeploymentForm onSaved={vi.fn()} />);
 
@@ -37,7 +47,6 @@ describe("DeploymentForm", () => {
     expect(await screen.findByRole("option", { name: /Ben Two/ })).toBeInTheDocument();
     expect(screen.queryByRole("option", { name: /Ana One/ })).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/unit/i)).not.toBeInTheDocument();
-    expect(screen.queryByLabelText("End date")).not.toBeInTheDocument();
   });
 
   it("submits the employee chosen in the combobox", async () => {

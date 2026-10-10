@@ -81,13 +81,21 @@ async function chooseComboboxOption(page: Page, name: RegExp | string, search: s
   await page.getByRole("option", { name: option }).first().click();
 }
 
+/** A distinct far-future start day per created deployment, so repeated runs never double-book the demo employee. */
+let deploymentDayCounter = 0;
+function uniqueDeploymentDay() {
+  deploymentDayCounter += 1;
+  const seed = Number.parseInt(runId.replace(/\D/g, "").slice(-6) || "0", 10);
+  return 3650 + ((seed * 7 + deploymentDayCounter) % 20000);
+}
+
 /** HR creates a deployment for the demo employee through the UI at the given (unique) location. */
 async function createDeployment(page: Page, location: string) {
   await page.goto("/hr/deployments/new");
   await chooseComboboxOption(page, /^Employee/, "0-00001", /Demo Employee/);
   await page.getByLabel(/^Location/).fill(location);
   await page.getByLabel(/^Remarks/).fill("Initial assignment");
-  await page.getByLabel(/^Start date/).fill(isoDate(0));
+  await page.getByLabel(/^Start date/).fill(isoDate(uniqueDeploymentDay()));
   await page.getByLabel(/^Deployment type/).selectOption("Public Assembly");
   await page.getByLabel(/^Event \/ Operation/).selectOption("Rally");
   await page.getByLabel(/^Status/).selectOption("ongoing");
