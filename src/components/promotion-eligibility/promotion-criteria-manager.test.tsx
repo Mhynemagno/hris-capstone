@@ -47,6 +47,8 @@ describe("PromotionCriteriaManager", () => {
   it("asks only for years of service and the required certification / training courses", () => {
     render(<PromotionCriteriaManager />);
     expect(screen.queryByLabelText(/performance rating/i)).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/^Years of service/)).toBeRequired();
+    expect(screen.queryByText("Minimum years of service")).not.toBeInTheDocument();
     expect(screen.queryByText(/Required credential/i)).not.toBeInTheDocument();
     expect(screen.getByRole("group", { name: /^Requirements/ })).toBeInTheDocument();
     expect(screen.queryByLabelText(/^Record type/)).not.toBeInTheDocument();

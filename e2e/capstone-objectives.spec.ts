@@ -366,7 +366,7 @@ test.describe("Objective 4: promotion eligibility tracker", () => {
     await expect(page.getByText(/Loading promotion criteria/)).toHaveCount(0, { timeout: 15_000 });
     if (await existing.count() === 0) {
       await chooseComboboxOption(page, /^Target rank/, "PCPL", /PCPL — Police Corporal/);
-      await page.getByLabel(/^Minimum years of service/).selectOption("3");
+      await page.getByLabel(/^Years of service/).selectOption("3");
       await expect(page.getByLabel(/^Minimum performance rating/)).toHaveCount(0);
       await page.getByLabel(/^Certification \/ Training/).selectOption(credential);
       // A second requirement row can be added and removed again.

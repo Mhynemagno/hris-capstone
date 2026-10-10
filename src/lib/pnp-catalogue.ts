@@ -129,7 +129,7 @@ export const PNP_CREDENTIALS_BY_KIND = {
   training: PNP_TRAININGS,
 } as const;
 
-/** Minimum years of service choices for promotion criteria. */
+/** Years of service choices for promotion criteria. */
 export const SERVICE_YEAR_CHOICES = Array.from({ length: 31 }, (_, years) => years);
 
 /** The listed choices, with a saved value that is no longer listed kept first. */
