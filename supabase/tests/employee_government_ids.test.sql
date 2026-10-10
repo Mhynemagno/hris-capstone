@@ -3,11 +3,13 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(11);
+select extensions.plan(14);
 
-select extensions.has_column('public', 'employees', 'sss_number', 'Employees have an SSS number');
+select extensions.has_column('public', 'employees', 'sss_number', 'Employees keep their SSS number column');
 select extensions.has_column('public', 'employees', 'philhealth_number', 'Employees have a PhilHealth number');
-select extensions.has_function('public', 'update_my_government_ids', array['text', 'text'], 'Employees can save their own government ID numbers');
+select extensions.has_column('public', 'employees', 'gsis_number', 'Employees have a GSIS number');
+select extensions.has_column('public', 'employees', 'pagibig_number', 'Employees have a Pag-IBIG number');
+select extensions.has_function('public', 'update_my_government_ids', array['text', 'text', 'text'], 'Employees can save their own government ID numbers');
 
 insert into auth.users (id, aud, role, email, created_at, updated_at)
 values
@@ -27,40 +29,44 @@ values
   ('00000000-0000-4000-8000-000000001712', null, 'GOV-002', 'Other', 'Person', 'gov-ids-other@example.test', '2024-01-01');
 
 select extensions.throws_ok(
-  $$update public.employees set sss_number = '12345' where id = '00000000-0000-4000-8000-000000001712'$$,
-  '23514', null, 'An SSS number must have 10 digits'
+  $$update public.employees set gsis_number = '12345' where id = '00000000-0000-4000-8000-000000001712'$$,
+  '23514', null, 'A GSIS number must have 11 digits'
+);
+select extensions.throws_ok(
+  $$update public.employees set pagibig_number = '1234-5678-9012' where id = '00000000-0000-4000-8000-000000001712'$$,
+  '23514', null, 'A Pag-IBIG number is stored as 12 digits'
 );
 select extensions.throws_ok(
   $$update public.employees set philhealth_number = '12-3456' where id = '00000000-0000-4000-8000-000000001712'$$,
   '23514', null, 'A PhilHealth number is stored as 12 digits'
 );
 
+update public.employees set sss_number = '3412345678' where id = '00000000-0000-4000-8000-000000001711';
+
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000001702';
-select public.update_my_government_ids('34-1234567-8', '12-345678901-2');
+select public.update_my_government_ids('12-345678901-2', '12345678901', '1234-5678-9012');
 select extensions.is(
-  (select sss_number from public.employees where id = '00000000-0000-4000-8000-000000001711'),
-  '3412345678', 'The employee saves their SSS number, stored as digits'
+  (select array[philhealth_number, gsis_number, pagibig_number, sss_number] from public.employees where id = '00000000-0000-4000-8000-000000001711'),
+  array['123456789012', '12345678901', '123456789012', '3412345678'],
+  'The employee saves PhilHealth, GSIS and Pag-IBIG as digits and the hidden SSS number is untouched'
 );
-select extensions.is(
-  (select philhealth_number from public.employees where id = '00000000-0000-4000-8000-000000001711'),
-  '123456789012', 'The employee saves their PhilHealth number, stored as digits'
-);
-select extensions.throws_ok($$select public.update_my_government_ids('123', null)$$, '22023', null, 'A short SSS number is rejected with a clear error');
-select public.update_my_government_ids('', null);
+select extensions.throws_ok($$select public.update_my_government_ids(null, '123', null)$$, '22023', null, 'A short GSIS number is rejected');
+select extensions.throws_ok($$select public.update_my_government_ids(null, null, '1234')$$, '22023', null, 'A short Pag-IBIG number is rejected');
+select public.update_my_government_ids('', '', '');
 select extensions.ok(
-  (select sss_number is null and philhealth_number is null from public.employees where id = '00000000-0000-4000-8000-000000001711'),
-  'Leaving a number blank clears it'
+  (select philhealth_number is null and gsis_number is null and pagibig_number is null and sss_number = '3412345678' from public.employees where id = '00000000-0000-4000-8000-000000001711'),
+  'Leaving the numbers blank clears them and keeps the SSS number'
 );
 
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000001703';
-select extensions.throws_ok($$select public.update_my_government_ids('3412345678', null)$$, '42501', null, 'Only an employee can save government ID numbers');
+select extensions.throws_ok($$select public.update_my_government_ids('123456789012', null, null)$$, '42501', null, 'Only an employee can save government ID numbers');
 
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000001701';
-update public.employees set sss_number = '1111111111' where id = '00000000-0000-4000-8000-000000001712';
+update public.employees set gsis_number = '11111111111' where id = '00000000-0000-4000-8000-000000001712';
 select extensions.is(
-  (select sss_number from public.employees where id = '00000000-0000-4000-8000-000000001712'),
-  '1111111111', 'HR can edit the numbers on a personnel record'
+  (select gsis_number from public.employees where id = '00000000-0000-4000-8000-000000001712'),
+  '11111111111', 'HR can edit the numbers on a personnel record'
 );
 
 select * from extensions.finish();

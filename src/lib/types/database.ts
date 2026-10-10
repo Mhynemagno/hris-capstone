@@ -131,7 +131,7 @@ export type Employee = {
   qualifier: string | null;
   place_of_birth: string | null;
   date_of_birth: string | null;
-  gender: "female" | "male" | "prefer_not_to_say" | null;
+  gender: "female" | "male" | null;
   civil_status: "single" | "married" | "widowed" | "separated" | "divorced" | null;
   religion: string | null;
   unit_station: string | null;
@@ -145,6 +145,8 @@ export type Employee = {
   sss_number: string | null;
   /** Digits only (12); shown as 12-345678901-2. */
   philhealth_number: string | null;
+  gsis_number: string | null;
+  pagibig_number: string | null;
   department_id: number | null;
   rank_id: number | null;
   employment_status: "active" | "retired";
@@ -167,6 +169,7 @@ export type ServiceHistory = {
   employee_id: string;
   department_id: number | null;
   rank_id: number | null;
+  unit_station: string | null;
   employment_title: string | null;
   started_on: string;
   ended_on: string | null;
@@ -379,6 +382,8 @@ export type LeaveType = {
   days_per_year: number | null;
   /** Days beyond the allotment are allowed and deducted from retirement benefits (Paternity Leave). */
   excess_deducted_from_retirement: boolean;
+  /** Maternity Leave is for female and Paternity Leave for male employees; null means everyone. */
+  eligible_gender: "female" | "male" | null;
   created_by_user_id: string | null;
   updated_by_user_id: string | null;
   created_at: string;

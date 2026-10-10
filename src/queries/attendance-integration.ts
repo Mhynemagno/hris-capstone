@@ -6,7 +6,9 @@ function throwIfError(error: { message: string } | null) { if (error) throw new 
 
 export function attendanceFilters(input: unknown = {}) { return attendanceFiltersSchema.parse(input); }
 
-export async function listHrAttendanceLogs(input: Partial<AttendanceFilters> = {}): Promise<PaginatedResult<AttendanceLog, AttendanceFilters>> {
+export type AttendanceLogWithEmployee = AttendanceLog & { employee: Pick<Employee, "id" | "employee_number" | "first_name" | "last_name"> | null };
+
+export async function listHrAttendanceLogs(input: Partial<AttendanceFilters> = {}): Promise<PaginatedResult<AttendanceLogWithEmployee, AttendanceFilters>> {
   const filters = attendanceFilters(input); const from = (filters.page - 1) * filters.pageSize;
   let query = createBrowserSupabaseClient().from("attendance_logs").select("*, employee:employees(id, employee_number, first_name, last_name)", { count: "exact" }).order("attendance_date", { ascending: false }).range(from, from + filters.pageSize - 1);
   if (filters.employeeId) query = query.eq("employee_id", filters.employeeId);
@@ -16,7 +18,7 @@ export async function listHrAttendanceLogs(input: Partial<AttendanceFilters> = {
   if (filters.startsOn) query = query.gte("attendance_date", filters.startsOn);
   if (filters.endsOn) query = query.lte("attendance_date", filters.endsOn);
   const { data, error, count } = await query; throwIfError(error);
-  return { rows: (data ?? []) as AttendanceLog[], count: count ?? 0, filters };
+  return { rows: (data ?? []) as AttendanceLogWithEmployee[], count: count ?? 0, filters };
 }
 
 export async function listMyAttendanceLogs(input: Partial<AttendanceFilters> = {}): Promise<PaginatedResult<AttendanceLog, AttendanceFilters>> {

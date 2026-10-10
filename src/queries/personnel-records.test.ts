@@ -8,7 +8,7 @@ vi.mock("@/lib/supabase/client", () => ({
   createBrowserSupabaseClient: () => ({ from, rpc, storage: { from: storageFrom } }),
 }));
 
-import { getEmployeeProfilePhotoUrl, listUnlinkedEmployeeAccounts, replaceMyEmployeeProfilePhoto, saveEmployee } from "./personnel-records";
+import { getEmployeeProfilePhotoUrl, listUnlinkedEmployeeAccounts, replaceMyEmployeeProfilePhoto, saveEmployee, updateMyGovernmentIds } from "./personnel-records";
 
 const employee = {
   id: "00000000-0000-0000-0000-000000000010",
@@ -43,6 +43,16 @@ describe("personnel-record queries", () => {
       email: "candidate.employee@example.test",
     }]);
     expect(rpc).toHaveBeenCalledWith("list_unlinked_employee_accounts");
+  });
+
+  it("saves the employee's own PhilHealth, GSIS and Pag-IBIG numbers", async () => {
+    rpc.mockResolvedValue({ data: null, error: null });
+    await updateMyGovernmentIds({ philhealthNumber: "12-345678901-2", gsisNumber: "12345678901", pagibigNumber: "1234-5678-9012" });
+    expect(rpc).toHaveBeenCalledWith("update_my_government_ids", {
+      target_philhealth_number: "123456789012",
+      target_gsis_number: "12345678901",
+      target_pagibig_number: "123456789012",
+    });
   });
 
   it("creates a short-lived URL for a private profile photo", async () => {
@@ -95,6 +105,22 @@ describe("personnel-record queries", () => {
       from.mockReturnValue({ update, insert });
       return { update, insert, eq };
     }
+
+    it("explains a duplicate personal email in the client's words", async () => {
+      const single = vi.fn().mockResolvedValue({ data: null, error: { code: "23505", message: 'duplicate key value violates unique constraint "employees_personal_email_unique_idx"' } });
+      const select = vi.fn(() => ({ single }));
+      from.mockReturnValue({ insert: vi.fn(() => ({ select })) });
+
+      await expect(saveEmployee({ ...baseInput, departmentId: 3, rankId: 7 })).rejects.toThrow("This email is already registered.");
+    });
+
+    it("saves GSIS and Pag-IBIG as digits and never touches the hidden SSS number", async () => {
+      const table = mockTable();
+      await saveEmployee({ ...baseInput, departmentId: 3, rankId: 7, gsisNumber: "12345678901", pagibigNumber: "1234-5678-9012", philhealthNumber: "12-345678901-2" }, employeeId);
+      const values = table.update.mock.calls[0]![0];
+      expect(values).toMatchObject({ gsis_number: "12345678901", pagibig_number: "123456789012", philhealth_number: "123456789012" });
+      expect(values).not.toHaveProperty("sss_number");
+    });
 
     it("keeps department and rank on edit and never sends profile_id when no link is supplied", async () => {
       const table = mockTable();

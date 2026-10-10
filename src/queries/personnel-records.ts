@@ -1,4 +1,5 @@
 import type { Certification, Employee, Qualification, ServiceHistory, TrainingRecord, UnlinkedEmployeeAccount, UnitStation } from "@/lib/types/database";
+import { DUPLICATE_EMAIL_MESSAGE } from "@/lib/auth/duplicate-email";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import {
   certificationSchema,
@@ -112,12 +113,13 @@ export async function removeMyEmployeeProfilePhoto(employee: ProfilePhotoEmploye
   return { cleanupError: cleanupError?.message ?? null };
 }
 
-/** The signed-in employee saves their own SSS and PhilHealth numbers (no HR approval step). */
+/** The signed-in employee saves their own PhilHealth, GSIS and Pag-IBIG numbers (no HR approval step). */
 export async function updateMyGovernmentIds(input: GovernmentIdsInput) {
   const parsed = governmentIdsSchema.parse(input);
   const { error } = await createBrowserSupabaseClient().rpc("update_my_government_ids", {
-    target_sss_number: parsed.sssNumber ?? "",
     target_philhealth_number: parsed.philhealthNumber ?? "",
+    target_gsis_number: parsed.gsisNumber ?? "",
+    target_pagibig_number: parsed.pagibigNumber ?? "",
   });
   throwIfError(error);
 }
@@ -137,7 +139,8 @@ function employeePayload(input: EmployeeInput) {
     unit_station: input.unitStation ?? null, personal_email: input.personalEmail,
     phone: input.phone ?? null, address: input.address ?? null, emergency_contact_name: input.emergencyContactName ?? null,
     emergency_contact_phone: input.emergencyContactPhone ?? null,
-    sss_number: input.sssNumber ?? null, philhealth_number: input.philhealthNumber ?? null, department_id: input.departmentId ?? null,
+    philhealth_number: input.philhealthNumber ?? null, gsis_number: input.gsisNumber ?? null, pagibig_number: input.pagibigNumber ?? null,
+    department_id: input.departmentId ?? null,
     rank_id: input.rankId ?? null, employment_status: input.employmentStatus,
     employment_started_on: input.employmentStartedOn, employment_ended_on: input.employmentEndedOn ?? null,
   };
@@ -152,6 +155,9 @@ export async function saveEmployee(input: EmployeeInput, employeeId?: string) {
   const result = employeeId
     ? await client.from("employees").update(parsed.profileId ? { ...values, profile_id: parsed.profileId } : values).eq("id", employeeId).select("*").single()
     : await client.from("employees").insert({ ...values, profile_id: parsed.profileId ?? null }).select("*").single();
+  if (result.error?.code === "23505" && result.error.message.includes("employees_personal_email_unique_idx")) {
+    throw new Error(DUPLICATE_EMAIL_MESSAGE);
+  }
   throwIfError(result.error);
   return result.data as Employee;
 }
@@ -160,7 +166,7 @@ type PersonnelEntry = ServiceHistory | Qualification | Certification | TrainingR
 type PersonnelKind = "serviceHistory" | "qualification" | "certification" | "training";
 
 const childConfig = {
-  serviceHistory: { table: "service_history", schema: serviceHistorySchema, payload: (v: ServiceHistoryInput) => ({ employee_id: v.employeeId, department_id: v.departmentId ?? null, rank_id: v.rankId ?? null, employment_title: v.employmentTitle ?? null, started_on: v.startedOn, ended_on: v.endedOn ?? null, notes: v.notes ?? null }) },
+  serviceHistory: { table: "service_history", schema: serviceHistorySchema, payload: (v: ServiceHistoryInput) => ({ employee_id: v.employeeId, department_id: v.departmentId ?? null, rank_id: v.rankId ?? null, unit_station: v.unitStation ?? null, employment_title: v.employmentTitle ?? null, started_on: v.startedOn, ended_on: v.endedOn ?? null, notes: v.notes ?? null }) },
   qualification: { table: "qualifications", schema: qualificationSchema, payload: (v: QualificationInput) => ({ employee_id: v.employeeId, name: v.name, institution: v.institution ?? null, qualification_level: v.qualificationLevel ?? null, field_of_study: v.fieldOfStudy ?? null, awarded_on: v.awardedOn, notes: v.notes ?? null }) },
   certification: { table: "certifications", schema: certificationSchema, payload: (v: CertificationInput) => ({ employee_id: v.employeeId, name: v.name, issuer: v.issuer ?? null, credential_id: v.credentialId ?? null, issued_on: v.issuedOn, expires_on: v.expiresOn ?? null, notes: v.notes ?? null }) },
   training: { table: "training_records", schema: trainingRecordSchema, payload: (v: TrainingRecordInput) => ({ employee_id: v.employeeId, course_name: v.courseName, provider: v.provider, completed_on: v.completedOn, expires_on: v.expiresOn ?? null, hours: v.hours ?? null, notes: v.notes ?? null }) },

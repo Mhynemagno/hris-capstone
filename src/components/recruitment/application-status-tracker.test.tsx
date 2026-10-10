@@ -45,4 +45,8 @@ describe("ApplicationStatusTracker", () => {
     expect(items[8]).toHaveTextContent("NOT SELECTED (Rejected)");
     expect(items[8]).toHaveAttribute("data-state", "rejected");
   });
+  it("tells the applicant their application is under final deliberation", () => {
+    const finalStep = applicationStatusSteps("Final Evaluation").find((step) => step.label === "Final Evaluation");
+    expect(finalStep?.detail).toBe("Under Final Deliberation");
+  });
 });

@@ -111,7 +111,7 @@ function CriterionForm({ rankOptions, takenRankIds }: { rankOptions: { value: st
           value={rankId}
         />
       </FormField>
-      <FormField error={errors.minimumYearsOfService} htmlFor="minimum-years" label="Minimum years of service" required>
+      <FormField error={errors.minimumYearsOfService} htmlFor="minimum-years" label="Years of service" required>
         <select className={nativeSelectClassName} defaultValue="1" id="minimum-years" name="minimumYearsOfService" required>
           {SERVICE_YEAR_CHOICES.map((years) => <option key={years} value={years}>{`${years} ${years === 1 ? "year" : "years"}`}</option>)}
         </select>

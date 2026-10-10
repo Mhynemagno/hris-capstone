@@ -11,12 +11,13 @@ import { PasswordInput } from "./password-input";
 
 type LoginFormProps = {
   error?: string;
+  notice?: string;
   /** Which login the visitor chose; kept so a failed attempt returns to the same page. */
   mode?: "employee" | "applicant" | null;
   nextPath: string;
 };
 
-export function LoginForm({ error, mode, nextPath }: LoginFormProps) {
+export function LoginForm({ error, mode, nextPath, notice }: LoginFormProps) {
   const [pending, setPending] = useState(false);
 
   useEffect(() => {
@@ -55,6 +56,7 @@ export function LoginForm({ error, mode, nextPath }: LoginFormProps) {
         </FormField>
         <div className="text-right text-sm"><Link className="font-medium text-primary underline-offset-4 hover:underline" href="/forgot-password">Forgot your password?</Link></div>
       </div>
+      {notice ? <p className="rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-900" role="status">{notice}</p> : null}
       {error ? <ErrorState message={error} /> : null}
       <button
         className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"

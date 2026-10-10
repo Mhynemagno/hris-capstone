@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(15);
+select extensions.plan(17);
 
 insert into public.job_openings (title, description, location, closes_on, status, published_at, created_by_user_id)
 values ('PDF workflow test opening', 'A test opening for the eight-stage applicant recruitment workflow.', 'San Juan City', current_date + 30, 'published', now(), '00000000-0000-4000-8000-000000008102');
@@ -107,6 +107,29 @@ select extensions.throws_ok(
   $$select public.hire_application('00000000-0000-4000-8000-000000018002', 'PAT-TEST', null)$$,
   '22023', 'Only shortlisted applicants can be hired.',
   'Hiring is blocked before Final Evaluation shortlisting'
+);
+
+set local role postgres;
+-- An applicant who chose "prefer not to say" can still be hired; personnel gender is left blank for HR to set.
+update public.applicants set gender = 'prefer_not_to_say' where profile_id = '00000000-0000-4000-8000-000000008104';
+insert into public.job_openings (title, description, location, closes_on, status, published_at, created_by_user_id)
+values ('PDF workflow hire test opening', 'A third test opening for hiring.', 'San Juan City', current_date + 30, 'published', now(), '00000000-0000-4000-8000-000000008102');
+insert into public.applications (id, applicant_id, job_opening_id, status)
+select '00000000-0000-4000-8000-000000018003', applicant.id, opening.id, 'Shortlisted'
+from public.applicants applicant
+join public.job_openings opening on opening.title = 'PDF workflow hire test opening'
+where applicant.profile_id = '00000000-0000-4000-8000-000000008104';
+
+set local role authenticated;
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000008102';
+select extensions.lives_ok(
+  $$select public.hire_application('00000000-0000-4000-8000-000000018003', '9-87654', null)$$,
+  'HR can hire an applicant whose gender is prefer not to say'
+);
+set local role postgres;
+select extensions.ok(
+  (select gender is null from public.employees where profile_id = '00000000-0000-4000-8000-000000008104'),
+  'The hired employee starts with a blank gender for HR to set'
 );
 
 select * from extensions.finish();

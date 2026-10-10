@@ -70,7 +70,7 @@ describe("personnel record schemas", () => {
       placeOfBirth: "Enter the place of birth.",
       dateOfBirth: "Enter the date of birth.",
       gender: "Choose a gender.",
-      religion: "Enter the religion.",
+      religion: "Choose a religion.",
       phone: "Enter the phone number.",
       address: "Enter the home address.",
       emergencyContactName: "Enter the emergency contact.",

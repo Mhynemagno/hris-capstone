@@ -41,8 +41,7 @@ export function DeploymentForm({ deployment, onSaved, pending = false }: Deploym
     const parsed = deploymentInputSchema.safeParse({
       ...values,
       employeeId: deployment?.employee_id ?? employeeId ?? values.employeeId,
-      // Existing end dates are preserved; they are not edited from this form.
-      endsOn: deployment?.ends_on || null,
+      endsOn: typeof values.endsOn === "string" && values.endsOn ? values.endsOn : null,
     });
     if (!parsed.success) {
       const errors: Record<string, string> = {};
@@ -51,7 +50,7 @@ export function DeploymentForm({ deployment, onSaved, pending = false }: Deploym
         errors[key] ??= key === "employeeId" ? "Choose an employee." : issue.message;
       }
       setFieldErrors(errors);
-      if (errors.form || errors.endsOn) setError(errors.form ?? errors.endsOn ?? null);
+      if (errors.form) setError(errors.form);
       return;
     }
     try {
@@ -115,6 +114,9 @@ export function DeploymentForm({ deployment, onSaved, pending = false }: Deploym
       </FormField>
       <FormField error={e.startsOn} htmlFor="starts-on" label="Start date" required>
         <Input defaultValue={deployment?.starts_on} id="starts-on" name="startsOn" required type="date" />
+      </FormField>
+      <FormField description="Optional. Leave blank for a one-day deployment." error={e.endsOn} htmlFor="ends-on" label="End date">
+        <Input defaultValue={deployment?.ends_on ?? ""} id="ends-on" name="endsOn" type="date" />
       </FormField>
       <div className="sm:col-span-2">
         <FormField error={e.notes} htmlFor="notes" label="Remarks" required>

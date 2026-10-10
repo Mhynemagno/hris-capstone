@@ -34,31 +34,40 @@ export function HrAttendanceDirectory() {
         </div>
       </div>
       <div className="relative overflow-x-auto rounded-xl border">
-        <table className="w-full min-w-[640px] text-left text-sm">
+        <table className="w-full min-w-[820px] text-left text-sm">
           <caption className="sr-only">Attendance records</caption>
           <thead className="bg-muted/60">
             <tr>
               <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Date</th>
+              <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Name</th>
               <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">External ID</th>
               <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Time in</th>
               <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Time out</th>
               <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Status</th>
               <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Source</th>
+              <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col"><span className="sr-only">Actions</span></th>
             </tr>
           </thead>
           <tbody>
-            {rows.length ? rows.map((row) => (
-              <tr className="border-t" key={row.id}>
-                <td className="px-4 py-3 align-top whitespace-nowrap">{formatDate(row.attendance_date)}</td>
-                <td className="px-4 py-3 align-top">{row.external_employee_id}</td>
-                <td className="px-4 py-3 align-top tabular-nums">{formatAttendanceTime(row.time_in)}</td>
-                <td className="px-4 py-3 align-top tabular-nums">{formatAttendanceTime(row.time_out)}</td>
-                <td className="px-4 py-3 align-top"><AttendanceStatusBadge status={row.status} /></td>
-                <td className="px-4 py-3 align-top">{row.capture_method === "face_recognition" ? "Face scan" : "Import"}</td>
-              </tr>
-            )) : (
+            {rows.length ? rows.map((row) => {
+              const name = row.employee ? `${row.employee.first_name} ${row.employee.last_name}` : null;
+              return (
+                <tr className="border-t" key={row.id}>
+                  <td className="px-4 py-3 align-top whitespace-nowrap">{formatDate(row.attendance_date)}</td>
+                  <td className="px-4 py-3 align-top">{name ? <><span className="block font-medium">{name}</span><span className="block text-muted-foreground tabular-nums">{row.employee?.employee_number}</span></> : <span className="text-muted-foreground">Unknown employee</span>}</td>
+                  <td className="px-4 py-3 align-top">{row.external_employee_id}</td>
+                  <td className="px-4 py-3 align-top tabular-nums">{formatAttendanceTime(row.time_in)}</td>
+                  <td className="px-4 py-3 align-top tabular-nums">{formatAttendanceTime(row.time_out)}</td>
+                  <td className="px-4 py-3 align-top"><AttendanceStatusBadge status={row.status} /></td>
+                  <td className="px-4 py-3 align-top">{row.capture_method === "face_recognition" ? "Face scan" : "Import"}</td>
+                  <td className="px-4 py-3 align-top text-right">
+                    <Link className={buttonVariants({ size: "sm", variant: "outline" })} href={`/hr/employees/${row.employee_id}`}>View{" "}<span className="sr-only">{name ?? "employee"}</span></Link>
+                  </td>
+                </tr>
+              );
+            }) : (
               <tr>
-                <td className="px-4 py-10 text-center text-muted-foreground" colSpan={6}>
+                <td className="px-4 py-10 text-center text-muted-foreground" colSpan={8}>
                   No attendance records yet. <Link className="font-medium text-primary underline underline-offset-4" href="/hr/attendance/import">Import an attendance file</Link> to get started.
                 </td>
               </tr>

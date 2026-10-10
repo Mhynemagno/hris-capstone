@@ -61,13 +61,13 @@ async function createEmployee(page: Page, suffix: string, startedOn = "2015-06-0
   await page.getByLabel(/^Date of birth/).fill("1995-05-15");
   await page.getByLabel(/^Gender/).selectOption("female");
   await page.getByLabel(/^Civil status/).selectOption("single");
-  await page.getByLabel(/^Religion/).fill("Roman Catholic");
+  await page.getByLabel(/^Religion/).selectOption("Roman Catholic");
   await page.locator("#phone").fill("+639171234567");
   await page.getByLabel(/^Home address/).fill("1 Test St., San Juan City");
   await page.locator("#emergency-contact-name").fill("Test Contact");
   await page.locator("#emergency-contact-phone").fill("+639181234567");
   await page.getByLabel(/^Unit \/ Section/).selectOption({ label: "Office of the Chief of Police" });
-  await page.getByLabel(/^Employment start date/).fill(startedOn);
+  await page.getByLabel(/^Date Entered Service/).fill(startedOn);
   await page.getByRole("button", { name: "Save employee" }).click();
   await expect(page).toHaveURL(/\/hr\/employees\/[0-9a-f-]{36}\?tab=official&saved=created$/, { timeout: 30_000 });
   await expect(page.getByRole("status").filter({ hasText: "Employee account has been saved." })).toBeVisible();
@@ -81,16 +81,24 @@ async function chooseComboboxOption(page: Page, name: RegExp | string, search: s
   await page.getByRole("option", { name: option }).first().click();
 }
 
+/** A distinct far-future start day per created deployment, so repeated runs never double-book the demo employee. */
+let deploymentDayCounter = 0;
+function uniqueDeploymentDay() {
+  deploymentDayCounter += 1;
+  const seed = Number.parseInt(runId.replace(/\D/g, "").slice(-6) || "0", 10);
+  return 3650 + ((seed * 7 + deploymentDayCounter) % 20000);
+}
+
 /** HR creates a deployment for the demo employee through the UI at the given (unique) location. */
-async function createDeployment(page: Page, location: string) {
+async function createDeployment(page: Page, location: string, { startDay = uniqueDeploymentDay(), status = "ongoing" }: { startDay?: number; status?: string } = {}) {
   await page.goto("/hr/deployments/new");
   await chooseComboboxOption(page, /^Employee/, "0-00001", /Demo Employee/);
   await page.getByLabel(/^Location/).fill(location);
   await page.getByLabel(/^Remarks/).fill("Initial assignment");
-  await page.getByLabel(/^Start date/).fill(isoDate(0));
+  await page.getByLabel(/^Start date/).fill(isoDate(startDay));
   await page.getByLabel(/^Deployment type/).selectOption("Public Assembly");
   await page.getByLabel(/^Event \/ Operation/).selectOption("Rally");
-  await page.getByLabel(/^Status/).selectOption("ongoing");
+  await page.getByLabel(/^Status/).selectOption(status);
   await page.getByRole("button", { name: "Save deployment" }).click();
   await expect(page).toHaveURL(/\/hr\/deployments\/[0-9a-f-]{36}$/, { timeout: 30_000 });
 }
@@ -313,12 +321,15 @@ test.describe("Objective 3: deployment tracking", () => {
     await expect(page.getByText("Remarks are required.").first()).toBeVisible();
 
     await createDeployment(page, role);
+    await expect(page.getByText("Deployment created by").first()).toBeVisible();
+    await expect(page.getByRole("textbox")).toHaveCount(0);
+    await page.getByRole("link", { name: "Update" }).click();
+    await expect(page).toHaveURL(/\/hr\/deployments\/[0-9a-f-]{36}\/edit$/);
     await page.getByLabel(/^Remarks/).fill(`Oplan Ligtas ${runId}`);
     await page.getByRole("button", { name: "Save deployment" }).click();
-    await expect(page.getByRole("status").filter({ hasText: "Deployment saved." })).toBeVisible();
-    await page.reload();
-    await expect(page.getByLabel(/^Remarks/)).toHaveValue(`Oplan Ligtas ${runId}`);
-    await expect(page.getByText(/History/).first()).toBeVisible();
+    await expect(page).toHaveURL(/\/hr\/deployments\/[0-9a-f-]{36}$/, { timeout: 30_000 });
+    await expect(page.getByText(`Oplan Ligtas ${runId}`)).toBeVisible();
+    await expect(page.getByText("Details updated by").first()).toBeVisible();
 
     await page.goto("/hr/deployments");
     await expect(page.getByRole("link", { name: new RegExp(`View details for ${role}`) })).toBeVisible({ timeout: 15_000 });
@@ -355,7 +366,7 @@ test.describe("Objective 4: promotion eligibility tracker", () => {
     await expect(page.getByText(/Loading promotion criteria/)).toHaveCount(0, { timeout: 15_000 });
     if (await existing.count() === 0) {
       await chooseComboboxOption(page, /^Target rank/, "PCPL", /PCPL — Police Corporal/);
-      await page.getByLabel(/^Minimum years of service/).selectOption("3");
+      await page.getByLabel(/^Years of service/).selectOption("3");
       await expect(page.getByLabel(/^Minimum performance rating/)).toHaveCount(0);
       await page.getByLabel(/^Certification \/ Training/).selectOption(credential);
       // A second requirement row can be added and removed again.
@@ -520,7 +531,8 @@ test.describe("Objective 8: automated reports", () => {
   test("HR generates, filters, and downloads reports; management reads them", async ({ page }) => {
     const role = `E2E Report ${runId}`;
     await signIn(page, HR.email, HR.home);
-    await createDeployment(page, role);
+    // Dated today so it falls in the report's default 30-day range; completed so it never double-books.
+    await createDeployment(page, role, { startDay: 0, status: "completed" });
 
     await page.goto("/reports");
     for (const report of ["applicant tracking", "hiring decisions", "employee performance", "deployments", "attendance leave", "promotion training needs"]) {

@@ -75,7 +75,12 @@ Deno.serve(async (request) => {
       redirectTo,
     });
   if (inviteError || !invited.user) {
-    return json(409, { error: "Unable to invite this account." });
+    // Mirrors isDuplicateEmailError in src/lib/auth/duplicate-email.ts (edge functions cannot import app code).
+    const duplicate = Boolean(inviteError) && (
+      inviteError?.code === "email_exists" || inviteError?.code === "user_already_exists"
+      || /already (been )?registered|already exists/i.test(inviteError?.message ?? "")
+    );
+    return json(409, { error: duplicate ? "This email is already registered." : "Unable to invite this account." });
   }
   const { error: roleError } = await callerClient.rpc("update_managed_user", {
     target_user_id: invited.user.id,

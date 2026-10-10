@@ -34,17 +34,29 @@ describe("ApplicantApplicationForm", () => {
     expect(screen.getByText("Your saved CV / Resume and required documents are included.")).toBeVisible();
   });
 
-  it("disables Submit until all five required documents are saved", () => {
+  it("shows a red error naming the missing documents when Submit is clicked too early", async () => {
+    const user = userEvent.setup();
+    const onMissingDocuments = vi.fn();
     mocks.documents.mockReturnValue({ data: allFive.slice(0, 4), error: null, isLoading: false });
-    render(<ApplicantApplicationForm jobId={7} />);
-    expect(screen.getByRole("button", { name: "Submit application" })).toBeDisabled();
-    expect(screen.getByText("Save all 5 required documents to submit.")).toBeVisible();
+    render(<ApplicantApplicationForm jobId={7} onMissingDocuments={onMissingDocuments} />);
+
+    const button = screen.getByRole("button", { name: "Submit application" });
+    expect(button).toBeEnabled();
+    await user.click(button);
+
+    const alert = screen.getByRole("alert");
+    expect(alert).toHaveTextContent("Please submit all required documents.");
+    expect(alert).toHaveTextContent("Still needed: Diploma");
+    expect(onMissingDocuments).toHaveBeenCalledOnce();
+    expect(mocks.submit).not.toHaveBeenCalled();
   });
 
-  it("blocks Submit while a chosen replacement document is not saved yet", () => {
+  it("explains that a chosen replacement must be saved first", async () => {
+    const user = userEvent.setup();
     render(<ApplicantApplicationForm hasUnsavedDocuments jobId={7} />);
-    expect(screen.getByRole("button", { name: "Submit application" })).toBeDisabled();
-    expect(screen.getByText("Save or cancel the file you chose above before submitting.")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Submit application" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("Save or cancel the file you chose above before submitting.");
+    expect(mocks.submit).not.toHaveBeenCalled();
   });
 
   it("attaches only the saved CV and shows a tracking link", async () => {

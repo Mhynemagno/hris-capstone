@@ -120,9 +120,9 @@ select extensions.lives_ok(
     current_setting('test.deployment_id')::uuid, current_setting('test.current_updated_at')::timestamptz,
     'Central station', null, null, 'Patrol officer', '2026-09-01', null, 'cancelled', 'Historic end-date check', 'Public Assembly', 'Rally'
   )$$,
-  'A direct update cannot erase a historic end date'
+  'HR can clear an end date from the form'
 );
-select extensions.is((select ends_on from public.deployments where id::text = current_setting('test.deployment_id')), '2026-09-30'::date, 'Historic deployment end date remains intact');
+select extensions.is((select ends_on from public.deployments where id::text = current_setting('test.deployment_id')), null::date, 'A cleared end date stays cleared (the form now owns the End date)');
 set local role postgres;
 select extensions.ok(exists (select 1 from public.audit_logs where entity_type = 'deployments' and entity_id = current_setting('test.deployment_id') and action = 'status_changed'), 'Status transition is audited');
 set local role authenticated;

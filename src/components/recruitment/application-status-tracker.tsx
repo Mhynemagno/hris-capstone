@@ -24,7 +24,7 @@ const reviewDetails: Partial<Record<ApplicationStatus, string>> = {
   "Drug Test": "You are now scheduled for the drug test.",
   "Character & Background Investigation": "Your character and background investigation is in progress.",
   "Panel Interview": "You are now scheduled for the panel interview.",
-  "Final Evaluation": "Your application is undergoing final evaluation.",
+  "Final Evaluation": "Under Final Deliberation",
 };
 
 export function applicationStatusSteps(status: ApplicationStatus): TrackerStep[] {

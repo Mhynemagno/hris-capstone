@@ -12,9 +12,9 @@ import { LoadingState } from "@/components/ui/loading-state";
 import { useDepartmentOptions, useRankOptions } from "@/hooks/use-administration";
 import { useEmployee, usePersonnelEntries, useSavePersonnelEntry } from "@/hooks/use-personnel-records";
 import { formatDate, formatDateRange } from "@/lib/format-date";
+import { formatGovernmentId } from "@/lib/government-ids";
 import { rankLabel } from "@/lib/ranks";
 import type { Certification, Employee, Qualification, ServiceHistory, TrainingRecord } from "@/lib/types/database";
-import type { DeletableEntityType } from "@/queries/deletion";
 import type { PersonnelKind } from "@/queries/personnel-records";
 
 import { EmployeeEditor } from "./employee-editor";
@@ -23,9 +23,8 @@ import { ActivityTimeline, formatDay, InfoCard, ProfileHeaderCard, serviceLength
 import { RecordEntryForm } from "./record-entry-form";
 import { parseRecordTab, RECORD_TABS, RecordTabs, type RecordTabKey } from "./record-tabs";
 
-/** Lower-case nouns for delete prompts, and the server-side record type each kind deletes as. */
+/** Lower-case nouns for update buttons and notices. */
 const nouns: Record<PersonnelKind, string> = { serviceHistory: "service history entry", qualification: "eligibility", certification: "certification / training", training: "training record" };
-const deletionTypes: Record<PersonnelKind, DeletableEntityType> = { serviceHistory: "service_history", qualification: "qualification", certification: "certification", training: "training_record" };
 const titles: Record<PersonnelKind, string> = { serviceHistory: "Service history", qualification: "Eligibility", certification: "Certification / Training", training: "Training" };
 const icons: Record<PersonnelKind, LucideIcon> = { serviceHistory: History, qualification: GraduationCap, certification: Award, training: BookOpenCheck };
 const listItemClassName = "flex flex-col gap-3 rounded-xl border bg-background/60 px-4 py-3 transition-colors hover:bg-muted/60 sm:flex-row sm:items-center sm:justify-between";
@@ -54,45 +53,77 @@ function titleCase(value: string | null | undefined) {
   return value ? value.replaceAll("_", " ").replace(/^\w/, (letter) => letter.toUpperCase()) : null;
 }
 
-/** `editable` is false in view mode: the list is shown without add, edit, or delete controls. */
+function useRankTitles() {
+  const ranks = useRankOptions();
+  return useMemo(() => new Map((ranks.data ?? []).map((rank) => [rank.id, rankLabel(rank)])), [ranks.data]);
+}
+
+function useDepartmentNames() {
+  const departments = useDepartmentOptions();
+  return useMemo(() => new Map((departments.data ?? []).map((department) => [department.id, department.name])), [departments.data]);
+}
+
+/** "PCPL — Police Corporal · San Juan Police Station": the rank held and where the officer was assigned. */
+export function serviceHistoryTitle(entry: Pick<ServiceHistory, "rank_id" | "unit_station" | "employment_title">, rankTitles: Map<number, string>) {
+  const title = [entry.rank_id ? rankTitles.get(entry.rank_id) : null, entry.unit_station].filter(Boolean).join(" · ");
+  return title || entry.employment_title || "Service entry";
+}
+
+/** `editable` is false in view mode: the list is shown without add or update controls. Records are updated, never deleted. */
 function Records({ employeeId, kind, editable }: { employeeId: string; kind: PersonnelKind; editable: boolean }) {
   const entries = usePersonnelEntries(kind, employeeId);
   const save = useSavePersonnelEntry(kind, employeeId);
-  const [deleting, setDeleting] = useState<string | null>(null);
+  const rankTitles = useRankTitles();
+  const departmentNames = useDepartmentNames();
+  const [editing, setEditing] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const noun = nouns[kind];
 
   if (entries.isLoading) return <LoadingState label={`Loading ${titles[kind].toLowerCase()}…`} />;
   if (entries.error) return <ErrorState message={entries.error.message} />;
+  const editingEntry = entries.data?.find((entry) => entry.id === editing);
   return (
     <InfoCard icon={icons[kind]} id={`records-${kind}`} title={titles[kind]}>
       {notice ? <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400" role="status">{notice}</p> : null}
       <ul className="mt-3 space-y-2">
         {entries.data?.length ? entries.data.map((entry) => {
           const record = entry as unknown as { id: string } & Record<string, unknown>;
-          const title = entryTitle(record);
-          const detail = entryDetail(kind, record);
+          const service = kind === "serviceHistory" ? entry as ServiceHistory : null;
+          const title = service ? serviceHistoryTitle(service, rankTitles) : entryTitle(record);
+          const detail = service
+            ? [service.department_id ? departmentNames.get(service.department_id) : null, formatDateRange(service.started_on, service.ended_on)].filter(Boolean).join(" · ")
+            : entryDetail(kind, record);
           return (
             <li className={listItemClassName} key={entry.id}>
               <div>
+                {service ? <p className="text-xs font-semibold tracking-wide text-primary uppercase">Service history</p> : null}
                 <p className="font-semibold">{title}</p>
                 {detail ? <p className="text-sm text-muted-foreground">{detail}</p> : null}
               </div>
               {editable ? (
-                <Button aria-label={`Delete ${noun} ${title}`} onClick={() => { setNotice(null); setDeleting(entry.id); }} size="sm" type="button" variant="destructive">Delete</Button>
+                <Button aria-label={`Update ${noun} ${title}`} onClick={() => { setNotice(null); setEditing(entry.id); }} size="sm" type="button" variant="outline">Update</Button>
               ) : null}
             </li>
           );
         }) : <li className={emptyItemClassName}>No {titles[kind].toLowerCase()} recorded.</li>}
       </ul>
-      <DeleteRecordDialog
-        entityId={deleting}
-        entityType={deletionTypes[kind]}
-        noun={noun}
-        onClose={() => setDeleting(null)}
-        onDeleted={() => setNotice(`The ${noun} was deleted successfully.`)}
-      />
-      {editable ? <RecordEntryForm employeeId={employeeId} kind={kind} onSaved={async (input) => { await save.mutateAsync({ input: input as never }); }} pending={save.isPending} /> : null}
+      {!editable ? null : editingEntry ? (
+        <div className="mt-4">
+          <div className="flex items-center justify-between"><h3 className="font-bold">Update {noun}</h3><Button onClick={() => setEditing(null)} size="sm" type="button" variant="ghost">Cancel</Button></div>
+          <RecordEntryForm
+            certification={kind === "certification" ? editingEntry as Certification : undefined}
+            employeeId={employeeId}
+            key={editingEntry.id}
+            kind={kind}
+            onSaved={async (input, id) => { await save.mutateAsync({ id, input: input as never }); setEditing(null); setNotice(`The ${noun} was updated.`); }}
+            pending={save.isPending}
+            qualification={kind === "qualification" ? editingEntry as Qualification : undefined}
+            serviceHistory={kind === "serviceHistory" ? editingEntry as ServiceHistory : undefined}
+          />
+        </div>
+      ) : (
+        <RecordEntryForm employeeId={employeeId} kind={kind} onSaved={async (input) => { await save.mutateAsync({ input: input as never }); }} pending={save.isPending} />
+      )}
     </InfoCard>
   );
 }
@@ -130,7 +161,7 @@ function useRecordActivity(employeeId: string, rankTitles: Map<number, string>, 
   const items = useMemo<TimelineItem[]>(() => [
     ...((service.data ?? []) as ServiceHistory[]).map((entry): TimelineItem => ({
       id: `service-${entry.id}`, icon: History, tone: "primary", category: "Service history",
-      title: entry.employment_title || (entry.rank_id ? rankTitles.get(entry.rank_id) : undefined) || "Service entry",
+      title: serviceHistoryTitle(entry, rankTitles),
       detail: [entry.department_id ? departmentNames.get(entry.department_id) : null, formatDateRange(entry.started_on, entry.ended_on)].filter(Boolean).join(" · "),
       date: entry.started_on,
     })),
@@ -161,7 +192,7 @@ function useRecordActivity(employeeId: string, rankTitles: Map<number, string>, 
   };
 }
 
-const genderLabels: Record<NonNullable<Employee["gender"]>, string> = { female: "Female", male: "Male", prefer_not_to_say: "Prefer not to say" };
+const genderLabels: Record<NonNullable<Employee["gender"]>, string> = { female: "Female", male: "Male" };
 const savedMessages = { created: "Employee account has been saved.", edited: "Employee account has been edited successfully." } as const;
 
 type DetailRow = { label: string; value: ReactNode; wide?: boolean };
@@ -213,7 +244,13 @@ function OfficialDetails({ record, departmentName, rankName }: { record: Employe
         { label: "Unit / Section", value: departmentName },
         { label: "Unit / Station", value: record.unit_station },
         { label: "Employment status", value: record.employment_status === "retired" ? "Retired" : "Active" },
-        { label: "Employment start date", value: formatDate(record.employment_started_on) },
+        { label: "Date Entered Service", value: formatDate(record.employment_started_on) },
+        { label: "Inclusive Dates (To)", value: formatDate(record.employment_ended_on) },
+      ]} />
+      <DetailSection title="IV. Government Identification" rows={[
+        { label: "PhilHealth number", value: record.philhealth_number ? <span className="tabular-nums">{formatGovernmentId("philhealth", record.philhealth_number)}</span> : null },
+        { label: "GSIS number", value: record.gsis_number ? <span className="tabular-nums">{formatGovernmentId("gsis", record.gsis_number)}</span> : null },
+        { label: "Pag-IBIG number", value: record.pagibig_number ? <span className="tabular-nums">{formatGovernmentId("pagibig", record.pagibig_number)}</span> : null },
       ]} />
     </div>
   );

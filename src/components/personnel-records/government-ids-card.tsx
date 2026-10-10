@@ -5,21 +5,21 @@ import { HeartPulse, IdCard, Pencil } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { FormField } from "@/components/ui/form-field";
-import { Input } from "@/components/ui/input";
+import { GovernmentIdInput } from "@/components/ui/government-id-input";
 import { useUpdateMyGovernmentIds } from "@/hooks/use-personnel-records";
-import { formatPhilHealthNumber, formatSssNumber } from "@/lib/government-ids";
+import { formatGovernmentId } from "@/lib/government-ids";
 import type { Employee } from "@/lib/types/database";
 import { governmentIdsSchema } from "@/schemas/personnel-records";
 
 import { InfoCard, InfoList } from "./profile-layout";
 
 type GovernmentIdsCardProps = {
-  employee: Pick<Employee, "sss_number" | "philhealth_number">;
+  employee: Pick<Employee, "philhealth_number" | "gsis_number" | "pagibig_number">;
   /** The employee may save their own numbers directly; HR edits them on the personnel record form. */
   canEdit?: boolean;
 };
 
-type FieldErrors = Partial<Record<"sssNumber" | "philhealthNumber", string>>;
+type FieldErrors = Partial<Record<"philhealthNumber" | "gsisNumber" | "pagibigNumber", string>>;
 
 export function GovernmentIdsCard({ employee, canEdit = false }: GovernmentIdsCardProps) {
   const save = useUpdateMyGovernmentIds();
@@ -58,11 +58,14 @@ export function GovernmentIdsCard({ employee, canEdit = false }: GovernmentIdsCa
     <InfoCard action={editButton} icon={IdCard} id="profile-government-ids" title="Government IDs">
       {editing ? (
         <form className="space-y-4" noValidate onSubmit={submit}>
-          <FormField description="10 digits, e.g. 34-1234567-8" error={fieldErrors.sssNumber} htmlFor="sss-number" label="SSS number">
-            <Input className="h-11" defaultValue={formatSssNumber(employee.sss_number)} id="sss-number" inputMode="numeric" name="sssNumber" />
+          <FormField error={fieldErrors.philhealthNumber} htmlFor="self-philhealth-number" label="PhilHealth number">
+            <GovernmentIdInput defaultValue={employee.philhealth_number} id="self-philhealth-number" kind="philhealth" name="philhealthNumber" />
           </FormField>
-          <FormField description="12 digits, e.g. 12-345678901-2" error={fieldErrors.philhealthNumber} htmlFor="philhealth-number" label="PhilHealth number">
-            <Input className="h-11" defaultValue={formatPhilHealthNumber(employee.philhealth_number)} id="philhealth-number" inputMode="numeric" name="philhealthNumber" />
+          <FormField error={fieldErrors.gsisNumber} htmlFor="self-gsis-number" label="GSIS number">
+            <GovernmentIdInput defaultValue={employee.gsis_number} id="self-gsis-number" kind="gsis" name="gsisNumber" />
+          </FormField>
+          <FormField error={fieldErrors.pagibigNumber} htmlFor="self-pagibig-number" label="Pag-IBIG number">
+            <GovernmentIdInput defaultValue={employee.pagibig_number} id="self-pagibig-number" kind="pagibig" name="pagibigNumber" />
           </FormField>
           {error ? <p className="text-sm text-destructive" role="alert">{error}</p> : null}
           <div className="flex flex-wrap gap-2">
@@ -72,8 +75,9 @@ export function GovernmentIdsCard({ employee, canEdit = false }: GovernmentIdsCa
         </form>
       ) : (
         <InfoList rows={[
-          { label: "SSS number", value: <span className="tabular-nums">{formatSssNumber(employee.sss_number) || "Not provided"}</span>, icon: IdCard },
-          { label: "PhilHealth number", value: <span className="tabular-nums">{formatPhilHealthNumber(employee.philhealth_number) || "Not provided"}</span>, icon: HeartPulse },
+          { label: "PhilHealth number", value: <span className="tabular-nums">{formatGovernmentId("philhealth", employee.philhealth_number) || "Not provided"}</span>, icon: HeartPulse },
+          { label: "GSIS number", value: <span className="tabular-nums">{formatGovernmentId("gsis", employee.gsis_number) || "Not provided"}</span>, icon: IdCard },
+          { label: "Pag-IBIG number", value: <span className="tabular-nums">{formatGovernmentId("pagibig", employee.pagibig_number) || "Not provided"}</span>, icon: IdCard },
         ]} />
       )}
       {notice ? <p className="mt-3 text-sm text-muted-foreground" role="status">{notice}</p> : null}

@@ -15,6 +15,7 @@ import { ApplicantProfileDocuments } from "./applicant-profile-documents";
 export function ApplicantApplyWorkspace({ jobId }: { jobId: number }) {
   const job = usePublishedJob(jobId);
   const [hasUnsavedDocuments, setHasUnsavedDocuments] = useState(false);
+  const [highlightMissing, setHighlightMissing] = useState(false);
   if (job.isLoading) return <LoadingState label="Loading job opening…" />;
   if (job.error) return <ErrorState message={job.error.message} />;
   if (!job.data) return <ErrorState message="This job opening is unavailable or has closed." />;
@@ -25,7 +26,7 @@ export function ApplicantApplyWorkspace({ jobId }: { jobId: number }) {
       <p className="mt-1 text-sm text-muted-foreground">{[job.data.location, job.data.closes_on ? `Deadline of Application: ${formatDate(job.data.closes_on)}` : "Open until filled"].filter(Boolean).join(" · ")}</p>
       <Link className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-primary underline-offset-4 hover:underline" href={`/jobs/${job.data.id}`}>View job details</Link>
     </section>
-    <ApplicantProfileDocuments onPendingChange={setHasUnsavedDocuments} />
-    <ApplicantApplicationForm hasUnsavedDocuments={hasUnsavedDocuments} jobId={job.data.id} />
+    <ApplicantProfileDocuments highlightMissing={highlightMissing} onPendingChange={setHasUnsavedDocuments} />
+    <ApplicantApplicationForm hasUnsavedDocuments={hasUnsavedDocuments} jobId={job.data.id} onMissingDocuments={() => setHighlightMissing(true)} />
   </div>;
 }
