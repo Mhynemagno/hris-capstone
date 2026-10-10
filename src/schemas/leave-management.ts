@@ -51,10 +51,19 @@ export const leaveAttachmentSchema = z.object({
   sizeBytes: z.number().int().positive().max(maxAttachmentSizeBytes),
 });
 
+/** Latest date a leave request may start or end: two years from today (local date). */
+export function maxLeaveDate() {
+  const now = new Date();
+  const limit = new Date(now.getFullYear() + 2, now.getMonth(), now.getDate());
+  return new Date(limit.getTime() - limit.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+}
+
+const withinTwoYears = (value: string) => value <= maxLeaveDate();
+
 export const leaveRequestDraftSchema = z.object({
   leaveTypeId: uuidSchema,
-  startsOn: isoDateSchema.refine(futureOrCurrentDate, "Choose today or a future start date."),
-  endsOn: isoDateSchema.refine(futureOrCurrentDate, "Choose today or a future end date."),
+  startsOn: isoDateSchema.refine(futureOrCurrentDate, "Choose today or a future start date.").refine(withinTwoYears, "Choose a date within the next two years."),
+  endsOn: isoDateSchema.refine(futureOrCurrentDate, "Choose today or a future end date.").refine(withinTwoYears, "Choose a date within the next two years."),
   reason: optionalNotesSchema,
 }).superRefine((value, context) => {
   if (value.endsOn < value.startsOn) {

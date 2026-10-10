@@ -1,11 +1,12 @@
 import userEvent from "@testing-library/user-event";
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   rows: [] as Array<Record<string, unknown>>,
   types: [] as Array<Record<string, unknown>>,
   balances: [] as Array<Record<string, unknown>>,
+  balanceYears: vi.fn(),
   cancel: vi.fn(),
   leaveRequestFilters: vi.fn(),
   submit: vi.fn(),
@@ -20,7 +21,7 @@ vi.mock("@/hooks/use-leave-management", () => ({
   useCancelLeaveRequest: () => ({ isPending: false, mutateAsync: mocks.cancel }),
   useRequestableLeaveTypes: () => ({ isLoading: false, error: null, data: mocks.types }),
   useSubmitLeaveRequest: () => ({ isPending: false, mutateAsync: mocks.submit }),
-  useMyLeaveBalances: () => ({ isLoading: false, error: null, data: mocks.balances }),
+  useMyLeaveBalances: (year: number) => { mocks.balanceYears(year); return { isLoading: false, error: null, data: mocks.balances }; },
 }));
 
 vi.mock("@/hooks/use-personnel-records", () => ({
@@ -28,6 +29,7 @@ vi.mock("@/hooks/use-personnel-records", () => ({
 }));
 
 import { EmployeeLeaveList, EmployeeLeaveRequestForm } from "./employee-leave";
+import { maxLeaveDate } from "@/schemas/leave-management";
 
 const isoDate = (offsetDays: number) => {
   const date = new Date(Date.now() - new Date().getTimezoneOffset() * 60000);
@@ -181,5 +183,23 @@ describe("EmployeeLeaveRequestForm", () => {
     const select = screen.getByLabelText(/^Leave type/);
     expect(within(select).getByRole("option", { name: "Paternity Leave" })).toBeInTheDocument();
     expect(within(select).queryByRole("option", { name: "Maternity Leave" })).not.toBeInTheDocument();
+  });
+  it("explains an impossible start date immediately instead of accepting year 0001", async () => {
+    render(<EmployeeLeaveRequestForm />);
+    fireEvent.change(screen.getByLabelText(/^Start date/), { target: { value: "0001-01-10" } });
+    expect(await screen.findByText("Choose today or a future date.")).toBeVisible();
+  });
+
+  it("caps leave dates two years ahead", () => {
+    render(<EmployeeLeaveRequestForm />);
+    expect(screen.getByLabelText(/^Start date/)).toHaveAttribute("max", maxLeaveDate());
+    expect(screen.getByLabelText(/^End date/)).toHaveAttribute("max", maxLeaveDate());
+  });
+
+  it("never asks for a year-1 balance", () => {
+    mocks.balanceYears.mockReset();
+    render(<EmployeeLeaveRequestForm />);
+    fireEvent.change(screen.getByLabelText(/^Start date/), { target: { value: "0001-01-10" } });
+    expect(mocks.balanceYears).not.toHaveBeenCalledWith(1);
   });
 });

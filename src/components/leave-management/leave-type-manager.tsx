@@ -2,7 +2,6 @@
 
 import { type FormEvent, useState } from "react";
 
-import { DeleteRecordDialog } from "@/components/deletion/delete-record-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
@@ -11,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { LoadingState } from "@/components/ui/loading-state";
 import { Pagination } from "@/components/ui/pagination";
 import { Textarea } from "@/components/ui/textarea";
-import { useCreateLeaveType, useLeaveTypes, useSetLeaveTypeAllotment, useUpdateLeaveType } from "@/hooks/use-leave-management";
+import { useLeaveTypes, useSetLeaveTypeAllotment, useUpdateLeaveType } from "@/hooks/use-leave-management";
 import type { LeaveType } from "@/lib/types/database";
 import { leaveTypeAllotmentSchema } from "@/schemas/leave-management";
 
@@ -89,47 +88,8 @@ function EditLeaveTypeForm({ onDone, type }: { onDone: (message: string) => void
 
 export function LeaveTypeManager({ onPageChange, page = 1 }: { onPageChange?: (page: number) => void; page?: number } = {}) {
   const types = useLeaveTypes({ page, pageSize: 10 });
-  const create = useCreateLeaveType();
-  const update = useUpdateLeaveType();
-  const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState<LeaveType | null>(null);
-  const [togglingId, setTogglingId] = useState<string | null>(null);
-
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError(null);
-    setNotice(null);
-    const formElement = event.currentTarget;
-    const data = new FormData(formElement);
-    const name = String(data.get("name") ?? "").trim();
-    if (!name) {
-      setError("Enter a name for the leave type.");
-      return;
-    }
-    try {
-      await create.mutateAsync({ name, description: String(data.get("description")), requiresAttachment: false });
-      formElement.reset();
-      setNotice(`${name} was added.`);
-    } catch (cause) {
-      setError(errorMessage(cause, "Unable to create leave type."));
-    }
-  }
-
-  async function setActive(type: LeaveType, isActive: boolean) {
-    setError(null);
-    setNotice(null);
-    setTogglingId(type.id);
-    try {
-      await update.mutateAsync({ id: type.id, name: type.name, description: type.description ?? undefined, requiresAttachment: type.requires_attachment, isActive });
-      setNotice(`${type.name} was ${isActive ? "reactivated" : "deactivated"}.`);
-    } catch (cause) {
-      setError(errorMessage(cause, "Unable to update the leave type."));
-      throw cause;
-    } finally {
-      setTogglingId(null);
-    }
-  }
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   if (types.isLoading) return <LoadingState label="Loading leave types…" />;
   if (types.error) return <ErrorState message={types.error.message} />;
@@ -138,18 +98,8 @@ export function LeaveTypeManager({ onPageChange, page = 1 }: { onPageChange?: (p
     <section aria-labelledby="leave-types-heading" className="space-y-4 rounded-xl border bg-card p-5">
       <div className="space-y-1">
         <h2 className="text-xl font-bold tracking-tight" id="leave-types-heading">Leave types</h2>
-        <p className="text-sm text-muted-foreground">Deactivate a type to stop new requests while keeping past requests. Only unused types can be deleted.</p>
+        <p className="text-sm text-muted-foreground">Update a leave type&apos;s name, description, or yearly days. Leave types cannot be added or removed.</p>
       </div>
-      <form className="grid gap-3 sm:grid-cols-2" noValidate onSubmit={submit}>
-        <FormField htmlFor="type-name" label="Name" required>
-          <Input id="type-name" name="name" required />
-        </FormField>
-        <FormField htmlFor="type-description" label="Description">
-          <Input id="type-description" name="description" />
-        </FormField>
-        <Button className="sm:col-span-2 sm:w-fit" disabled={create.isPending} type="submit">{create.isPending ? "Adding…" : "Add leave type"}</Button>
-      </form>
-      {error ? <ErrorState message={error} /> : null}
       <p aria-live="polite" className="text-sm font-medium text-emerald-700 dark:text-emerald-400" role="status">{notice ?? ""}</p>
       {types.data?.rows.length ? (
         <ul className="space-y-2">
@@ -160,41 +110,18 @@ export function LeaveTypeManager({ onPageChange, page = 1 }: { onPageChange?: (p
                   <span className="font-semibold">{type.name}</span>
                   <Badge variant={type.is_active ? "secondary" : "outline"}>{type.is_active ? "Active" : "Inactive"}</Badge>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    aria-label={`${type.is_active ? "Deactivate" : "Activate"} ${type.name}`}
-                    disabled={togglingId === type.id}
-                    onClick={() => void setActive(type, !type.is_active).catch(() => undefined)}
-                    size="sm"
-                    type="button"
-                    variant="outline"
-                  >
-                    {togglingId === type.id ? "Saving…" : type.is_active ? "Deactivate type" : "Activate type"}
-                  </Button>
-                  <Button aria-label={`Delete ${type.name}`} onClick={() => setDeleting(type)} size="sm" type="button" variant="destructive">Delete</Button>
-                </div>
+                <Button aria-expanded={editingId === type.id} aria-label={`Update ${type.name}`} onClick={() => setEditingId(editingId === type.id ? null : type.id)} size="sm" type="button" variant="outline">Update</Button>
               </div>
               <p className="mt-1 text-sm">{allotmentLabel(type)}</p>
               {type.description ? <p className="mt-1 text-sm text-muted-foreground">{type.description}</p> : null}
-              <details className="mt-2">
-                <summary className="inline-flex min-h-10 cursor-pointer items-center text-sm font-semibold text-primary underline-offset-4 hover:underline">Edit type</summary>
-                <EditLeaveTypeForm onDone={setNotice} type={type} />
-              </details>
+              {editingId === type.id ? <EditLeaveTypeForm onDone={(message) => { setNotice(message); setEditingId(null); }} type={type} /> : null}
             </li>
           ))}
         </ul>
       ) : (
-        <p className="rounded-lg border border-dashed px-4 py-6 text-center text-muted-foreground">No leave types yet. Add the first one above.</p>
+        <p className="rounded-lg border border-dashed px-4 py-6 text-center text-muted-foreground">No leave types are set up.</p>
       )}
       {onPageChange && types.data ? <Pagination from={types.data.rows.length ? (page - 1) * 10 + 1 : 0} noun="leave types" onPageChange={onPageChange} page={page} pageCount={Math.max(1, Math.ceil(types.data.count / 10))} to={Math.min(page * 10, types.data.count)} total={types.data.count} /> : null}
-      <DeleteRecordDialog
-        alternative={deleting?.is_active ? { label: "Deactivate instead", onSelect: () => setActive(deleting, false) } : undefined}
-        entityId={deleting?.id ?? null}
-        entityType="leave_type"
-        noun="leave type"
-        onClose={() => setDeleting(null)}
-        onDeleted={() => setNotice("The leave type was deleted successfully.")}
-      />
     </section>
   );
 }

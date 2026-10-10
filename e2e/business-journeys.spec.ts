@@ -80,25 +80,14 @@ test.describe("administrator master data", () => {
 });
 
 test.describe("leave journey", () => {
-  test("HR manages a leave type lifecycle: create, deactivate, then delete while unused", async ({ page }) => {
-    const typeName = `E2E Leave ${runId}`;
+  test("HR can only update the fixed leave types", async ({ page }) => {
     await signIn(page, "demo.hr@example.test", "/hr");
     await page.goto("/hr/leave-requests");
     await page.getByRole("tab", { name: "Leave types" }).click();
-
-    await page.getByLabel(/^Name/).first().fill(typeName);
-    await page.getByRole("button", { name: "Add leave type" }).click();
-    await expect(page.getByRole("status").first()).toContainText(`${typeName} was added`);
-
-    await page.getByRole("button", { name: `Deactivate ${typeName}` }).click();
-    await expect(page.getByRole("button", { name: `Activate ${typeName}` })).toBeVisible();
-
-    await page.getByRole("button", { name: `Delete ${typeName}` }).click();
-    const dialog = page.getByRole("alertdialog");
-    await dialog.getByRole("button", { name: "Delete leave type" }).click();
-    await expect(dialog).toBeHidden();
-    await page.reload();
-    await expect(page.getByText(typeName)).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Add leave type" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /^(Deactivate|Activate|Delete) / })).toHaveCount(0);
+    await page.getByRole("button", { name: "Update Mandatory Leave" }).click();
+    await expect(page.getByRole("button", { name: "Save changes" })).toBeVisible();
   });
 
   test("employee submits leave, invalid dates are caught inline, and HR approves it", async ({ page }) => {

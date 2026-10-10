@@ -22,7 +22,7 @@ import { useEmployeeForCurrentUser } from "@/hooks/use-personnel-records";
 import { formatDateRange } from "@/lib/format-date";
 import { requestableLeaveTypes } from "@/lib/leave/requestable-types";
 import type { LeaveBalance } from "@/lib/types/database";
-import { leaveRequestDraftSchema } from "@/schemas/leave-management";
+import { leaveRequestDraftSchema, maxLeaveDate } from "@/schemas/leave-management";
 
 import { LeaveStatusBadge } from "./leave-status-badge";
 
@@ -39,6 +39,14 @@ export function leaveDays(startsOn: string, endsOn: string) {
 export function remainingLeaveDays(balance: LeaveBalance | undefined) {
   if (!balance || balance.days_per_year === null) return null;
   return Math.max(balance.days_per_year - balance.used_days, 0);
+}
+
+/** Inline message for a typed leave date outside today … two years ahead, or a partial value. */
+export function leaveDateError(value: string, min: string, max: string) {
+  if (!value) return undefined;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || value < min) return "Choose today or a future date.";
+  if (value > max) return "Choose a date within the next two years.";
+  return undefined;
 }
 
 function balanceHint(balance: LeaveBalance | undefined, year: number) {
@@ -159,7 +167,11 @@ export function EmployeeLeaveRequestForm() {
   const [fieldErrors, setFieldErrors] = useState<LeaveFieldErrors>({});
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const year = Number((startsOn || today()).slice(0, 4));
+  const minDate = today();
+  const maxDate = maxLeaveDate();
+  // Only a complete, in-range start date picks the balance year, so a half-typed year never queries year 1.
+  const validStart = startsOn && !leaveDateError(startsOn, minDate, maxDate) ? startsOn : null;
+  const year = Number((validStart ?? minDate).slice(0, 4));
   const balances = useMyLeaveBalances(year);
   const balance = balances.data?.find((entry) => entry.leave_type_id === leaveTypeId);
 
@@ -167,7 +179,6 @@ export function EmployeeLeaveRequestForm() {
   const loadError = types.error ?? employee.error;
   if (loadError) return <ErrorState message={loadError.message} />;
   const activeTypes = requestableLeaveTypes(types.data ?? [], employee.data?.gender);
-  const minDate = today();
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -229,9 +240,10 @@ export function EmployeeLeaveRequestForm() {
         <FormField error={fieldErrors.startsOn} htmlFor="starts-on" label="Start date" required>
           <Input
             id="starts-on"
+            max={maxDate}
             min={minDate}
             name="startsOn"
-            onChange={(event) => setStartsOn(event.target.value)}
+            onChange={(event) => { setStartsOn(event.target.value); setFieldErrors((current) => ({ ...current, startsOn: leaveDateError(event.target.value, minDate, maxDate) })); }}
             required
             type="date"
             value={startsOn}
@@ -240,9 +252,10 @@ export function EmployeeLeaveRequestForm() {
         <FormField error={fieldErrors.endsOn} htmlFor="ends-on" label="End date" required>
           <Input
             id="ends-on"
-            min={startsOn && startsOn > minDate ? startsOn : minDate}
+            max={maxDate}
+            min={validStart && validStart > minDate ? validStart : minDate}
             name="endsOn"
-            onChange={(event) => setEndsOn(event.target.value)}
+            onChange={(event) => { setEndsOn(event.target.value); setFieldErrors((current) => ({ ...current, endsOn: leaveDateError(event.target.value, minDate, maxDate) })); }}
             required
             type="date"
             value={endsOn}
