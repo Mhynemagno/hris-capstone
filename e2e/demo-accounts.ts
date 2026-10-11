@@ -1,14 +1,15 @@
 import type { Page } from "@playwright/test";
 
 /**
- * Staff sign in with their badge number and applicants with their email address.
+ * Employees sign in with their badge number; applicants, HR and System Administrators with their email
+ * address (HR and SysAd at the Admin & HR Login, choosing their Access Level).
  * These are the fictitious accounts from supabase/seed.sql.
  */
-export type LoginAccount = { mode: "employee" | "applicant"; identifier: string };
+export type LoginAccount = { mode: "employee" | "applicant" | "admin"; identifier: string; accessLevel?: "hr" | "sysad" };
 
 const DEMO_ACCOUNTS: Record<string, LoginAccount> = {
-  "demo.admin@example.test": { mode: "employee", identifier: "0-00004" },
-  "demo.hr@example.test": { mode: "employee", identifier: "0-00002" },
+  "demo.admin@example.test": { mode: "admin", identifier: "demo.admin@example.test", accessLevel: "sysad" },
+  "demo.hr@example.test": { mode: "admin", identifier: "demo.hr@example.test", accessLevel: "hr" },
   "demo.management@example.test": { mode: "employee", identifier: "0-00003" },
   "demo.employee@example.test": { mode: "employee", identifier: "0-00001" },
   "demo.applicant@example.test": { mode: "applicant", identifier: "demo.applicant@example.test" },
@@ -23,8 +24,9 @@ export function loginAccountFor(account: string | LoginAccount): LoginAccount {
 
 /** Fills the login form already on screen (the employee or applicant login) for the account. */
 export async function fillLogin(page: Page, account: string | LoginAccount, password: string) {
-  const { mode, identifier } = loginAccountFor(account);
-  await page.getByLabel(mode === "applicant" ? "Email Address" : "Badge Number").fill(identifier);
+  const { mode, identifier, accessLevel } = loginAccountFor(account);
+  if (mode === "admin") await page.getByLabel("Access Level").selectOption(accessLevel ?? "hr");
+  await page.getByLabel(mode === "employee" ? "Badge Number" : "Email Address").fill(identifier);
   await page.getByRole("textbox", { name: "Password" }).fill(password);
   await page.getByRole("button", { name: "Login" }).click();
 }
@@ -35,7 +37,7 @@ export async function openLoginAndSignIn(page: Page, account: string | LoginAcco
   await fillLogin(page, account, password);
 }
 
-/** Signs out from any shell: staff use the sidebar's Sign out, applicants the account menu's Logout. */
+/** Signs out from any shell: the Capstone UI shells use the account menu's Logout, the workspace shell its sidebar Sign out. */
 export async function signOutFromShell(page: Page) {
   const signOut = page.getByRole("button", { name: "Sign out" });
   if (await signOut.isVisible()) {

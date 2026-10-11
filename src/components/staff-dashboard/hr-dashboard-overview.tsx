@@ -105,7 +105,7 @@ export function HrDashboardOverview() {
 
       {overview.error ? <ErrorState message={overview.error.message} onRetry={() => void overview.refetch()} /> : null}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <Kpi caption={<><Check aria-hidden="true" className="inline size-3" /> Active personnel</>} captionClassName="text-emerald-600" icon={Users} label="Total Active 201" tone="blue" value={activeTotal} />
+        <Kpi caption={<><Check aria-hidden="true" className="inline size-3" /> Active personnel</>} captionClassName="text-emerald-700" icon={Users} label="Total Active 201" tone="blue" value={activeTotal} />
         <Kpi caption={`${strength}% Operational Strength`} captionClassName="text-purple-700" icon={UserCheck} label="Present On Duty" tone="purple" value={<>{present}<span className="text-xs font-normal text-slate-500">/ {activeTotal}</span></>} />
         <Kpi caption="Approved Leave Status" captionClassName="text-amber-700" icon={UserX} label="Absent / Leave" tone="amber" value={absent} />
         <Kpi caption="Half-day / Late Check-in" captionClassName="text-rose-600" icon={UserRoundSearch} label="Partial / Late" tone="rose" value={partial} />

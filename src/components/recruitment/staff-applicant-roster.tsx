@@ -47,7 +47,7 @@ function AiMatch({ row }: { row: ApplicationRow }) {
         </div>
         <span className="font-mono text-xs font-black text-emerald-700">{outOfFive} / 5</span>
       </div>
-      <span className="rounded border border-emerald-200 bg-emerald-50 px-2 text-[9px] font-bold text-emerald-600">{aiMatchLabel(outOfFive)}</span>
+      <span className="rounded border border-emerald-200 bg-emerald-50 px-2 text-[9px] font-bold text-emerald-700">{aiMatchLabel(outOfFive)}</span>
     </div>
   );
 }

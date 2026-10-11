@@ -112,7 +112,7 @@ export function StaffLeave() {
                 {rows.length ? rows.map((row) => {
                   const name = leaveEmployeeName(row);
                   const pending = row.status === "pending";
-                  const label = `${name}'s ${row.leave_type_name} leave request, ${formatDateRange(row.starts_on, row.ends_on)}`;
+                  const label = `${name}'s ${row.leave_type_name} request, ${formatDateRange(row.starts_on, row.ends_on)}`;
                   return (
                     <tr className={cn(staffTable.tr, pending && "bg-amber-50/20")} key={row.id}>
                       <td className={staffTable.td}>

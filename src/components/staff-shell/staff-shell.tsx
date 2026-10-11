@@ -50,7 +50,7 @@ function StaffNavigation({ activeHref, config }: { activeHref: string | undefine
     <nav aria-label="Main navigation" className="space-y-6 px-3 py-4">
       {groupNavigation(config.navigation).map((group) => (
         <div key={group.label ?? "top"}>
-          {group.label ? <p className="mb-1.5 px-3 text-[10px] font-extrabold tracking-wider text-slate-500 uppercase">{group.label}</p> : null}
+          {group.label ? <p className="mb-1.5 px-3 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">{group.label}</p> : null}
           <div className="space-y-0.5">
             {group.items.map((item) => {
               const active = activeHref === item.href;
@@ -127,7 +127,7 @@ export function StaffShell({ children, config, email, displayName }: StaffShellP
             </div>
             <div className="flex items-center gap-3">
               <NotificationDrawer onError={notifyStaffError} tone="light" />
-              <CapstoneAccountMenu afterLogoutHref="/login?as=admin" ariaLabel={`Account menu for ${email ?? displayName}`} email={email} name={displayName} onError={notifyStaffError} tone="light" />
+              <CapstoneAccountMenu afterLogoutHref="/" ariaLabel={`Account menu for ${email ?? displayName}`} email={email} name={displayName} onError={notifyStaffError} tone="light" />
             </div>
           </header>
           <div className={cn("flex-1", redesigned ? "space-y-6 p-4 sm:p-6" : "workspace bg-background p-4 text-foreground sm:p-6 lg:p-8")}>

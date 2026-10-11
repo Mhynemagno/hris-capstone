@@ -47,3 +47,16 @@ test("invalid credentials show a safe error and do not create a session", async 
   await page.goto("/applicant");
   await expect(page).toHaveURL(/\/login\?/);
 });
+
+test("an HR account cannot sign in as System Administrator at the Admin & HR Login", async ({ page }) => {
+  await page.goto("/login?as=admin");
+  await page.getByLabel("Access Level").selectOption("sysad");
+  await page.getByLabel("Email Address").fill("demo.hr@example.test");
+  await page.getByRole("textbox", { name: "Password" }).fill(demoPassword);
+  await page.getByRole("button", { name: "Login" }).click();
+
+  await expect(page).toHaveURL(/\/login\?.*error=wrong_access_level/);
+  await expect(page.getByText("This account does not have System Administrator access.")).toBeVisible();
+  await page.goto("/hr");
+  await expect(page).toHaveURL(/\/login\?/);
+});

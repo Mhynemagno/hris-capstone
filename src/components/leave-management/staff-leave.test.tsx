@@ -57,7 +57,7 @@ describe("StaffLeave (leave.html)", () => {
     const [, pendingRow, approvedRow] = screen.getAllByRole("row");
     expect(within(pendingRow!).getByText("For Approval")).toBeInTheDocument();
     expect(within(approvedRow!).queryByRole("button", { name: /^Review/ })).not.toBeInTheDocument();
-    await userEvent.click(within(pendingRow!).getByRole("button", { name: "Review Tyson Peters's Mandatory Leave leave request, October 5, 2026 to October 6, 2026" }));
+    await userEvent.click(within(pendingRow!).getByRole("button", { name: "Review Tyson Peters's Mandatory Leave request, October 5, 2026 to October 6, 2026" }));
     expect(mocks.replace).toHaveBeenCalledWith("/hr/leave-requests?review=r1", { scroll: false });
     await userEvent.click(within(approvedRow!).getByRole("button", { name: /^View Tyson Peters/ }));
     expect(mocks.replace).toHaveBeenLastCalledWith("/hr/leave-requests?view=r2", { scroll: false });

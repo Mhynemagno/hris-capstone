@@ -39,8 +39,10 @@ async function signInAsHr(page: Page, destination: string) {
 }
 
 test("the attendance kiosk loads models, starts the camera, and asks for a face", async ({ page }) => {
-  await signInAsHr(page, "/hr/attendance/kiosk");
-  await page.getByRole("button", { name: "Open scanner" }).click();
+  await signInAsHr(page, "/hr/attendance");
+  // The Kiosk page was removed (PDF p. 33): the kiosk opens over Attendance Logs.
+  await page.getByRole("button", { name: /Launch Attendance Kiosk/ }).click();
+  await expect(page.getByRole("dialog", { name: "Attendance kiosk" })).toBeVisible();
 
   await waitRecoveringFromFakeCamera(page, "Scanner ready.", /try again/i);
   await page.getByRole("button", { name: "Start scanning" }).click();
@@ -53,7 +55,7 @@ test("the attendance kiosk loads models, starts the camera, and asks for a face"
   });
   expect(await liveTracks()).toBeGreaterThan(0);
 
-  await page.getByRole("button", { name: "Close scanner" }).click();
+  await page.getByRole("button", { name: /Exit Kiosk Mode/ }).click();
   await expect(page.getByLabel("Camera preview")).toHaveCount(0);
 });
 

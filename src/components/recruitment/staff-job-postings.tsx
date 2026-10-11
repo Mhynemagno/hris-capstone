@@ -143,7 +143,7 @@ export function StaffJobPostings() {
                     <td className={cn(staffTable.td, "text-center")}><span className={cn("font-mono text-sm font-bold", count ? "text-slate-900" : "text-slate-500")}>{count}</span></td>
                     <td className={staffTable.td}>
                       <p className="font-semibold text-slate-800">{formatDate(job.closes_on) ?? "No deadline"}</p>
-                      {note ? <p className={cn("text-[10px] font-bold", note.startsWith("Closes") ? "text-emerald-600" : "text-slate-500")}>{note}</p> : null}
+                      {note ? <p className={cn("text-[10px] font-bold", note.startsWith("Closes") ? "text-emerald-700" : "text-slate-500")}>{note}</p> : null}
                     </td>
                     <td className={cn(staffTable.td, "text-slate-500")}>{formatDate(job.updated_at)}</td>
                     <td className={staffTable.td}>
