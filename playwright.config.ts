@@ -25,7 +25,8 @@ function getLocalSupabaseEnvironment() {
 
   const url = values.get("API_URL");
   const publishableKey = values.get("PUBLISHABLE_KEY") ?? values.get("ANON_KEY");
-  const serviceRoleKey = values.get("SECRET_KEY") ?? values.get("SERVICE_ROLE_KEY");
+  // The JWT service-role key carries its role claim, so it works whichever CLI version started the stack.
+  const serviceRoleKey = values.get("SERVICE_ROLE_KEY") ?? values.get("SECRET_KEY");
   if (!url || !publishableKey || !serviceRoleKey) {
     throw new Error("Start the local Supabase stack before running Playwright.");
   }
