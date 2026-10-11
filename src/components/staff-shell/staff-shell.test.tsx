@@ -37,6 +37,18 @@ describe("StaffShell (HR)", () => {
     render(<StaffShell config={ROLE_CONFIG.hr_personnel} displayName="x" email="hr@example.test"><h1>Employees</h1></StaffShell>);
     expect(screen.getByRole("heading", { name: "Employees" }).closest(".workspace")).not.toBeNull();
   });
+
+  it("shows the SysAd control groups with the current admin route active", () => {
+    usePathname.mockReturnValue("/admin/settings");
+    render(<StaffShell config={ROLE_CONFIG.system_administrator} displayName="PMAJ M. C. Balneg" email="sysad@example.test"><h1>Settings</h1></StaffShell>);
+
+    const nav = screen.getByRole("navigation", { name: "Main navigation" });
+    expect(within(nav).getByText("People and Access")).toHaveClass("text-slate-400");
+    expect(within(nav).getByText("Station Organization")).toBeInTheDocument();
+    expect(within(nav).getByText("System Oversight")).toBeInTheDocument();
+    expect(within(nav).getByRole("link", { name: "System Settings" })).toHaveAttribute("aria-current", "page");
+    expect(within(nav).queryByRole("link", { name: /plantilla openings|leave applications/i })).not.toBeInTheDocument();
+  });
 });
 
 describe("StaffShell (employee)", () => {

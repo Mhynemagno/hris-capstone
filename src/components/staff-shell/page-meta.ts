@@ -8,6 +8,7 @@ const SUBTITLES: [root: string, subtitle: string][] = [
   ["/hr/attendance", "Personnel Management • Face Biometrics & Attendance Logs"],
   ["/reports", "Personnel Management • Official Analytics & Station Reports"],
   ["/hr/public-site", "Public Site • Announcements & Station Contacts"],
+  ["/admin", "System Administration & Station Controls"],
   ["/notifications", "Notifications"],
   ["/employee/profile", "Personnel Self-Service • My Profile 201"],
   ["/employee/leave", "Personnel Self-Service • My Leaves"],
@@ -25,7 +26,11 @@ export function staffPageSubtitle(pathname: string) {
 }
 
 /** Pages copied from a Capstone UI mockup; every other staff page keeps the workspace look. */
-const REDESIGNED = new Set(["/hr", "/hr/jobs", "/hr/applications", "/hr/deployments", "/hr/leave-requests", "/hr/promotions", "/hr/attendance", "/reports", "/hr/public-site", "/employee", "/employee/profile", "/employee/leave", "/employee/deployments", "/employee/promotion-eligibility", "/employee/attendance"]);
+const REDESIGNED = new Set([
+  "/hr", "/hr/jobs", "/hr/applications", "/hr/deployments", "/hr/leave-requests", "/hr/promotions", "/hr/attendance", "/reports", "/hr/public-site",
+  "/employee", "/employee/profile", "/employee/leave", "/employee/deployments", "/employee/promotion-eligibility", "/employee/attendance",
+  "/admin", "/admin/users", "/admin/departments", "/admin/unit-stations", "/admin/ranks", "/admin/profile-change-requests", "/admin/integrations/attendance", "/admin/audit-logs", "/admin/settings",
+]);
 export function isRedesignedStaffRoute(pathname: string) {
   return REDESIGNED.has(pathname);
 }

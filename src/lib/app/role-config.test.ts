@@ -49,19 +49,20 @@ describe("role configuration", () => {
     ]);
   });
 
-  it("groups administrator navigation by people, organization and system", () => {
+  it("groups administrator navigation into the Capstone system-administration modules", () => {
     expect(getRoleConfig("system_administrator").navigation.map(({ href, label, group }) => ({ href, label, group }))).toEqual([
       { href: "/admin", label: "Dashboard", group: undefined },
-      { href: "/admin/users", label: "Accounts", group: "People" },
-      { href: "/admin/profile-change-requests", label: "Approvals", group: "People" },
-      { href: "/admin/departments", label: "Units / Sections", group: "Organization" },
-      { href: "/admin/unit-stations", label: "Units / Stations", group: "Organization" },
-      { href: "/admin/ranks", label: "Ranks", group: "Organization" },
-      { href: "/admin/settings", label: "Settings", group: "System" },
-      { href: "/admin/integrations/attendance", label: "Attendance integration", group: "System" },
-      { href: "/admin/audit-logs", label: "Audit log", group: "System" },
+      { href: "/admin/users", label: "Manage Accounts", group: "People and Access" },
+      { href: "/admin/profile-change-requests", label: "Review Approvals", group: "People and Access" },
+      { href: "/admin/departments", label: "Units and Sections", group: "Station Organization" },
+      { href: "/admin/unit-stations", label: "Units and Stations", group: "Station Organization" },
+      { href: "/admin/ranks", label: "Ranks", group: "Station Organization" },
+      { href: "/admin/integrations/attendance", label: "Attendance Integration", group: "System Oversight" },
+      { href: "/admin/audit-logs", label: "Audit Log", group: "System Oversight" },
+      { href: "/admin/settings", label: "System Settings", group: "System Oversight" },
     ]);
     expect(getRoleConfig("system_administrator").navigation.some((item) => item.href === "/admin/roles")).toBe(false);
+    expect(getRoleConfig("system_administrator").navigation.some((item) => item.href.startsWith("/hr"))).toBe(false);
   });
 
   it("uses the Capstone employee navigation without a standalone scan page", () => {
