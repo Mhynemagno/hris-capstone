@@ -62,7 +62,7 @@ export function ApplicationHeader(props: HeaderProps) {
           </p>
         </div>
       </div>
-      <div className="flex shrink-0 flex-wrap items-center gap-2">
+      <div className="flex shrink-0 scroll-mt-24 flex-wrap items-center gap-2" id="stage-actions">
         {results.map((result) => (
           <Button key={result} onClick={() => setDialog(result)} variant={result === "passed" ? "default" : result === "failed" ? "destructive" : "outline"}>{RESULT_LABELS[result]}</Button>
         ))}

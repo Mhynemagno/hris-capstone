@@ -1,5 +1,7 @@
-import { HrApplicationsWorkspace } from "@/components/recruitment/hr-applications-workspace";
+import { Suspense } from "react";
+
+import { StaffApplicantRoster } from "@/components/recruitment/staff-applicant-roster";
 
 export default function HrApplicationsPage() {
-  return <HrApplicationsWorkspace />;
+  return <Suspense><StaffApplicantRoster /></Suspense>;
 }

@@ -7,7 +7,7 @@ vi.mock("@/lib/supabase/client", () => ({
   createBrowserSupabaseClient: () => ({ from, rpc }),
 }));
 
-import { createDeployment, deploymentFilters, EMPLOYEE_OPTIONS_LIMIT, listEmployeeOptions, updateDeployment } from "./deployment-tracking";
+import { createDeployment, deploymentFilters, EMPLOYEE_OPTIONS_LIMIT, listEmployeeOptions, listHrDeployments, updateDeployment } from "./deployment-tracking";
 
 const deployment = { employeeId: "3f1e2d3c-4b5a-4968-8776-655443322110", location: "San Juan", unit: "", startsOn: "2026-09-25", status: "ongoing", deploymentType: "Public Assembly", eventOperation: "Rally", notes: "Relief duty" };
 
@@ -43,5 +43,16 @@ describe("deployment tracking queries", () => {
     expect(from).toHaveBeenCalledWith("employees");
     expect(limit).toHaveBeenCalledWith(EMPLOYEE_OPTIONS_LIMIT);
     expect(EMPLOYEE_OPTIONS_LIMIT).toBe(2000);
+  });
+
+  it("filters the HR list by deployment type", async () => {
+    const eq = vi.fn();
+    const chain: Record<string, unknown> = {};
+    for (const method of ["select", "order", "range", "or", "lte"]) chain[method] = vi.fn(() => chain);
+    chain.eq = vi.fn((...args: unknown[]) => { eq(...args); return chain; });
+    chain.then = (resolve: (value: unknown) => void) => resolve({ data: [], error: null, count: 0 });
+    from.mockReturnValue(chain);
+    await listHrDeployments({ deploymentType: "Special Event" });
+    expect(eq).toHaveBeenCalledWith("deployment_type", "Special Event");
   });
 });

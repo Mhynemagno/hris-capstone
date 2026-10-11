@@ -10,6 +10,7 @@ import { formatDate } from "@/lib/format-date";
 import { announcementCategoryLabel } from "@/schemas/public-site";
 
 import { SectionIntro } from "./section-intro";
+import { stripAnnouncementMarkup } from "@/lib/public-site/announcement-markup";
 
 export function LandingAnnouncements() {
   const announcements = usePublishedAnnouncements(6);
@@ -35,7 +36,7 @@ export function LandingAnnouncements() {
                       {announcement.published_at ? <time dateTime={announcement.published_at}>{formatDate(announcement.published_at)}</time> : null}
                     </p>
                     <h3 className="mt-3 text-lg font-bold text-foreground [overflow-wrap:anywhere]" id={`announcement-${announcement.id}-title`}>{announcement.title}</h3>
-                    <p className="mt-2 flex-1 text-base leading-7 text-muted-foreground [overflow-wrap:anywhere]">{announcement.summary}</p>
+                    <p className="mt-2 flex-1 text-base leading-7 text-muted-foreground [overflow-wrap:anywhere]">{stripAnnouncementMarkup(announcement.summary)}</p>
                     <Link
                       aria-label={`Read more about ${announcement.title}`}
                       className="mt-4 inline-flex min-h-11 w-fit items-center gap-1.5 rounded-lg font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"

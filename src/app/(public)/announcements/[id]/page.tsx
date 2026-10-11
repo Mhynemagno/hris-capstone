@@ -8,6 +8,7 @@ import { PublicSiteHeader } from "@/components/recruitment/public-site-header";
 import { formatDate } from "@/lib/format-date";
 import { getPublishedAnnouncement } from "@/lib/public-site/published-announcement";
 import { announcementCategoryLabel } from "@/schemas/public-site";
+import { stripAnnouncementMarkup } from "@/lib/public-site/announcement-markup";
 
 type AnnouncementPageProps = { params: Promise<{ id: string }> };
 
@@ -15,7 +16,7 @@ export async function generateMetadata({ params }: AnnouncementPageProps): Promi
   const { id } = await params;
   const announcement = await getPublishedAnnouncement(id);
   if (!announcement) return { title: "Announcement not found | San Juan City Police HRIS" };
-  return { title: `${announcement.title} | San Juan City Police HRIS`, description: announcement.summary };
+  return { title: `${announcement.title} | San Juan City Police HRIS`, description: stripAnnouncementMarkup(announcement.summary) };
 }
 
 export default async function AnnouncementPage({ params }: AnnouncementPageProps) {
@@ -37,7 +38,7 @@ export default async function AnnouncementPage({ params }: AnnouncementPageProps
             {announcement.published_at ? <time dateTime={announcement.published_at}>{formatDate(announcement.published_at)}</time> : null}
           </p>
           <h1 className="mt-4 text-3xl font-bold tracking-tight [overflow-wrap:anywhere] sm:text-4xl">{announcement.title}</h1>
-          <p className="mt-3 text-lg leading-8 text-muted-foreground">{announcement.summary}</p>
+          <p className="mt-3 text-lg leading-8 text-muted-foreground">{stripAnnouncementMarkup(announcement.summary)}</p>
           <AnnouncementBody body={announcement.body} className="mt-8" />
         </article>
       </main>

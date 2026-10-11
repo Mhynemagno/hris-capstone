@@ -35,7 +35,7 @@ export function HrDeploymentDetails({ deploymentId }: { deploymentId: string }) 
     <section className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="flex items-center gap-2 text-sm font-medium text-muted-foreground">Current status <DeploymentStatusBadge deployment={deployment} /></p>
-        <Link className={buttonVariants()} href={`/hr/deployments/${deployment.id}/edit`}>Update</Link>
+        <Link className={buttonVariants()} href={`/hr/deployments?edit=${deployment.id}`}>Update</Link>
       </div>
       <dl className="grid gap-x-6 gap-y-4 rounded-xl border bg-card p-5 sm:grid-cols-2">
         <Detail label="Employee">{employeeName ? <>{employeeName}<span className="block text-sm font-normal text-muted-foreground tabular-nums">Badge no. {employee?.employee_number}</span></> : null}</Detail>

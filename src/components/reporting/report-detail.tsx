@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { EmptyTableState } from "@/components/ui/empty-table-state";
@@ -11,10 +11,10 @@ import { LoadingState } from "@/components/ui/loading-state";
 import { nativeSelectClassName } from "@/components/ui/native-select";
 import { PageHeader } from "@/components/ui/page-header";
 import { useDepartmentOptions } from "@/hooks/use-administration";
-import { useReport } from "@/hooks/use-reporting";
+import { useFetchFullReport, useReport } from "@/hooks/use-reporting";
 import { formatDate, formatDateTime } from "@/lib/format-date";
 import { toReportCsv } from "@/lib/reporting/csv";
-import { reportFiltersSchema, type ReportFilters } from "@/schemas/reporting";
+import { reportFiltersSchema, type ReportFilters, type ReportResponse } from "@/schemas/reporting";
 
 type ReportKey = ReportFilters["reportKey"];
 type StatusOption = { value: string; label: string; group?: string };
@@ -125,16 +125,29 @@ export function reportDateRangeError(reportKey: ReportKey, draft: DraftFilters) 
     : "End date must be on or after the start date.";
 }
 
-export function ReportDetail({ role, reportKey }: { role: "hr_personnel" | "management"; reportKey: ReportKey }) {
-  const [draft, setDraft] = useState<DraftFilters>(emptyDraft);
+export function ReportDetail({ role, reportKey, initialFilters, autoAction = null }: {
+  role: "hr_personnel" | "management";
+  reportKey: ReportKey;
+  /** Filters chosen in the Generate Report modal (Capstone UI reports.html). */
+  initialFilters?: Partial<Pick<DraftFilters, "startsOn" | "endsOn" | "departmentId">>;
+  /** Print or download once the report has loaded, as the modal's export format asked. */
+  autoAction?: "print" | "csv" | null;
+}) {
+  const initialDraft: DraftFilters = { ...emptyDraft, ...initialFilters };
+  const [draft, setDraft] = useState<DraftFilters>(() => (reportDateRangeError(reportKey, initialDraft) ? emptyDraft : initialDraft));
   // Only valid filters are applied: useReport parses them during render and the RPC rejects start > end.
-  const [applied, setApplied] = useState(() => buildFilters(reportKey, emptyDraft));
+  const [applied, setApplied] = useState(() => buildFilters(reportKey, reportDateRangeError(reportKey, initialDraft) ? emptyDraft : initialDraft));
+  const autoDone = useRef(false);
+  const [printReport, setPrintReport] = useState<ReportResponse | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
   if (applied.reportKey !== reportKey) {
     // Status values differ per report; reset filters when navigating to another report.
     setDraft(emptyDraft);
     setApplied(buildFilters(reportKey, emptyDraft));
   }
   const query = useReport(applied.reportKey === reportKey ? applied : { reportKey }, role);
+  const fetchFull = useFetchFullReport(role);
 
   const statusFilter = REPORT_STATUS_FILTERS[reportKey];
   const departments = useDepartmentOptions();
@@ -152,15 +165,47 @@ export function ReportDetail({ role, reportKey }: { role: "hr_personnel" | "mana
   const hasFilters = Object.values(draft).some(Boolean);
   const title = REPORT_TITLES[reportKey];
 
-  const download = () => {
-    if (!query.data) return;
-    const href = URL.createObjectURL(new Blob([toReportCsv(query.data)], { type: "text/csv;charset=utf-8" }));
+  const loadAll = async () => {
+    setExportError(null);
+    setExporting(true);
+    try {
+      return await fetchFull(applied.reportKey === reportKey ? applied : { reportKey });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setExportError(`The full report could not be loaded: ${message}`);
+      return null;
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const download = async () => {
+    const full = await loadAll();
+    if (!full) return;
+    const href = URL.createObjectURL(new Blob([toReportCsv(full)], { type: "text/csv;charset=utf-8" }));
     const link = document.createElement("a");
     link.href = href;
-    link.download = `${query.data.reportKey}-${query.data.generatedAt.slice(0, 10)}.csv`;
+    link.download = `${full.reportKey}-${full.generatedAt.slice(0, 10)}.csv`;
     link.click();
     URL.revokeObjectURL(href);
   };
+
+  const print = async () => {
+    const full = await loadAll();
+    if (full) setPrintReport(full);
+  };
+
+  useEffect(() => {
+    if (!printReport) return;
+    window.print();
+    queueMicrotask(() => setPrintReport(null));
+  }, [printReport]);
+
+  useEffect(() => {
+    if (!autoAction || autoDone.current || !query.data) return;
+    autoDone.current = true;
+    queueMicrotask(() => void (autoAction === "print" ? print() : download()));
+  });
 
   const departmentName = departments.data?.find((department) => String(department.id) === String(applied.departmentId ?? ""))?.name;
   const statusName = statusFilter.options.find((option) => option.value === applied.status)?.label;
@@ -168,13 +213,18 @@ export function ReportDetail({ role, reportKey }: { role: "hr_personnel" | "mana
 
   return (
     <section className="space-y-6">
+      <div className="hidden text-center print:block" data-testid="report-letterhead">
+        <p className="text-xs font-extrabold tracking-widest uppercase">Republic of the Philippines • PNP</p>
+        <p className="text-base font-black uppercase">SAN JUAN CITY POLICE STATION</p>
+        <p className="text-sm font-bold">Human Resource and Doctrine Development Section</p>
+      </div>
       <PageHeader
         action={
           <div className="flex flex-wrap gap-2 print:hidden">
-            <Button disabled={!query.data} onClick={download} type="button" variant="outline">
+            <Button disabled={!query.data || exporting} onClick={() => void download()} type="button" variant="outline">
               Download CSV
             </Button>
-            <Button onClick={() => window.print()} type="button">
+            <Button disabled={!query.data || exporting} onClick={() => void print()} type="button">
               Print report
             </Button>
           </div>
@@ -259,6 +309,7 @@ export function ReportDetail({ role, reportKey }: { role: "hr_personnel" | "mana
           </Button>
         </div>
       </form>
+      {exportError ? <p className="text-sm text-destructive" role="alert">{exportError}</p> : null}
       {query.isLoading ? (
         <LoadingState label="Loading report…" />
       ) : query.error ? (
@@ -273,10 +324,10 @@ export function ReportDetail({ role, reportKey }: { role: "hr_personnel" | "mana
           </p>
           <div className="relative overflow-x-auto rounded-xl border">
             <table className="w-full min-w-[640px] text-left text-sm">
-              <caption className="sr-only">{query.data.title}</caption>
+              <caption className="sr-only">{(printReport ?? query.data).title}</caption>
               <thead className="bg-muted/60">
                 <tr>
-                  {query.data.columns.map((column) => (
+                  {(printReport ?? query.data).columns.map((column) => (
                     <th className="px-4 py-3 font-semibold text-muted-foreground" key={column.key} scope="col">
                       {column.label}
                     </th>
@@ -284,10 +335,10 @@ export function ReportDetail({ role, reportKey }: { role: "hr_personnel" | "mana
                 </tr>
               </thead>
               <tbody>
-                {query.data.rows.length ? (
-                  query.data.rows.map((row, index) => (
+                {(printReport ?? query.data).rows.length ? (
+                  (printReport ?? query.data).rows.map((row, index) => (
                     <tr className="border-t" key={index}>
-                      {query.data.columns.map((column) => (
+                      {(printReport ?? query.data).columns.map((column) => (
                         <td className="px-4 py-3 align-top" key={column.key}>
                           {formatCell(row[column.key])}
                         </td>
@@ -297,7 +348,7 @@ export function ReportDetail({ role, reportKey }: { role: "hr_personnel" | "mana
                 ) : (
                   <tr>
                     <EmptyTableState
-                      colSpan={query.data.columns.length}
+                      colSpan={(printReport ?? query.data).columns.length}
                       message={
                         hasFilters
                           ? "No records match these filters. Widen the date range or clear filters."

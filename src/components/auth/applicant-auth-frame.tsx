@@ -10,7 +10,24 @@ import type { RecruitmentNotice } from "@/lib/recruitment/recruitment-notice";
  * The applicant login and registration card (Capstone UI loginapp.html): the form on the left and the
  * station's dark hero with the live Recruitment Notice on the right. Stacks on phones.
  */
-export function ApplicantAuthFrame({ children, notice }: { children: ReactNode; notice: RecruitmentNotice }) {
+export function ApplicantAuthFrame({
+  children,
+  notice = null,
+  hero,
+  mobilePortalLabel = "Recruitment Portal",
+  footerNote = "San Juan City PNP Online Recruitment & Applicant Portal System",
+  portalPill = "Applicant Portal",
+  portalDotClassName = "bg-emerald-400",
+}: {
+  children: ReactNode;
+  notice?: RecruitmentNotice;
+  /** Replaces the applicant motto and Recruitment Notice (the Admin & HR Login, sample.html). */
+  hero?: ReactNode;
+  mobilePortalLabel?: string;
+  footerNote?: string | null;
+  portalPill?: string;
+  portalDotClassName?: string;
+}) {
   return (
     <main className="capstone-ui flex min-h-svh items-center justify-center bg-slate-900 p-4 font-sans sm:p-6 lg:p-8">
       {/* The mockup card is 1024×620; it grows instead of clipping when the form or the font needs more room. */}
@@ -25,16 +42,16 @@ export function ApplicantAuthFrame({ children, notice }: { children: ReactNode; 
               </div>
               <div>
                 <p className="text-xs font-bold text-slate-900 uppercase">PNP San Juan City</p>
-                <p className="text-[10px] text-slate-500 uppercase">Recruitment Portal</p>
+                <p className="text-[10px] text-slate-500 uppercase">{mobilePortalLabel}</p>
               </div>
             </div>
             {children}
           </div>
 
           {/* FOOTER NOTE */}
-          <div className="mt-8 border-t border-slate-100 pt-4 text-center text-[11px] text-slate-500">
-            San Juan City PNP Online Recruitment &amp; Applicant Portal System
-          </div>
+          {footerNote ? (
+            <div className="mt-8 border-t border-slate-100 pt-4 text-center text-[11px] text-slate-500">{footerNote}</div>
+          ) : null}
         </div>
 
         {/* RIGHT SIDE: BRANDING HERO PANEL (7 COLS) */}
@@ -55,36 +72,38 @@ export function ApplicantAuthFrame({ children, notice }: { children: ReactNode; 
 
             {/* OFFICIAL BADGE PILL */}
             <div className="hidden items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 backdrop-blur-md sm:flex">
-              <span aria-hidden="true" className="size-2 animate-pulse rounded-full bg-emerald-400" />
-              <span className="text-[10px] font-bold tracking-wider text-slate-200 uppercase">Applicant Portal</span>
+              <span aria-hidden="true" className={`size-2 animate-pulse rounded-full ${portalDotClassName}`} />
+              <span className="text-[10px] font-bold tracking-wider text-slate-200 uppercase">{portalPill}</span>
             </div>
           </div>
 
           {/* MIDDLE HERO MOTTO / SLOGAN */}
-          <div className="relative z-10 my-auto py-6">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-[11px] font-bold tracking-widest text-amber-400 uppercase">
-              <span>Service</span> • <span>Honor</span> • <span>Justice</span>
-            </div>
+          {hero ?? (
+            <div className="relative z-10 my-auto py-6">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-[11px] font-bold tracking-widest text-amber-400 uppercase">
+                <span>Service</span> • <span>Honor</span> • <span>Justice</span>
+              </div>
 
-            <h2 className="text-3xl leading-tight font-extrabold text-white">To Serve and Protect.</h2>
+              <h2 className="text-3xl leading-tight font-extrabold text-white">To Serve and Protect.</h2>
 
-            <p className="mt-3 max-w-md text-xs leading-relaxed font-normal text-slate-300">
-              Welcome to the official recruitment tracking system of the San Juan City Police Station. Monitor your application status, agility tests, and board evaluations in real time.
-            </p>
-
-            {/* RECRUITMENT NOTICE */}
-            <div className="mt-6 max-w-md rounded-xl border border-slate-800/80 bg-slate-900/80 p-4 backdrop-blur-md">
-              <p className="mb-1 flex items-center gap-2 text-xs font-bold text-amber-400">
-                <Megaphone aria-hidden="true" className="size-3.5" /> Recruitment Notice
+              <p className="mt-3 max-w-md text-xs leading-relaxed font-normal text-slate-300">
+                Welcome to the official recruitment tracking system of the San Juan City Police Station. Monitor your application status, agility tests, and board evaluations in real time.
               </p>
-              {/* Two lines tall whatever the posting, so the card does not jump between openings. */}
-              <p className="line-clamp-2 min-h-[2lh] text-[11px] leading-snug text-slate-300" data-recruitment-notice>
-                {notice
-                  ? <>Current Hiring Pool for <strong>{notice.title}</strong> is now open for verified candidates.</>
-                  : "There is no active recruitment at the moment. Please check back for new openings."}
-              </p>
+
+              {/* RECRUITMENT NOTICE */}
+              <div className="mt-6 max-w-md rounded-xl border border-slate-800/80 bg-slate-900/80 p-4 backdrop-blur-md">
+                <p className="mb-1 flex items-center gap-2 text-xs font-bold text-amber-400">
+                  <Megaphone aria-hidden="true" className="size-3.5" /> Recruitment Notice
+                </p>
+                {/* Two lines tall whatever the posting, so the card does not jump between openings. */}
+                <p className="line-clamp-2 min-h-[2lh] text-[11px] leading-snug text-slate-300" data-recruitment-notice>
+                  {notice
+                    ? <>Current Hiring Pool for <strong>{notice.title}</strong> is now open for verified candidates.</>
+                    : "There is no active recruitment at the moment. Please check back for new openings."}
+                </p>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* BOTTOM FOOTER */}
           <div className="relative z-10 flex flex-wrap items-center justify-between gap-3 border-t border-slate-800/80 pt-6 text-[11px] text-slate-400">

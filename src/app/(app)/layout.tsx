@@ -3,9 +3,11 @@ import { redirect } from "next/navigation";
 
 import { AppShell } from "@/components/app-shell/app-shell";
 import { QueryProvider } from "@/components/providers/query-provider";
+import { StaffShell } from "@/components/staff-shell/staff-shell";
 import { WorkspaceShell } from "@/components/workspace-shell/workspace-shell";
 import { getCurrentRole } from "@/lib/auth/current-role";
 import { getAuthenticatedUser } from "@/lib/auth/current-user";
+import { getStaffDisplayName } from "@/lib/auth/staff-display-name";
 import { getRoleConfig } from "@/lib/app/role-config";
 
 export default async function ProtectedLayout({
@@ -23,12 +25,25 @@ export default async function ProtectedLayout({
     redirect("/unauthorized");
   }
 
-  // Applicants keep the original shell; every internal role gets the workspace shell.
+  const config = getRoleConfig(role);
+  if (role === "hr_personnel") {
+    // HR uses the Capstone UI staff shell (dashboard.html).
+    const displayName = await getStaffDisplayName(user.id, user.email ?? "HR Personnel");
+    return (
+      <QueryProvider>
+        <StaffShell config={config} displayName={displayName} email={user.email}>
+          {children}
+        </StaffShell>
+      </QueryProvider>
+    );
+  }
+
+  // Applicants keep the Capstone UI applicant shell; other internal roles keep the workspace shell until their redesign.
   const Shell = role === "applicant" ? AppShell : WorkspaceShell;
 
   return (
     <QueryProvider>
-      <Shell config={getRoleConfig(role)} email={user.email}>
+      <Shell config={config} email={user.email}>
         {children}
       </Shell>
     </QueryProvider>

@@ -7,12 +7,14 @@ import { openLoginAndSignIn } from "./demo-accounts";
 // approved scale (spec 2026-10-07 §3.2), whose smallest step is 12px (table headers
 // and badges); redesigned HR screens are also checked at laptop widths. Applicant
 // screens copy the Capstone UI mockups 1:1 (spec 2026-10-11), whose smallest text is
-// 9px (badges and captions).
+// 9px (badges and captions). The HR side copies its Capstone UI mockups 1:1 too (spec
+// 2026-10-11 HR), so HR shares the 9px floor.
 const WORKSPACE_MIN_FONT = 12;
 const APPLICANT_MIN_FONT = 9;
+const HR_MIN_FONT = 9;
 const sets: [string, string, string[]][] = [
   ["demo.admin@example.test", "/admin", ["/admin", "/admin/users", "/admin/departments", "/admin/ranks", "/admin/settings", "/admin/audit-logs", "/admin/profile-change-requests", "/admin/integrations/attendance"]],
-  ["demo.hr@example.test", "/hr", ["/hr", "/hr/employees", "/hr/jobs", "/hr/applications", "/hr/leave-requests", "/hr/deployments", "/hr/promotions", "/hr/promotions/criteria", "/hr/attendance", "/hr/public-site", "/reports"]],
+  ["demo.hr@example.test", "/hr", ["/hr", "/hr/employees", "/hr/jobs", "/hr/applications", "/hr/leave-requests", "/hr/deployments", "/hr/promotions", "/hr/attendance", "/hr/public-site", "/reports"]],
   ["demo.employee@example.test", "/employee", ["/employee", "/employee/profile", "/employee/leave", "/employee/deployments", "/employee/attendance", "/notifications"]],
   ["demo.applicant@example.test", "/applicant", ["/applicant", "/applicant/profile", "/applicant/applications", "/applicant/documents", "/jobs"]],
   ["demo.management@example.test", "/management", ["/management", "/reports"]],
@@ -20,7 +22,7 @@ const sets: [string, string, string[]][] = [
 for (const [email, home, paths] of sets) {
   test(`${home} screens fit a phone and keep text readable`, async ({ page }) => {
     test.setTimeout(180_000);
-    const minFont = home === "/applicant" ? APPLICANT_MIN_FONT : WORKSPACE_MIN_FONT;
+    const minFont = home === "/applicant" ? APPLICANT_MIN_FONT : home === "/hr" ? HR_MIN_FONT : WORKSPACE_MIN_FONT;
     const widths = home === "/hr" ? [390, 1024, 1366] : [390];
     await page.setViewportSize({ width: 390, height: 844 });
     await openLoginAndSignIn(page, email, process.env.HRIS_E2E_PASSWORD ?? "DemoPass!2026");
@@ -57,6 +59,15 @@ test("the applicant login fits a phone", async ({ page }) => {
   await page.goto("/login?as=applicant");
   await page.waitForLoadState("networkidle");
   await expect(page.getByRole("heading", { level: 1, name: "Login as Applicant" })).toBeVisible();
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
+});
+
+test("the Admin & HR Login fits a phone", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/login?as=admin");
+  await page.waitForLoadState("networkidle");
+  await expect(page.getByRole("heading", { level: 1, name: "Admin & HR Login" })).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(0);
 });

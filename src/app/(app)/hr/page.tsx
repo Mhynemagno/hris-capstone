@@ -1,5 +1,5 @@
-import { WorkspaceDashboard } from "@/components/reporting/workspace-dashboard";
+import { HrDashboardOverview } from "@/components/staff-dashboard/hr-dashboard-overview";
 
 export default function HrPage() {
-  return <WorkspaceDashboard role="hr_personnel" />;
+  return <HrDashboardOverview />;
 }

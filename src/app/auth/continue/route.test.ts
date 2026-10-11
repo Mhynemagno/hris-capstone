@@ -60,4 +60,10 @@ describe("post-login continuation", () => {
     const response = await GET(new NextRequest("http://localhost/auth/continue"));
     expect(response.headers.get("location")).toBe("http://localhost/login?as=employee");
   });
+
+  it("sends a signed-out visitor bound for /hr to the admin login", async () => {
+    getAuthenticatedUser.mockResolvedValue(null);
+    const response = await GET(new NextRequest("http://localhost/auth/continue?next=/hr/leave-requests"));
+    expect(response.headers.get("location")).toBe("http://localhost/login?as=admin&next=%2Fhr%2Fleave-requests");
+  });
 });

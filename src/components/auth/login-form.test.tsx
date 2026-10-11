@@ -57,4 +57,11 @@ describe("LoginForm", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Email confirmed. Please log in.");
     expect(screen.getByRole("alert")).toHaveTextContent("We could not sign you in.");
   });
+
+  it("posts the Access Level with the admin login", () => {
+    const { container } = render(<LoginForm accessLevel="sysad" mode="admin" nextPath="/admin" />);
+    expect(screen.getByLabelText("Access Level")).toHaveValue("sysad");
+    expect(container.querySelector('input[name="as"]')).toHaveValue("admin");
+    expect(screen.getByLabelText("Email Address")).toHaveAttribute("placeholder", "juan.delacruz@gmail.com");
+  });
 });

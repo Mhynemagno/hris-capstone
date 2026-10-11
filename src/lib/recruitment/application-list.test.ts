@@ -39,7 +39,7 @@ describe("application list", () => {
     const base = parseApplicationListParams({});
     expect(buildApplicationRows(apps, [], { ...base, quick: "candidates" }).map((row) => row.id)).toEqual(["2"]);
     expect(buildApplicationRows(apps, [], { ...base, quick: "not-selected" }).map((row) => row.id)).toEqual(["3"]);
-    expect(QUICK_VIEWS.map((view) => view.label)).toEqual(["Active", "Candidates", "Hired", "Disqualified", "Not yet applied", "All"]);
+    expect(QUICK_VIEWS.map((view) => view.label)).toEqual(["Active", "Candidates", "Hired", "Disqualified", "Pending", "All"]);
   });
 
   it("lets an explicit stage or job override the quick view and never matches registered rows", () => {

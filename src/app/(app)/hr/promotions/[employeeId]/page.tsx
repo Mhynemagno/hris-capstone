@@ -1,5 +1,10 @@
-import { notFound } from "next/navigation";
-import { HrPromotionReview } from "@/components/promotion-eligibility/hr-promotion-review";
+import { notFound, redirect } from "next/navigation";
+
 import { uuidSchema } from "@/schemas/common";
-import { PageHeader } from "@/components/ui/page-header";
-export default async function HrPromotionReviewPage({ params }: { params: Promise<{ employeeId: string }> }) { const { employeeId } = await params; if (!uuidSchema.safeParse(employeeId).success) notFound(); return <section className="space-y-4"><PageHeader description="Review this employee’s readiness against the promotion criteria." title="Promotion review" /><HrPromotionReview employeeId={employeeId} /></section>; }
+
+/** Promotion reviews open in the Promotions page modal (Capstone UI promotions.html). */
+export default async function HrPromotionReviewPage({ params }: { params: Promise<{ employeeId: string }> }) {
+  const { employeeId } = await params;
+  if (!uuidSchema.safeParse(employeeId).success) notFound();
+  redirect(`/hr/promotions?review=${employeeId}`);
+}

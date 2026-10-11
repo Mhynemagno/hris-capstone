@@ -20,7 +20,7 @@ describe("HrDeploymentDetails", () => {
     expect(screen.getByText("Maria Balneg")).toBeVisible();
     expect(screen.getByText("Whiteplains, EDSA")).toBeVisible();
     expect(screen.getByRole("heading", { name: "Reports / proof of attendance" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Update" })).toHaveAttribute("href", `/hr/deployments/${deployment.id}/edit`);
+    expect(screen.getByRole("link", { name: "Update" })).toHaveAttribute("href", `/hr/deployments?edit=${deployment.id}`);
     expect(screen.getByText("Deployment created by Juan Dela Cruz")).toBeVisible();
     expect(screen.queryByText(/^created$/)).not.toBeInTheDocument();
   });

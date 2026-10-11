@@ -6,11 +6,14 @@ function throwIfError(error: { message: string } | null) { if (error) throw new 
 
 export function attendanceFilters(input: unknown = {}) { return attendanceFiltersSchema.parse(input); }
 
-export type AttendanceLogWithEmployee = AttendanceLog & { employee: Pick<Employee, "id" | "employee_number" | "first_name" | "last_name"> | null };
+export type AttendanceLogWithEmployee = AttendanceLog & {
+  employee: (Pick<Employee, "id" | "employee_number" | "first_name" | "last_name"> & { ranks?: { code: string } | null; departments?: { name: string } | null }) | null;
+  attendance_imports?: { source_filename: string } | null;
+};
 
 export async function listHrAttendanceLogs(input: Partial<AttendanceFilters> = {}): Promise<PaginatedResult<AttendanceLogWithEmployee, AttendanceFilters>> {
   const filters = attendanceFilters(input); const from = (filters.page - 1) * filters.pageSize;
-  let query = createBrowserSupabaseClient().from("attendance_logs").select("*, employee:employees(id, employee_number, first_name, last_name)", { count: "exact" }).order("attendance_date", { ascending: false }).range(from, from + filters.pageSize - 1);
+  let query = createBrowserSupabaseClient().from("attendance_logs").select("*, employee:employees(id, employee_number, first_name, last_name, ranks(code), departments(name)), attendance_imports(source_filename)", { count: "exact" }).order("attendance_date", { ascending: false }).range(from, from + filters.pageSize - 1);
   if (filters.employeeId) query = query.eq("employee_id", filters.employeeId);
   if (filters.status) query = query.eq("status", filters.status);
   if (filters.statuses?.length === 1) query = query.eq("status", filters.statuses[0]);

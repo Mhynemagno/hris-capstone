@@ -1,5 +1,7 @@
-import { HrJobPostings } from "@/components/recruitment/hr-job-postings";
+import { Suspense } from "react";
+
+import { StaffJobPostings } from "@/components/recruitment/staff-job-postings";
 
 export default function HrJobsPage() {
-  return <HrJobPostings />;
+  return <Suspense><StaffJobPostings /></Suspense>;
 }

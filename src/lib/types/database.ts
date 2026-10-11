@@ -203,6 +203,11 @@ export type Certification = {
   notes: string | null;
   /** Set by the database from the course name; drives the performance rubric. */
   category?: "mandatory_course" | "specialized_training" | null;
+  /** Uploaded certificate (Capstone UI HR redesign, PDF p. 23); optional. */
+  document_path?: string | null;
+  document_name?: string | null;
+  document_mime_type?: string | null;
+  document_size_bytes?: number | null;
 };
 
 export type TrainingRecord = {

@@ -32,6 +32,7 @@ export const deploymentUpdateSchema = deploymentInputSchema.extend({
 export const deploymentFiltersSchema = paginationSchema.extend({
   pageSize: z.coerce.number().int().positive().transform((value) => Math.min(value, 100)).default(25),
   status: deploymentStatusSchema.optional(),
+  deploymentType: z.enum(DEPLOYMENT_TYPES).optional(),
   employeeId: uuidSchema.optional(),
   startsOn: isoDateSchema.optional(),
   endsOn: isoDateSchema.optional(),

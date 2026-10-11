@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { formatDate } from "../src/lib/format-date";
-import { openLoginAndSignIn } from "./demo-accounts";
+import { openLoginAndSignIn, signOutFromShell } from "./demo-accounts";
 
 // These journeys create and remove their own uniquely named records in the
 // LOCAL Supabase stack only (playwright.config.ts refuses non-local URLs).
@@ -18,7 +18,7 @@ async function signIn(page: Page, email: string, home: string) {
 }
 
 async function signOut(page: Page) {
-  await page.getByRole("button", { name: "Sign out" }).click();
+  await signOutFromShell(page);
   await expect(page).toHaveURL(/^https?:\/\/[^/]+\/$/);
 }
 
@@ -81,11 +81,10 @@ test.describe("leave journey", () => {
   test("HR can only update the fixed leave types", async ({ page }) => {
     await signIn(page, "demo.hr@example.test", "/hr");
     await page.goto("/hr/leave-requests");
-    await page.getByRole("tab", { name: "Leave types" }).click();
     await expect(page.getByRole("button", { name: "Add leave type" })).toHaveCount(0);
     await expect(page.getByRole("button", { name: /^(Deactivate|Activate|Delete) / })).toHaveCount(0);
-    await page.getByRole("button", { name: "Update Mandatory Leave" }).click();
-    await expect(page.getByRole("button", { name: "Save changes" })).toBeVisible();
+    await page.getByRole("button", { name: "Update Policy: Mandatory Leave" }).click();
+    await expect(page.getByRole("dialog", { name: "Update Policy: Mandatory Leave" }).getByRole("button", { name: "Save Changes" })).toBeVisible();
   });
 
   test("employee submits leave, invalid dates are caught inline, and HR approves it", async ({ page }) => {
@@ -112,13 +111,18 @@ test.describe("leave journey", () => {
 
     await signIn(page, "demo.hr@example.test", "/hr");
     await page.goto("/hr/leave-requests");
-    await page.getByRole("link", { name: new RegExp(`Review .+'s Demo leave request, ${formatDate(isoDate(offset + 3))}`) }).click();
-    await expect(page).toHaveURL(/\/hr\/leave-requests\/[0-9a-f-]{36}$/, { timeout: 30_000 });
-    await expect(page.getByText(reason)).toBeVisible({ timeout: 15_000 });
-    await page.getByRole("button", { name: "Approve request" }).click();
-    await expect(page.getByRole("status").filter({ hasText: "approved" })).toBeVisible();
-    await page.reload();
-    await expect(page.getByRole("button", { name: "Approve request" })).toHaveCount(0);
+    // Review opens in place (PDF p. 27); HR remarks are required to approve too.
+    const reviewButton = page.getByRole("button", { name: new RegExp(`Review .+'s Demo leave request, ${formatDate(isoDate(offset + 3))}`) });
+    await reviewButton.click();
+    await expect(page).toHaveURL(/\/hr\/leave-requests\?review=[0-9a-f-]{36}$/, { timeout: 30_000 });
+    const review = page.getByRole("dialog", { name: "Review Leave Request" });
+    await review.getByRole("button", { name: "Approve Request" }).click();
+    await expect(review.getByText("HR Remarks are required to proceed.")).toBeVisible();
+    await review.getByLabel(/HR Remarks \/ Notes/).fill(`Approved by the journey test ${runId}`);
+    await review.getByRole("button", { name: "Approve Request" }).click();
+    await expect(page.getByText("Leave request approved")).toBeVisible();
+    await page.goto("/hr/leave-requests");
+    await expect(reviewButton).toHaveCount(0, { timeout: 15_000 });
     await signOut(page);
 
     await signIn(page, "demo.employee@example.test", "/employee");
@@ -243,17 +247,17 @@ test.describe("read-only and public journeys", () => {
     await page.goto("/hr/public-site");
     await expect(page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Announcements" })).toHaveAttribute("aria-current", "page");
 
-    await page.getByRole("button", { name: "New announcement" }).click();
-    const form = page.getByRole("form", { name: "New announcement" });
+    await page.getByRole("button", { name: /New Announcement/ }).click();
+    const form = page.getByRole("dialog", { name: "Create New Announcement" });
     await form.getByLabel(/^Title/).fill(title);
     await form.getByLabel(/^Category/).selectOption("advisory");
     await form.getByLabel(/^Summary/).fill("Road works near the station this weekend.");
-    await form.getByLabel(/^Announcement text/).fill("First paragraph.\n\nSecond paragraph.");
-    await form.getByRole("button", { name: "Save draft" }).click();
-    await expect(page.getByText(`${title} was saved as a draft.`)).toBeVisible();
+    await form.getByLabel(/^Announcement Text/).fill("First paragraph.\n\nSecond paragraph.");
+    await form.getByRole("button", { name: /Save Announcement/ }).click();
+    await expect(page.getByText("Draft saved")).toBeVisible();
 
     await page.getByRole("button", { name: `Publish ${title}` }).click();
-    await expect(page.getByText(`${title} is now published on the landing page.`)).toBeVisible();
+    await expect(page.getByText("Announcement published")).toBeVisible();
     await signOut(page);
 
     await page.goto("/");

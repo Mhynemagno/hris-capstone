@@ -31,7 +31,14 @@ export function timeAgo(iso: string, now = Date.now()) {
  * Capstone UI notifapp.html: the bell opens the notifications in place (All / Unread, mark read,
  * delete, mark all as read, clear all) instead of navigating to another page.
  */
-export function NotificationDrawer() {
+export function NotificationDrawer({
+  onError = (title, description) => notifyApplicant({ title, description, tone: "error" }),
+  tone = "dark",
+}: {
+  onError?: (title: string, description: string) => void;
+  /** "dark" sits on the applicant's navy bar, "light" on the staff shell's white bar (Capstone UI dashboard.html). */
+  tone?: "dark" | "light";
+} = {}) {
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState<"all" | "unread">("all");
   const containerRef = useRef<HTMLDivElement>(null);
@@ -48,7 +55,7 @@ export function NotificationDrawer() {
   const unreadCount = !unread.isLoading && !unread.isError ? (unread.data ?? 0) : 0;
   const rows = notifications.data?.rows ?? [];
   const total = notifications.data?.count ?? rows.length;
-  const failed = (title: string) => ({ onError: (error: Error) => notifyApplicant({ title, description: error.message, tone: "error" }) });
+  const failed = (title: string) => ({ onError: (error: Error) => onError(title, error.message) });
 
   function openPanel() {
     setOpen(true);
@@ -87,7 +94,10 @@ export function NotificationDrawer() {
         aria-expanded={open}
         aria-haspopup="dialog"
         aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}
-        className="relative rounded-full p-2 text-slate-300 transition-colors hover:bg-slate-800 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+        className={cn(
+          "relative p-2 transition-colors focus:outline-none focus-visible:ring-2",
+          tone === "dark" ? "rounded-full text-slate-300 hover:bg-slate-800 hover:text-white focus-visible:ring-blue-400" : "rounded-xl text-slate-500 hover:bg-slate-100 focus-visible:ring-blue-700",
+        )}
         onClick={() => (open ? close() : openPanel())}
         ref={bellRef}
         type="button"

@@ -15,6 +15,7 @@ import type { PersonnelKind } from "@/queries/personnel-records";
 import { certificationSchema, qualificationSchema, serviceHistorySchema, trainingRecordSchema } from "@/schemas/personnel-records";
 
 import { DepartmentRankFields } from "./department-rank-fields";
+import { DocumentUploadDialog } from "./document-upload-dialog";
 
 const fields: Record<PersonnelKind, { title: string; primary?: string; secondary?: string; date: string; expiry?: string }> = {
   serviceHistory: { title: "Service history", date: "Start date", expiry: "End date" },
@@ -78,6 +79,7 @@ export function RecordEntryForm({ employeeId, kind, onSaved, pending = false, tr
   const [startDate, setStartDate] = useState(training?.completed_on ?? qualification?.awarded_on ?? certification?.issued_on ?? serviceHistory?.started_on ?? "");
   const unitStations = useUnitStations();
   const [documentFile, setDocumentFile] = useState<File | null>(null);
+  const [documentDialog, setDocumentDialog] = useState(false);
   const config = fields[kind];
   const kindChoices = choices[kind];
   const savedPrimary = training?.course_name ?? qualification?.name ?? certification?.name;
@@ -123,7 +125,7 @@ export function RecordEntryForm({ employeeId, kind, onSaved, pending = false, tr
       return;
     }
     try {
-      if (kind === "qualification") await onSaved(parsed.data, editId, documentFile);
+      if (kind === "qualification" || (kind === "certification" && documentFile)) await onSaved(parsed.data, editId, documentFile);
       else await onSaved(parsed.data, editId);
       setDocumentFile(null);
       if (!editId) {
@@ -212,17 +214,28 @@ export function RecordEntryForm({ employeeId, kind, onSaved, pending = false, tr
           <Input className="h-11" defaultValue={training?.hours ?? ""} id="training-hours" max="9999.99" min="0" name="hours" step="0.25" type="number" />
         </FormField>
       ) : null}
-      {kind === "qualification" ? (
+      {kind === "qualification" || kind === "certification" ? (
         <div className="sm:col-span-2">
           <FormField
-            description={qualification?.document_path ? `Current document: ${qualification.document_name}. Choose a file only to replace it.` : "Required. Proof the exam was passed (PDF or image, up to 10 MB)."}
+            description={(qualification?.document_path || certification?.document_path)
+              ? `Current document: ${qualification?.document_name ?? certification?.document_name}. Choose a file only to replace it.`
+              : kind === "qualification" ? "Required. Proof the exam was passed (PDF or image, up to 10 MB)." : "Optional. A certificate or proof of completion (PDF or image, up to 10 MB)."}
             error={e.document}
-            htmlFor="qualification-document"
+            htmlFor={`${kind}-document`}
             label="Supporting document"
-            required={!qualification?.document_path}
+            required={kind === "qualification" && !qualification?.document_path}
           >
-            <Input accept="application/pdf,image/png,image/jpeg,image/webp" className="h-11" id="qualification-document" onChange={(event) => setDocumentFile(event.target.files?.[0] ?? null)} type="file" />
+            <div className="flex flex-wrap items-center gap-3" id={`${kind}-document`}>
+              <Button onClick={() => setDocumentDialog(true)} type="button" variant="outline">Choose document</Button>
+              {documentFile ? (
+                <>
+                  <span className="text-sm font-medium">{documentFile.name}</span>
+                  <Button aria-label={`Remove ${documentFile.name}`} onClick={() => setDocumentFile(null)} size="sm" type="button" variant="ghost">Remove</Button>
+                </>
+              ) : null}
+            </div>
           </FormField>
+          <DocumentUploadDialog onClose={() => setDocumentDialog(false)} onSave={(file) => { setDocumentFile(file); setDocumentDialog(false); }} open={documentDialog} saving={false} />
         </div>
       ) : null}
       <div className="sm:col-span-2">

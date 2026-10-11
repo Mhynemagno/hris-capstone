@@ -1,4 +1,6 @@
-import { FaceAttendanceKiosk } from "@/components/face-recognition/face-attendance-kiosk";
-import { PageHeader } from "@/components/ui/page-header";
+import { redirect } from "next/navigation";
 
-export default function FaceAttendanceKioskPage() { return <section className="space-y-4"><PageHeader description="Run on a supervised device. Employees look at the camera; they never choose their name." title="Attendance kiosk" /><FaceAttendanceKiosk /></section>; }
+/** The Kiosk page was removed (PDF p. 33): the kiosk opens from Attendance Logs. */
+export default function KioskPage() {
+  redirect("/hr/attendance?kiosk=1");
+}

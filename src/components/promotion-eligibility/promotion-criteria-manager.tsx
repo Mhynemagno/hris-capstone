@@ -1,18 +1,19 @@
 "use client";
 
+import { CirclePlus, Plus } from "lucide-react";
 import { useMemo, useState, type FormEvent } from "react";
 
 import { DeleteRecordDialog } from "@/components/deletion/delete-record-dialog";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { notifyStaff } from "@/components/staff-shell/staff-notify";
+import { staffButton } from "@/components/staff-shell/ui/staff-buttons";
+import { StaffLabel, StaffSelect } from "@/components/staff-shell/ui/staff-fields";
 import { Combobox } from "@/components/ui/combobox";
 import { ErrorState } from "@/components/ui/error-state";
-import { FormField } from "@/components/ui/form-field";
 import { LoadingState } from "@/components/ui/loading-state";
-import { nativeSelectClassName } from "@/components/ui/native-select";
 import { useRankOptions } from "@/hooks/use-administration";
 import { PNP_CERTIFICATION_GROUPS, PNP_CERTIFICATIONS } from "@/lib/pnp-catalogue";
 import { rankLabel } from "@/lib/ranks";
+import { cn } from "@/lib/utils";
 import { useCreatePromotionCriterion, usePromotionCriteria, useSetPromotionCriterionActive } from "@/hooks/use-promotion-eligibility";
 import type { PromotionCriterionRequirement } from "@/lib/types/database";
 import { promotionCriterionSchema } from "@/schemas/promotion-eligibility";
@@ -30,6 +31,11 @@ const SERVICE_YEAR_CHOICES = [1, 2, 3] as const;
 type RequirementRow = { key: number; name: string };
 type FieldErrors = Partial<Record<"targetRankId" | "minimumYearsOfService" | "requirements" | "form", string>>;
 
+function FieldError({ message }: { message?: string }) {
+  return message ? <p className="text-[10px] font-bold text-rose-500" role="alert">{message}</p> : null;
+}
+
+/** Capstone UI promotions.html "Add Promotion Criteria" card. */
 function CriterionForm({ rankOptions, takenRankIds }: { rankOptions: { value: string; label: string; description?: string }[]; takenRankIds: Set<number> }) {
   const create = useCreatePromotionCriterion();
   const [rankId, setRankId] = useState<string | null>(null);
@@ -37,7 +43,6 @@ function CriterionForm({ rankOptions, takenRankIds }: { rankOptions: { value: st
   const [nextKey, setNextKey] = useState(1);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [rowErrors, setRowErrors] = useState<Record<number, string>>({});
-  const [notice, setNotice] = useState<string | null>(null);
   const available = rankOptions.filter((option) => !takenRankIds.has(Number(option.value)));
   const chosenNames = new Set(rows.map((row) => row.name).filter(Boolean));
   const canAddRow = rows.length < MAX_REQUIREMENTS && rows.length < PNP_CERTIFICATIONS.length;
@@ -60,9 +65,9 @@ function CriterionForm({ rankOptions, takenRankIds }: { rankOptions: { value: st
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (create.isPending) return;
     setErrors({});
     setRowErrors({});
-    setNotice(null);
     const formElement = event.currentTarget;
     const form = Object.fromEntries(new FormData(formElement));
     const parsed = promotionCriterionSchema.safeParse({
@@ -92,17 +97,21 @@ function CriterionForm({ rankOptions, takenRankIds }: { rankOptions: { value: st
       setRankId(null);
       setRows([{ key: nextKey, name: "" }]);
       setNextKey((key) => key + 1);
-      setNotice("Promotion criteria saved.");
+      notifyStaff({ title: "Promotion criteria saved" });
     } catch (cause) {
       setErrors({ form: cause instanceof Error ? cause.message : "Unable to save criteria." });
     }
   }
 
   return (
-    <form className="grid gap-4 rounded-xl border bg-card p-5 sm:grid-cols-2" noValidate onSubmit={submit}>
-      <h2 className="text-xl font-bold tracking-tight sm:col-span-2">Add promotion criteria</h2>
-      <FormField description="Each rank can have one set of criteria." error={errors.targetRankId} htmlFor="target-rank" label="Target rank" required>
+    <form className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4" noValidate onSubmit={submit}>
+      <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900"><CirclePlus aria-hidden="true" className="size-4 text-blue-700" /> Add Promotion Criteria</h3>
+      <div className="space-y-1">
+        <StaffLabel htmlFor="target-rank" required>Target Rank</StaffLabel>
         <Combobox
+          aria-label="Target Rank"
+          className="rounded-xl border-slate-200 bg-slate-50"
+          inputClassName="text-xs font-medium text-slate-900 placeholder:text-slate-400"
           emptyMessage="No rank without criteria matches that search."
           id="target-rank"
           onValueChange={setRankId}
@@ -110,58 +119,59 @@ function CriterionForm({ rankOptions, takenRankIds }: { rankOptions: { value: st
           placeholder="Search ranks"
           value={rankId}
         />
-      </FormField>
-      <FormField error={errors.minimumYearsOfService} htmlFor="minimum-years" label="Years of service" required>
-        <select className={nativeSelectClassName} defaultValue="1" id="minimum-years" name="minimumYearsOfService" required>
-          {SERVICE_YEAR_CHOICES.map((years) => <option key={years} value={years}>{`${years} ${years === 1 ? "year" : "years"}`}</option>)}
-        </select>
-      </FormField>
-      <fieldset aria-describedby={errors.requirements ? "requirements-error" : undefined} className="grid gap-4 rounded-lg border p-4 sm:col-span-2 sm:grid-cols-2">
-        <legend className="px-1 text-sm font-semibold">
-          Requirements
-          <span aria-hidden="true" className="ml-0.5 text-destructive">*</span>
-        </legend>
-        <div className="space-y-3 sm:col-span-2">
-          {rows.map((row, index) => (
-            <div className="flex items-end gap-2" key={row.key}>
-              <div className="min-w-0 flex-1">
-                <FormField error={rowErrors[row.key] || undefined} htmlFor={`requirement-${row.key}`} label={rows.length > 1 ? `Certification / Training ${index + 1}` : "Certification / Training"} required>
-                  <select
-                    className={nativeSelectClassName}
-                    id={`requirement-${row.key}`}
-                    name="requiredName"
-                    onChange={(event) => updateRow(row.key, event.target.value)}
-                    required
-                    value={row.name}
-                  >
-                    <option value="">Choose a certification / training</option>
-                    {row.name && !(PNP_CERTIFICATIONS as readonly string[]).includes(row.name) ? <option value={row.name}>{row.name}</option> : null}
-                    {PNP_CERTIFICATION_GROUPS.map((group) => (
-                      <optgroup key={group.label} label={group.label}>
-                        {group.choices.filter((name) => name === row.name || !chosenNames.has(name)).map((name) => <option key={name} value={name}>{name}</option>)}
-                      </optgroup>
-                    ))}
-                  </select>
-                </FormField>
-              </div>
-              {rows.length > 1 ? (
-                <Button aria-label={`Remove requirement ${index + 1}`} onClick={() => removeRow(row.key)} type="button" variant="outline">Remove</Button>
-              ) : null}
-            </div>
-          ))}
-          {errors.requirements ? <p className="text-sm font-medium text-destructive" id="requirements-error" role="alert">{errors.requirements}</p> : null}
-          <Button disabled={!canAddRow} onClick={addRow} size="sm" type="button" variant="outline">Add another certification / training</Button>
-        </div>
-      </fieldset>
-      {errors.form ? <div className="sm:col-span-2"><ErrorState message={errors.form} /></div> : null}
-      <p aria-live="polite" className="text-sm font-medium text-emerald-700 sm:col-span-2 dark:text-emerald-400" role="status">{notice ?? ""}</p>
-      <div className="sm:col-span-2">
-        <Button disabled={create.isPending} type="submit">{create.isPending ? "Saving…" : "Save criteria"}</Button>
+        <p className="text-[10px] font-normal text-slate-500">Each rank can have one set of criteria.</p>
+        <FieldError message={errors.targetRankId} />
       </div>
+      <div className="space-y-1">
+        <StaffLabel htmlFor="minimum-years" required>Years of Service</StaffLabel>
+        <StaffSelect defaultValue="1" id="minimum-years" name="minimumYearsOfService" required>
+          {SERVICE_YEAR_CHOICES.map((years) => <option key={years} value={years}>{`${years} ${years === 1 ? "year" : "years"}`}</option>)}
+        </StaffSelect>
+        <FieldError message={errors.minimumYearsOfService} />
+      </div>
+      <fieldset aria-describedby={errors.requirements ? "requirements-error" : undefined} className="space-y-3 border-t border-slate-200 pt-3">
+        <legend className="text-xs font-semibold text-slate-700">
+          Certification / Training Requirements
+          <span aria-hidden="true" className="ml-0.5 text-rose-500">*</span>
+        </legend>
+        {rows.map((row, index) => (
+          <div className="flex items-end gap-2" key={row.key}>
+            <div className="min-w-0 flex-1 space-y-1">
+              <label className="sr-only" htmlFor={`requirement-${row.key}`}>{rows.length > 1 ? `Certification / Training ${index + 1}` : "Certification / Training"}</label>
+              <StaffSelect
+                id={`requirement-${row.key}`}
+                name="requiredName"
+                onChange={(event) => updateRow(row.key, event.target.value)}
+                required
+                value={row.name}
+              >
+                <option value="">Choose a certification / training</option>
+                {row.name && !(PNP_CERTIFICATIONS as readonly string[]).includes(row.name) ? <option value={row.name}>{row.name}</option> : null}
+                {PNP_CERTIFICATION_GROUPS.map((group) => (
+                  <optgroup key={group.label} label={group.label}>
+                    {group.choices.filter((name) => name === row.name || !chosenNames.has(name)).map((name) => <option key={name} value={name}>{name}</option>)}
+                  </optgroup>
+                ))}
+              </StaffSelect>
+              <FieldError message={rowErrors[row.key] || undefined} />
+            </div>
+            {rows.length > 1 ? (
+              <button aria-label={`Remove requirement ${index + 1}`} className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-[11px] font-bold text-slate-600 hover:bg-slate-100" onClick={() => removeRow(row.key)} type="button">Remove</button>
+            ) : null}
+          </div>
+        ))}
+        {errors.requirements ? <p className="text-[10px] font-bold text-rose-500" id="requirements-error" role="alert">{errors.requirements}</p> : null}
+        <button className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-60" disabled={!canAddRow} onClick={addRow} type="button">
+          <Plus aria-hidden="true" className="size-2.5" /> Add another certification / training
+        </button>
+      </fieldset>
+      {errors.form ? <ErrorState message={errors.form} /> : null}
+      <button className={cn(staffButton.primary, "w-full")} disabled={create.isPending} type="submit">{create.isPending ? "Saving…" : "Save Criteria"}</button>
     </form>
   );
 }
 
+/** Capstone UI promotions.html criteria drawer body: add criteria, then the existing policies. */
 export function PromotionCriteriaManager() {
   const criteria = usePromotionCriteria();
   const ranks = useRankOptions();
@@ -195,57 +205,52 @@ export function PromotionCriteriaManager() {
       <CriterionForm rankOptions={rankOptions} takenRankIds={takenRankIds} />
 
       <section aria-labelledby="existing-criteria" className="space-y-3">
-        <h2 className="text-xl font-bold tracking-tight" id="existing-criteria">Existing criteria</h2>
-        <p className="text-base text-muted-foreground">
-          Deactivate criteria to stop using them for new evaluations. Criteria can only be deleted before any employee has been evaluated against them.
-        </p>
+        <h3 className="text-sm font-bold text-slate-900" id="existing-criteria">Existing Criteria Policies</h3>
+        <p className="text-[11px] font-normal text-slate-500">Deactivate criteria to stop using them for new evaluations.</p>
         {actionError ? <ErrorState message={actionError} /> : null}
-        <p aria-live="polite" className="text-sm font-medium text-emerald-700 dark:text-emerald-400" role="status">{notice ?? ""}</p>
+        <p aria-live="polite" className="text-[11px] font-medium text-emerald-700" role="status">{notice ?? ""}</p>
         {criteria.isLoading ? <LoadingState label="Loading promotion criteria…" /> : criteria.error ? <ErrorState message={criteria.error.message} /> : criteria.data?.length ? (
-          <ul className="grid gap-3">
+          <ul className="space-y-3">
             {criteria.data.map((criterion) => {
               const title = rankTitles.get(criterion.target_rank_id) ?? `Rank #${criterion.target_rank_id}`;
               const requirements = (criterion.promotion_criteria_requirements ?? []) as PromotionCriterionRequirement[];
               return (
-                <li className="rounded-xl border bg-card p-4" key={criterion.id}>
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="space-y-1">
-                      <p className="flex flex-wrap items-center gap-2 text-base font-semibold">
-                        {title}
-                        <Badge variant={criterion.is_active ? "secondary" : "outline"}>{criterion.is_active ? "Active" : "Inactive"}</Badge>
-                        {criterion.minimum_years_of_service > 3 ? <Badge variant="destructive">Update to 1–3 years</Badge> : null}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        At least {criterion.minimum_years_of_service} {criterion.minimum_years_of_service === 1 ? "year" : "years"} of service
-                      </p>
-                      {requirements.length ? (
-                        <ul className="list-disc space-y-0.5 pl-5 text-sm">
-                          {requirements.toSorted((a, b) => a.ordinal - b.ordinal).map((requirement) => (
-                            <li key={requirement.id}>{recordKindLabels[requirement.record_kind]}: {requirement.label}</li>
-                          ))}
-                        </ul>
-                      ) : <p className="text-sm text-muted-foreground">No requirements.</p>}
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <Button
+                <li className="space-y-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm" key={criterion.id}>
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <p className="flex flex-wrap items-center gap-2 text-sm font-bold text-slate-900">
+                      {title}
+                      <span className={cn("rounded px-1.5 text-[10px] font-bold", criterion.is_active ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600")}>{criterion.is_active ? "Active" : "Inactive"}</span>
+                      {criterion.minimum_years_of_service > 3 ? <span className="rounded bg-rose-50 px-1.5 text-[10px] font-bold text-rose-700">Update to 1–3 years</span> : null}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      <button
                         aria-label={`${criterion.is_active ? "Deactivate" : "Activate"} criteria for ${title}`}
+                        className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-60"
                         disabled={setActive.isPending}
                         onClick={() => void toggle(criterion.id, !criterion.is_active, title).catch(() => undefined)}
-                        size="sm"
                         type="button"
-                        variant="outline"
                       >
                         {criterion.is_active ? "Deactivate" : "Activate"}
-                      </Button>
-                      <Button aria-label={`Delete criteria for ${title}`} onClick={() => setDeletingId(criterion.id)} size="sm" type="button" variant="destructive">Delete</Button>
+                      </button>
+                      <button aria-label={`Delete criteria for ${title}`} className="rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-700 hover:bg-rose-100" onClick={() => setDeletingId(criterion.id)} type="button">Delete</button>
                     </div>
                   </div>
+                  <p className="text-[11px] font-normal text-slate-600">
+                    At least {criterion.minimum_years_of_service} {criterion.minimum_years_of_service === 1 ? "year" : "years"} of service
+                  </p>
+                  {requirements.length ? (
+                    <ul className="list-disc space-y-0.5 pl-5 text-[11px] font-normal text-slate-600">
+                      {requirements.toSorted((a, b) => a.ordinal - b.ordinal).map((requirement) => (
+                        <li key={requirement.id}>{recordKindLabels[requirement.record_kind]}: {requirement.label}</li>
+                      ))}
+                    </ul>
+                  ) : <p className="text-[11px] text-slate-500">No requirements.</p>}
                 </li>
               );
             })}
           </ul>
         ) : (
-          <p className="rounded-xl border border-dashed px-4 py-8 text-center text-muted-foreground">No promotion criteria yet. Add the first set above.</p>
+          <p className="rounded-2xl border border-dashed border-slate-300 px-4 py-8 text-center text-xs text-slate-500">No promotion criteria yet. Add the first set above.</p>
         )}
       </section>
 

@@ -25,6 +25,8 @@ type ComboboxProps = {
   disabled?: boolean;
   required?: boolean;
   className?: string;
+  /** Extra classes for the text input itself (e.g. the Capstone UI input size). */
+  inputClassName?: string;
   "aria-describedby"?: string;
   "aria-invalid"?: boolean | "true" | "false";
   "aria-label"?: string;
@@ -51,6 +53,7 @@ export function Combobox({
   disabled = false,
   required = false,
   className,
+  inputClassName,
   ...aria
 }: ComboboxProps) {
   const selected = useMemo(() => options.find((option) => option.value === value) ?? null, [options, value]);
@@ -75,7 +78,7 @@ export function Combobox({
         )}
       >
         <ComboboxPrimitive.Input
-          className="h-full min-h-11 w-full min-w-0 rounded-lg border-0 bg-transparent py-2 pr-20 pl-3 text-base text-foreground outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed"
+          className={cn("h-full min-h-11 w-full min-w-0 rounded-lg border-0 bg-transparent py-2 pr-20 pl-3 text-base text-foreground outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed", inputClassName)}
           id={id}
           placeholder={placeholder}
           {...aria}

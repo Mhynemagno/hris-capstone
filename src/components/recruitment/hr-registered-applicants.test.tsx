@@ -23,7 +23,7 @@ describe("HrRegisteredApplicants", () => {
     render(<HrRegisteredApplicants />);
     expect(screen.getByRole("link", { name: "Reyes, Ana" })).toHaveAttribute("href", "/hr/applications/app-1");
     expect(within(screen.getByRole("row", { name: /Cruz, Ben/ })).getByText("Unconfirmed")).toBeInTheDocument();
-    expect(within(screen.getByRole("row", { name: /Cruz, Ben/ })).getByText("Not yet applied")).toBeInTheDocument();
+    expect(within(screen.getByRole("row", { name: /Cruz, Ben/ })).getByText("Pending")).toBeInTheDocument();
   });
 
   it("filters to accounts that have not applied", () => {

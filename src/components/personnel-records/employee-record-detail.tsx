@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Activity, ArrowLeft, Award, BadgeCheck, BookOpenCheck, Building2, Cake, CheckCircle2, Clock, FileText, GraduationCap, History, MapPin, Pencil, ShieldCheck, TrendingUp, UserRound, X, type LucideIcon } from "lucide-react";
+import { Activity, ArrowLeft, Award, BadgeCheck, BookOpenCheck, Building2, Cake, CheckCircle2, Clock, GraduationCap, History, MapPin, Pencil, ShieldCheck, TrendingUp, UserRound, X, type LucideIcon } from "lucide-react";
 
 import { DeleteRecordDialog } from "@/components/deletion/delete-record-dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -13,14 +13,14 @@ import { useDepartmentOptions, useRankOptions } from "@/hooks/use-administration
 import { useEmployee, usePersonnelEntries, useSavePersonnelEntry } from "@/hooks/use-personnel-records";
 import { formatDate, formatDateRange } from "@/lib/format-date";
 import { formatGovernmentId } from "@/lib/government-ids";
-import { openSignedUrl } from "@/lib/open-signed-url";
 import { rankLabel } from "@/lib/ranks";
 import type { Certification, Employee, Qualification, ServiceHistory, TrainingRecord } from "@/lib/types/database";
-import { getPersonnelDocumentUrl, type PersonnelKind } from "@/queries/personnel-records";
+import type { PersonnelKind } from "@/queries/personnel-records";
 
 import { EmployeeEditor } from "./employee-editor";
 import { EmployeeProfilePhotoControl } from "./employee-profile-photo-control";
 import { ActivityTimeline, formatDay, InfoCard, ProfileHeaderCard, serviceLength, type TimelineItem } from "./profile-layout";
+import { RecordDocumentRow } from "./record-document-row";
 import { RecordEntryForm } from "./record-entry-form";
 import { parseRecordTab, RECORD_TABS, RecordTabs, type RecordTabKey } from "./record-tabs";
 
@@ -55,11 +55,6 @@ function titleCase(value: string | null | undefined) {
 }
 
 /** An eligibility's supporting document, if it has one. */
-function qualificationDocument(entry: object) {
-  const record = entry as Partial<Qualification>;
-  return record.document_path && record.document_name ? { path: record.document_path, name: record.document_name } : null;
-}
-
 function useRankTitles() {
   const ranks = useRankOptions();
   return useMemo(() => new Map((ranks.data ?? []).map((rank) => [rank.id, rankLabel(rank)])), [ranks.data]);
@@ -106,11 +101,11 @@ function Records({ employeeId, kind, editable }: { employeeId: string; kind: Per
                 {service ? <p className="text-xs font-semibold tracking-wide text-primary uppercase">Service history</p> : null}
                 <p className="font-semibold">{title}</p>
                 {detail ? <p className="text-sm text-muted-foreground">{detail}</p> : null}
+                {kind === "qualification" || kind === "certification" ? (
+                  <RecordDocumentRow canEdit={editable} entry={{ ...(entry as Qualification | Certification), name: title }} kind={kind} />
+                ) : null}
               </div>
               <div className="flex flex-wrap gap-2">
-              {qualificationDocument(entry) ? (
-                <Button aria-label={`View document ${qualificationDocument(entry)!.name}`} onClick={() => void openSignedUrl(() => getPersonnelDocumentUrl(qualificationDocument(entry)!.path)).catch((cause) => setNotice(cause instanceof Error ? cause.message : "Unable to open the document."))} size="sm" type="button" variant="ghost"><FileText aria-hidden />View document</Button>
-              ) : null}
               {editable ? (
                 <Button aria-label={`Update ${noun} ${title}`} onClick={() => { setNotice(null); setEditing(entry.id); }} size="sm" type="button" variant="outline">Update</Button>
               ) : null}
@@ -351,7 +346,7 @@ export function EmployeeRecordDetail({ employeeId }: { employeeId: string }) {
         {editing
           ? <Button onClick={stopEditing} size="sm" type="button" variant="outline">Done editing</Button>
           : <Button onClick={editDetails} size="sm" type="button"><Pencil aria-hidden />Edit details</Button>}
-        <Link className={buttonVariants({ size: "sm", variant: "outline" })} href={`/hr/promotions/${record.id}`}><TrendingUp aria-hidden />Promotion review</Link>
+        <Link className={buttonVariants({ size: "sm", variant: "outline" })} href={`/hr/promotions?review=${record.id}`}><TrendingUp aria-hidden />Promotion review</Link>
       </>}
       meta={[
         { label: "Badge number", value: <span className="tabular-nums">{record.employee_number}</span>, icon: BadgeCheck },

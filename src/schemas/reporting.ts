@@ -73,3 +73,11 @@ export type DashboardSummary = z.output<typeof dashboardSummarySchema>;
 export function reportingFilters(input: unknown) {
   return reportFiltersSchema.parse(input);
 }
+
+const countSchema = z.number().int().nonnegative();
+export const hrDashboardOverviewSchema = z.object({
+  personnelByRank: z.array(z.object({ code: z.string().nullable(), name: z.string().nullable(), count: countSchema })),
+  personnelByGender: z.array(z.object({ label: z.enum(["male", "female", "unspecified"]), count: countSchema })),
+  attendanceToday: z.object({ present: countSchema, late: countSchema, incomplete: countSchema, absent: countSchema, onLeave: countSchema }),
+});
+export type HrDashboardOverview = z.output<typeof hrDashboardOverviewSchema>;
