@@ -35,7 +35,7 @@ test.describe("administrator master data", () => {
     await page.goto("/admin/departments");
 
     // Navigation shows the current location.
-    await expect(page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Units / Sections" })).toHaveAttribute("aria-current", "page");
+    await expect(page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Units and Sections" })).toHaveAttribute("aria-current", "page");
 
     await page.getByRole("button", { name: "Add unit / section" }).click();
     const panel = page.getByRole("dialog", { name: "Add unit / section" });

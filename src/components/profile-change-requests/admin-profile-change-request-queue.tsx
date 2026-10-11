@@ -3,12 +3,13 @@
 import Link from "next/link";
 
 import { PaginatedTableControls } from "@/components/administration/paginated-table-controls";
-import { Badge } from "@/components/ui/badge";
 import { EmptyTableState } from "@/components/ui/empty-table-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { FormField } from "@/components/ui/form-field";
 import { LoadingState } from "@/components/ui/loading-state";
 import { nativeSelectClassName } from "@/components/ui/native-select";
+import { StatusPill } from "@/components/staff-shell/ui/status-pill";
+import { staffTable } from "@/components/staff-shell/ui/staff-table-card";
 import { useAdminProfileChangeRequests } from "@/hooks/use-profile-change-requests";
 import { formatDateTime } from "@/lib/format-date";
 import { useListParams } from "@/lib/workspace/list-params";
@@ -49,33 +50,31 @@ export function AdminProfileChangeRequestQueue() {
         <ErrorState message={result.error.message} />
       ) : (
         <>
-          <div className="relative overflow-x-auto rounded-xl border">
-            <table className="w-full min-w-[640px] text-left text-sm">
+          <div className="overflow-x-auto rounded-2xl border border-slate-200/90 bg-white shadow-sm">
+            <table className={staffTable.table}>
               <caption className="sr-only">Reviews and approvals: {statusLabel(status).toLowerCase()}</caption>
-              <thead className="bg-muted/60">
+              <thead className={staffTable.thead}>
                 <tr>
-                  <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Status</th>
-                  <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Submitted</th>
-                  <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Employee note</th>
-                  <th className="px-4 py-3 font-semibold text-muted-foreground" scope="col">Action</th>
+                  <th className={staffTable.th} scope="col">Status</th>
+                  <th className={staffTable.th} scope="col">Submitted</th>
+                  <th className={staffTable.th} scope="col">Employee note</th>
+                  <th className={staffTable.th} scope="col">Action</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className={staffTable.tbody}>
                 {rows.length ? (
                   rows.map((request) => {
                     const submitted = formatDateTime(request.created_at);
                     return (
-                      <tr className="border-t" key={request.id}>
-                        <td className="px-4 py-3 align-top">
-                          <Badge className="capitalize" variant={request.status === "approved" ? "secondary" : request.status === "rejected" ? "destructive" : "outline"}>
-                            {request.status}
-                          </Badge>
+                      <tr className={staffTable.tr} key={request.id}>
+                        <td className={staffTable.td}>
+                          <StatusPill tone={request.status === "approved" ? "emerald" : request.status === "rejected" ? "rose" : "amber"}>{request.status}</StatusPill>
                         </td>
-                        <td className="px-4 py-3 align-top">
+                        <td className={staffTable.td}>
                           <time dateTime={request.created_at}>{submitted}</time>
                         </td>
-                        <td className="max-w-md px-4 py-3 align-top break-words whitespace-pre-line text-muted-foreground">{request.note || "—"}</td>
-                        <td className="px-4 py-3 align-top">
+                        <td className={`${staffTable.td} max-w-md break-words whitespace-pre-line text-slate-500`}>{request.note || "—"}</td>
+                        <td className={staffTable.td}>
                           <Link
                             aria-label={`${request.status === "pending" ? "Review" : "View"} request submitted ${submitted}`}
                             className="font-medium text-primary underline underline-offset-4"
@@ -98,7 +97,7 @@ export function AdminProfileChangeRequestQueue() {
               </tbody>
             </table>
           </div>
-          <PaginatedTableControls onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={10} totalCount={result.data?.count ?? 0} />
+          {result.data?.count ? <PaginatedTableControls onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={10} totalCount={result.data.count} /> : null}
         </>
       )}
     </div>

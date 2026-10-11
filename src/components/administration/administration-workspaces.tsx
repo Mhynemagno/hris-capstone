@@ -9,7 +9,6 @@ import type { z } from "zod";
 import { AdministrationFormPanel } from "@/components/administration/administration-form-panel";
 import { PaginatedTableControls } from "@/components/administration/paginated-table-controls";
 import { DeleteRecordDialog } from "@/components/deletion/delete-record-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
 import { EmptyTableState } from "@/components/ui/empty-table-state";
@@ -18,6 +17,9 @@ import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { LoadingState } from "@/components/ui/loading-state";
 import { nativeSelectClassName } from "@/components/ui/native-select";
+import { staffButton } from "@/components/staff-shell/ui/staff-buttons";
+import { StatusPill } from "@/components/staff-shell/ui/status-pill";
+import { staffTable } from "@/components/staff-shell/ui/staff-table-card";
 import {
   useAuditLogs,
   useDepartments,
@@ -71,7 +73,7 @@ function ErrorWithRetry({ error, onRetry }: { error: Error; onRetry: () => void 
   return (
     <div className="space-y-3">
       <ErrorState message={error.message} />
-      <Button onClick={onRetry} type="button" variant="outline">Retry</Button>
+      <Button className={staffButton.secondary} onClick={onRetry} type="button" variant="outline">Retry</Button>
     </div>
   );
 }
@@ -85,24 +87,24 @@ function SuccessMessage({ message }: { message: string | null }) {
 }
 
 function StatusBadge({ active }: { active: boolean }) {
-  return <Badge variant={active ? "secondary" : "outline"}>{active ? "Active" : "Inactive"}</Badge>;
+  return <StatusPill tone={active ? "emerald" : "slate"}>{active ? "Active" : "Inactive"}</StatusPill>;
 }
 
 function DataTable({ caption, children, columns, minWidth = "min-w-[640px]" }: { caption: string; children: ReactNode; columns: string[]; minWidth?: string }) {
   return (
-    <div className="relative overflow-x-auto rounded-xl border bg-card">
-      <table className={cn("w-full text-left text-sm", minWidth)}>
+    <div className="overflow-x-auto rounded-2xl border border-slate-200/90 bg-white shadow-sm">
+      <table className={cn(staffTable.table, minWidth)}>
         <caption className="sr-only">{caption}</caption>
-        <thead className="bg-muted/60">
+        <thead className={staffTable.thead}>
           <tr>
             {columns.map((column) => (
-              <th className="px-4 py-3 font-semibold text-muted-foreground" key={column} scope="col">
+              <th className={staffTable.th} key={column} scope="col">
                 {column === "Actions" ? <span className="sr-only">Actions</span> : column}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody>{children}</tbody>
+        <tbody className={staffTable.tbody}>{children}</tbody>
       </table>
     </div>
   );
@@ -285,22 +287,22 @@ function ManagedUsersTable({ onDelete, onEdit, rows, showProfiles }: {
   return (
     <DataTable caption="Managed accounts" columns={["Account", "Role", "Status", "Actions"]} minWidth="min-w-[760px]">
       {rows.length ? rows.map((user) => (
-        <tr className="border-t" key={user.id}>
+        <tr className={staffTable.tr} key={user.id}>
           <td className="px-4 py-3 align-top">
             <p className="font-semibold">{user.full_name || "Unnamed account"}</p>
             <p className="break-all text-muted-foreground">{user.email}</p>
-            {user.pending_activation ? <Badge className="mt-2" variant="outline">Pending employee activation</Badge> : null}
+            {user.pending_activation ? <StatusPill className="mt-2" tone="slate">Pending employee activation</StatusPill> : null}
           </td>
           <td className="px-4 py-3 align-top">{roleLabels[user.role]}</td>
           <td className="px-4 py-3 align-top"><StatusBadge active={user.is_active} /></td>
           <RowActions>
             {showProfiles && user.employee_id ? (
-              <Link aria-label={`View profile for ${accountName(user)}`} className="inline-flex min-h-10 items-center rounded-lg border px-3 text-sm font-semibold hover:bg-muted" href={`/admin/users/${user.id}/profile`}>
+              <Link aria-label={`View profile for ${accountName(user)}`} className={staffButton.secondary} href={`/admin/users/${user.id}/profile`}>
                 View profile
               </Link>
             ) : null}
-            <Button aria-label={`Edit ${accountName(user)}`} onClick={() => onEdit(user)} size="sm" type="button" variant="outline">Edit</Button>
-            <Button aria-label={`Delete ${accountName(user)}`} onClick={() => onDelete(user)} size="sm" type="button" variant="destructive">Delete</Button>
+            <Button aria-label={`Edit ${accountName(user)}`} className={staffButton.secondary} onClick={() => onEdit(user)} size="sm" type="button" variant="outline">Edit</Button>
+            <Button aria-label={`Delete ${accountName(user)}`} className={staffButton.danger} onClick={() => onDelete(user)} size="sm" type="button" variant="destructive">Delete</Button>
           </RowActions>
         </tr>
       )) : <tr><EmptyTableState colSpan={4} message="No accounts match these filters. Clear the search or filters to see all accounts." /></tr>}
@@ -341,7 +343,7 @@ function ManagedAccountsWorkspace({ invite }: { invite: boolean }) {
       <ListBody loadingLabel="Loading accounts…" result={result}>
         <ManagedUsersTable onDelete={setDeleting} onEdit={setSelected} rows={result.data?.rows ?? []} showProfiles={invite} />
       </ListBody>
-      <PaginatedTableControls onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={10} totalCount={result.data?.count ?? 0} />
+      {result.data?.count ? <PaginatedTableControls onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={10} totalCount={result.data.count} /> : null}
       {invite ? (
         <AdministrationFormPanel description="Invite an internal account without exposing administrative credentials." onOpenChange={setInviteOpen} open={inviteOpen} title="Invite account">
           <InvitationForm
@@ -447,18 +449,18 @@ export function DepartmentsWorkspace() {
       <ListBody loadingLabel="Loading units / sections…" result={result}>
         <DataTable caption="Units / Sections" columns={["Unit / Section", "Status", "Actions"]} minWidth="min-w-[560px]">
           {rows.length ? rows.map((department) => (
-            <tr className="border-t" key={department.id}>
+            <tr className={staffTable.tr} key={department.id}>
               <td className="px-4 py-3 font-semibold">{department.name}</td>
               <td className="px-4 py-3"><StatusBadge active={department.is_active} /></td>
               <RowActions>
-                <Button aria-label={`Edit ${department.name}`} onClick={() => setEditing(department)} size="sm" type="button" variant="outline">Edit</Button>
-                <Button aria-label={`Delete ${department.name}`} onClick={() => { setNotice(null); setDeleting(department); }} size="sm" type="button" variant="destructive">Delete</Button>
+                <Button aria-label={`Edit ${department.name}`} className={staffButton.secondary} onClick={() => setEditing(department)} size="sm" type="button" variant="outline">Edit</Button>
+                <Button aria-label={`Delete ${department.name}`} className={staffButton.danger} onClick={() => { setNotice(null); setDeleting(department); }} size="sm" type="button" variant="destructive">Delete</Button>
               </RowActions>
             </tr>
           )) : <tr><EmptyTableState colSpan={3} message="No units / sections match these filters." /></tr>}
         </DataTable>
       </ListBody>
-      <PaginatedTableControls onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={10} totalCount={result.data?.count ?? 0} />
+      {result.data?.count ? <PaginatedTableControls onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={10} totalCount={result.data.count} /> : null}
       <AdministrationFormPanel description="Create a unit / section for personnel and job openings." onOpenChange={setCreating} open={creating} title="Add unit / section">
         <DepartmentForm onSaved={async (input) => { await save.mutateAsync({ input: { ...input, isActive: true } }); setCreating(false); setNotice(`${input.name} was added.`); }} pending={save.isPending} />
       </AdministrationFormPanel>
@@ -537,18 +539,18 @@ export function UnitStationsWorkspace() {
       <ListBody loadingLabel="Loading units…" result={result}>
         <DataTable caption="Units / Stations" columns={["Unit / Station", "Status", "Actions"]} minWidth="min-w-[560px]">
           {rows.length ? rows.map((unitStation) => (
-            <tr className="border-t" key={unitStation.id}>
+            <tr className={staffTable.tr} key={unitStation.id}>
               <td className="px-4 py-3 font-semibold">{unitStation.name}</td>
               <td className="px-4 py-3"><StatusBadge active={unitStation.is_active} /></td>
               <RowActions>
-                <Button aria-label={`Edit ${unitStation.name}`} onClick={() => setEditing(unitStation)} size="sm" type="button" variant="outline">Edit</Button>
-                <Button aria-label={`Delete ${unitStation.name}`} onClick={() => { setNotice(null); setDeleting(unitStation); }} size="sm" type="button" variant="destructive">Delete</Button>
+                <Button aria-label={`Edit ${unitStation.name}`} className={staffButton.secondary} onClick={() => setEditing(unitStation)} size="sm" type="button" variant="outline">Edit</Button>
+                <Button aria-label={`Delete ${unitStation.name}`} className={staffButton.danger} onClick={() => { setNotice(null); setDeleting(unitStation); }} size="sm" type="button" variant="destructive">Delete</Button>
               </RowActions>
             </tr>
           )) : <tr><EmptyTableState colSpan={3} message={searchTerm || status ? "No units match these filters." : "No units yet. Add the station's precincts and units so they can be assigned."} /></tr>}
         </DataTable>
       </ListBody>
-      <PaginatedTableControls onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={10} totalCount={result.data?.count ?? 0} />
+      {result.data?.count ? <PaginatedTableControls onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={10} totalCount={result.data.count} /> : null}
       <AdministrationFormPanel description="Create a unit / station for personnel records." onOpenChange={setCreating} open={creating} title="Add unit / station">
         <UnitStationForm onSaved={async (input) => { await save.mutateAsync({ input: { ...input, isActive: true } }); setCreating(false); setNotice(`${input.name} was added.`); }} pending={save.isPending} />
       </AdministrationFormPanel>
@@ -638,20 +640,20 @@ export function RanksWorkspace() {
       <ListBody loadingLabel="Loading ranks…" result={result}>
         <DataTable caption="Ranks" columns={["Code", "Name", "Order", "Status", "Actions"]} minWidth="min-w-[640px]">
           {rows.length ? rows.map((rank) => (
-            <tr className="border-t" key={rank.id}>
+            <tr className={staffTable.tr} key={rank.id}>
               <td className="px-4 py-3 font-semibold">{rank.code}</td>
               <td className="px-4 py-3">{rank.name}</td>
               <td className="px-4 py-3 text-muted-foreground">{rank.sort_order}</td>
               <td className="px-4 py-3"><StatusBadge active={rank.is_active} /></td>
               <RowActions>
-                <Button aria-label={`Edit ${rank.name}`} onClick={() => setEditing(rank)} size="sm" type="button" variant="outline">Edit</Button>
-                <Button aria-label={`Delete ${rank.name}`} onClick={() => { setNotice(null); setDeleting(rank); }} size="sm" type="button" variant="destructive">Delete</Button>
+                <Button aria-label={`Edit ${rank.name}`} className={staffButton.secondary} onClick={() => setEditing(rank)} size="sm" type="button" variant="outline">Edit</Button>
+                <Button aria-label={`Delete ${rank.name}`} className={staffButton.danger} onClick={() => { setNotice(null); setDeleting(rank); }} size="sm" type="button" variant="destructive">Delete</Button>
               </RowActions>
             </tr>
           )) : <tr><EmptyTableState colSpan={5} message="No ranks match these filters." /></tr>}
         </DataTable>
       </ListBody>
-      <PaginatedTableControls onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={10} totalCount={result.data?.count ?? 0} />
+      {result.data?.count ? <PaginatedTableControls onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={10} totalCount={result.data.count} /> : null}
       <AdministrationFormPanel description="Add a police rank. It becomes available in every unit / section." onOpenChange={setCreating} open={creating} title="Add rank">
         <RankForm onSaved={async (input) => { await save.mutateAsync({ input: { ...input, isActive: true }, rankId: undefined }); setCreating(false); setNotice(`${input.name} was added.`); }} pending={save.isPending} />
       </AdministrationFormPanel>
@@ -798,7 +800,7 @@ export function AuditLogsWorkspace() {
       <ListBody loadingLabel="Loading audit history…" result={result}>
         <DataTable caption="Audit history" columns={["Date", "Account", "Logs", "Action", "Details"]} minWidth="min-w-[760px]">
           {rows.length ? rows.map((entry) => (
-            <tr className="border-t" key={entry.id}>
+            <tr className={staffTable.tr} key={entry.id}>
               <td className="px-4 py-3 whitespace-nowrap"><time dateTime={entry.created_at}>{formatAuditDate(entry.created_at)}</time></td>
               <td className="px-4 py-3">{entry.actorLabel}</td>
               <td className="px-4 py-3">{entry.recordLabel}</td>
@@ -810,7 +812,7 @@ export function AuditLogsWorkspace() {
           )) : <tr><EmptyTableState colSpan={5} message={filtered ? "No audit entries match these filters." : "No audit entries have been recorded yet."} /></tr>}
         </DataTable>
       </ListBody>
-      <PaginatedTableControls onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={10} totalCount={result.data?.count ?? 0} />
+      {result.data?.count ? <PaginatedTableControls onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={10} totalCount={result.data.count} /> : null}
       {selected ? (
         <AdministrationFormPanel description="Audit entries are a permanent record and cannot be changed." onOpenChange={(open) => { if (!open) setSelected(null); }} open title="Audit record details">
           <div className="space-y-4">
