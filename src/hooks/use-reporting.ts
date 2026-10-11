@@ -1,9 +1,10 @@
 "use client";
 
+import { useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { queryKeys } from "@/lib/query-keys";
-import { getHrDashboard, getHrDashboardOverview, getHrReport, getManagementDashboard, getManagementReport, reportingFilters } from "@/queries/reporting";
+import { getFullReport, getHrDashboard, getHrDashboardOverview, getHrReport, getManagementDashboard, getManagementReport, reportingFilters } from "@/queries/reporting";
 import type { ReportFilters } from "@/schemas/reporting";
 
 type ReportingRole = "hr_personnel" | "management";
@@ -21,6 +22,10 @@ export function useManagementDashboard(input: Partial<Pick<ReportFilters, "start
 export function useReport(input: Partial<ReportFilters> & Pick<ReportFilters, "reportKey">, role: ReportingRole) {
   const filters = reportingFilters(input);
   return useQuery({ queryKey: queryKeys.reporting.report(role, filters), queryFn: () => role === "hr_personnel" ? getHrReport(filters) : getManagementReport(filters), staleTime: 60_000 });
+}
+
+export function useFetchFullReport(role: ReportingRole) {
+  return useCallback((input: unknown) => getFullReport(input, role), [role]);
 }
 
 export function useHrDashboardOverview() {

@@ -46,6 +46,22 @@ export async function getManagementReport(input: unknown) {
   return reportResponseSchema.parse(data);
 }
 
+/** Fetches every report page for a CSV export or printed report. */
+export async function getFullReport(input: unknown, role: "hr_personnel" | "management") {
+  const filters = reportingFilters(input);
+  const getReport = role === "hr_personnel" ? getHrReport : getManagementReport;
+  const first = await getReport({ ...filters, page: 1, pageSize: 100 });
+  const rows = [...first.rows];
+
+  for (let page = 2; rows.length < first.totalCount && page <= 100; page += 1) {
+    const next = await getReport({ ...filters, page, pageSize: 100 });
+    if (!next.rows.length) break;
+    rows.push(...next.rows);
+  }
+
+  return { ...first, rows, page: 1 };
+}
+
 export async function getHrDashboardOverview() {
   const { data, error } = await createBrowserSupabaseClient().rpc("get_hr_dashboard_overview");
   throwIfError(error);

@@ -1,10 +1,10 @@
 import userEvent from "@testing-library/user-event";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ useReport: vi.fn() }));
+const mocks = vi.hoisted(() => ({ useReport: vi.fn(), fetchFull: vi.fn() }));
 
-vi.mock("@/hooks/use-reporting", () => ({ useReport: mocks.useReport }));
+vi.mock("@/hooks/use-reporting", () => ({ useReport: mocks.useReport, useFetchFullReport: () => mocks.fetchFull }));
 vi.mock("@/hooks/use-administration", () => ({
   useDepartmentOptions: () => ({
     isLoading: false,
@@ -97,12 +97,54 @@ describe("ReportDetail filters", () => {
     expect(screen.getByText(/No records match these filters/)).toBeVisible();
   });
 
-  it("opens with the Generate filters and prints once the report has loaded", () => {
+  it("opens with the Generate filters and prints once the report has loaded", async () => {
+    mocks.fetchFull.mockResolvedValue(report);
     const print = vi.spyOn(window, "print").mockImplementation(() => undefined);
     render(<ReportDetail autoAction="print" initialFilters={{ startsOn: "2026-10-01", endsOn: "2026-10-11", departmentId: "1" }} reportKey="deployments" role="hr_personnel" />);
     expect(mocks.useReport).toHaveBeenLastCalledWith(expect.objectContaining({ startsOn: "2026-10-01", endsOn: "2026-10-11", departmentId: 1 }), "hr_personnel");
-    expect(print).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(print).toHaveBeenCalledTimes(1));
     expect(screen.getByText("SAN JUAN CITY POLICE STATION")).toBeInTheDocument();
     print.mockRestore();
+  });
+});
+
+describe("ReportDetail export (every page, not only the one on screen)", () => {
+  const rows = (from: number, to: number) => Array.from({ length: to - from + 1 }, (_, index) => ({ employee: `Officer ${from + index}`, status: "ongoing" }));
+  beforeEach(() => {
+    mocks.useReport.mockReset();
+    mocks.fetchFull.mockReset();
+    mocks.useReport.mockReturnValue({ isLoading: false, error: null, data: { ...report, rows: rows(1, 10), totalCount: 15, pageSize: 10 } });
+    mocks.fetchFull.mockResolvedValue({ ...report, rows: rows(1, 15), totalCount: 15, pageSize: 100 });
+  });
+
+  it("prints every row of the report", async () => {
+    let printedRows = 0;
+    const print = vi.spyOn(window, "print").mockImplementation(() => { printedRows = screen.getAllByRole("row").length - 1; });
+    render(<ReportDetail autoAction="print" reportKey="deployments" role="hr_personnel" />);
+    await waitFor(() => expect(print).toHaveBeenCalledTimes(1));
+    expect(mocks.fetchFull).toHaveBeenCalledWith(expect.objectContaining({ reportKey: "deployments" }));
+    expect(printedRows).toBe(15);
+    await waitFor(() => expect(screen.getAllByRole("row")).toHaveLength(11));
+    print.mockRestore();
+  });
+
+  it("downloads every row as CSV", async () => {
+    const blobs: Blob[] = [];
+    const createObjectURL = vi.fn((blob: Blob) => { blobs.push(blob); return "blob:report"; });
+    Object.assign(URL, { createObjectURL, revokeObjectURL: vi.fn() });
+    const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => undefined);
+    render(<ReportDetail reportKey="deployments" role="hr_personnel" />);
+    await userEvent.click(screen.getByRole("button", { name: "Download CSV" }));
+    await waitFor(() => expect(click).toHaveBeenCalledTimes(1));
+    const csv = await blobs[0].text();
+    expect(csv).toContain("Officer 15");
+    click.mockRestore();
+  });
+
+  it("says so when the full report cannot be fetched", async () => {
+    mocks.fetchFull.mockRejectedValue(new Error("Network down"));
+    render(<ReportDetail reportKey="deployments" role="hr_personnel" />);
+    await userEvent.click(screen.getByRole("button", { name: "Download CSV" }));
+    expect(await screen.findByText("The full report could not be loaded: Network down")).toBeInTheDocument();
   });
 });
