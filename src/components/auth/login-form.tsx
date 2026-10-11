@@ -1,69 +1,43 @@
 "use client";
 
-import { Badge, ChevronDown, Eye, EyeOff, Lock, Mail, ShieldUser } from "lucide-react";
+import { Badge, Eye, EyeOff, Lock, Mail } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-
-import type { AdminAccessLevel } from "@/schemas/auth";
 
 type LoginFormProps = {
   error?: string;
   notice?: string;
   /**
    * Which login the visitor chose; kept so a failed attempt returns to the same page.
-   * Employees sign in with their badge number, applicants with their email address, and HR / SysAd with either.
+   * Employees, HR and System Administrators sign in with their badge number, applicants with their email address.
    */
-  mode: "employee" | "applicant" | "admin";
-  /** The Admin & HR Login's preselected Access Level (Capstone UI sample.html). */
-  accessLevel?: AdminAccessLevel;
+  mode: "employee" | "applicant";
   nextPath: string;
 };
 
 const applicantInputClassName =
   "w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 text-xs font-medium text-slate-900 transition-all placeholder:text-slate-400 focus:border-transparent focus:bg-white focus:ring-2 focus:ring-blue-800 focus:outline-none";
 
-/** Capstone UI loginapp.html / sample.html: (Access Level,) email, password with show/hide, Forgot password?, Remember me, Login. */
-function CapstoneFields({ pending, accessLevel }: { pending: boolean; accessLevel?: AdminAccessLevel }) {
+/** Capstone UI loginapp.html: email, password with show/hide, Forgot password?, Remember me, Login. */
+function CapstoneFields({ pending }: { pending: boolean }) {
   const [passwordVisible, setPasswordVisible] = useState(false);
   return (
     <>
-      {accessLevel ? (
-        <div>
-          <label className="mb-1 block text-xs font-semibold text-slate-700" htmlFor="login-access-level">Access Level</label>
-          <div className="relative">
-            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-500">
-              <ShieldUser aria-hidden="true" className="size-4" />
-            </div>
-            <select
-              className={`${applicantInputClassName} cursor-pointer appearance-none pr-10 pl-10`}
-              defaultValue={accessLevel}
-              id="login-access-level"
-              name="access_level"
-            >
-              <option value="hr">HR Admin</option>
-              <option value="sysad">System Administrator</option>
-            </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-500">
-              <ChevronDown aria-hidden="true" className="size-3.5" />
-            </div>
-          </div>
-        </div>
-      ) : null}
       <div>
-        <label className="mb-1.5 block text-xs font-semibold text-slate-700" htmlFor="login-identifier">{accessLevel ? "Email Address or Badge Number" : "Email Address"}</label>
+        <label className="mb-1.5 block text-xs font-semibold text-slate-700" htmlFor="login-identifier">Email Address</label>
         <div className="relative">
           <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
             <Mail aria-hidden="true" className="size-4" />
           </div>
           <input
-            autoComplete={accessLevel ? "username" : "email"}
+            autoComplete="email"
             className={`${applicantInputClassName} pr-4 pl-10`}
             id="login-identifier"
-            inputMode={accessLevel ? "text" : "email"}
+            inputMode="email"
             name="identifier"
-            placeholder={accessLevel ? "juan.delacruz@gmail.com or 0-12345" : "juan.delacruz@email.com"}
+            placeholder="juan.delacruz@email.com"
             required
-            type={accessLevel ? "text" : "email"}
+            type="email"
           />
         </div>
       </div>
@@ -159,7 +133,7 @@ function EmployeeFields({ pending }: { pending: boolean }) {
   );
 }
 
-export function LoginForm({ accessLevel, error, mode, nextPath, notice }: LoginFormProps) {
+export function LoginForm({ error, mode, nextPath, notice }: LoginFormProps) {
   const [pending, setPending] = useState(false);
 
   useEffect(() => {
@@ -169,7 +143,7 @@ export function LoginForm({ accessLevel, error, mode, nextPath, notice }: LoginF
     return () => window.removeEventListener("pageshow", reset);
   }, []);
 
-  if (mode === "applicant" || mode === "admin") {
+  if (mode === "applicant") {
     return (
       <form
         action="/auth/login"
@@ -184,7 +158,7 @@ export function LoginForm({ accessLevel, error, mode, nextPath, notice }: LoginF
         <input name="as" type="hidden" value={mode} />
         {notice ? <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-800" role="status">{notice}</p> : null}
         {error ? <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700" role="alert">{error}</p> : null}
-        <CapstoneFields accessLevel={mode === "admin" ? (accessLevel ?? "hr") : undefined} pending={pending} />
+        <CapstoneFields pending={pending} />
       </form>
     );
   }

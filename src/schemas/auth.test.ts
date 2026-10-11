@@ -8,7 +8,6 @@ import {
   loginSchema,
   resetPasswordSchema,
 } from "./auth";
-import { adminAccessLevel, adminLoginSchema, ADMIN_ACCESS_LEVELS } from "./auth";
 
 const validRegistration = {
   email: "applicant@example.com",
@@ -126,21 +125,16 @@ describe("applicant login identifier", () => {
   });
 });
 
-describe("admin login schema", () => {
-  it("accepts an email, trimmed and lowercased", () => {
-    expect(adminLoginSchema.parse({ identifier: " MC.Balneg@Example.TEST ", password: "secret1" }).identifier).toEqual({ kind: "email", value: "mc.balneg@example.test" });
+describe("Employee / HR login schema", () => {
+  const employeeLogin = loginIdentifierSchema("employee");
+  it("accepts a badge number, trimmed and uppercased, for employees, HR and SysAd", () => {
+    expect(employeeLogin.parse({ identifier: " 0-00002 ", password: "secret1" }).identifier).toEqual({ kind: "badge_number", value: "0-00002" });
   });
-  it("accepts a badge number, trimmed and uppercased", () => {
-    expect(adminLoginSchema.parse({ identifier: " 0-00002 ", password: "secret1" }).identifier).toEqual({ kind: "badge_number", value: "0-00002" });
+  it("still accepts an email for an account without a badge, trimmed and lowercased", () => {
+    expect(employeeLogin.parse({ identifier: " MC.Balneg@Example.TEST ", password: "secret1" }).identifier).toEqual({ kind: "email", value: "mc.balneg@example.test" });
   });
   it("rejects an empty identifier and a malformed email", () => {
-    expect(adminLoginSchema.safeParse({ identifier: " ", password: "secret1" }).success).toBe(false);
-    expect(adminLoginSchema.safeParse({ identifier: "hr@", password: "secret1" }).success).toBe(false);
-  });
-  it("maps access levels to roles, defaulting to HR Admin", () => {
-    expect(adminAccessLevel("sysad")).toBe("sysad");
-    expect(adminAccessLevel("anything")).toBe("hr");
-    expect(ADMIN_ACCESS_LEVELS.sysad.role).toBe("system_administrator");
-    expect(ADMIN_ACCESS_LEVELS.hr.label).toBe("HR Admin");
+    expect(employeeLogin.safeParse({ identifier: " ", password: "secret1" }).success).toBe(false);
+    expect(employeeLogin.safeParse({ identifier: "hr@", password: "secret1" }).success).toBe(false);
   });
 });

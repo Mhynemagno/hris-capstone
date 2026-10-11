@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { POST } from "./route";
 
@@ -137,7 +137,7 @@ describe("password login route", () => {
   });
 });
 
-describe("admin & HR login", () => {
+describe("Employee / HR login for HR and System Administrators", () => {
   function clientWithRole(role: string | null) {
     const signOut = vi.fn().mockResolvedValue({ error: null });
     const from = vi.fn((table: string) => ({
@@ -153,57 +153,35 @@ describe("admin & HR login", () => {
 
   beforeEach(() => {
     signInWithPassword.mockReset();
-    cookieStore.set.mockReset();
-    cookieStore.delete.mockReset();
+    serviceRpc.mockReset();
     signInWithPassword.mockResolvedValue({ data: { user: { id: "u1" } }, error: null });
-  });
-
-  it("signs HR in with their email when HR Admin is chosen", async () => {
-    clientWithRole("hr_personnel");
-    const response = await POST(loginRequest({ as: "admin", access_level: "hr", identifier: "HR@Example.test", password: "secret1", remember: "on", next: "/hr" }));
-    expect(signInWithPassword).toHaveBeenCalledWith({ email: "hr@example.test", password: "secret1" });
-    expect(response.headers.get("location")).toBe("http://localhost/auth/continue?next=%2Fhr");
-    expect(cookieStore.delete).toHaveBeenCalledWith("hris-session-only");
-  });
-
-  it("signs a SysAd in when System Administrator is chosen", async () => {
-    clientWithRole("system_administrator");
-    const response = await POST(loginRequest({ as: "admin", access_level: "sysad", identifier: "admin@example.test", password: "secret1" }));
-    expect(response.headers.get("location")).toContain("/auth/continue");
-    expect(cookieStore.set).toHaveBeenCalledWith("hris-session-only", "1", expect.objectContaining({ path: "/" }));
-  });
-
-  it("signs an HR account straight back out when System Administrator is chosen", async () => {
-    const { signOut } = clientWithRole("hr_personnel");
-    const response = await POST(loginRequest({ as: "admin", access_level: "sysad", identifier: "hr@example.test", password: "secret1", next: "/admin" }));
-    expect(signOut).toHaveBeenCalled();
-    expect(response.headers.get("location")).toBe("http://localhost/login?as=admin&next=%2Fadmin&error=wrong_access_level&level=sysad");
-  });
-
-  it("refuses an employee account at the admin login", async () => {
-    const { signOut } = clientWithRole("employee");
-    const response = await POST(loginRequest({ as: "admin", access_level: "hr", identifier: "employee@example.test", password: "secret1" }));
-    expect(signOut).toHaveBeenCalled();
-    expect(response.headers.get("location")).toBe("http://localhost/login?as=admin&error=wrong_access_level&level=hr");
-  });
-
-  it("signs HR in with a badge number looked up server-side", async () => {
     vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "service-role");
-    serviceRpc.mockResolvedValue({ data: "hr@example.test", error: null });
+  });
+  afterEach(() => vi.unstubAllEnvs());
+
+  for (const [role, badge, email, next] of [["hr_personnel", "0-00002", "hr@example.test", "/hr"], ["system_administrator", "0-00004", "admin@example.test", "/admin"]] as const) {
+    it(`signs ${role} in with their badge number, looked up server-side`, async () => {
+      serviceRpc.mockResolvedValue({ data: email, error: null });
+      clientWithRole(role);
+      const response = await POST(loginRequest({ as: "employee", identifier: ` ${badge} `, password: "secret1", next }));
+      expect(serviceRpc).toHaveBeenCalledWith("resolve_login_identifier", { target_mode: "employee", target_identifier: badge });
+      expect(signInWithPassword).toHaveBeenCalledWith({ email, password: "secret1" });
+      expect(response.headers.get("location")).toBe(`http://localhost/auth/continue?next=${encodeURIComponent(next)}`);
+    });
+  }
+
+  it("still signs in an account without a badge by email, without a lookup", async () => {
     clientWithRole("hr_personnel");
-    const response = await POST(loginRequest({ as: "admin", access_level: "hr", identifier: " 0-00002 ", password: "secret1" }));
-    expect(serviceRpc).toHaveBeenCalledWith("resolve_login_identifier", { target_mode: "employee", target_identifier: "0-00002" });
+    const response = await POST(loginRequest({ as: "employee", identifier: "HR@Example.test", password: "secret1" }));
+    expect(serviceRpc).not.toHaveBeenCalled();
     expect(signInWithPassword).toHaveBeenCalledWith({ email: "hr@example.test", password: "secret1" });
     expect(response.headers.get("location")).toBe("http://localhost/auth/continue?next=%2F");
-    vi.unstubAllEnvs();
   });
 
-  it("rejects an unknown badge number without signing in", async () => {
-    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "service-role");
+  it("treats a post from the old Admin & HR Login as the Employee / HR login", async () => {
     serviceRpc.mockResolvedValue({ data: null, error: null });
-    const response = await POST(loginRequest({ as: "admin", access_level: "hr", identifier: "9-99999", password: "secret1" }));
-    expect(response.headers.get("location")).toBe("http://localhost/login?as=admin&error=invalid_credentials");
+    const response = await POST(loginRequest({ as: "admin", access_level: "sysad", identifier: "9-99999", password: "secret1" }));
+    expect(response.headers.get("location")).toBe("http://localhost/login?as=employee&error=invalid_credentials");
     expect(signInWithPassword).not.toHaveBeenCalled();
-    vi.unstubAllEnvs();
   });
 });

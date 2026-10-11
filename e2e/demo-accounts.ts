@@ -1,15 +1,14 @@
 import type { Page } from "@playwright/test";
 
 /**
- * Employees sign in with their badge number; applicants, HR and System Administrators with their email
- * address (HR and SysAd at the Admin & HR Login, choosing their Access Level).
- * These are the fictitious accounts from supabase/seed.sql.
+ * Employees, HR and System Administrators sign in with their badge number at the Employee / HR login;
+ * applicants with their email address. These are the fictitious accounts from supabase/seed.sql.
  */
-export type LoginAccount = { mode: "employee" | "applicant" | "admin"; identifier: string; accessLevel?: "hr" | "sysad" };
+export type LoginAccount = { mode: "employee" | "applicant"; identifier: string };
 
 const DEMO_ACCOUNTS: Record<string, LoginAccount> = {
-  "demo.admin@example.test": { mode: "admin", identifier: "demo.admin@example.test", accessLevel: "sysad" },
-  "demo.hr@example.test": { mode: "admin", identifier: "demo.hr@example.test", accessLevel: "hr" },
+  "demo.admin@example.test": { mode: "employee", identifier: "0-00004" },
+  "demo.hr@example.test": { mode: "employee", identifier: "0-00002" },
   "demo.management@example.test": { mode: "employee", identifier: "0-00003" },
   "demo.employee@example.test": { mode: "employee", identifier: "0-00001" },
   "demo.applicant@example.test": { mode: "applicant", identifier: "demo.applicant@example.test" },
@@ -24,8 +23,7 @@ export function loginAccountFor(account: string | LoginAccount): LoginAccount {
 
 /** Fills the login form already on screen (the employee or applicant login) for the account. */
 export async function fillLogin(page: Page, account: string | LoginAccount, password: string) {
-  const { mode, identifier, accessLevel } = loginAccountFor(account);
-  if (mode === "admin") await page.getByLabel("Access Level").selectOption(accessLevel ?? "hr");
+  const { mode, identifier } = loginAccountFor(account);
   await page.getByLabel(mode === "employee" ? "Badge Number" : "Email Address").fill(identifier);
   await page.getByRole("textbox", { name: "Password" }).fill(password);
   await page.getByRole("button", { name: "Login" }).click();

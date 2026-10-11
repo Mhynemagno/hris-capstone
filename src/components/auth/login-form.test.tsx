@@ -60,12 +60,10 @@ describe("LoginForm", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("We could not sign you in.");
   });
 
-  it("posts the Access Level with the admin login", () => {
-    const { container } = render(<LoginForm accessLevel="sysad" mode="admin" nextPath="/admin" />);
-    expect(screen.getByLabelText("Access Level")).toHaveValue("sysad");
-    expect(container.querySelector('input[name="as"]')).toHaveValue("admin");
-    const identifier = screen.getByLabelText("Email Address or Badge Number");
-    expect(identifier).toHaveAttribute("type", "text");
-    expect(identifier).toHaveAttribute("placeholder", "juan.delacruz@gmail.com or 0-12345");
+  it("has no Access Level: employees, HR and SysAd all sign in with their badge number", () => {
+    const { container } = render(<LoginForm mode="employee" nextPath="/hr" />);
+    expect(screen.queryByLabelText("Access Level")).not.toBeInTheDocument();
+    expect(container.querySelector('input[name="as"]')).toHaveValue("employee");
+    expect(screen.getByLabelText("Badge Number")).toHaveAttribute("type", "text");
   });
 });
