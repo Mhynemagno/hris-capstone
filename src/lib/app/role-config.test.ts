@@ -64,8 +64,18 @@ describe("role configuration", () => {
     expect(getRoleConfig("system_administrator").navigation.some((item) => item.href === "/admin/roles")).toBe(false);
   });
 
-  it("keeps employee and management menus with tidied labels", () => {
-    expect(getRoleConfig("employee").navigation.map(({ label }) => label)).toEqual(["Dashboard", "My profile", "Leave", "Deployments", "Promotion", "Attendance", "Scan"]);
+  it("uses the Capstone employee navigation without a standalone scan page", () => {
+    expect(getRoleConfig("employee").navigation.map(({ href, label }) => ({ href, label }))).toEqual([
+      { href: "/employee", label: "Dashboard" },
+      { href: "/employee/profile", label: "My Profile 201" },
+      { href: "/employee/leave", label: "My Leaves" },
+      { href: "/employee/deployments", label: "My Deployments" },
+      { href: "/employee/promotion-eligibility", label: "Promotion Status" },
+      { href: "/employee/attendance", label: "My Attendance" },
+    ]);
+  });
+
+  it("keeps the management menu unchanged", () => {
     expect(getRoleConfig("management").navigation.map(({ href, label }) => ({ href, label }))).toEqual([
       { href: "/management", label: "Dashboard" },
       { href: "/reports", label: "Reports" },

@@ -91,21 +91,24 @@ test.describe("leave journey", () => {
     const reason = `E2E leave reason ${runId}`;
     const offset = 60 + Math.floor(Math.random() * 200);
     await signIn(page, "demo.employee@example.test", "/employee");
-    await page.goto("/employee/leave/new");
+    await page.goto("/employee/leave");
+    await page.getByRole("button", { name: "Request New Leave" }).click();
+    const application = page.getByRole("dialog", { name: "File Leave Application" });
+    await expect(application).toBeVisible();
 
     await page.getByLabel(/^Leave type/).selectOption({ label: "Demo leave" });
     await page.getByLabel(/^Start date/).fill(isoDate(offset + 3));
     await page.getByLabel(/^End date/).fill(isoDate(offset));
     await page.getByLabel(/^Notes/).fill(reason);
-    await page.getByRole("button", { name: "Submit request" }).click();
+    await page.getByRole("button", { name: "Submit Application" }).click();
     await expect(page.getByText(/end date/i).and(page.getByRole("alert"))).toBeVisible();
 
     await page.getByLabel(/^End date/).fill(isoDate(offset + 4));
-    await page.getByRole("button", { name: "Submit request" }).click();
+    await page.getByRole("button", { name: "Submit Application" }).click();
     await expect(page.getByRole("status").filter({ hasText: /submitted/i })).toBeVisible();
 
     await page.goto("/employee/leave");
-    const request = page.getByRole("article").filter({ hasText: reason });
+    const request = page.getByRole("row").filter({ hasText: reason });
     await expect(request).toContainText("For Approval");
     await signOut(page);
 
@@ -127,7 +130,7 @@ test.describe("leave journey", () => {
 
     await signIn(page, "demo.employee@example.test", "/employee");
     await page.goto("/employee/leave");
-    await expect(page.getByRole("article").filter({ hasText: reason })).toContainText(/approved/i);
+    await expect(page.getByRole("row").filter({ hasText: reason })).toContainText(/approved/i);
     await page.goto("/notifications");
     await expect(page.getByRole("heading", { name: "Notifications" })).toBeVisible();
     await expect(page.getByText(/leave request/i).first()).toBeVisible();
@@ -254,7 +257,7 @@ test.describe("read-only and public journeys", () => {
     await form.getByLabel(/^Summary/).fill("Road works near the station this weekend.");
     await form.getByLabel(/^Announcement Text/).fill("First paragraph.\n\nSecond paragraph.");
     await form.getByRole("button", { name: /Save Announcement/ }).click();
-    await expect(page.getByText("Draft saved")).toBeVisible();
+    await expect(page.getByText("Draft saved", { exact: true })).toBeVisible();
 
     await page.getByRole("button", { name: `Publish ${title}` }).click();
     await expect(page.getByText("Announcement published")).toBeVisible();

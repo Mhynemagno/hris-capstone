@@ -26,6 +26,7 @@ describe("LoginForm", () => {
   it("labels the fields, links to password recovery, and toggles the password inside its input", () => {
     render(<LoginForm mode="employee" nextPath="/" />);
     expect(screen.getByLabelText("Badge Number")).toHaveAttribute("type", "text");
+    expect(screen.getByLabelText("Badge Number")).toHaveAttribute("placeholder", "0-12345");
     expect(screen.queryByLabelText("Email or badge number")).not.toBeInTheDocument();
     expect(document.querySelector('input[name="as"]')).toHaveValue("employee");
     const password = screen.getByLabelText("Password");
@@ -34,6 +35,7 @@ describe("LoginForm", () => {
     fireEvent.click(screen.getByRole("button", { name: "Show password" }));
     expect(password).toHaveAttribute("type", "text");
     expect(screen.getByRole("button", { name: "Hide password" }).parentElement).toContainElement(password);
+    expect(screen.getByRole("checkbox", { name: "Remember me on this device" })).toBeInTheDocument();
   });
 
   it("asks applicants for their email address and offers Remember me", () => {

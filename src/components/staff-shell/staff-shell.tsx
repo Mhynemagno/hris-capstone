@@ -87,6 +87,7 @@ export function StaffShell({ children, config, email, displayName }: StaffShellP
     .filter((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))
     .toSorted((left, right) => right.href.length - left.href.length)[0];
   const redesigned = isRedesignedStaffRoute(pathname);
+  const portalLabel = config.role === "employee" ? "Personnel Portal" : "HRDD Portal";
 
   // Unredesigned pages' dialogs render in portals under <body>; scoping <html> gives them the workspace tokens.
   useEffect(() => {
@@ -120,14 +121,14 @@ export function StaffShell({ children, config, email, displayName }: StaffShellP
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="truncate text-xs font-extrabold tracking-tight text-slate-900">SAN JUAN CITY POLICE STATION</span>
-                  <span className="hidden rounded-md border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 sm:inline">HRDD Portal</span>
+                  <span className="hidden rounded-md border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 sm:inline">{portalLabel}</span>
                 </div>
                 <p className="truncate text-[10px] font-medium text-slate-500">{staffPageSubtitle(pathname)}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <NotificationDrawer onError={notifyStaffError} tone="light" />
-              <CapstoneAccountMenu afterLogoutHref="/" ariaLabel={`Account menu for ${email ?? displayName}`} email={email} name={displayName} onError={notifyStaffError} tone="light" />
+              <CapstoneAccountMenu afterLogoutHref="/" ariaLabel={`Account menu for ${email ?? displayName}`} email={email} name={displayName} onError={notifyStaffError} profileHref={config.role === "employee" ? "/employee/profile" : undefined} tone="light" />
             </div>
           </header>
           <div className={cn("flex-1", redesigned ? "space-y-6 p-4 sm:p-6" : "workspace bg-background p-4 text-foreground sm:p-6 lg:p-8")}>

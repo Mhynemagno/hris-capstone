@@ -605,9 +605,21 @@ export type PromotionReadinessRow = {
 };
 
 export type MyPromotionReadiness = {
+  criterionId: string;
+  currentRankName: string;
   targetRankName: string;
-  evaluatedOn: string;
+  targetRankCode: string;
+  evaluatedOn: string | null;
+  docket: EmployeePromotionDocket | null;
   readiness: PromotionReadiness;
+};
+
+/** An employee's submitted request for HR to review a rank-matched promotion criterion. */
+export type EmployeePromotionDocket = {
+  id: string;
+  criterionId: string;
+  remarks: string;
+  submittedAt: string;
 };
 
 export type AttendanceStatus = "present" | "late" | "absent" | "incomplete";

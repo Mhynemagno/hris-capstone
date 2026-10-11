@@ -1,5 +1,5 @@
-import { EmployeeRecordSummary } from "@/components/personnel-records/employee-record-summary";
+import { EmployeeDashboard } from "@/components/employee/employee-dashboard";
 
 export default function EmployeePage() {
-  return <EmployeeRecordSummary variant="summary" />;
+  return <EmployeeDashboard />;
 }

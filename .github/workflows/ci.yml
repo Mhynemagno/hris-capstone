@@ -71,15 +71,19 @@ jobs:
       - name: Install app dependencies for the browser tests
         run: npm ci
 
-      - name: Expose the local Supabase URL and key to Playwright
+      - name: Expose the local Supabase URL and keys to Playwright
         run: |
           supabase status --output env > supabase.env
           url=$(grep '^API_URL=' supabase.env | cut -d= -f2- | tr -d '"')
           key=$(grep '^PUBLISHABLE_KEY=' supabase.env | cut -d= -f2- | tr -d '"')
           [ -n "$key" ] || key=$(grep '^ANON_KEY=' supabase.env | cut -d= -f2- | tr -d '"')
+          service=$(grep '^SERVICE_ROLE_KEY=' supabase.env | cut -d= -f2- | tr -d '"')
+          [ -n "$service" ] || service=$(grep '^SECRET_KEY=' supabase.env | cut -d= -f2- | tr -d '"')
           rm supabase.env
+          echo "::add-mask::$service"
           echo "HRIS_E2E_SUPABASE_URL=$url" >> "$GITHUB_ENV"
           echo "HRIS_E2E_SUPABASE_PUBLISHABLE_KEY=$key" >> "$GITHUB_ENV"
+          echo "HRIS_E2E_SUPABASE_SERVICE_ROLE_KEY=$service" >> "$GITHUB_ENV"
 
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium

@@ -436,14 +436,14 @@ test.describe("Objective 4: promotion eligibility tracker", () => {
 
     await page.goto("/hr/promotions");
     // One row per employee, from their latest review, with readiness checked against today's records.
-    const promotionRow = page.getByRole("row").filter({ has: page.getByRole("button", { name: /Open review for .*PCPL/ }) }).filter({ hasText: formatDate(isoDate(0)) ?? isoDate(0) }).first();
+    const promotionRow = page.getByRole("row").filter({ has: page.getByRole("button", { name: /Open review for .*PCPL/ }) }).filter({ hasText: employee.lastName }).first();
     await expect(promotionRow).toBeVisible({ timeout: 15_000 });
     await expect(promotionRow).toContainText("Ready");
     await signOut(page);
 
     await signIn(page, EMPLOYEE.email, EMPLOYEE.home);
     await page.goto("/employee/promotion-eligibility");
-    await expect(page.getByRole("heading", { name: "Promotion", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Promotion Status" })).toBeVisible();
   });
 });
 
@@ -461,12 +461,14 @@ test.describe("Objective 5: personnel self-service portal", () => {
     await page.goto("/employee/profile");
     await expect(page.getByText("Demo Employee").first()).toBeVisible();
 
-    await page.goto("/employee/leave/new");
+    await page.goto("/employee/leave");
+    await page.getByRole("button", { name: "Request New Leave" }).click();
+    await expect(page.getByRole("dialog", { name: "File Leave Application" })).toBeVisible();
     await page.getByLabel(/^Leave type/).selectOption({ label: "Demo leave" });
     await page.getByLabel(/^Start date/).fill(start);
     await page.getByLabel(/^End date/).fill(start);
     await page.getByLabel(/^Notes/).fill(reason);
-    await page.getByRole("button", { name: "Submit request" }).click();
+    await page.getByRole("button", { name: "Submit Application" }).click();
     await expect(page.getByRole("status").filter({ hasText: /Leave request submitted/ })).toBeVisible();
     await signOut(page);
 
@@ -483,7 +485,7 @@ test.describe("Objective 5: personnel self-service portal", () => {
 
     await signIn(page, EMPLOYEE.email, EMPLOYEE.home);
     await page.goto("/employee/leave");
-    await expect(page.getByRole("article").filter({ hasText: reason })).toContainText(/rejected/i);
+    await expect(page.getByRole("row").filter({ hasText: reason })).toContainText(/rejected|declined/i);
     await page.goto("/notifications");
     await expect(page.getByRole("link", { name: "View details for Leave request rejected" }).first()).toBeVisible();
     const unread = page.getByRole("button", { name: "Mark Leave request rejected as read" });
@@ -533,8 +535,10 @@ test.describe("Objective 6: attendance monitoring and reporting", () => {
 
     await signIn(page, EMPLOYEE.email, EMPLOYEE.home);
     await page.goto("/employee/attendance");
-    await expect(page.getByRole("heading", { name: "My attendance" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Scan attendance" }).first()).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "My Attendance" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Scan Attendance Now" })).toBeVisible();
+    await page.getByRole("button", { name: "Scan Attendance Now" }).click();
+    await expect(page.getByText("Record Attendance with Face Verification")).toBeVisible();
   });
 });
 

@@ -12,18 +12,19 @@ import { openLoginAndSignIn } from "./demo-accounts";
 const WORKSPACE_MIN_FONT = 12;
 const APPLICANT_MIN_FONT = 9;
 const HR_MIN_FONT = 9;
+const EMPLOYEE_MIN_FONT = 9; // the employee side copies its Capstone UI mockups 1:1 too (spec 2026-10-11 employee)
 const sets: [string, string, string[]][] = [
   ["demo.admin@example.test", "/admin", ["/admin", "/admin/users", "/admin/departments", "/admin/ranks", "/admin/settings", "/admin/audit-logs", "/admin/profile-change-requests", "/admin/integrations/attendance"]],
   ["demo.hr@example.test", "/hr", ["/hr", "/hr/employees", "/hr/jobs", "/hr/applications", "/hr/leave-requests", "/hr/deployments", "/hr/promotions", "/hr/attendance", "/hr/public-site", "/reports"]],
-  ["demo.employee@example.test", "/employee", ["/employee", "/employee/profile", "/employee/leave", "/employee/deployments", "/employee/attendance", "/notifications"]],
+  ["demo.employee@example.test", "/employee", ["/employee", "/employee/profile", "/employee/leave", "/employee/deployments", "/employee/attendance", "/employee/promotion-eligibility", "/notifications"]],
   ["demo.applicant@example.test", "/applicant", ["/applicant", "/applicant/profile", "/applicant/applications", "/applicant/documents", "/jobs"]],
   ["demo.management@example.test", "/management", ["/management", "/reports"]],
 ];
 for (const [email, home, paths] of sets) {
   test(`${home} screens fit a phone and keep text readable`, async ({ page }) => {
     test.setTimeout(180_000);
-    const minFont = home === "/applicant" ? APPLICANT_MIN_FONT : home === "/hr" ? HR_MIN_FONT : WORKSPACE_MIN_FONT;
-    const widths = home === "/hr" ? [390, 1024, 1366] : [390];
+    const minFont = home === "/applicant" ? APPLICANT_MIN_FONT : home === "/hr" ? HR_MIN_FONT : home === "/employee" ? EMPLOYEE_MIN_FONT : WORKSPACE_MIN_FONT;
+    const widths = home === "/hr" ? [390, 1024, 1366] : home === "/employee" ? [390, 1366] : [390];
     await page.setViewportSize({ width: 390, height: 844 });
     await openLoginAndSignIn(page, email, process.env.HRIS_E2E_PASSWORD ?? "DemoPass!2026");
     await page.waitForURL(new RegExp(home + "$"));

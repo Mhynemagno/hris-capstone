@@ -8,6 +8,7 @@ describe("staff page meta", () => {
     expect(staffPageSubtitle("/hr/leave-requests")).toBe("Leave Management & Personnel Entitlements");
     expect(staffPageSubtitle("/reports/deployments")).toBe("Personnel Management • Official Analytics & Station Reports");
     expect(staffPageSubtitle("/hr")).toBe("Dashboard • Manpower, Attendance & Deployment Overview");
+    expect(staffPageSubtitle("/employee/attendance")).toBe("Personnel Self-Service • My Attendance");
   });
   it("knows which pages are redesigned (the rest keep the workspace look)", () => {
     expect(isRedesignedStaffRoute("/hr/deployments")).toBe(true);
@@ -15,5 +16,6 @@ describe("staff page meta", () => {
     expect(isRedesignedStaffRoute("/hr/employees")).toBe(false);
     expect(isRedesignedStaffRoute("/reports")).toBe(true);
     expect(isRedesignedStaffRoute("/reports/deployments")).toBe(false);
+    expect(isRedesignedStaffRoute("/employee/promotion-eligibility")).toBe(true);
   });
 });

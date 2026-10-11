@@ -77,11 +77,16 @@ test("face registration requires consent and guides the capture", async ({ page 
 });
 
 test("an employee reaches face attendance with their own login, without HR", async ({ page }) => {
-  await page.goto("/employee/attendance/scan");
+  await page.goto("/employee/attendance");
   await fillLogin(page, "demo.employee@example.test", demoPassword);
-  await expect(page).toHaveURL(/\/employee\/attendance\/scan$/);
-  // The demo employee has no face registration, so the page explains how to get one.
-  await expect(page.getByText(/Face registration needed|Record attendance with your face/)).toBeVisible();
+  await expect(page).toHaveURL(/\/employee\/attendance$/);
+  await expect(page.getByText("Attendance Logs")).toBeVisible();
+  // The retired standalone scan route sends the employee back to Attendance.
+  await page.goto("/employee/attendance/scan");
+  await expect(page).toHaveURL(/\/employee\/attendance$/);
+  // Scanning starts from Attendance; the demo employee has no face registration, so the scanner explains how to get one.
+  await page.getByRole("button", { name: "Scan Attendance Now" }).click();
+  await expect(page.getByText(/Face registration needed|Scanner ready|Loading face models/)).toBeVisible();
 
   await page.goto("/hr/attendance/kiosk");
   await expect(page).toHaveURL(/\/unauthorized$/);

@@ -8,6 +8,8 @@ vi.mock("@/hooks/use-personnel-records", () => ({
   useRemoveMyEmployeeProfilePhoto: () => ({ isPending: false, mutateAsync: vi.fn() }),
   useReplaceMyEmployeeProfilePhoto: () => ({ isPending: false, mutateAsync: vi.fn() }),
   useUpdateMyGovernmentIds: () => ({ isPending: false, mutateAsync: vi.fn() }),
+  useReplacePersonnelDocument: () => ({ isPending: false, mutateAsync: vi.fn() }),
+  useRemovePersonnelDocument: () => ({ isPending: false, mutateAsync: vi.fn() }),
 }));
 
 vi.mock("@/hooks/use-administration", () => ({
@@ -113,7 +115,7 @@ describe("EmployeeProfile", () => {
     expect(eligibility).not.toHaveTextContent("Civil Service Commission");
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Service history" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("region", { name: "Certification / Training" })).not.toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Certification / Training" })).toHaveTextContent("No certification or training recorded.");
 
     rerender(<EmployeeProfile certifications={[{ id: "c1", employee_id: employee.id, name: "First Aid", issuer: "Red Cross", credential_id: null, issued_on: "2025-02-01", expires_on: null, notes: null }]} employee={employee} qualifications={[]} serviceHistory={[{ id: "s1", employee_id: employee.id, department_id: 3, rank_id: 9, unit_station: null, employment_title: null, started_on: "2024-01-01", ended_on: null, notes: null }]} trainings={[]} />);
 
@@ -122,6 +124,22 @@ describe("EmployeeProfile", () => {
     expect(screen.getByRole("region", { name: "Service history" })).toHaveTextContent(/Intelligence Section · January 1, 2024 – present/);
     expect(screen.getByRole("region", { name: "Certification / Training" })).toHaveTextContent("First Aid");
     expect(screen.getByRole("region", { name: "Certification / Training" })).toHaveTextContent("Completed February 1, 2025");
+  });
+
+  it("shows a heading level that fits the page and a status pill derived from employment status", () => {
+    const { rerender } = render(<EmployeeProfile employee={employee} headingLevel={2} trainings={[]} />);
+    expect(screen.getByRole("heading", { level: 2, name: "Ada Dela Cruz" })).toBeInTheDocument();
+    expect(screen.getByText("Active")).toBeInTheDocument();
+    rerender(<EmployeeProfile employee={{ ...employee, employment_status: "retired" }} headingLevel={2} trainings={[]} />);
+    expect(screen.getByText("Retired")).toBeInTheDocument();
+  });
+
+  it("lists trainings inside Certification / Training without a separate Training records heading", () => {
+    render(<EmployeeProfile employee={employee} qualifications={[]} trainings={[{ id: "t1", employee_id: employee.id, course_name: "Leadership Development", provider: "Police Academy", completed_on: "2026-01-01", expires_on: null, hours: 16, notes: null }]} />);
+    const card = screen.getByRole("region", { name: "Certification / Training" });
+    expect(card).toHaveTextContent("Leadership Development");
+    expect(card).toHaveTextContent("Completed January 1, 2026");
+    expect(screen.queryByRole("heading", { name: "Training records" })).not.toBeInTheDocument();
   });
 
   it("hides eligibility when it is not provided (administrator view)", () => {

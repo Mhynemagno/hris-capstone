@@ -38,3 +38,18 @@ describe("StaffShell (HR)", () => {
     expect(screen.getByRole("heading", { name: "Employees" }).closest(".workspace")).not.toBeNull();
   });
 });
+
+describe("StaffShell (employee)", () => {
+  beforeEach(() => usePathname.mockReturnValue("/employee/attendance"));
+
+  it("uses the employee sidebar wording, slate inactive labels, and profile account link", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    render(<StaffShell config={ROLE_CONFIG.employee} displayName="Pat Demo Employee" email="employee@example.test"><h1>Attendance</h1></StaffShell>);
+    const nav = screen.getByRole("navigation", { name: "Main navigation" });
+    expect(within(nav).getByRole("link", { name: "My Attendance" })).toHaveAttribute("aria-current", "page");
+    expect(within(nav).getByRole("link", { name: "My Leaves" })).toHaveClass("text-slate-400");
+    expect(within(nav).queryByRole("link", { name: "Scan" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Account menu for employee@example.test" }));
+    expect(await screen.findByRole("menuitem", { name: "Profile" })).toHaveAttribute("href", "/employee/profile");
+  });
+});
