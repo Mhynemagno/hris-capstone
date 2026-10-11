@@ -22,7 +22,10 @@ export async function GET(request: NextRequest) {
     // Keep where the visitor was going (e.g. the portal link in an email) and pick the matching login.
     const nextPath = getSafeNextPath(request.nextUrl.searchParams.get("next"));
     const login = new URL("/login", request.url);
-    login.searchParams.set("as", isWithin(nextPath, "/applicant") || isWithin(nextPath, "/jobs") ? "applicant" : "employee");
+    const mode = isWithin(nextPath, "/applicant") || isWithin(nextPath, "/jobs")
+      ? "applicant"
+      : isWithin(nextPath, "/hr") || isWithin(nextPath, "/admin") ? "admin" : "employee";
+    login.searchParams.set("as", mode);
     if (nextPath !== "/") login.searchParams.set("next", nextPath);
     return NextResponse.redirect(login);
   }

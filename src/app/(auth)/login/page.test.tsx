@@ -6,7 +6,7 @@ vi.mock("@/lib/recruitment/recruitment-notice", () => ({ getRecruitmentNotice: a
 
 import LoginPage from "./page";
 
-async function renderLogin(params: { as?: string; error?: string; message?: string; next?: string } = {}) {
+async function renderLogin(params: { as?: string; error?: string; level?: string; message?: string; next?: string } = {}) {
   render(await LoginPage({ searchParams: Promise.resolve(params) }));
 }
 
@@ -16,7 +16,7 @@ describe("LoginPage", () => {
   });
 
   it("keeps the return path and messages when choosing the login for the visitor", async () => {
-    await expect(renderLogin({ error: "account_disabled", next: "/hr" })).rejects.toThrow("REDIRECT /login?as=employee&next=%2Fhr&error=account_disabled");
+    await expect(renderLogin({ error: "account_disabled", next: "/employee" })).rejects.toThrow("REDIRECT /login?as=employee&next=%2Femployee&error=account_disabled");
     await expect(renderLogin({ message: "email_confirmed" })).rejects.toThrow("REDIRECT /login?as=applicant&message=email_confirmed");
   });
 
@@ -63,5 +63,36 @@ describe("LoginPage", () => {
     await renderLogin({ as: "applicant", message: "email_confirmed" });
     expect(screen.getByRole("status")).toHaveTextContent("Email confirmed. Please log in.");
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("renders the Admin & HR Login (sample.html)", async () => {
+    await renderLogin({ as: "admin" });
+    expect(screen.getByText("Administrative Access")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Admin & HR Login" })).toBeInTheDocument();
+    expect(screen.getByText("Authorized management portal for HR Personnel Officers and System Administrators.")).toBeInTheDocument();
+    expect(screen.getByLabelText("Access Level")).toHaveValue("hr");
+    expect(screen.getByRole("option", { name: "System Administrator" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Email Address")).toHaveAttribute("type", "email");
+    expect(screen.getByText("System Management & Administration")).toBeInTheDocument();
+    expect(screen.getByText("Management Portal")).toBeInTheDocument();
+    expect(screen.queryByText(/Current Hiring Pool for/)).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Login as Employee" })).toHaveAttribute("href", "/login?as=employee");
+    expect(document.querySelector('input[name="as"]')).toHaveValue("admin");
+  });
+
+  it("explains an Access Level mismatch and keeps the chosen level", async () => {
+    await renderLogin({ as: "admin", error: "wrong_access_level", level: "sysad" });
+    expect(screen.getByRole("alert")).toHaveTextContent("This account does not have System Administrator access.");
+    expect(screen.getByLabelText("Access Level")).toHaveValue("sysad");
+  });
+
+  it("sends visitors bound for /hr or /admin to the admin login", async () => {
+    await expect(renderLogin({ next: "/hr/jobs" })).rejects.toThrow("REDIRECT /login?as=admin&next=%2Fhr%2Fjobs");
+    await expect(renderLogin({ next: "/admin" })).rejects.toThrow("REDIRECT /login?as=admin&next=%2Fadmin");
+  });
+
+  it("links the employee login to the admin login", async () => {
+    await renderLogin({ as: "employee" });
+    expect(screen.getByRole("link", { name: "Admin & HR Login" })).toHaveAttribute("href", "/login?as=admin");
   });
 });
