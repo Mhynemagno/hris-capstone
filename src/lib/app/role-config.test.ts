@@ -29,7 +29,6 @@ describe("role configuration", () => {
     expect(getRoleConfig("applicant").navigation.map(({ href, label, icon }) => ({ href, label, icon }))).toEqual([
       { href: "/applicant", label: "Dashboard", icon: "LayoutDashboard" },
       { href: "/applicant/profile", label: "Profile", icon: "ContactRound" },
-      { href: "/jobs", label: "Recruitment", icon: "BriefcaseBusiness" },
       { href: "/applicant/documents", label: "Documents", icon: "FileText" },
       { href: "/applicant/applications", label: "Application Status", icon: "Clock" },
     ]);

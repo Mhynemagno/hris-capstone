@@ -7,30 +7,37 @@ import { AppShell } from "./app-shell";
 
 const { usePathname } = vi.hoisted(() => ({ usePathname: vi.fn() }));
 vi.mock("next/navigation", () => ({ usePathname, useRouter: () => ({ replace: vi.fn(), refresh: vi.fn() }) }));
-vi.mock("@/components/notifications/notification-bell", () => ({ NotificationBell: () => <a href="/notifications">Notifications</a> }));
-vi.mock("@/components/auth/sign-out-button", () => ({ SignOutButton: () => <button type="button">Sign out</button> }));
+vi.mock("./notification-drawer", () => ({ NotificationDrawer: () => <button type="button">Notifications</button> }));
+vi.mock("./applicant-toaster", () => ({ ApplicantToaster: () => null }));
+vi.mock("@/hooks/use-recruitment", () => ({ useApplicantProfile: () => ({ data: { first_name: "Aldrick", last_name: "Jamlani" } }) }));
 
 describe("AppShell (applicant)", () => {
   beforeEach(() => usePathname.mockReturnValue("/applicant"));
 
-  it("shows the applicant navigation and identifies the current page", () => {
-    render(<AppShell config={ROLE_CONFIG.applicant} email="a@example.com"><p>Applicant</p></AppShell>);
+  it("shows the four portal pages and identifies the current one", () => {
+    render(<AppShell config={ROLE_CONFIG.applicant} email="aldrick.jamlani@gmail.com"><p>Applicant</p></AppShell>);
     const navigation = screen.getByRole("navigation", { name: /main navigation/i });
+    expect(within(navigation).getAllByRole("link").map((link) => link.textContent)).toEqual(["Dashboard", "Profile", "Documents", "Application Status"]);
     expect(within(navigation).getByRole("link", { name: "Dashboard" })).toHaveAttribute("aria-current", "page");
-    expect(within(navigation).getByRole("link", { name: "Recruitment" })).toHaveAttribute("href", "/jobs");
   });
 
-  it("keeps the original landmarks and brand", () => {
-    render(<AppShell config={ROLE_CONFIG.applicant} email="a@example.com"><p>Applicant</p></AppShell>);
+  it("matches the Capstone UI frame", () => {
+    usePathname.mockReturnValue("/applicant/documents");
+    render(<AppShell config={ROLE_CONFIG.applicant} email="aldrick.jamlani@gmail.com"><p>Applicant</p></AppShell>);
     expect(screen.getByRole("link", { name: /skip to main content/i })).toHaveAttribute("href", "#main-content");
-    expect(screen.getByRole("button", { name: /toggle sidebar/i })).toHaveClass("min-h-11");
+    expect(screen.getByRole("button", { name: /toggle sidebar/i })).toBeInTheDocument();
     expect(screen.getByText("San Juan City Police Station")).toBeInTheDocument();
-    expect(screen.getByTestId("brand-command-accent")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Account menu for a@example.com" })).toBeInTheDocument();
+    expect(screen.getByText("Recruitment Division")).toBeInTheDocument();
+    expect(screen.getByText("Menu")).toBeInTheDocument();
+    expect(screen.getByText("PNP San Juan Recruitment Portal")).toBeInTheDocument();
+    const breadcrumb = screen.getByRole("navigation", { name: "Breadcrumb" });
+    expect(breadcrumb).toHaveTextContent("Applicant");
+    expect(breadcrumb).toHaveTextContent("Documents");
+    expect(screen.getByRole("button", { name: "Account menu for Aldrick Jamlani" })).toBeInTheDocument();
   });
 
-  it("anchors the sign-out action at the bottom of the sidebar", () => {
-    render(<AppShell config={ROLE_CONFIG.applicant} email="a@example.com"><p>Applicant</p></AppShell>);
-    expect(screen.getByRole("button", { name: "Sign out" }).closest('[data-sidebar="footer"]')).not.toBeNull();
+  it("has no sign-out button in the sidebar: logging out lives in the account menu", () => {
+    render(<AppShell config={ROLE_CONFIG.applicant} email="aldrick.jamlani@gmail.com"><p>Applicant</p></AppShell>);
+    expect(screen.queryByRole("button", { name: "Sign out" })).not.toBeInTheDocument();
   });
 });
