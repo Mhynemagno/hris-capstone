@@ -7,10 +7,23 @@ type Pager = { page: number; pageSize: number; total: number; noun: string; onPa
 
 const pagerButton = "inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-600 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60";
 
+/** "Showing a–b of n …" with Previous / Next, as in every Capstone UI table footer. */
+export function StaffPager({ page, pageSize, total, noun, onPageChange }: Pager) {
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const from = total ? (page - 1) * pageSize + 1 : 0;
+  const to = Math.min(total, page * pageSize);
+  return (
+    <div className="flex items-center justify-between gap-3 border-t border-slate-100 bg-slate-50/50 p-4 text-xs text-slate-500">
+      <p>{total ? `Showing ${from}–${to} of ${total} ${noun}` : `Showing 0 of 0 ${noun}`}</p>
+      <div className="flex gap-2">
+        <button className={pagerButton} disabled={page <= 1} onClick={() => onPageChange(page - 1)} type="button"><ChevronLeft aria-hidden="true" className="size-3" /> Previous</button>
+        <button className={pagerButton} disabled={page >= pageCount} onClick={() => onPageChange(page + 1)} type="button">Next <ChevronRight aria-hidden="true" className="size-3" /></button>
+      </div>
+    </div>
+  );
+}
+
 export function StaffTableCard({ title, subtitle, count, toolbar, children, pager }: { title: string; subtitle?: string; count?: string; toolbar?: ReactNode; children: ReactNode; pager?: Pager }) {
-  const pageCount = pager ? Math.max(1, Math.ceil(pager.total / pager.pageSize)) : 1;
-  const from = pager && pager.total ? (pager.page - 1) * pager.pageSize + 1 : 0;
-  const to = pager ? Math.min(pager.total, pager.page * pager.pageSize) : 0;
   return (
     <section aria-label={title} className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm">
       <div className="flex flex-col gap-3 border-b border-slate-100 bg-slate-50/50 p-4 md:flex-row md:items-center md:justify-between">
@@ -24,15 +37,7 @@ export function StaffTableCard({ title, subtitle, count, toolbar, children, page
         {toolbar ? <div className="flex flex-col gap-2 sm:flex-row sm:items-center">{toolbar}</div> : null}
       </div>
       <div className="overflow-x-auto">{children}</div>
-      {pager ? (
-        <div className="flex items-center justify-between gap-3 border-t border-slate-100 bg-slate-50/50 p-4 text-xs text-slate-500">
-          <p>{pager.total ? `Showing ${from}–${to} of ${pager.total} ${pager.noun}` : `Showing 0 of 0 ${pager.noun}`}</p>
-          <div className="flex gap-2">
-            <button className={pagerButton} disabled={pager.page <= 1} onClick={() => pager.onPageChange(pager.page - 1)} type="button"><ChevronLeft aria-hidden="true" className="size-3" /> Previous</button>
-            <button className={pagerButton} disabled={pager.page >= pageCount} onClick={() => pager.onPageChange(pager.page + 1)} type="button">Next <ChevronRight aria-hidden="true" className="size-3" /></button>
-          </div>
-        </div>
-      ) : null}
+      {pager ? <StaffPager {...pager} /> : null}
     </section>
   );
 }
