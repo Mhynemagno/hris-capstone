@@ -54,40 +54,46 @@ type ProfileHeaderCardProps = {
   actions?: ReactNode;
   meta: ProfileMetaItem[];
   tags?: string[];
+  /** Status chips shown under the rank. */
+  pills?: ReactNode;
+  /** The name is the page heading (h1) unless the page already has its own title. */
+  headingLevel?: 1 | 2;
 };
 
-/** Top-of-profile summary: photo, name, rank, primary actions, key facts, and tag chips. The facts sit below the name so the name always keeps the full width. */
-export function ProfileHeaderCard({ photo, name, subtitle, actions, meta, tags = [] }: ProfileHeaderCardProps) {
+/** Capstone personnel card: photo, name, rank, status, primary actions and key facts. The facts sit below the name so the name always keeps the full width. */
+export function ProfileHeaderCard({ photo, name, subtitle, actions, meta, tags = [], pills, headingLevel = 1 }: ProfileHeaderCardProps) {
+  const Heading = headingLevel === 1 ? "h1" : "h2";
   return (
-    <section aria-label="Employee summary" className="overflow-hidden rounded-2xl border bg-card shadow-sm">
-      <div className="bg-linear-to-br from-primary/10 via-primary/[0.03] to-transparent p-5 sm:p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+    <section aria-label="Employee summary" className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+        <div className="flex min-w-0 flex-col gap-5 sm:flex-row sm:items-center">
           {photo ? <div className="shrink-0">{photo}</div> : null}
-          <div className="min-w-0 flex-1">
-            <h1 className="text-3xl font-bold tracking-tight break-words">{name}</h1>
-            <p className="mt-1 text-sm font-medium text-muted-foreground">{subtitle}</p>
-            {actions ? <div className="mt-4 flex flex-wrap gap-2">{actions}</div> : null}
+          <div className="min-w-0">
+            <Heading className="text-2xl font-extrabold tracking-tight break-words text-slate-900">{name}</Heading>
+            <p className="mt-0.5 text-xs font-bold text-slate-500">{subtitle}</p>
+            {pills ? <div className="mt-3 flex flex-wrap gap-2">{pills}</div> : null}
           </div>
         </div>
-        <dl className="mt-6 grid grid-cols-1 gap-x-6 gap-y-4 border-t pt-5 min-[420px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
-          {meta.map(({ label, value, icon: Icon }) => (
-            <div className="min-w-0" key={label}>
-              <dt className="flex items-center gap-2.5 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                <Icon aria-hidden className="size-4 shrink-0 text-primary" />
-                {label}
-              </dt>
-              <dd className="pl-6.5 font-semibold break-words">{value}</dd>
-            </div>
-          ))}
-        </dl>
-        {tags.length ? (
-          <ul aria-label="Highlights" className="mt-5 flex flex-wrap gap-2">
-            {tags.map((tag) => (
-              <li className="rounded-full border bg-background/80 px-3 py-1 text-xs font-semibold text-secondary-foreground" key={tag}>{tag}</li>
-            ))}
-          </ul>
-        ) : null}
+        {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
       </div>
+      <dl className="mt-6 grid grid-cols-1 gap-x-6 gap-y-4 border-t border-slate-100 pt-6 min-[420px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+        {meta.map(({ label, value, icon: Icon }) => (
+          <div className="min-w-0" key={label}>
+            <dt className="flex items-center gap-2 text-[10px] font-bold tracking-wider text-slate-500 uppercase">
+              <Icon aria-hidden className="size-3.5 shrink-0 text-blue-900" />
+              {label}
+            </dt>
+            <dd className="mt-0.5 text-xs font-bold break-words text-slate-800">{value}</dd>
+          </div>
+        ))}
+      </dl>
+      {tags.length ? (
+        <ul aria-label="Highlights" className="mt-5 flex flex-wrap gap-2">
+          {tags.map((tag) => (
+            <li className="rounded-lg border border-slate-200 bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-700" key={tag}>{tag}</li>
+          ))}
+        </ul>
+      ) : null}
     </section>
   );
 }
@@ -101,16 +107,16 @@ type InfoCardProps = {
   action?: ReactNode;
 };
 
-/** A titled content card with an icon chip. */
+/** A titled Capstone content card with an icon chip. */
 export function InfoCard({ icon: Icon, title, id, children, className, action }: InfoCardProps) {
   return (
-    <section aria-labelledby={id} className={cn("rounded-2xl border bg-card p-5 shadow-sm", className)}>
-      <div className="flex items-center gap-3">
-        <span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><Icon className="size-4.5" /></span>
-        <h2 className="font-heading text-lg font-bold" id={id}>{title}</h2>
+    <section aria-labelledby={id} className={cn("rounded-2xl border border-slate-200 bg-white p-6 shadow-sm", className)}>
+      <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+        <span aria-hidden className="grid size-8 shrink-0 place-items-center rounded-lg bg-blue-50 text-blue-900"><Icon className="size-4" /></span>
+        <h2 className="text-sm font-bold text-slate-900" id={id}>{title}</h2>
         {action ? <div className="ml-auto">{action}</div> : null}
       </div>
-      <div className="mt-3">{children}</div>
+      <div className="mt-4">{children}</div>
     </section>
   );
 }
@@ -122,12 +128,12 @@ export function InfoList({ rows }: { rows: InfoRow[] }) {
   return (
     <dl className="divide-y">
       {rows.map(({ label, value, icon: Icon }) => (
-        <div className="min-w-0 py-3 first:pt-1 last:pb-0" key={label}>
-          <dt className="flex items-center gap-3 text-xs text-muted-foreground">
-            <Icon aria-hidden className="size-4 shrink-0" />
+        <div className="min-w-0 py-3 first:pt-0 last:pb-0" key={label}>
+          <dt className="flex items-center gap-2 text-[10px] font-bold tracking-wider text-slate-500 uppercase">
+            <Icon aria-hidden className="size-3.5 shrink-0" />
             {label}
           </dt>
-          <dd className="pl-7 font-medium break-words">{value}</dd>
+          <dd className="pl-5.5 text-xs font-bold break-words text-slate-800">{value}</dd>
         </div>
       ))}
     </dl>
