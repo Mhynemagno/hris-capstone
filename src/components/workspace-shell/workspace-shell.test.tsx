@@ -31,11 +31,11 @@ describe("WorkspaceShell", () => {
     usePathname.mockReturnValue("/admin/profile-change-requests");
     render(<WorkspaceShell config={ROLE_CONFIG.system_administrator} email="admin@example.com"><p>Approvals</p></WorkspaceShell>);
     const navigation = screen.getByRole("navigation", { name: "Main navigation" });
-    for (const heading of ["People", "Organization", "System"]) {
+    for (const heading of ["People and Access", "Station Organization", "System Oversight"]) {
       expect(within(navigation).getByText(heading, { selector: "div" })).toBeInTheDocument();
     }
-    expect(within(navigation).getByRole("link", { name: "Approvals" })).toHaveAttribute("aria-current", "page");
-    expect(within(navigation).getByRole("link", { name: "Accounts" })).not.toHaveAttribute("aria-current");
+    expect(within(navigation).getByRole("link", { name: "Review Approvals" })).toHaveAttribute("aria-current", "page");
+    expect(within(navigation).getByRole("link", { name: "Manage Accounts" })).not.toHaveAttribute("aria-current");
     expect(within(navigation).getByText("badge:profileChangesPending")).toBeInTheDocument();
   });
 
@@ -70,7 +70,7 @@ describe("WorkspaceShell", () => {
     usePathname.mockReturnValue("/admin/users/123e4567-e89b-42d3-a456-426614174000");
     render(<WorkspaceShell config={ROLE_CONFIG.system_administrator} email="admin@example.com"><DetailPage /></WorkspaceShell>);
     const breadcrumb = screen.getByRole("navigation", { name: "Breadcrumb" });
-    expect(within(breadcrumb).getByRole("link", { name: "Accounts" })).toHaveAttribute("href", "/admin/users");
+    expect(within(breadcrumb).getByRole("link", { name: "Manage Accounts" })).toHaveAttribute("href", "/admin/users");
     expect(within(breadcrumb).getByText("Aplica Candidate")).toHaveAttribute("aria-current", "page");
   });
 });
