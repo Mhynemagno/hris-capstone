@@ -25,12 +25,15 @@ begin
       from (values ('male', 1), ('female', 2), ('unspecified', 3)) as bucket(label, sort_key)
     ),
     'attendanceToday', jsonb_build_object(
-      'present', (select count(*) from public.attendance_logs where attendance_date = manila_today and status = 'present'),
-      'late', (select count(*) from public.attendance_logs where attendance_date = manila_today and status = 'late'),
-      'incomplete', (select count(*) from public.attendance_logs where attendance_date = manila_today and status = 'incomplete'),
+      'present', (select count(*) from public.attendance_logs log join public.employees employee on employee.id = log.employee_id and employee.employment_status = 'active' where log.attendance_date = manila_today and log.status = 'present'),
+      'late', (select count(*) from public.attendance_logs log join public.employees employee on employee.id = log.employee_id and employee.employment_status = 'active' where log.attendance_date = manila_today and log.status = 'late'),
+      'incomplete', (select count(*) from public.attendance_logs log join public.employees employee on employee.id = log.employee_id and employee.employment_status = 'active' where log.attendance_date = manila_today and log.status = 'incomplete'),
       'onLeave', (select count(*) from public.employees employee where employee.employment_status = 'active'
         and exists (select 1 from public.leave_requests leave_request where leave_request.employee_id = employee.id and leave_request.status = 'approved' and manila_today between leave_request.starts_on and leave_request.ends_on)),
-      'absent', (select count(*) from public.employees employee where employee.employment_status = 'active'
+      -- Same rule as the reports summary: hand-recorded absences, plus no-shows once anyone has scanned today.
+      'absent', (select count(*) from public.attendance_logs log join public.employees employee on employee.id = log.employee_id and employee.employment_status = 'active' where log.attendance_date = manila_today and log.status = 'absent')
+        + (select count(*) from public.employees employee where employee.employment_status = 'active'
+        and exists (select 1 from public.attendance_logs scanned where scanned.attendance_date = manila_today)
         and (employee.employment_started_on is null or employee.employment_started_on <= manila_today)
         and not exists (select 1 from public.attendance_logs log where log.employee_id = employee.id and log.attendance_date = manila_today)
         and not exists (select 1 from public.leave_requests leave_request where leave_request.employee_id = employee.id and leave_request.status = 'approved' and manila_today between leave_request.starts_on and leave_request.ends_on))
