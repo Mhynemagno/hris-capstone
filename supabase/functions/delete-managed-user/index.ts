@@ -63,9 +63,9 @@ export function createDeleteManagedUserHandler(
       return json(400, { error: "You cannot delete your own account." });
     }
 
-    // Authorisation and integrity rules live in the database: the caller must
-    // be an active administrator, the target must not be the caller or the
-    // last active administrator, and nothing may still depend on the account.
+    // Authorisation rules live in the database: the caller must be an active
+    // administrator, and the target must not be the caller or the last active
+    // administrator. Records that depend on the account no longer block it.
     const { data: impact, error: impactError } = await callerClient.rpc(
       "assert_managed_user_deletable",
       { target_user_id: parsed.data.userId },
@@ -96,18 +96,18 @@ export function createDeleteManagedUserHandler(
     }
     if (!targetProfile) return json(404, { error: "Account not found." });
 
-    // An applicant's own recruitment data (applicant profile, applications, documents, AI
-    // screening results) is removed with the account; for other roles this removes nothing.
-    // It runs with the administrator's JWT so the database re-checks access and dependencies.
+    // Everything the account owns (personnel record with its leave, attendance, deployments and
+    // evaluations; applicant profile with its applications) is removed first, so the auth delete
+    // cannot be blocked. It runs with the administrator's JWT so the database re-checks access.
     const { data: removal, error: removalError } = await callerClient.rpc(
-      "remove_applicant_account_data",
+      "remove_managed_account_data",
       { target_user_id: parsed.data.userId },
     );
     if (removalError) {
       if (removalError.code === "P0001") {
         return json(409, { error: removalError.message });
       }
-      return json(500, { error: "Unable to remove this applicant's records." });
+      return json(500, { error: "Unable to remove this account's records." });
     }
     const storage = (removal?.storage ?? {}) as Record<string, unknown>;
     for (const [bucket, paths] of Object.entries(storage)) {
@@ -123,11 +123,7 @@ export function createDeleteManagedUserHandler(
       parsed.data.userId,
     );
     if (deleteError) {
-      // Foreign keys still protect history if a record was linked after the check.
-      return json(409, {
-        error:
-          "This account could not be deleted because records now depend on it. Edit the account and clear \"Account can sign in\" instead.",
-      });
+      return json(500, { error: "Unable to delete this account. Please try again." });
     }
 
     const { error: auditError } = await adminClient.from("audit_logs").insert({

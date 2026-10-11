@@ -108,7 +108,7 @@ values
   ('00000000-0000-4000-8000-000000001544', 'DASH-AB-4', 'Joined', 'Later', 'dash-ab-4@example.test', '1960-01-03');
 
 -- New leave cannot start in the past; this test transaction (rolled back) lifts that rule to backdate one.
-alter table public.leave_requests drop constraint leave_requests_starts_on_check;
+alter table public.leave_requests disable trigger leave_requests_enforce_start_date;
 insert into public.leave_requests (id, employee_id, submitted_by_user_id, leave_type_id, leave_type_name, starts_on, ends_on, reason, status, decided_by_user_id, decided_at)
 values ('00000000-0000-4000-8000-000000001545', '00000000-0000-4000-8000-000000001543', '00000000-0000-4000-8000-000000001503', '00000000-0000-4000-8000-000000001521', 'Dashboard leave test', '1960-01-02', '1960-01-02', null, 'approved', '00000000-0000-4000-8000-000000001501', now());
 
