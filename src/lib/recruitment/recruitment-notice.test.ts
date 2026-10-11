@@ -26,4 +26,14 @@ describe("getRecruitmentNotice", () => {
     query.maybeSingle.mockResolvedValue({ data: null, error: { message: "offline" } });
     await expect(getRecruitmentNotice()).resolves.toBeNull();
   });
+
+  it("treats a posting as open through its closing day the way the database does (UTC current_date)", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-11T20:00:00Z")); // already October 12 in Manila
+    query.maybeSingle.mockResolvedValue({ data: null, error: null });
+    query.or.mockClear();
+    await getRecruitmentNotice();
+    expect(query.or).toHaveBeenLastCalledWith("closes_on.is.null,closes_on.gte.2026-10-11");
+    vi.useRealTimers();
+  });
 });

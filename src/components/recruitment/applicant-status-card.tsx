@@ -20,9 +20,10 @@ export function ApplicantStatusCard() {
   if (applications.error) return <ErrorState message={applications.error.message} />;
 
   const finished = latest && (latest.status === "Hired" || latest.status === "Shortlisted" || latest.status === "Not Selected");
-  // A remark is a history row that keeps the status (HR notes, and the note sent with Verified / Scheduled).
+  // Remarks for the current status: the note HR sent with the result that moved the application here
+  // (e.g. why it was not selected), then notes added at this stage (remarks, Verified / Scheduled notes).
   const remarks = latest
-    ? (history.data ?? []).filter((entry) => entry.previous_status === latest.status && entry.next_status === latest.status && entry.note?.trim()).map((entry) => entry.note!.trim())
+    ? (history.data ?? []).filter((entry) => entry.next_status === latest.status && entry.note?.trim()).map((entry) => entry.note!.trim())
     : [];
   const schedule = latest?.stage_result === "scheduled" ? scheduleParts(latest.stage_scheduled_at) : null;
   const scheduleLine = schedule

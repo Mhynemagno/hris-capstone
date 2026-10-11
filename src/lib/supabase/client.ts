@@ -5,10 +5,19 @@ import { applyRememberMe, SESSION_ONLY_COOKIE } from "./remember-me";
 
 type BrowserCookieOptions = { path?: string; domain?: string; maxAge?: number; expires?: Date; sameSite?: boolean | "lax" | "strict" | "none"; secure?: boolean };
 
+/** A cookie set by something else may not be valid percent-encoding; keep it raw instead of failing every call. */
+function safeDecode(value: string) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
 function readCookies() {
   return document.cookie.split("; ").filter(Boolean).map((pair) => {
     const index = pair.indexOf("=");
-    return { name: decodeURIComponent(pair.slice(0, index)), value: decodeURIComponent(pair.slice(index + 1)) };
+    return { name: safeDecode(pair.slice(0, index)), value: safeDecode(pair.slice(index + 1)) };
   });
 }
 

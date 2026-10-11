@@ -115,10 +115,10 @@ describe("ApplicantProfileDocuments", { timeout: 20_000 }, () => {
 
   it("submits the application on Save once all five are on file", async () => {
     mocks.documents = allFive;
-    mocks.submit.mockResolvedValue({ outcome: "submitted", applicationId: "a1" });
+    mocks.submit.mockResolvedValue({ outcome: "submitted", applicationId: "a1", jobTitle: "Patrolman / Patrolwoman (Cycle 2026)" });
     render(<ApplicantProfileDocuments />);
     await userEvent.click(screen.getByRole("button", { name: SAVE_ALL }));
-    await waitFor(() => expect(mocks.notify).toHaveBeenCalledWith({ title: "All Documents Saved!", description: "Your files have been saved to your portal." }));
+    await waitFor(() => expect(mocks.notify).toHaveBeenCalledWith({ title: "All Documents Saved!", description: "Your application for Patrolman / Patrolwoman (Cycle 2026) has been submitted." }));
   });
 
   it("does not submit again when an application is active", async () => {

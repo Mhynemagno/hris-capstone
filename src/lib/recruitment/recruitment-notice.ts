@@ -5,8 +5,9 @@ export type RecruitmentNotice = { title: string } | null;
 /** The newest open posting, shown as the applicant login's Recruitment Notice. A failed lookup shows no notice. */
 export async function getRecruitmentNotice(): Promise<RecruitmentNotice> {
   const supabase = await createServerSupabaseClient();
-  // A posting is open through its closing date in Philippine time, like the database's current_date checks.
-  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Manila" }).format(new Date());
+  // Same day boundary as the database's open check (private.posting_is_open uses current_date, which is UTC),
+  // so the notice never says a posting is closed while Save All Documents still submits to it.
+  const today = new Date().toISOString().slice(0, 10);
   const { data, error } = await supabase
     .from("job_openings")
     .select("title")

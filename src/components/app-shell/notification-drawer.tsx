@@ -4,6 +4,7 @@ import { ArrowRight, Bell, Check, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 
+import { notifyApplicant } from "@/components/app-shell/applicant-toaster";
 import {
   useDeleteAllNotifications,
   useDeleteNotification,
@@ -47,6 +48,13 @@ export function NotificationDrawer() {
   const unreadCount = !unread.isLoading && !unread.isError ? (unread.data ?? 0) : 0;
   const rows = notifications.data?.rows ?? [];
   const total = notifications.data?.count ?? rows.length;
+  const failed = (title: string) => ({ onError: (error: Error) => notifyApplicant({ title, description: error.message, tone: "error" }) });
+
+  function openPanel() {
+    setOpen(true);
+    // New notifications (e.g. right after Save All Documents) appear without a page reload.
+    void notifications.refetch();
+  }
   const visible = filter === "unread" ? rows.filter((row) => !row.read_at) : rows;
 
   function close({ returnFocus = true } = {}) {
@@ -80,7 +88,7 @@ export function NotificationDrawer() {
         aria-haspopup="dialog"
         aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}
         className="relative rounded-full p-2 text-slate-300 transition-colors hover:bg-slate-800 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
-        onClick={() => (open ? close() : setOpen(true))}
+        onClick={() => (open ? close() : openPanel())}
         ref={bellRef}
         type="button"
       >
@@ -150,7 +158,7 @@ export function NotificationDrawer() {
                     <p className="mb-2 text-xs leading-relaxed text-slate-600">{row.body}</p>
                     <div className="flex items-center justify-between pt-1 text-[11px]">
                       {row.link ? (
-                        <Link className="flex items-center gap-1 font-semibold text-blue-700 hover:underline" href={row.link} onClick={() => { if (isUnread) markRead.mutate(row.id); close({ returnFocus: false }); }}>
+                        <Link className="flex items-center gap-1 font-semibold text-blue-700 hover:underline" href={row.link} onClick={() => { if (isUnread) markRead.mutate(row.id, failed("Notification not updated")); close({ returnFocus: false }); }}>
                           <span>View details</span>
                           <ArrowRight aria-hidden="true" className="size-2.5" />
                         </Link>
@@ -159,11 +167,11 @@ export function NotificationDrawer() {
                       )}
                       <div className="flex items-center gap-2 text-slate-400">
                         {isUnread ? (
-                          <button aria-label={`Mark ${row.title} as read`} className="rounded hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400" onClick={() => markRead.mutate(row.id)} title="Mark as read" type="button">
+                          <button aria-label={`Mark ${row.title} as read`} className="rounded hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400" onClick={() => markRead.mutate(row.id, failed("Notification not updated"))} title="Mark as read" type="button">
                             <Check aria-hidden="true" className="size-3.5" />
                           </button>
                         ) : null}
-                        <button aria-label={`Delete ${row.title}`} className="rounded hover:text-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400" onClick={() => deleteOne.mutate(row.id)} title="Delete" type="button">
+                        <button aria-label={`Delete ${row.title}`} className="rounded hover:text-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400" onClick={() => deleteOne.mutate(row.id, failed("Notification not deleted"))} title="Delete" type="button">
                           <Trash2 aria-hidden="true" className="size-3.5" />
                         </button>
                       </div>
@@ -175,7 +183,7 @@ export function NotificationDrawer() {
           )}
 
           <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50 p-2.5 px-4 text-center">
-            <button className="text-xs font-medium text-slate-600 transition-colors hover:text-slate-900" onClick={() => markAll.mutate()} type="button">
+            <button className="text-xs font-medium text-slate-600 transition-colors hover:text-slate-900" onClick={() => markAll.mutate(undefined, failed("Notifications not updated"))} type="button">
               Mark all as read
             </button>
             {total > rows.length ? (
@@ -183,7 +191,7 @@ export function NotificationDrawer() {
             ) : null}
             <button
               className="text-xs font-medium text-red-600 transition-colors hover:text-red-800"
-              onClick={() => { if (window.confirm("Clear all notifications?")) clearAll.mutate(); }}
+              onClick={() => { if (window.confirm("Clear all notifications?")) clearAll.mutate(undefined, failed("Notifications not cleared")); }}
               type="button"
             >
               Clear all

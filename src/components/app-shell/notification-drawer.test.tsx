@@ -3,6 +3,8 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
+  refetch: vi.fn(),
+  notify: vi.fn(),
   rows: vi.fn(),
   count: vi.fn(),
   markRead: vi.fn(),
@@ -12,13 +14,15 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/hooks/use-notifications", () => ({
-  useNotifications: () => ({ data: { rows: mocks.rows(), count: mocks.count() }, isLoading: false, error: null }),
+  useNotifications: () => ({ data: { rows: mocks.rows(), count: mocks.count() }, isLoading: false, error: null, refetch: mocks.refetch }),
   useUnreadNotificationCount: () => ({ data: mocks.rows().filter((row: { read_at: string | null }) => !row.read_at).length, isLoading: false, isError: false }),
   useMarkNotificationRead: () => ({ mutate: mocks.markRead }),
   useMarkAllNotificationsRead: () => ({ mutate: mocks.markAll }),
   useDeleteNotification: () => ({ mutate: mocks.deleteOne }),
   useDeleteAllNotifications: () => ({ mutate: mocks.clearAll }),
 }));
+
+vi.mock("./applicant-toaster", () => ({ notifyApplicant: mocks.notify }));
 
 import { NotificationDrawer } from "./notification-drawer";
 
@@ -51,9 +55,9 @@ describe("NotificationDrawer", () => {
     render(<NotificationDrawer />);
     await userEvent.click(screen.getByRole("button", { name: /Notifications/ }));
     await userEvent.click(screen.getByRole("button", { name: "Mark Physical Agility Test Scheduled as read" }));
-    expect(mocks.markRead).toHaveBeenCalledWith("n1");
+    expect(mocks.markRead).toHaveBeenCalledWith("n1", expect.objectContaining({ onError: expect.any(Function) }));
     await userEvent.click(screen.getByRole("button", { name: "Delete Welcome" }));
-    expect(mocks.deleteOne).toHaveBeenCalledWith("n2");
+    expect(mocks.deleteOne).toHaveBeenCalledWith("n2", expect.objectContaining({ onError: expect.any(Function) }));
     await userEvent.click(screen.getByRole("button", { name: "Mark all as read" }));
     expect(mocks.markAll).toHaveBeenCalled();
     await userEvent.click(screen.getByRole("button", { name: "Clear all" }));
@@ -84,5 +88,19 @@ describe("NotificationDrawer", () => {
     render(<NotificationDrawer />);
     await userEvent.click(screen.getByRole("button", { name: /Notifications/ }));
     expect(screen.getByRole("link", { name: "View all" })).toHaveAttribute("href", "/notifications");
+  });
+
+  it("refreshes the list when opened", async () => {
+    render(<NotificationDrawer />);
+    await userEvent.click(screen.getByRole("button", { name: /Notifications/ }));
+    expect(mocks.refetch).toHaveBeenCalled();
+  });
+
+  it("says when a notification could not be deleted", async () => {
+    mocks.deleteOne.mockImplementation((_id: string, options?: { onError?: (error: Error) => void }) => options?.onError?.(new Error("Network down")));
+    render(<NotificationDrawer />);
+    await userEvent.click(screen.getByRole("button", { name: /Notifications/ }));
+    await userEvent.click(screen.getByRole("button", { name: "Delete Welcome" }));
+    expect(mocks.notify).toHaveBeenCalledWith({ title: "Notification not deleted", description: "Network down", tone: "error" });
   });
 });

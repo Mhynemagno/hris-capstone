@@ -90,6 +90,7 @@ export function ApplicantProfileDocuments({ applyJobId = null }: { applyJobId?: 
     try {
       const result = await submit.mutateAsync();
       if (result.outcome === "no-open-posting") notifyApplicant({ title: "All Documents Saved!", description: "Your documents are saved. There is no open recruitment right now.", tone: "warning" });
+      else if (result.outcome === "submitted") notifyApplicant({ title: "All Documents Saved!", description: result.jobTitle ? `Your application for ${result.jobTitle} has been submitted.` : "Your application has been submitted." });
       else notifyApplicant({ title: "All Documents Saved!", description: "Your files have been saved to your portal." });
     } catch (cause) {
       notifyApplicant({ title: "Application not submitted", description: errorText(cause, "Please try again."), tone: "error" });

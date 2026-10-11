@@ -596,7 +596,7 @@ export async function setMyPreferredJobOpening(jobId: number) {
 }
 
 export type SubmitMyApplicationResult =
-  | { outcome: "submitted"; applicationId: string }
+  | { outcome: "submitted"; applicationId: string; jobTitle: string | null }
   | { outcome: "already-active" }
   | { outcome: "no-open-posting" };
 
@@ -620,7 +620,9 @@ export async function submitMyApplication(): Promise<SubmitMyApplicationResult> 
   if (!resume) throw new Error("Please upload required documents");
   const cv = await loadMyProfileDocumentFile(resume);
   const applicationId = await submitApplication({ applicationId: crypto.randomUUID(), jobId: target, documents: [{ kind: "cv", file: cv }] });
-  return { outcome: "submitted", applicationId };
+  // Named in the confirmation: without a remembered posting the application goes to the newest open one.
+  const { data: posting } = await client.from("job_openings").select("title").eq("id", target).maybeSingle();
+  return { outcome: "submitted", applicationId, jobTitle: (posting as { title?: string } | null)?.title ?? null };
 }
 
 export async function deleteDraftJobOpening(jobId: number) {

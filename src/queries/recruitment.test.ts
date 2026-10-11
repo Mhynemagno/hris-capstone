@@ -427,9 +427,10 @@ describe("submitMyApplication", () => {
       applications: { data: [], error: null },
       applicant_profile_documents: { data: [resume], error: null },
       applicants: { data: { id: "323e4567-e89b-42d3-a456-426614174000" }, error: null },
+      job_openings: { data: { title: "Patrolman / Patrolwoman (Cycle 2026)" }, error: null },
     });
     mocks.rpc.mockImplementation(async (name: string) => (name === "my_application_target_job" ? { data: 7, error: null } : { data: applicationId, error: null }));
-    await expect(recruitmentQueries.submitMyApplication()).resolves.toEqual({ outcome: "submitted", applicationId });
+    await expect(recruitmentQueries.submitMyApplication()).resolves.toEqual({ outcome: "submitted", applicationId, jobTitle: "Patrolman / Patrolwoman (Cycle 2026)" });
     expect(mocks.rpc).toHaveBeenCalledWith("submit_application", expect.objectContaining({ target_job_opening_id: 7 }));
   });
 });

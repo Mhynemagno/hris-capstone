@@ -56,4 +56,13 @@ describe("ApplicantStatusCard", () => {
     expect(screen.getByText("Thank you for applying. You were not selected for this opening.")).toBeInTheDocument();
     expect(screen.queryByText(/Next Action Required/)).not.toBeInTheDocument();
   });
+
+  it("shows the note HR sent with the result that moved the application to its current status", () => {
+    state.rows = [application("Not Selected")];
+    state.history = [
+      { previous_status: "Drug Test", next_status: "Not Selected", note: "Did not meet the BMI requirement.", result: "failed", created_at: "2026-10-12T00:00:00Z" },
+    ];
+    render(<ApplicantStatusCard />);
+    expect(screen.getAllByRole("listitem").map((item) => item.textContent)).toEqual(["Did not meet the BMI requirement."]);
+  });
 });
