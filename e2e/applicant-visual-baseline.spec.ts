@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-// Guards the redesign's hard constraint: approved pages (applicant, public, Admin & HR Login, HR) look exactly as approved.
+// Guards the redesign's hard constraint: approved pages (applicant, public, Employee / HR and Admin & HR logins, HR, employee) look exactly as approved.
 // Computed styles are data-independent, so they are snapshotted for pages whose content changes
 // between runs; static pages are also screenshotted.
 
@@ -51,6 +51,14 @@ async function signInHr(page: Page) {
   await expect(page).toHaveURL(/\/hr$/, { timeout: 30_000 });
 }
 
+async function signInEmployee(page: Page) {
+  await page.goto("/login?as=employee&next=/employee");
+  await page.getByLabel("Badge Number").fill("0-00001");
+  await page.getByRole("textbox", { name: "Password" }).fill(demoPassword);
+  await page.getByRole("button", { name: "Login" }).click();
+  await expect(page).toHaveURL(/\/employee$/, { timeout: 30_000 });
+}
+
 async function signInApplicant(page: Page) {
   await page.goto("/login?as=applicant&next=/applicant");
   await page.getByLabel("Email Address").fill("demo.applicant@example.test");
@@ -62,7 +70,7 @@ async function signInApplicant(page: Page) {
 test.describe("applicant, admin login and HR pages keep their approved look", () => {
   test.use({ viewport: { width: 1366, height: 900 } });
 
-  for (const path of ["/login", "/login?as=applicant", "/login?as=admin", "/applicant/register"]) {
+  for (const path of ["/login", "/login?as=applicant", "/login?as=admin", "/login?as=employee", "/applicant/register"]) {
     test(`static page ${path}`, async ({ page }) => {
       await page.goto(path);
       await page.waitForLoadState("networkidle");
@@ -100,6 +108,16 @@ test.describe("applicant, admin login and HR pages keep their approved look", ()
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
       const probes = path === "/hr/applications" || path === "/hr/deployments" ? CONTENT_AGNOSTIC_PROBES : PROBES;
       expect(JSON.stringify(await styleSignature(page, probes), null, 2)).toMatchSnapshot(`${path.replaceAll("/", "_")}.styles.json`);
+    }
+  });
+
+  test("signed-in employee pages", async ({ page }) => {
+    await signInEmployee(page);
+    for (const path of ["/employee", "/employee/profile", "/employee/leave", "/employee/deployments", "/employee/attendance", "/employee/promotion-eligibility"]) {
+      await page.goto(path);
+      await page.waitForLoadState("networkidle");
+      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+      expect(JSON.stringify(await styleSignature(page, CONTENT_AGNOSTIC_PROBES), null, 2)).toMatchSnapshot(`${path.replaceAll("/", "_")}.styles.json`);
     }
   });
 });

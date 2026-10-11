@@ -24,6 +24,16 @@ async function signIn(page: Page, account: { email: string; home: string }) {
 }
 
 test.describe("Security: confidentiality, integrity, and authenticity", () => {
+  test("the Employee / HR badge login keeps each role on its own home", async ({ page }) => {
+    await page.goto("/login?as=employee");
+    await expect(page.getByRole("heading", { level: 1, name: "Employee / HR" })).toBeVisible();
+    for (const [badge, home] of [["0-00002", "/hr"], ["0-00004", "/admin"], ["0-00003", "/management"], ["0-00001", "/employee"]] as const) {
+      await openLoginAndSignIn(page, { mode: "employee", identifier: badge }, demoPassword);
+      await expect(page).toHaveURL(new RegExp(`${home}$`), { timeout: 30_000 });
+      await page.context().clearCookies();
+    }
+  });
+
   const protectedRoutes = ["/hr/employees", "/hr/applications", "/hr/deployments", "/hr/promotions", "/hr/attendance", "/employee/leave", "/employee/attendance", "/reports", "/admin/users", "/notifications"];
 
   test("every protected page requires signing in", async ({ page }) => {
@@ -68,7 +78,7 @@ test.describe("Interaction capability (usability): accessibility", () => {
     ["public", ["/", "/login", "/login?as=applicant", "/login?as=admin", "/applicant/register", "/jobs"]],
     ["applicant", ["/applicant", "/applicant/profile", "/applicant/documents", "/applicant/applications"]],
     ["hr", ["/hr", "/hr/jobs", "/hr/jobs/new", "/hr/applications", "/hr/applications?view=applicants", "/hr/employees", "/hr/employees/new", "/hr/leave-requests", "/hr/deployments", "/hr/deployments?create=1", "/hr/promotions", "/hr/promotions?criteria=1", "/hr/attendance", "/hr/public-site", "/hr/public-site?new=1", "/reports"]],
-    ["employee", ["/employee", "/employee/leave/new", "/employee/attendance"]],
+    ["employee", ["/employee", "/employee/profile", "/employee/leave", "/employee/leave?request=1", "/employee/deployments", "/employee/attendance", "/employee/promotion-eligibility"]],
     ["management", ["/management"]],
   ];
   for (const [role, routes] of pages) {
@@ -77,12 +87,25 @@ test.describe("Interaction capability (usability): accessibility", () => {
       for (const route of routes) {
         await page.goto(route);
         // Panel routes open a modal or slide-over, which hides the page behind it from assistive technology.
-        const opensPanel = /[?&](create|criteria|new)=/.test(route);
+        const opensPanel = /[?&](create|criteria|new|request)=/.test(route);
         await expect(opensPanel ? page.getByRole("dialog").first() : page.getByRole("heading", { level: 1 }).first()).toBeVisible();
         await expect(page.getByText(/^Loading/)).toHaveCount(0, { timeout: 15_000 });
         const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
         const blocking = results.violations.filter((violation) => violation.impact === "serious" || violation.impact === "critical");
         expect(blocking.map((violation) => `${violation.id}: ${violation.help} (${violation.nodes.length} element(s))`), `${route}`).toEqual([]);
+      }
+      if (role === "employee") {
+        // The promotion docket dialog opens only when the demo employee is ready to file.
+        await page.goto("/employee/promotion-eligibility");
+        await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+        const file = page.getByRole("button", { name: "Submit to Promotion Board" });
+        if (await file.count()) {
+          await file.click();
+          await expect(page.getByRole("dialog").first()).toBeVisible();
+          const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
+          const blocking = results.violations.filter((violation) => violation.impact === "serious" || violation.impact === "critical");
+          expect(blocking.map((violation) => `${violation.id}: ${violation.help} (${violation.nodes.length} element(s))`), "promotion docket dialog").toEqual([]);
+        }
       }
       if (role === "hr") {
         // The applicant review page, reached from the list like a user would.
