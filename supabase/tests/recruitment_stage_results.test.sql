@@ -5,7 +5,7 @@ set local search_path = extensions, public;
 
 select extensions.plan(18);
 
-select extensions.has_function('public', 'record_stage_result', array['uuid', 'text', 'text', 'jsonb'], 'HR records Passed / Failed / Scheduled / Verified results');
+select extensions.has_function('public', 'record_stage_result', array['uuid', 'text', 'text', 'jsonb', 'timestamp with time zone', 'text'], 'HR records Passed / Failed / Scheduled / Verified results');
 select extensions.has_table('public', 'application_stage_documents', 'Stage supporting documents are stored');
 
 insert into public.job_openings (title, description, location, closes_on, status, published_at, created_by_user_id)
