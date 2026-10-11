@@ -31,7 +31,7 @@ export function timeAgo(iso: string, now = Date.now()) {
  * Capstone UI notifapp.html: the bell opens the notifications in place (All / Unread, mark read,
  * delete, mark all as read, clear all) instead of navigating to another page.
  */
-export function NotificationDrawer() {
+export function NotificationDrawer({ onError = (title, description) => notifyApplicant({ title, description, tone: "error" }) }: { onError?: (title: string, description: string) => void } = {}) {
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState<"all" | "unread">("all");
   const containerRef = useRef<HTMLDivElement>(null);
@@ -48,7 +48,7 @@ export function NotificationDrawer() {
   const unreadCount = !unread.isLoading && !unread.isError ? (unread.data ?? 0) : 0;
   const rows = notifications.data?.rows ?? [];
   const total = notifications.data?.count ?? rows.length;
-  const failed = (title: string) => ({ onError: (error: Error) => notifyApplicant({ title, description: error.message, tone: "error" }) });
+  const failed = (title: string) => ({ onError: (error: Error) => onError(title, error.message) });
 
   function openPanel() {
     setOpen(true);
