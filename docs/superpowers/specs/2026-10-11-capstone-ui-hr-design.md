@@ -31,7 +31,7 @@ The client's adviser produced finished mockups of every screen and a PDF of note
 | In-place panels | State lives in the URL (`?create=1`, `?review=<id>` …). The old routes redirect to those URLs. |
 | Uploads (PDF p. 23) | **One document per entry**, for Eligibility and for Certification / Training. |
 | Promotion review | Mockup layout, keeping the Round 5 performance rubric and the recommendation inside the modal. |
-| Dashboard | **Mockup only**, on real data. The Needs attention tab, period picker, Quick actions, Station pulse and Create menu are removed. |
+| Dashboard | **Mockup only**, on real data (one new read-only RPC for rank, gender and today's attendance). The Needs attention tab, period picker, Quick actions, Station pulse and Create menu are removed. |
 | Announcement toolbar | Safe lightweight markup in the existing plain-text body. HTML is never rendered. |
 | Leave remarks | Required for both Approve and Decline. |
 | Roster actions | View and Edit open the application review. Delete disqualifies the application (Not Selected). |
@@ -187,6 +187,7 @@ Every screen copies its mockup's markup and classes, replaces sample data with r
 
 **Left column (8/12)**
 - **Personnel Distribution:**
+  - Rank and gender counts come from `get_hr_dashboard_overview` (§4.2).
   - The filter select has Units / "Ranks (Highest to Lowest)" / Gender.
   - Each view uses its mockup heading, subtitle, row layout, `font-mono` "N Personnel (pct)", bar colours and "Total: N Personnel" footer.
   - Gender shows the Male / Female cards; a "Not specified" row appears only when that count is above 0.
@@ -212,7 +213,7 @@ Every screen copies its mockup's markup and classes, replaces sample data with r
 - **Recent Applications:** the 5 most recent, with initials, name, "{posting} • {date in words}" and a stage pill. "View All Applications →" goes to `/hr/applications`.
 - **Recent Duty Deployments:** the 5 most recent, with an icon avatar, "{rank code} {initial}. {last name}", "{type} • {location}" and a status pill. "View Full Roster →" goes to `/hr/deployments`.
 
-**Data:** `get_hr_dashboard_summary` (extended, §4.2), the readiness query, and a recent-deployments query (5 rows, newest `starts_on`).
+**Data:** `get_hr_dashboard_summary` (last 30 days), `get_hr_dashboard_overview` (§4.2) for the distribution and today's attendance, the readiness query, and a recent-deployments query (5 rows, newest `starts_on`).
 
 **Removed:** Needs attention tab, period picker, Quick actions, Station pulse, Create menu, and the old metric cards and charts.
 
@@ -234,7 +235,7 @@ Every screen copies its mockup's markup and classes, replaces sample data with r
 **Actions:**
 - **View** opens the public `/jobs/[id]`.
 - **Edit** goes to `/hr/jobs/[id]`.
-- **Delete** asks "Are you sure you want to delete this posting?", then calls `delete_record('job_openings', id)`. If the server refuses, its message shows as an error toast.
+- **Delete** asks "Are you sure you want to delete this posting?", then calls `deleteRecord("job_opening", id)` (`src/queries/deletion.ts`). If the server refuses, its message shows as an error toast.
 
 ### 3.3 Applicant Roster `/hr/applications` (`roster.html`, PDF p. 22)
 
@@ -264,7 +265,7 @@ Every screen copies its mockup's markup and classes, replaces sample data with r
 
 **Actions (application rows)**
 - **View** → `/hr/applications/[id]`.
-- **Edit** → `/hr/applications/[id]?tab=actions`, opening the review at its status actions.
+- **Edit** → `/hr/applications/[id]#stage-actions`, scrolling the review to its stage actions (the header's action group gets `id="stage-actions"`).
 - **Delete** opens a `StaffModal` "Disqualify or remove applicant?" with a required Reason. It then calls `transition_application_status` to `Not Selected` with the reason as the note.
 - Delete is hidden for Hired and Not Selected rows.
 
@@ -329,7 +330,7 @@ Every screen copies its mockup's markup and classes, replaces sample data with r
 **Actions**
 - **View** → `/hr/deployments/[id]` (unchanged, with reports).
 - **Edit** opens the panel.
-- **Delete** asks "Cancel or delete this deployment?", then calls `delete_record`.
+- **Delete** asks "Cancel or delete this deployment?", then sets the status to Cancelled via `update_deployment`. Deployments are not in `delete_record`'s list, and the page promises to keep their history. Delete is hidden on rows that are already cancelled.
 
 **Redirects:** `/hr/deployments/new` → `?create=1`; `/hr/deployments/[id]/edit` → `?edit=[id]`.
 
@@ -545,11 +546,12 @@ Each card uses its mockup icon, colour, tag and description, with a **Generate**
 - **Qualifications delete policy:** the existing one limits deletes to the uploader. It is widened to any active HR for both prefixes, so Replace and Remove work when a different HR user uploaded the file.
 - **Deletes:** `delete_record` doesn't touch storage. After it succeeds for an entry with a document, the client removes the stored object (best effort; a failure is logged, not shown). This is the same cleanup `savePersonnelEntry` does on a failed save.
 
-### 4.2 Dashboard summary (migration `…_hr_dashboard_distribution.sql`)
+### 4.2 Dashboard overview (migration `…_hr_dashboard_overview.sql`)
 
-`get_hr_dashboard_summary` keeps every existing field and adds:
-- `personnel_by_rank`: `[{ code, name, count }]` for active employees, ordered by `ranks.sort_order` (highest first). Employees without a rank are counted under code `null`, which renders as "Non-Uniformed Personnel (NUP)". The bracketed category (Commissioned Officer (PCO) / Non-Commissioned (PNCO) / Civilian Staff) is derived in code from the rank code by a lookup in `src/lib/personnel/rank-category.ts`, because the ranks table has no category column.
-- `personnel_by_sex`: `[{ label: 'Male' | 'Female' | 'Not specified', count }]`, from `employees.sex`.
+`get_hr_dashboard_summary` is unchanged; it already provides `totalPersonnel`, `openJobs`, `workforceByDepartment` and `recruitmentPipeline`. A new HR-only RPC, `public.get_hr_dashboard_overview()` (security definer, `private.require_active_hr()`), returns:
+- `personnelByRank`: `[{ code, name, count }]` for active employees, joined to `ranks` on `employees.rank_id` and ordered by `ranks.sort_order` (highest first). Employees without a rank are counted under `code: null, name: null`, which renders as "Non-Uniformed Personnel (NUP)". The bracketed category (Commissioned Officer (PCO) / Non-Commissioned (PNCO) / Civilian Staff) is derived in code from the rank code by a lookup in `src/lib/personnel/rank-category.ts`, because the ranks table has no category column.
+- `personnelByGender`: `[{ label: 'male' | 'female' | 'unspecified', count }]`, from `employees.gender`.
+- `attendanceToday`: `{ present, late, incomplete, absent, onLeave }` for the Manila date. `absent` counts active employees with no log and no approved leave today, using the same rule as the summary's `attendanceStatus` breakdown.
 
 ### 4.3 No other schema changes
 
@@ -590,8 +592,7 @@ The following are application code only:
 - trigger path and object checks
 - storage policies: HR, the owning employee, and another employee
 - the widened HR delete policy
-- `personnel_by_rank` order and counts
-- `personnel_by_sex` counts
+- `get_hr_dashboard_overview`: rank order and counts, gender counts, today's attendance counts, and refusal for non-HR callers
 
 **End-to-end (Playwright)**
 - `demo-accounts`: HR and SysAd sign in at `/login?as=admin` by email with the right Access Level; `signOutFromShell` prefers the account menu.
