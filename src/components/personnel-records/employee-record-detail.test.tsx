@@ -116,7 +116,7 @@ describe("EmployeeRecordDetail", () => {
 
     expect(screen.getByRole("heading", { level: 1, name: "Ada Dela Cruz" })).toBeInTheDocument();
     expect(within(screen.getByRole("region", { name: "Employee summary" })).getByText("PAT-001")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Promotion review" })).toHaveAttribute("href", `/hr/promotions/${employeeId}`);
+    expect(screen.getByRole("link", { name: "Promotion review" })).toHaveAttribute("href", `/hr/promotions?review=${employeeId}`);
     expect(screen.getByRole("tab", { name: /Certification \/ Training/ })).toHaveTextContent("Certification / Training1");
     const activity = screen.getByRole("region", { name: "Recent activity" });
     expect(activity).toHaveTextContent("Certification / Training");

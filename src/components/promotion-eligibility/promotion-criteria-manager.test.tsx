@@ -39,7 +39,7 @@ beforeEach(() => {
 });
 
 async function chooseRank(user: ReturnType<typeof userEvent.setup>) {
-  await user.type(screen.getByRole("combobox", { name: /Target rank/ }), "SPO");
+  await user.type(screen.getByRole("combobox", { name: /Target Rank/ }), "SPO");
   await user.click(await screen.findByRole("option", { name: /Senior Police Officer/ }));
 }
 
@@ -47,10 +47,10 @@ describe("PromotionCriteriaManager", () => {
   it("asks only for years of service and the required certification / training courses", () => {
     render(<PromotionCriteriaManager />);
     expect(screen.queryByLabelText(/performance rating/i)).not.toBeInTheDocument();
-    expect(screen.getByLabelText(/^Years of service/)).toBeRequired();
+    expect(screen.getByLabelText(/^Years of Service/)).toBeRequired();
     expect(screen.queryByText("Minimum years of service")).not.toBeInTheDocument();
     expect(screen.queryByText(/Required credential/i)).not.toBeInTheDocument();
-    expect(screen.getByRole("group", { name: /^Requirements/ })).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: /^Certification \/ Training Requirements/ })).toBeInTheDocument();
     expect(screen.queryByLabelText(/^Record type/)).not.toBeInTheDocument();
     const requirement = screen.getByLabelText(/^Certification \/ Training/);
     expect(requirement).toBeRequired();
@@ -71,7 +71,7 @@ describe("PromotionCriteriaManager", () => {
     const user = userEvent.setup();
     render(<PromotionCriteriaManager />);
     await chooseRank(user);
-    await user.click(screen.getByRole("button", { name: "Save criteria" }));
+    await user.click(screen.getByRole("button", { name: "Save Criteria" }));
     expect(await screen.findByText("Choose a certification / training.")).toBeVisible();
     expect(create).not.toHaveBeenCalled();
   });
@@ -92,7 +92,7 @@ describe("PromotionCriteriaManager", () => {
     await user.click(screen.getByRole("button", { name: "Remove requirement 3" }));
     expect(screen.queryByLabelText(/^Certification \/ Training 3/)).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Save criteria" }));
+    await user.click(screen.getByRole("button", { name: "Save Criteria" }));
     await waitFor(() => expect(create).toHaveBeenCalledWith({
       targetRankId: 7,
       minimumYearsOfService: 1,

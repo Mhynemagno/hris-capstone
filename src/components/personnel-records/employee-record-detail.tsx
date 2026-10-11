@@ -346,7 +346,7 @@ export function EmployeeRecordDetail({ employeeId }: { employeeId: string }) {
         {editing
           ? <Button onClick={stopEditing} size="sm" type="button" variant="outline">Done editing</Button>
           : <Button onClick={editDetails} size="sm" type="button"><Pencil aria-hidden />Edit details</Button>}
-        <Link className={buttonVariants({ size: "sm", variant: "outline" })} href={`/hr/promotions/${record.id}`}><TrendingUp aria-hidden />Promotion review</Link>
+        <Link className={buttonVariants({ size: "sm", variant: "outline" })} href={`/hr/promotions?review=${record.id}`}><TrendingUp aria-hidden />Promotion review</Link>
       </>}
       meta={[
         { label: "Badge number", value: <span className="tabular-nums">{record.employee_number}</span>, icon: BadgeCheck },
