@@ -264,7 +264,8 @@ test.describe("read-only and public journeys", () => {
     await signOut(page);
 
     await page.goto("/");
-    const announcements = page.getByRole("region", { name: "Announcements" });
+    await page.getByRole("tab", { name: "Advisories & News" }).click();
+    const announcements = page.getByRole("tabpanel", { name: "Advisories & News" });
     await expect(announcements.getByRole("heading", { name: title })).toBeVisible();
     await announcements.getByRole("link", { name: `Read more about ${title}` }).click();
     await expect(page).toHaveURL(/\/announcements\/[0-9a-f-]{36}$/);

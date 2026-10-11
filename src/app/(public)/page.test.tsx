@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, expect, it, vi } from "vitest";
 
 import Home from "./page";
@@ -22,18 +22,15 @@ describe("Home", () => {
     redirect.mockClear();
   });
 
-  it("offers employee and applicant sign-in, and the job openings, without a Careers button", async () => {
+  it("offers the Portal Login role picker for personnel and applicants, without a Careers button", async () => {
     getAuthenticatedUser.mockResolvedValue(null);
     render(await Home());
 
-    expect(screen.getByRole("button", { name: /^login$/i })).toBeVisible();
-    expect(
-      screen.getAllByRole("link", { name: /login as employee/i }).some((link) => link.getAttribute("href") === "/login?as=employee"),
-    ).toBe(true);
-    expect(
-      screen.getAllByRole("link", { name: /login as applicant/i }).some((link) => link.getAttribute("href") === "/login?as=applicant"),
-    ).toBe(true);
-    expect(screen.getByRole("link", { name: /view all openings/i })).toHaveAttribute("href", "/jobs");
+    expect(screen.getByRole("tab", { name: "Recruitment Openings" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Portal Login" }));
+    const dialog = await screen.findByRole("dialog", { name: "Select User Role" });
+    expect(within(dialog).getByRole("link", { name: /HR \/ Employee Portal/ })).toHaveAttribute("href", "/login?as=employee");
+    expect(within(dialog).getByRole("link", { name: /Applicant Portal/ })).toHaveAttribute("href", "/login?as=applicant");
     expect(screen.queryByRole("link", { name: /^careers$/i })).not.toBeInTheDocument();
   });
 

@@ -3,7 +3,7 @@ import { openLoginAndSignIn } from "./demo-accounts";
 
 // Every role's main screens must fit a 390px phone without page-level
 // horizontal scrolling (wide tables scroll inside their own container).
-// Public text stays at 14px or more. The HR/Admin workspace uses the denser
+// Public text stays at 14px or more, except screens copied 1:1 from the client mockups. The HR/Admin workspace uses the denser
 // approved scale (spec 2026-10-07 §3.2), whose smallest step is 12px (table headers
 // and badges); redesigned HR screens are also checked at laptop widths. Applicant
 // screens copy the Capstone UI mockups 1:1 (spec 2026-10-11), whose smallest text is
@@ -14,6 +14,7 @@ const APPLICANT_MIN_FONT = 9;
 const HR_MIN_FONT = 9;
 const EMPLOYEE_MIN_FONT = 9; // the employee side copies its Capstone UI mockups 1:1 too (spec 2026-10-11 employee)
 const SYSAD_MIN_FONT = 9; // SysAd uses the same approved Capstone floor as HR and Employee.
+const LANDING_MIN_FONT = 9; // the landing page copies the client's landing.html 1:1 (Final Changes, Oct 2026)
 const sets: [string, string, string[]][] = [
   ["demo.admin@example.test", "/admin", ["/admin", "/admin/users", "/admin/departments", "/admin/ranks", "/admin/settings", "/admin/audit-logs", "/admin/profile-change-requests", "/admin/integrations/attendance"]],
   ["demo.hr@example.test", "/hr", ["/hr", "/hr/employees", "/hr/jobs", "/hr/applications", "/hr/leave-requests", "/hr/deployments", "/hr/promotions", "/hr/attendance", "/hr/public-site", "/reports"]],
@@ -51,7 +52,7 @@ test("the public landing page fits a phone and keeps text readable", async ({ pa
   await page.goto("/");
   await page.waitForLoadState("networkidle");
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-  const small = await page.evaluate(() => [...document.querySelectorAll("body *")].filter((el) => el.childNodes.length && [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent!.trim()) && parseFloat(getComputedStyle(el).fontSize) < 14 && (el as HTMLElement).offsetParent !== null).map((el) => `${el.tagName}:${parseFloat(getComputedStyle(el).fontSize)}:${el.textContent!.trim().slice(0, 30)}`).slice(0, 3));
+  const small = await page.evaluate((min) => [...document.querySelectorAll("body *")].filter((el) => el.childNodes.length && [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent!.trim()) && parseFloat(getComputedStyle(el).fontSize) < min && (el as HTMLElement).offsetParent !== null).map((el) => `${el.tagName}:${parseFloat(getComputedStyle(el).fontSize)}:${el.textContent!.trim().slice(0, 30)}`).slice(0, 3), LANDING_MIN_FONT);
   expect(overflow).toBeLessThanOrEqual(0);
   expect(small).toEqual([]);
 });

@@ -1,5 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
+import { type EmailContext, renderNotificationEmail } from "./email-templates.ts";
+
 const BREVO_EMAIL_URL = "https://api.brevo.com/v3/smtp/email";
 const WORKER_BATCH_SIZE = 10;
 
@@ -56,14 +58,14 @@ function failureForStatus(status: number) {
   };
 }
 
-function escapeHtml(value: string) {
-  return value.replace(/[&<>"']/g, (character) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;",
-  })[character] ?? character);
+/** Recipient details for the email design; a lookup failure still sends the email with generic wording. */
+async function loadEmailContext(admin: SupabaseAdminClient, jobId: string): Promise<EmailContext> {
+  try {
+    const { data, error } = await admin.rpc("notification_email_context", { target_job_id: jobId });
+    return !error && data && typeof data === "object" ? data as EmailContext : {};
+  } catch {
+    return {};
+  }
 }
 
 export function createSendNotificationEmailHandler({
@@ -142,12 +144,13 @@ export function createSendNotificationEmailHandler({
         continue;
       }
 
+      const email = renderNotificationEmail(job, await loadEmailContext(admin, job.id), continueUrl);
       const payload = {
         sender: { email: senderEmail, name: senderName },
         to: [{ email: recipientEmail }],
         subject: job.notification_title,
-        textContent: `${job.notification_body}\n\nOpen in HRIS: ${continueUrl}`,
-        htmlContent: `<p>${escapeHtml(job.notification_body).replace(/\r?\n/g, "<br>")}</p><p><a href="${continueUrl}">Open in HRIS</a></p>`,
+        textContent: email.text,
+        htmlContent: email.html,
         tags: [`email-notification:${job.id}`],
       };
 
