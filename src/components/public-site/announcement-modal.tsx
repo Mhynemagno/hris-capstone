@@ -5,6 +5,7 @@ import { Check, Megaphone, Send, SquarePen, Trash2, X } from "lucide-react";
 import { useRef, useState, type FormEvent } from "react";
 
 import { notifyStaff } from "@/components/staff-shell/staff-notify";
+import { LoadingState } from "@/components/ui/loading-state";
 import { StaffInput, StaffLabel, StaffSelect, staffInputClass } from "@/components/staff-shell/ui/staff-fields";
 import { useDeleteAnnouncement, useHrAnnouncements, useSaveAnnouncement, useSetAnnouncementStatus } from "@/hooks/use-public-site";
 import type { Announcement, AnnouncementCategory } from "@/lib/types/database";
@@ -49,7 +50,16 @@ function AnnouncementForm({ announcement, onClose }: { announcement?: Announceme
     setErrors({});
     try {
       const saved = await save.mutateAsync(announcement ? { input: parsed.data, announcementId: announcement.id } : { input: parsed.data });
-      if (creating && publish) await setStatus.mutateAsync({ announcementId: saved.id, status: "published" });
+      if (creating && publish) {
+        try {
+          await setStatus.mutateAsync({ announcementId: saved.id, status: "published" });
+        } catch (cause) {
+          // The draft exists now; close so a retry cannot create a second copy.
+          notifyStaff({ title: "Saved as a draft; publishing failed", description: cause instanceof Error ? cause.message : "Publish it from the list.", tone: "warning" });
+          onClose();
+          return;
+        }
+      }
       notifyStaff({ title: creating ? (publish ? "Announcement published" : "Draft saved") : "Announcement updated" });
       onClose();
     } catch (cause) {
@@ -152,7 +162,9 @@ export function AnnouncementModal({ mode, onClose }: { mode: AnnouncementModalMo
             </Dialog.Title>
             <Dialog.Close aria-label="Close" className="rounded p-1 text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"><X aria-hidden="true" className="size-4" /></Dialog.Close>
           </div>
-          {mode?.kind === "edit" && !announcements.isLoading && !editing ? (
+          {mode?.kind === "edit" && announcements.isLoading ? (
+            <div className="p-6"><LoadingState label="Loading announcement…" /></div>
+          ) : mode?.kind === "edit" && !editing ? (
             <div className="space-y-4 p-6">
               <p className="text-xs font-semibold text-slate-600">This announcement could not be found.</p>
               <button className="rounded-xl bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200" onClick={onClose} type="button">Cancel</button>

@@ -2,11 +2,11 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ save: vi.fn(), setStatus: vi.fn(), remove: vi.fn(), notify: vi.fn() }));
+const mocks = vi.hoisted(() => ({ save: vi.fn(), setStatus: vi.fn(), remove: vi.fn(), notify: vi.fn(), loading: false }));
 vi.mock("@/components/staff-shell/staff-notify", () => ({ notifyStaff: mocks.notify }));
 const existing = { id: "a1", title: "Oplan Bisita Eskwela", summary: "Summary", body: "Body text", category: "news", status: "published", published_at: "2026-10-09T00:00:00Z" };
 vi.mock("@/hooks/use-public-site", () => ({
-  useHrAnnouncements: () => ({ isLoading: false, data: [existing] }),
+  useHrAnnouncements: () => (mocks.loading ? { isLoading: true, data: undefined } : { isLoading: false, data: [existing] }),
   useSaveAnnouncement: () => ({ mutateAsync: mocks.save, isPending: false }),
   useSetAnnouncementStatus: () => ({ mutateAsync: mocks.setStatus, isPending: false }),
   useDeleteAnnouncement: () => ({ mutateAsync: mocks.remove, isPending: false }),
@@ -79,5 +79,29 @@ describe("AnnouncementModal (PDF pp. 35–36)", () => {
   it("says when the announcement to edit cannot be found", () => {
     render(<AnnouncementModal mode={{ kind: "edit", id: "missing" }} onClose={vi.fn()} />);
     expect(screen.getByText("This announcement could not be found.")).toBeInTheDocument();
+  });
+
+  it("shows a loading state, not a Create form, while the announcement to edit is loading", () => {
+    mocks.loading = true;
+    render(<AnnouncementModal mode={{ kind: "edit", id: "a1" }} onClose={vi.fn()} />);
+    expect(screen.getByText("Loading announcement…")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Save Announcement/ })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Publish immediately")).not.toBeInTheDocument();
+    mocks.loading = false;
+  });
+
+  it("keeps a saved draft when publishing fails, instead of creating another on retry", async () => {
+    const onClose = vi.fn();
+    mocks.save.mockResolvedValue({ id: "new3" });
+    mocks.setStatus.mockRejectedValue(new Error("Network down"));
+    render(<AnnouncementModal mode={{ kind: "create" }} onClose={onClose} />);
+    await userEvent.type(screen.getByLabelText(/^Title/), "Draft");
+    await userEvent.type(screen.getByLabelText(/^Summary/), "S");
+    await userEvent.type(screen.getByLabelText(/^Announcement Text/), "B");
+    await userEvent.click(screen.getByLabelText("Publish immediately"));
+    await userEvent.click(screen.getByRole("button", { name: /Save Announcement/ }));
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect(mocks.save).toHaveBeenCalledTimes(1);
+    expect(mocks.notify).toHaveBeenCalledWith({ title: "Saved as a draft; publishing failed", description: "Network down", tone: "warning" });
   });
 });
