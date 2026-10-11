@@ -1,3 +1,6 @@
-import { HrDeploymentEditor } from "@/components/deployment-tracking/hr-deployment-editor";
-import { PageHeader } from "@/components/ui/page-header";
-export default function NewDeploymentPage() { return <section className="space-y-4"><PageHeader description="Assign an employee to a location." title="New deployment" /><HrDeploymentEditor /></section>; }
+import { redirect } from "next/navigation";
+
+/** Creating a deployment happens in the Deployments side panel (Capstone UI dep.html). */
+export default function NewDeploymentPage() {
+  redirect("/hr/deployments?create=1");
+}

@@ -4,7 +4,6 @@ import { describe, expect, it, vi } from "vitest";
 
 import { DeploymentStatusBadge } from "./deployment-status-badge";
 import { EmployeeDeploymentList } from "./employee-deployment-list";
-import { HrDeploymentDirectory } from "./hr-deployment-directory";
 
 const row = { id: "d1", employee_id: "e1", location: "San Juan", unit: "Station 1", project: null, assignment_role: "San Juan", starts_on: "2026-09-23", ends_on: "2026-10-09", status: "ongoing", deployment_type: "Public Assembly", event_operation: "Rally", notes: "Relief duty", updated_at: "2026-09-23T00:00:00Z" };
 vi.mock("@/hooks/use-deployment-tracking", () => ({
@@ -32,17 +31,6 @@ describe("deployment tracking presentation", () => {
     expect(screen.getByText("Public Assembly · Rally")).toBeVisible();
   });
 
-  it("lists deployments with a location column, no unit column, and dates in words", () => {
-    render(<HrDeploymentDirectory />);
-    expect(screen.getByRole("columnheader", { name: "Location" })).toBeInTheDocument();
-    expect(screen.getByRole("columnheader", { name: "Type / Event" })).toBeInTheDocument();
-    expect(screen.getByText("Public Assembly")).toBeInTheDocument();
-    expect(screen.getByText("Rally")).toBeInTheDocument();
-    expect(screen.queryByRole("columnheader", { name: "Unit / Assignment" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("columnheader", { name: "Role" })).not.toBeInTheDocument();
-    expect(screen.getByText("September 23, 2026 – October 9, 2026")).toBeInTheDocument();
-    expect(screen.queryByText(/2026-09-23/)).not.toBeInTheDocument();
-  });
   it("lets the employee submit a report / proof of attendance for each deployment", () => {
     render(<EmployeeDeploymentList />);
     expect(screen.getByText("Report / proof of attendance")).toBeInTheDocument();

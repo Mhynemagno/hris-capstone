@@ -15,6 +15,7 @@ export async function listHrDeployments(input: Partial<DeploymentFilters> = {}):
   const filters = deploymentFilters(input); const from = (filters.page - 1) * filters.pageSize;
   let query = createBrowserSupabaseClient().from("deployments").select("*", { count: "exact" }).order("starts_on", { ascending: false }).range(from, from + filters.pageSize - 1);
   if (filters.status) query = query.eq("status", filters.status);
+  if (filters.deploymentType) query = query.eq("deployment_type", filters.deploymentType);
   if (filters.employeeId) query = query.eq("employee_id", filters.employeeId);
   if (filters.startsOn) query = query.or(`ends_on.is.null,ends_on.gte.${filters.startsOn}`);
   if (filters.endsOn) query = query.lte("starts_on", filters.endsOn);
