@@ -11,7 +11,7 @@ type LoginFormProps = {
   notice?: string;
   /**
    * Which login the visitor chose; kept so a failed attempt returns to the same page.
-   * Staff sign in with their badge number, applicants with their email address.
+   * Employees sign in with their badge number, applicants with their email address, and HR / SysAd with either.
    */
   mode: "employee" | "applicant" | "admin";
   /** The Admin & HR Login's preselected Access Level (Capstone UI sample.html). */
@@ -50,20 +50,20 @@ function CapstoneFields({ pending, accessLevel }: { pending: boolean; accessLeve
         </div>
       ) : null}
       <div>
-        <label className="mb-1.5 block text-xs font-semibold text-slate-700" htmlFor="login-identifier">Email Address</label>
+        <label className="mb-1.5 block text-xs font-semibold text-slate-700" htmlFor="login-identifier">{accessLevel ? "Email Address or Badge Number" : "Email Address"}</label>
         <div className="relative">
           <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
             <Mail aria-hidden="true" className="size-4" />
           </div>
           <input
-            autoComplete="email"
+            autoComplete={accessLevel ? "username" : "email"}
             className={`${applicantInputClassName} pr-4 pl-10`}
             id="login-identifier"
-            inputMode="email"
+            inputMode={accessLevel ? "text" : "email"}
             name="identifier"
-            placeholder={accessLevel ? "juan.delacruz@gmail.com" : "juan.delacruz@email.com"}
+            placeholder={accessLevel ? "juan.delacruz@gmail.com or 0-12345" : "juan.delacruz@email.com"}
             required
-            type="email"
+            type={accessLevel ? "text" : "email"}
           />
         </div>
       </div>

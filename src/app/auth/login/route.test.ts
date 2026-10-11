@@ -10,6 +10,10 @@ const { createServerSupabaseClient, signInWithPassword } = vi.hoisted(() => ({
 
 vi.mock("@/lib/supabase/server", () => ({ createServerSupabaseClient }));
 
+const { serviceRpc } = vi.hoisted(() => ({ serviceRpc: vi.fn() }));
+vi.mock("@supabase/supabase-js", () => ({ createClient: () => ({ rpc: serviceRpc }) }));
+vi.mock("@/lib/supabase/env", () => ({ getPublicSupabaseConfig: () => ({ url: "http://localhost:54321", publishableKey: "publishable" }) }));
+
 const cookieStore = vi.hoisted(() => ({ get: vi.fn(), set: vi.fn(), delete: vi.fn(), getAll: vi.fn(() => []) }));
 vi.mock("next/headers", () => ({ cookies: async () => cookieStore }));
 
@@ -183,9 +187,23 @@ describe("admin & HR login", () => {
     expect(response.headers.get("location")).toBe("http://localhost/login?as=admin&error=wrong_access_level&level=hr");
   });
 
-  it("rejects a badge number without calling Supabase", async () => {
-    const response = await POST(loginRequest({ as: "admin", access_level: "hr", identifier: "0-00002", password: "secret1" }));
+  it("signs HR in with a badge number looked up server-side", async () => {
+    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "service-role");
+    serviceRpc.mockResolvedValue({ data: "hr@example.test", error: null });
+    clientWithRole("hr_personnel");
+    const response = await POST(loginRequest({ as: "admin", access_level: "hr", identifier: " 0-00002 ", password: "secret1" }));
+    expect(serviceRpc).toHaveBeenCalledWith("resolve_login_identifier", { target_mode: "employee", target_identifier: "0-00002" });
+    expect(signInWithPassword).toHaveBeenCalledWith({ email: "hr@example.test", password: "secret1" });
+    expect(response.headers.get("location")).toBe("http://localhost/auth/continue?next=%2F");
+    vi.unstubAllEnvs();
+  });
+
+  it("rejects an unknown badge number without signing in", async () => {
+    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "service-role");
+    serviceRpc.mockResolvedValue({ data: null, error: null });
+    const response = await POST(loginRequest({ as: "admin", access_level: "hr", identifier: "9-99999", password: "secret1" }));
     expect(response.headers.get("location")).toBe("http://localhost/login?as=admin&error=invalid_credentials");
     expect(signInWithPassword).not.toHaveBeenCalled();
+    vi.unstubAllEnvs();
   });
 });

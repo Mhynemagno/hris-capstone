@@ -128,10 +128,14 @@ describe("applicant login identifier", () => {
 
 describe("admin login schema", () => {
   it("accepts an email, trimmed and lowercased", () => {
-    expect(adminLoginSchema.parse({ identifier: " MC.Balneg@Example.TEST ", password: "secret1" }).identifier).toBe("mc.balneg@example.test");
+    expect(adminLoginSchema.parse({ identifier: " MC.Balneg@Example.TEST ", password: "secret1" }).identifier).toEqual({ kind: "email", value: "mc.balneg@example.test" });
   });
-  it("rejects a badge number", () => {
-    expect(adminLoginSchema.safeParse({ identifier: "0-00002", password: "secret1" }).success).toBe(false);
+  it("accepts a badge number, trimmed and uppercased", () => {
+    expect(adminLoginSchema.parse({ identifier: " 0-00002 ", password: "secret1" }).identifier).toEqual({ kind: "badge_number", value: "0-00002" });
+  });
+  it("rejects an empty identifier and a malformed email", () => {
+    expect(adminLoginSchema.safeParse({ identifier: " ", password: "secret1" }).success).toBe(false);
+    expect(adminLoginSchema.safeParse({ identifier: "hr@", password: "secret1" }).success).toBe(false);
   });
   it("maps access levels to roles, defaulting to HR Admin", () => {
     expect(adminAccessLevel("sysad")).toBe("sysad");

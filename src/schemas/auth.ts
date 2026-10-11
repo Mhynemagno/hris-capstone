@@ -26,8 +26,14 @@ export function adminAccessLevel(value: unknown): AdminAccessLevel {
   return value === "sysad" ? "sysad" : "hr";
 }
 
+/** HR / SysAd sign in with their email or, when they have a personnel record, their badge number. */
 export const adminLoginSchema = z.object({
-  identifier: z.string().trim().transform((value) => value.toLowerCase()).pipe(z.email("Enter your email address.")),
+  identifier: z.string().trim().transform((value, context) => {
+    if (z.email().safeParse(value).success) return { kind: "email" as const, value: value.toLowerCase() };
+    if (value && value.length <= 32 && !value.includes("@")) return { kind: "badge_number" as const, value: value.toUpperCase() };
+    context.addIssue({ code: "custom", message: "Enter your email address or Badge Number." });
+    return z.NEVER;
+  }),
   password: passwordSchema,
 });
 
