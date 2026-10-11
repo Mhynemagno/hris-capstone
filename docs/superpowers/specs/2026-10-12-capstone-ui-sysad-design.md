@@ -103,7 +103,7 @@ Every behavior change follows RED → GREEN: write a focused failing Vitest/Test
 ### Unit and component tests
 
 - `ROLE_CONFIG` and `StaffShell`: SysAd navigation order and groups, no HR operational navigation, slate-400 dark sidebar labels, correct active route, and System Administration header metadata.
-- `/admin`: exact three-card hierarchy, all nine correct links, card labels and captions, and absence of a fake justification modal.
+- `/admin`: exact three-card hierarchy, all eight correct links, card labels and captions, and absence of a fake justification modal.
 - Restyled route pages: `PageTitle` titles/captions and reuse of staff layout primitives while retaining existing user, approval, organization, settings, audit, and integration actions.
 - State boundaries: loading shows a localized loading indicator and preserves usable controls; error shows retry/error feedback; a successful empty collection has no pager; a populated collection has the correct word-form range pager.
 - Mutations: an existing failed account, organization, settings, or integration action stays visibly failed rather than being dismissed as success.

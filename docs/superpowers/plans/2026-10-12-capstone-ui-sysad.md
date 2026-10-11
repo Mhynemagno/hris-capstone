@@ -82,12 +82,12 @@ Commit the listed role-config and shell files with: feat: align SysAd shell navi
 - Regression only: src/app/(app)/admin/layout.tsx
 
 **Interfaces:**
-- Consumes: PageTitle, Lucide icons, and the existing nine /admin hrefs.
+- Consumes: PageTitle, Lucide icons, and the existing eight /admin hrefs.
 - Produces: a stateless dashboard linking to—not replacing—authoritative admin workspaces.
 
 - [ ] **Step 1: Write a failing dashboard test**
 
-Require h1 System Administration, its approved caption, the three card titles, all nine labelled routes, audit-trail informational copy, and no Administrator Remarks / Log Justification field/modal.
+Require h1 System Administration, its approved caption, the three card titles, all eight labelled routes, audit-trail informational copy, and no Administrator Remarks / Log Justification field/modal.
 
 - [ ] **Step 2: Run RED**
 
