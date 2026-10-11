@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(16);
+select extensions.plan(17);
 
 select extensions.has_table('public', 'employee_promotion_dockets', 'Employee promotion dockets table exists');
 select extensions.has_function('public', 'submit_employee_promotion_docket', array['uuid', 'text'], 'Employee promotion docket RPC exists');
@@ -53,6 +53,7 @@ select extensions.throws_ok($$select public.submit_employee_promotion_docket(cur
 select extensions.throws_ok($$select public.submit_employee_promotion_docket(current_setting('test.docket_criterion')::uuid, '   ')$$, '22023', null, 'A promotion docket requires nonblank remarks');
 select set_config('test.docket_id', public.submit_employee_promotion_docket(current_setting('test.docket_criterion')::uuid, '  Ready for rank review.  ')::text, true);
 select extensions.is((select remarks from public.employee_promotion_dockets where id = current_setting('test.docket_id')::uuid), 'Ready for rank review.', 'Docket remarks are trimmed before storage');
+select extensions.is(public.get_my_promotion_readiness() -> 'docket' ->> 'id', current_setting('test.docket_id'), 'Readiness returns the employee docket for its matching criterion');
 select extensions.throws_ok($$select public.submit_employee_promotion_docket(current_setting('test.docket_criterion')::uuid, 'Second request')$$, '23505', null, 'An employee cannot submit a duplicate docket for the same criterion');
 select extensions.is((select count(*)::integer from public.notifications where recipient_user_id = '00000000-0000-4000-8000-000000002603'::uuid and type = 'promotion_docket_submitted'), 1, 'Submitting a docket creates an employee notification');
 select extensions.is((select employment_status from public.employees where id = '00000000-0000-4000-8000-000000002613'::uuid), 'active', 'Submitting a docket does not change employment status');

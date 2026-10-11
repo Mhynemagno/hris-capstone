@@ -46,6 +46,17 @@ begin
     'targetRankName', target_rank.name,
     'targetRankCode', target_rank.code,
     'evaluatedOn', null,
+    'docket', (
+      select jsonb_build_object(
+        'id', docket.id,
+        'criterionId', docket.criterion_id,
+        'remarks', docket.remarks,
+        'submittedAt', docket.submitted_at
+      )
+      from public.employee_promotion_dockets docket
+      where docket.employee_id = employee.id
+        and docket.criterion_id = criterion.id
+    ),
     'readiness', private.promotion_readiness(employee.id, criterion.id, (now() at time zone 'Asia/Manila')::date)
   ) into response
   from public.employees employee
