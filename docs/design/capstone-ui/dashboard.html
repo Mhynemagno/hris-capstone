@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>San Juan City Police Station - HR Admin</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- FontAwesome 6 Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Chart.js CDN for Graphs -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body class="h-full font-sans text-slate-800 antialiased overflow-hidden flex">
+
+  <!-- ==================== LEFT SIDEBAR NAVIGATION ==================== -->
+  <aside class="w-64 bg-[#0B132B] text-slate-300 flex flex-col justify-between shrink-0 h-full z-30 border-r border-slate-800">
+    <div>
+      
+      <!-- BRANDING & LOGO HEADER -->
+      <div class="p-4 border-b border-slate-800/80 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-blue-900 border border-amber-400/50 flex items-center justify-center text-amber-400 text-lg shadow-md shrink-0">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <div class="min-w-0">
+          <h1 class="text-xs font-extrabold text-white tracking-wider uppercase truncate">San Juan City PS</h1>
+        </div>
+      </div>
+
+      <!-- NAVIGATION MENU SECTION -->
+      <div class="px-3 py-4 space-y-6">
+        
+        <!-- DASHBOARD DIRECT LINK -->
+        <div>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-blue-700 text-white shadow-lg shadow-blue-900/40">
+            <i class="fa-solid fa-chart-pie w-4 text-center text-sm"></i>
+            <span>Dashboard</span>
+          </a>
+        </div>
+
+        <!-- RECRUITMENT MANAGEMENT -->
+        <div class="space-y-1">
+          <div class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider px-3 mb-1.5">Recruitment</div>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-briefcase w-4 text-center"></i>
+            <span>Plantilla Openings</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-id-card-clip w-4 text-center"></i>
+            <span>Applicant Roster</span>
+          </a>
+        </div>
+
+        <!-- PERSONNEL & RECORDS MANAGEMENT -->
+        <div class="space-y-1">
+          <div class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider px-3 mb-1.5">Personnel 201</div>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-users w-4 text-center"></i>
+            <span>Active Personnel</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-map-location-dot w-4 text-center"></i>
+            <span>Duty Deployments</span>
+          </a>
+          <a href="#" class="flex items-center justify-between px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <div class="flex items-center gap-3">
+              <i class="fa-solid fa-calendar-check w-4 text-center"></i>
+              <span>Leave Applications</span>
+            </div>
+            <span class="px-1.5 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-bold">1</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-award w-4 text-center"></i>
+            <span>Promotion Records</span>
+          </a>
+        </div>
+
+        <!-- DAILY ATTENDANCE LOGS -->
+        <div class="space-y-1">
+          <div class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider px-3 mb-1.5">Attendance & DTR</div>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-clock w-4 text-center"></i>
+            <span>Daily Attendance Logs</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-desktop w-4 text-center"></i>
+            <span>Kiosk Terminal Logs</span>
+          </a>
+        </div>
+
+        <!-- ANALYTICS & INSIGHTS -->
+        <div class="space-y-1">
+          <div class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider px-3 mb-1.5">Reports</div>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-file-invoice w-4 text-center"></i>
+            <span>HR Audit & Reports</span>
+          </a>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- USER FOOTER -->
+    <div class="p-3 border-t border-slate-800/80 bg-slate-950/40">
+      <button onclick="alert('Logging out...')" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all">
+        <i class="fa-solid fa-arrow-right-from-bracket text-red-500"></i>
+        <span>Sign out</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ==================== MAIN CONTENT CONTAINER ==================== -->
+  <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-slate-50">
+
+    <!-- TOP HEADER NAVBAR -->
+    <header class="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between shrink-0 z-20">
+      <div class="flex items-center gap-3">
+        <div class="text-xs text-slate-500 font-medium flex items-center gap-2">
+          <span class="text-slate-500">HR Admin</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <div class="relative">
+          <button class="p-2 rounded-xl text-slate-500 hover:bg-slate-100 relative">
+            <i class="fa-regular fa-bell text-base"></i>
+            <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-white"></span>
+          </button>
+        </div>
+
+        <div class="flex items-center gap-3 pl-3 border-l border-slate-200">
+          <div class="w-9 h-9 rounded-full bg-slate-900 text-amber-400 font-bold text-xs flex items-center justify-center border border-slate-700 shadow-sm">
+            MC
+          </div>
+          <div class="text-left leading-tight">
+            <p class="text-xs font-bold text-slate-900">PMAJ M. C. Balneg</p>
+            <p class="text-[10px] text-slate-400">mcbalnegg915@gmail.com</p>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- DASHBOARD SCROLLABLE BODY -->
+    <main class="flex-1 overflow-y-auto p-6 space-y-6">
+
+      <!-- TOP PAGE TITLE & QUICK ACTION HEADER -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 class="text-2xl font-black text-slate-900 tracking-tight">Dashboard Overview</h1>
+          <p class="text-xs text-slate-500 font-medium mt-0.5">
+            Real-time manpower analytics, daily attendance, and deployment status for <span class="font-bold text-slate-700">October 11, 2026</span>.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2.5">
+          <div class="bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-sm flex items-center gap-2">
+            <i class="fa-regular fa-calendar text-slate-400"></i>
+            <span>Last 30 days</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- KEY PERFORMANCE INDICATORS (KPI CARDS) GRID -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+
+        <!-- 1. TOTAL PERSONNEL -->
+        <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-sm flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 flex items-center justify-center text-lg font-bold shrink-0">
+            <i class="fa-solid fa-users"></i>
+          </div>
+          <div>
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Active 201</p>
+            <p class="text-2xl font-black text-slate-900">28</p>
+            <p class="text-[10px] text-emerald-600 font-semibold"><i class="fa-solid fa-check"></i> 100% Verified Roster</p>
+          </div>
+        </div>
+
+        <!-- 2. PRESENT ON DUTY -->
+        <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-sm flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-purple-50 border border-purple-200 text-purple-700 flex items-center justify-center text-lg font-bold shrink-0">
+            <i class="fa-solid fa-user-check"></i>
+          </div>
+          <div>
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Present On Duty</p>
+            <p class="text-2xl font-black text-slate-900">25 <span class="text-xs font-normal text-slate-400">/ 28</span></p>
+            <p class="text-[10px] text-purple-700 font-semibold">89.3% Operational Strength</p>
+          </div>
+        </div>
+
+        <!-- 3. ABSENT / LEAVE TODAY -->
+        <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-sm flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center text-lg font-bold shrink-0">
+            <i class="fa-solid fa-user-xmark"></i>
+          </div>
+          <div>
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Absent / Leave</p>
+            <p class="text-2xl font-black text-slate-900">1</p>
+            <p class="text-[10px] text-amber-700 font-semibold">Approved Leave Status</p>
+          </div>
+        </div>
+
+        <!-- 4. PARTIAL / LATE -->
+        <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-sm flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 flex items-center justify-center text-lg font-bold shrink-0">
+            <i class="fa-solid fa-user-clock"></i>
+          </div>
+          <div>
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Partial / Late</p>
+            <p class="text-2xl font-black text-slate-900">2</p>
+            <p class="text-[10px] text-rose-600 font-semibold">Half-day / Late Check-in</p>
+          </div>
+        </div>
+
+        <!-- 5. PLANTILLA VACANCIES -->
+        <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-sm flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center text-lg font-bold shrink-0">
+            <i class="fa-solid fa-briefcase"></i>
+          </div>
+          <div>
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Plantilla Vacancies</p>
+            <p class="text-2xl font-black text-slate-900">1</p>
+            <p class="text-[10px] text-indigo-600 font-semibold">Open for Recruitment</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- MAIN SPLIT DASHBOARD SECTION (2 COLUMNS) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+        <!-- LEFT COLUMN: DYNAMIC PERSONNEL DISTRIBUTION & VERTICAL RECRUITMENT PIPELINE GRAPH (8 COLS) -->
+        <div class="lg:col-span-8 space-y-6">
+
+          <!-- CARD 1: PERSONNEL DISTRIBUTION WITH FILTERS -->
+          <div class="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-sm space-y-5">
+            
+            <!-- SECTION HEADER WITH SINGLE FILTER DROPDOWN -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+              <div>
+                <h2 id="viewTitle" class="text-base font-bold text-slate-900">Personnel Distribution by Unit</h2>
+                <p id="viewDesc" class="text-xs text-slate-400">Headcount distribution across station units</p>
+              </div>
+
+              <!-- MAIN SINGLE FILTER DROPDOWN -->
+              <div class="relative">
+                <select id="mainFilter" onchange="renderFilteredView()" class="pl-9 pr-8 py-2 text-xs font-bold rounded-xl border border-slate-200 bg-slate-50 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600 appearance-none cursor-pointer shadow-sm">
+                  <option value="UNITS" selected>Filter by Units</option>
+                  <option value="RANKS">Filter by Ranks (Highest to Lowest)</option>
+                  <option value="GENDER">Filter by Gender</option>
+                </select>
+                <i class="fa-solid fa-filter absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs pointer-events-none"></i>
+                <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-[9px] pointer-events-none"></i>
+              </div>
+            </div>
+
+            <!-- DYNAMIC CONTENT AREA -->
+            <div id="distributionContainer" class="space-y-3.5">
+              <!-- Dynamic rows rendered by JS based on selected filter -->
+            </div>
+
+            <!-- FOOTER SUMMARY -->
+            <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-medium">
+              <span id="footerCountLabel">Showing 10 Units</span>
+              <span id="footerTotalLabel" class="font-bold text-slate-700">Total: 28 Personnel</span>
+            </div>
+
+          </div>
+
+          <!-- CARD 2: VERTICAL RECRUITMENT PIPELINE COLUMN GRAPH -->
+          <div class="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-sm space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div>
+                <h2 class="text-base font-bold text-slate-900">Recruitment Pipeline Overview</h2>
+                <p class="text-xs text-slate-400">Vertical column breakdown of candidates per recruitment stage</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-xl text-[11px] font-bold">
+                  2 Total Applicants
+                </span>
+              </div>
+            </div>
+
+            <!-- VERTICAL BAR CHART GRAPH CONTAINER -->
+            <div class="relative w-full h-80 pt-2">
+              <canvas id="pipelineChart"></canvas>
+            </div>
+
+            <!-- GRAPH LEGEND FOOTER -->
+            <div class="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between text-[11px] text-slate-500 font-medium gap-2">
+              <div class="flex items-center gap-4">
+                <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-blue-600"></span> Active Candidate</span>
+                <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-slate-300"></span> Empty Stage</span>
+                <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-rose-500"></span> Disqualified / Not Selected</span>
+              </div>
+              <span class="font-bold text-slate-700">Updated Real-Time</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- RIGHT COLUMN: TODAY'S STATION PULSE WITH PIE CHART (4 COLS) -->
+        <div class="lg:col-span-4 space-y-6">
+
+          <!-- TODAY'S STATION PULSE CARD WITH ATTENDANCE PIE GRAPH -->
+          <div class="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-sm space-y-5">
+            <div class="border-b border-slate-100 pb-3 flex items-center justify-between">
+              <div>
+                <h2 class="text-base font-bold text-slate-900">Daily Attendance Overview</h2>
+                <p class="text-xs text-slate-400">Real-time DTR & Attendance Status</p>
+              </div>
+              <span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-extrabold uppercase tracking-wide">Live Log</span>
+            </div>
+
+            <!-- PIE / DONUT GRAPH CONTAINER -->
+            <div class="relative flex justify-center items-center py-2">
+              <div class="w-44 h-44 relative">
+                <canvas id="attendancePieChart"></canvas>
+                <!-- OVERLAY TEXT IN CENTER OF PIE -->
+                <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <span class="text-2xl font-black text-slate-900">28</span>
+                  <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Total Active</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- ATTENDANCE CATEGORIES BREAKDOWN LIST -->
+            <div class="space-y-2.5 text-xs">
+
+              <!-- PRESENT -->
+              <div class="flex items-center justify-between p-2.5 bg-emerald-50/60 rounded-xl border border-emerald-100">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+                  <span class="font-bold text-emerald-900">Present</span>
+                </div>
+                <span class="font-black text-emerald-800 font-mono">25 <span class="text-[10px] font-normal text-emerald-600">(89.3%)</span></span>
+              </div>
+
+              <!-- ABSENT -->
+              <div class="flex items-center justify-between p-2.5 bg-amber-50/60 rounded-xl border border-amber-100">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-3 h-3 rounded-full bg-amber-500"></span>
+                  <span class="font-bold text-amber-900">Absent / Leave</span>
+                </div>
+                <span class="font-black text-amber-800 font-mono">1 <span class="text-[10px] font-normal text-amber-600">(3.6%)</span></span>
+              </div>
+
+              <!-- PARTIAL -->
+              <div class="flex items-center justify-between p-2.5 bg-rose-50/60 rounded-xl border border-rose-100">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-3 h-3 rounded-full bg-rose-500"></span>
+                  <span class="font-bold text-rose-900">Partial / Late</span>
+                </div>
+                <span class="font-black text-rose-800 font-mono">2 <span class="text-[10px] font-normal text-rose-600">(7.1%)</span></span>
+              </div>
+
+            </div>
+
+            <div class="pt-2">
+              <button onclick="alert('Viewing full station attendance roster...')" class="w-full py-2.5 text-center text-xs font-bold text-blue-700 hover:text-blue-900 hover:bg-blue-50 rounded-xl transition-all flex items-center justify-center gap-1.5 border border-blue-100">
+                <span>Go to Full Attendance Roster</span>
+                <i class="fa-solid fa-arrow-right text-[10px]"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- PROMOTION ENDORSEMENT NOTICE CARD -->
+          <div class="bg-gradient-to-br from-slate-900 to-blue-950 text-white rounded-2xl p-6 shadow-md border border-slate-800 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/30 text-amber-300 text-[10px] font-bold uppercase tracking-wider">
+                Promotion Notice
+              </span>
+              <i class="fa-solid fa-award text-amber-400 text-lg"></i>
+            </div>
+            <h3 class="text-sm font-bold text-white">Q4 Promotion Endorsement</h3>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              3 Police Non-Commissioned Officers (PNCO) meet the Time-in-Grade requirement for regular promotion evaluation.
+            </p>
+            <button onclick="alert('Opening promotion board evaluation...')" class="w-full py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-xl transition-colors">
+              Review Endorsements
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- ==================== RECENT ACTIVITIES ROW (APPLICATIONS & DEPLOYMENTS) ==================== -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-2">
+
+        <!-- CARD 1: RECENT APPLICATIONS -->
+        <div class="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-sm space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+              <h2 class="text-base font-bold text-slate-900">Recent Applications</h2>
+              <p class="text-xs text-slate-400">Latest applicant submissions & activity logs</p>
+            </div>
+            <a href="#" class="text-xs font-bold text-blue-700 hover:text-blue-900 transition-colors">View All Applications →</a>
+          </div>
+
+          <div class="space-y-3 text-xs">
+            <!-- Applicant Item 1 -->
+            <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 hover:bg-slate-100/80 transition-all">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-full bg-blue-100 border border-blue-200 text-blue-700 font-extrabold flex items-center justify-center text-xs shrink-0">
+                  JD
+                </div>
+                <div>
+                  <p class="font-bold text-slate-800">Juan Dela Cruz</p>
+                  <p class="text-[10px] text-slate-400">Patrolman Applicant • Applied Today at 09:15 AM</p>
+                </div>
+              </div>
+              <span class="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 font-bold text-[10px] border border-blue-200">
+                Physical Agility Test
+              </span>
+            </div>
+
+            <!-- Applicant Item 2 -->
+            <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 hover:bg-slate-100/80 transition-all">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-full bg-rose-100 border border-rose-200 text-rose-700 font-extrabold flex items-center justify-center text-xs shrink-0">
+                  MS
+                </div>
+                <div>
+                  <p class="font-bold text-slate-800">Maria Santos</p>
+                  <p class="text-[10px] text-slate-400">NUP Applicant • Oct 09, 2026</p>
+                </div>
+              </div>
+              <span class="px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 font-bold text-[10px] border border-rose-200">
+                Not Selected
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- CARD 2: RECENT DEPLOYMENTS -->
+        <div class="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-sm space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+              <h2 class="text-base font-bold text-slate-900">Recent Duty Deployments</h2>
+              <p class="text-xs text-slate-400">Latest field assignments & tactical duty logs</p>
+            </div>
+            <a href="#" class="text-xs font-bold text-blue-700 hover:text-blue-900 transition-colors">View Full Roster →</a>
+          </div>
+
+          <div class="space-y-3 text-xs">
+            <!-- Deployment Item 1 -->
+            <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 hover:bg-slate-100/80 transition-all">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-full bg-emerald-100 border border-emerald-200 text-emerald-700 font-bold flex items-center justify-center text-xs shrink-0">
+                  <i class="fa-solid fa-person-military-to-person"></i>
+                </div>
+                <div>
+                  <p class="font-bold text-slate-800">PSSg R. Reyes</p>
+                  <p class="text-[10px] text-slate-400">Mobile Patrol • Greenhills Sector (Assigned Today)</p>
+                </div>
+              </div>
+              <span class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[10px] border border-emerald-200">
+                Active Field
+              </span>
+            </div>
+
+            <!-- Deployment Item 2 -->
+            <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 hover:bg-slate-100/80 transition-all">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-full bg-slate-200 border border-slate-300 text-slate-700 font-bold flex items-center justify-center text-xs shrink-0">
+                  <i class="fa-solid fa-shield"></i>
+                </div>
+                <div>
+                  <p class="font-bold text-slate-800">PCpl A. Mendoza</p>
+                  <p class="text-[10px] text-slate-400">Fixed Post • City Hall Gate 1 (Shift Ended)</p>
+                </div>
+              </div>
+              <span class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 font-bold text-[10px] border border-slate-200">
+                Completed
+              </span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- JAVASCRIPT FOR SINGLE FILTER CONTROLLER & CHART.JS GRAPHS -->
+  <script>
+    // DATASET 1: UNITS
+    const unitsData = [
+      { name: "Administrative & Resource Management Section (ARMS)", count: 7, pct: "25.0%", color: "bg-slate-900" },
+      { name: "Investigation & Detective Management Section (IDMS)", count: 4, pct: "14.3%", color: "bg-slate-800" },
+      { name: "Deputy Chief of Police for Administration (DCOPA)", count: 3, pct: "10.7%", color: "bg-blue-800" },
+      { name: "Police Community Precinct / Station Command (PCP)", count: 3, pct: "10.7%", color: "bg-blue-800" },
+      { name: "Deputy Chief of Police for Operations (DCOPO)", count: 2, pct: "7.1%", color: "bg-slate-700" },
+      { name: "Office of the Chief of Police (COP)", count: 2, pct: "7.1%", color: "bg-slate-700" },
+      { name: "Traffic & Investigation Section (TIS)", count: 2, pct: "7.1%", color: "bg-slate-700" },
+      { name: "Station Drug Enforcement Unit (SDEU)", count: 1, pct: "3.6%", color: "bg-teal-600" },
+      { name: "Station Warrant & Subpoena Section (SWSS)", count: 1, pct: "3.6%", color: "bg-teal-600" },
+      { name: "Women & Children Protection Desk (WCPD)", count: 1, pct: "3.6%", color: "bg-teal-600" }
+    ];
+
+    // DATASET 2: RANKS (STRICT HIGHEST TO LOWEST HIERARCHY)
+    const ranksHierarchyData = [
+      { rank: "Police Major (PMAJ)", category: "Commissioned Officer (PCO)", count: 1, pct: "3.6%", color: "bg-slate-900" },
+      { rank: "Police Captain (PCPT)", category: "Commissioned Officer (PCO)", count: 2, pct: "7.1%", color: "bg-slate-800" },
+      { rank: "Police Lieutenant (PLT)", category: "Commissioned Officer (PCO)", count: 5, pct: "17.9%", color: "bg-slate-700" },
+      { rank: "Police Executive Master Sergeant (PEMS)", category: "Non-Commissioned (PNCO)", count: 1, pct: "3.6%", color: "bg-blue-900" },
+      { rank: "Police Chief Master Sergeant (PCMS)", category: "Non-Commissioned (PNCO)", count: 2, pct: "7.1%", color: "bg-blue-800" },
+      { rank: "Police Senior Master Sergeant (PSMS)", category: "Non-Commissioned (PNCO)", count: 3, pct: "10.7%", color: "bg-blue-700" },
+      { rank: "Police Staff Sergeant (PSSg)", category: "Non-Commissioned (PNCO)", count: 4, pct: "14.3%", color: "bg-blue-600" },
+      { rank: "Corporal (Cpl) / Patrolman / Patrolwoman", category: "Non-Commissioned (PNCO)", count: 6, pct: "21.4%", color: "bg-blue-500" },
+      { rank: "Non-Uniformed Personnel (NUP)", category: "Civilian Staff", count: 4, pct: "14.3%", color: "bg-amber-600" }
+    ];
+
+    // DATASET 3: GENDER DEMOGRAPHICS
+    const genderData = [
+      { type: "Male Personnel", count: 20, pct: "71.4%", color: "bg-blue-700", icon: "fa-mars text-blue-600" },
+      { type: "Female Personnel", count: 8, pct: "28.6%", color: "bg-pink-600", icon: "fa-venus text-pink-500" }
+    ];
+
+    function renderFilteredView() {
+      const selectedFilter = document.getElementById('mainFilter').value;
+      const container = document.getElementById('distributionContainer');
+      const title = document.getElementById('viewTitle');
+      const desc = document.getElementById('viewDesc');
+      const countLabel = document.getElementById('footerCountLabel');
+      const totalLabel = document.getElementById('footerTotalLabel');
+
+      container.innerHTML = '';
+
+      if (selectedFilter === 'UNITS') {
+        title.textContent = "Personnel Distribution by Unit";
+        desc.textContent = "Headcount breakdown across 10 station units";
+        countLabel.textContent = "Showing 10 Station Units";
+        totalLabel.textContent = "Total: 28 Personnel";
+
+        const maxUnitCount = Math.max(...unitsData.map(u => u.count));
+
+        unitsData.forEach(item => {
+          const barWidth = (item.count / maxUnitCount) * 100;
+          container.innerHTML += `
+            <div class="space-y-1">
+              <div class="flex justify-between text-xs font-bold">
+                <span class="text-slate-800">${item.name}</span>
+                <span class="text-slate-900 font-mono">${item.count} Personnel (${item.pct})</span>
+              </div>
+              <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden p-0.5 border border-slate-200">
+                <div class="${item.color} h-full rounded-full transition-all duration-300" style="width: ${barWidth}%"></div>
+              </div>
+            </div>
+          `;
+        });
+
+      } else if (selectedFilter === 'RANKS') {
+        title.textContent = "Personnel Distribution by Rank Hierarchy";
+        desc.textContent = "Rank structure sorted from Highest Rank to Lowest Rank";
+        countLabel.textContent = "Showing 9 Rank Classifications";
+        totalLabel.textContent = "Total: 28 Personnel";
+
+        const maxRankCount = Math.max(...ranksHierarchyData.map(r => r.count));
+
+        ranksHierarchyData.forEach(item => {
+          const barWidth = (item.count / maxRankCount) * 100;
+          container.innerHTML += `
+            <div class="space-y-1">
+              <div class="flex justify-between items-center text-xs font-bold">
+                <div>
+                  <span class="text-slate-900">${item.rank}</span>
+                  <span class="text-[10px] text-slate-400 font-semibold ml-1.5">(${item.category})</span>
+                </div>
+                <span class="text-slate-900 font-mono">${item.count} Personnel (${item.pct})</span>
+              </div>
+              <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden p-0.5 border border-slate-200">
+                <div class="${item.color} h-full rounded-full transition-all duration-300" style="width: ${barWidth}%"></div>
+              </div>
+            </div>
+          `;
+        });
+
+      } else if (selectedFilter === 'GENDER') {
+        title.textContent = "Personnel Distribution by Gender";
+        desc.textContent = "Demographic breakdown of Male and Female station personnel";
+        countLabel.textContent = "Showing Gender Distribution";
+        totalLabel.textContent = "Total: 28 Personnel";
+
+        genderData.forEach(item => {
+          container.innerHTML += `
+            <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+              <div class="flex items-center justify-between text-xs font-bold">
+                <span class="text-slate-900 flex items-center gap-2">
+                  <i class="fa-solid ${item.icon} text-base"></i>
+                  <span>${item.type}</span>
+                </span>
+                <span class="text-slate-900 font-mono font-black text-sm">${item.count} (${item.pct})</span>
+              </div>
+              <div class="w-full bg-slate-200 h-3.5 rounded-full overflow-hidden p-0.5 border border-slate-300">
+                <div class="${item.color} h-full rounded-full transition-all duration-500" style="width: ${item.pct}"></div>
+              </div>
+            </div>
+          `;
+        });
+      }
+    }
+
+    // INITIALIZE CHART.JS RECRUITMENT PIPELINE VERTICAL COLUMN CHART
+    function initPipelineChart() {
+      const ctx = document.getElementById('pipelineChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: [
+            ['Application', 'Submission'],
+            ['Physical Agility', 'Test'],
+            ['Physical & Medical', 'Exam'],
+            ['Neuro-Psychiatric', 'Exam'],
+            ['Drug Test'],
+            ['Background', 'Investigation'],
+            ['Panel Interview'],
+            ['Final Evaluation'],
+            ['Not Selected']
+          ],
+          datasets: [{
+            label: 'Applicants',
+            data: [0, 1, 0, 0, 0, 0, 0, 0, 1],
+            backgroundColor: [
+              '#cbd5e1', // Stage 1
+              '#2563eb', // Stage 2 (Active Candidate - Blue)
+              '#cbd5e1', // Stage 3
+              '#cbd5e1', // Stage 4
+              '#cbd5e1', // Stage 5
+              '#cbd5e1', // Stage 6
+              '#cbd5e1', // Stage 7
+              '#cbd5e1', // Stage 8
+              '#f43f5e'  // Disqualified (Rose/Red)
+            ],
+            borderRadius: 6,
+            barThickness: 24
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return ` ${context.raw} Applicant(s)`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: { font: { size: 9, weight: '600', family: 'Inter' }, color: '#475569' },
+              grid: { display: false }
+            },
+            y: {
+              beginAtZero: true,
+              ticks: { stepSize: 1, font: { size: 10, family: 'Inter' } },
+              grid: { color: '#f1f5f9' }
+            }
+          }
+        }
+      });
+    }
+
+    // INITIALIZE CHART.JS PIE GRAPH FOR ATTENDANCE
+    function initAttendancePieChart() {
+      const ctx = document.getElementById('attendancePieChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Present', 'Absent', 'Partial'],
+          datasets: [{
+            data: [25, 1, 2],
+            backgroundColor: ['#10b981', '#f59e0b', '#f43f5e'],
+            hoverBackgroundColor: ['#059669', '#d97706', '#e11d48'],
+            borderWidth: 3,
+            borderColor: '#ffffff'
+          }]
+        },
+        options: {
+          cutout: '72%',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return ` ${context.label}: ${context.raw} Personnel`;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Initialize Default View Mode and Charts on Load
+    document.addEventListener('DOMContentLoaded', () => {
+      renderFilteredView();
+      initPipelineChart();
+      initAttendancePieChart();
+    });
+  </script>
+
+</body>
+</html>

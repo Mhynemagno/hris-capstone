@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Duty Deployments - San Juan City Police Station HR Admin</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- FontAwesome 6 Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body class="h-full font-sans text-slate-800 antialiased overflow-hidden flex">
+
+  <!-- ==================== LEFT SIDEBAR NAVIGATION ==================== -->
+  <aside class="w-64 bg-[#0B132B] text-slate-300 flex flex-col justify-between shrink-0 h-full z-30 border-r border-slate-800">
+    <div>
+      
+      <!-- BRANDING & LOGO HEADER -->
+      <div class="p-4 border-b border-slate-800/80 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-blue-900 border border-amber-400/50 flex items-center justify-center text-amber-400 text-lg shadow-md shrink-0">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <div class="min-w-0">
+          <h1 class="text-xs font-extrabold text-white tracking-wider uppercase truncate">San Juan City PS</h1>
+        </div>
+      </div>
+
+      <!-- NAVIGATION MENU SECTION -->
+      <div class="px-3 py-4 space-y-6">
+        
+        <!-- DASHBOARD DIRECT LINK -->
+        <div>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-chart-pie w-4 text-center"></i>
+            <span>Dashboard</span>
+          </a>
+        </div>
+
+        <!-- RECRUITMENT MANAGEMENT -->
+        <div class="space-y-1">
+          <div class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider px-3 mb-1.5">Recruitment</div>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-briefcase w-4 text-center"></i>
+            <span>Plantilla Openings</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-id-card-clip w-4 text-center"></i>
+            <span>Applicant Roster</span>
+          </a>
+        </div>
+
+        <!-- PERSONNEL & RECORDS MANAGEMENT -->
+        <div class="space-y-1">
+          <div class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider px-3 mb-1.5">Personnel 201</div>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-users w-4 text-center"></i>
+            <span>Active Personnel</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-blue-700 text-white shadow-lg shadow-blue-900/40">
+            <i class="fa-solid fa-map-location-dot w-4 text-center text-sm"></i>
+            <span>Duty Deployments</span>
+          </a>
+          <a href="#" class="flex items-center justify-between px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <div class="flex items-center gap-3">
+              <i class="fa-solid fa-calendar-check w-4 text-center"></i>
+              <span>Leave Applications</span>
+            </div>
+            <span class="px-1.5 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-bold">1</span>
+          </a>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- USER FOOTER -->
+    <div class="p-3 border-t border-slate-800/80 bg-slate-950/40">
+      <button onclick="alert('Logging out...')" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all">
+        <i class="fa-solid fa-arrow-right-from-bracket text-red-500"></i>
+        <span>Sign out</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ==================== MAIN CONTENT CONTAINER ==================== -->
+  <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-slate-50">
+
+    <!-- TOP HEADER NAVBAR -->
+    <header class="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between shrink-0 z-20">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-blue-900 text-amber-400 flex items-center justify-center font-bold text-xs shadow-sm">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <div class="flex flex-col">
+          <div class="flex items-center gap-2">
+            <span class="font-extrabold text-xs text-slate-900 tracking-tight">SAN JUAN CITY POLICE STATION</span>
+            <span class="px-2 py-0.5 text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 rounded-md">HRDD Portal</span>
+          </div>
+          <span class="text-[10px] text-slate-400 font-medium">Personnel Management • Duty Deployments & Field Assignments</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <button class="p-2 rounded-xl text-slate-500 hover:bg-slate-100 relative">
+          <i class="fa-regular fa-bell text-base"></i>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-white"></span>
+        </button>
+
+        <div class="flex items-center gap-3 pl-3 border-l border-slate-200">
+          <div class="w-9 h-9 rounded-full bg-slate-900 text-amber-400 font-bold text-xs flex items-center justify-center border border-slate-700 shadow-sm">
+            MC
+          </div>
+          <div class="text-left leading-tight">
+            <p class="text-xs font-bold text-slate-900">PMAJ M. C. Balneg</p>
+            <p class="text-[10px] text-slate-400">mcbalnegg915@gmail.com</p>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN SCROLLABLE CONTENT -->
+    <main class="flex-1 overflow-y-auto p-6 space-y-6">
+
+      <!-- PAGE TITLE & NEW DEPLOYMENT BUTTON -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 class="text-2xl font-black text-slate-900 tracking-tight">DEPLOYMENTS</h1>
+          <p class="text-xs text-slate-500 font-medium mt-0.5">Create and manage personnel deployments without losing their history.</p>
+        </div>
+
+        <button onclick="toggleDeploymentModal(true)" class="px-4 py-2.5 bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs rounded-xl shadow-md shadow-blue-900/20 transition-all flex items-center gap-2 self-start sm:self-auto">
+          <i class="fa-solid fa-plus text-xs"></i>
+          <span>New Deployment</span>
+        </button>
+      </div>
+
+      <!-- MAIN TABLE CONTAINER CARD -->
+      <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
+        
+        <!-- SEARCH BAR & FILTER ROW -->
+        <div class="p-4 border-b border-slate-100 bg-slate-50/50">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
+            
+            <div class="lg:col-span-5 relative">
+              <input type="text" placeholder="Search employee name or badge number..." class="w-full pl-9 pr-4 py-2 text-xs font-medium rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all">
+              <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+            </div>
+
+            <div class="lg:col-span-4 relative">
+              <select class="w-full pl-3 pr-8 py-2 text-xs font-semibold rounded-xl border border-slate-200 bg-white text-slate-700 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer">
+                <option selected>All Deployment Types</option>
+                <option>Public Assembly / Rally</option>
+                <option>Disaster Response / Flood</option>
+                <option>Special Event / Fiesta</option>
+                <option>Mobile / Fixed Post Patrol</option>
+              </select>
+              <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-[9px] pointer-events-none"></i>
+            </div>
+
+            <div class="lg:col-span-3 relative">
+              <select class="w-full pl-3 pr-8 py-2 text-xs font-semibold rounded-xl border border-slate-200 bg-white text-slate-700 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer">
+                <option selected>All Statuses</option>
+                <option>Ongoing</option>
+                <option>Scheduled</option>
+                <option>Completed</option>
+                <option>Cancelled</option>
+              </select>
+              <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-[9px] pointer-events-none"></i>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- DEPLOYMENTS TABLE -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="border-b border-slate-100 bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                <th class="py-3.5 px-6">Employee</th>
+                <th class="py-3.5 px-4">Location</th>
+                <th class="py-3.5 px-4">Type / Event</th>
+                <th class="py-3.5 px-4">Dates</th>
+                <th class="py-3.5 px-4">Status</th>
+                <th class="py-3.5 px-6 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 text-slate-700 font-medium">
+              
+              <!-- ROW 1 -->
+              <tr class="hover:bg-slate-50/80 transition-colors">
+                <td class="py-4 px-6">
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full bg-blue-100 border border-blue-200 text-blue-800 font-extrabold text-xs flex items-center justify-center shrink-0">
+                      DA
+                    </div>
+                    <div>
+                      <p class="font-bold text-slate-900 text-sm">Danilo Fernandez Aguilar Jr</p>
+                      <p class="text-[10px] font-mono text-slate-400">Badge: 0-11152</p>
+                    </div>
+                  </div>
+                </td>
+                <td class="py-4 px-4 font-semibold text-slate-800">
+                  <i class="fa-solid fa-location-dot text-slate-400 mr-1"></i> San Juan
+                </td>
+                <td class="py-4 px-4">
+                  <p class="font-bold text-slate-800">Public Assembly</p>
+                  <p class="text-[10px] text-slate-400">Rally</p>
+                </td>
+                <td class="py-4 px-4 font-mono text-[11px] text-slate-600">
+                  Oct 13, 2026 – Oct 13, 2026
+                </td>
+                <td class="py-4 px-4">
+                  <span class="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-bold text-[10px] uppercase tracking-wider">
+                    Ongoing
+                  </span>
+                </td>
+                <td class="py-4 px-6 text-center">
+                  <div class="flex items-center justify-center gap-1.5">
+                    <button onclick="alert('Viewing deployment details...')" title="View Details" class="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
+                      <i class="fa-solid fa-eye text-xs"></i>
+                    </button>
+                    <button onclick="alert('Editing deployment...')" title="Edit Deployment" class="p-2 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all">
+                      <i class="fa-solid fa-pen-to-square text-xs"></i>
+                    </button>
+                    <button onclick="confirm('Cancel or delete this deployment?') && alert('Deleted.')" title="Delete Deployment" class="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all">
+                      <i class="fa-solid fa-trash-can text-xs"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- ROW 2 -->
+              <tr class="hover:bg-slate-50/80 transition-colors">
+                <td class="py-4 px-6">
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full bg-blue-100 border border-blue-200 text-blue-800 font-extrabold text-xs flex items-center justify-center shrink-0">
+                      DA
+                    </div>
+                    <div>
+                      <p class="font-bold text-slate-900 text-sm">Danilo Fernandez Aguilar Jr</p>
+                      <p class="text-[10px] font-mono text-slate-400">Badge: 0-11152</p>
+                    </div>
+                  </div>
+                </td>
+                <td class="py-4 px-4 font-semibold text-slate-800">
+                  <i class="fa-solid fa-location-dot text-slate-400 mr-1"></i> San Juan
+                </td>
+                <td class="py-4 px-4">
+                  <p class="font-bold text-slate-800">Public Assembly</p>
+                  <p class="text-[10px] text-slate-400">Rally</p>
+                </td>
+                <td class="py-4 px-4 font-mono text-[11px] text-slate-600">
+                  Oct 12, 2026 – Oct 12, 2026
+                </td>
+                <td class="py-4 px-4">
+                  <span class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200 font-bold text-[10px] uppercase tracking-wider">
+                    Scheduled
+                  </span>
+                </td>
+                <td class="py-4 px-6 text-center">
+                  <div class="flex items-center justify-center gap-1.5">
+                    <button onclick="alert('Viewing deployment details...')" title="View Details" class="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
+                      <i class="fa-solid fa-eye text-xs"></i>
+                    </button>
+                    <button onclick="alert('Editing deployment...')" title="Edit Deployment" class="p-2 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all">
+                      <i class="fa-solid fa-pen-to-square text-xs"></i>
+                    </button>
+                    <button onclick="confirm('Cancel or delete this deployment?') && alert('Deleted.')" title="Delete Deployment" class="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all">
+                      <i class="fa-solid fa-trash-can text-xs"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- ROW 3 -->
+              <tr class="hover:bg-slate-50/80 transition-colors">
+                <td class="py-4 px-6">
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full bg-purple-100 border border-purple-200 text-purple-800 font-extrabold text-xs flex items-center justify-center shrink-0">
+                      MB
+                    </div>
+                    <div>
+                      <p class="font-bold text-slate-900 text-sm">Maria Cristina Baldoz Balneg</p>
+                      <p class="text-[10px] font-mono text-slate-400">Badge: 1-60482</p>
+                    </div>
+                  </div>
+                </td>
+                <td class="py-4 px-4 font-semibold text-slate-800">
+                  <i class="fa-solid fa-location-dot text-slate-400 mr-1"></i> Salapan, San Juan City
+                </td>
+                <td class="py-4 px-4">
+                  <p class="font-bold text-slate-800">Disaster Response</p>
+                  <p class="text-[10px] text-slate-400">Flood / Emergency</p>
+                </td>
+                <td class="py-4 px-4 font-mono text-[11px] text-slate-600">
+                  Oct 10, 2026 – No end date
+                </td>
+                <td class="py-4 px-4">
+                  <span class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200 font-bold text-[10px] uppercase tracking-wider">
+                    Scheduled
+                  </span>
+                </td>
+                <td class="py-4 px-6 text-center">
+                  <div class="flex items-center justify-center gap-1.5">
+                    <button onclick="alert('Viewing deployment details...')" title="View Details" class="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
+                      <i class="fa-solid fa-eye text-xs"></i>
+                    </button>
+                    <button onclick="alert('Editing deployment...')" title="Edit Deployment" class="p-2 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all">
+                      <i class="fa-solid fa-pen-to-square text-xs"></i>
+                    </button>
+                    <button onclick="confirm('Cancel or delete this deployment?') && alert('Deleted.')" title="Delete Deployment" class="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all">
+                      <i class="fa-solid fa-trash-can text-xs"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- ROW 4 -->
+              <tr class="hover:bg-slate-50/80 transition-colors">
+                <td class="py-4 px-6">
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full bg-emerald-100 border border-emerald-200 text-emerald-800 font-extrabold text-xs flex items-center justify-center shrink-0">
+                      TP
+                    </div>
+                    <div>
+                      <p class="font-bold text-slate-900 text-sm">Tyson Bernal Peters Jr</p>
+                      <p class="text-[10px] font-mono text-slate-400">Badge: 4-15889</p>
+                    </div>
+                  </div>
+                </td>
+                <td class="py-4 px-4 font-semibold text-slate-800">
+                  <i class="fa-solid fa-location-dot text-slate-400 mr-1"></i> Greenhills Sector
+                </td>
+                <td class="py-4 px-4">
+                  <p class="font-bold text-slate-800">Mobile Patrol</p>
+                  <p class="text-[10px] text-slate-400">Regular Duty</p>
+                </td>
+                <td class="py-4 px-4 font-mono text-[11px] text-slate-600">
+                  Sep 28, 2026 – No end date
+                </td>
+                <td class="py-4 px-4">
+                  <span class="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-bold text-[10px] uppercase tracking-wider">
+                    Ongoing
+                  </span>
+                </td>
+                <td class="py-4 px-6 text-center">
+                  <div class="flex items-center justify-center gap-1.5">
+                    <button onclick="alert('Viewing deployment details...')" title="View Details" class="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
+                      <i class="fa-solid fa-eye text-xs"></i>
+                    </button>
+                    <button onclick="alert('Editing deployment...')" title="Edit Deployment" class="p-2 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all">
+                      <i class="fa-solid fa-pen-to-square text-xs"></i>
+                    </button>
+                    <button onclick="confirm('Cancel or delete this deployment?') && alert('Deleted.')" title="Delete Deployment" class="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all">
+                      <i class="fa-solid fa-trash-can text-xs"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- ROW 5 (CANCELLED) -->
+              <tr class="hover:bg-slate-50/80 transition-colors">
+                <td class="py-4 px-6">
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full bg-rose-100 border border-rose-200 text-rose-800 font-extrabold text-xs flex items-center justify-center shrink-0">
+                      SA
+                    </div>
+                    <div>
+                      <p class="font-bold text-slate-900 text-sm">Sandara Arquillo</p>
+                      <p class="text-[10px] font-mono text-slate-400">Badge: 0-56441</p>
+                    </div>
+                  </div>
+                </td>
+                <td class="py-4 px-4 font-semibold text-slate-800">
+                  <i class="fa-solid fa-location-dot text-slate-400 mr-1"></i> Sub Station 1 - Greenhills
+                </td>
+                <td class="py-4 px-4">
+                  <p class="font-bold text-slate-800">Public Assembly</p>
+                  <p class="text-[10px] text-slate-400">Rally</p>
+                </td>
+                <td class="py-4 px-4 font-mono text-[11px] text-slate-600">
+                  Sep 25, 2026 – No end date
+                </td>
+                <td class="py-4 px-4">
+                  <span class="px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200 font-bold text-[10px] uppercase tracking-wider">
+                    Cancelled
+                  </span>
+                </td>
+                <td class="py-4 px-6 text-center">
+                  <div class="flex items-center justify-center gap-1.5">
+                    <button onclick="alert('Viewing deployment details...')" title="View Details" class="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
+                      <i class="fa-solid fa-eye text-xs"></i>
+                    </button>
+                    <button onclick="alert('Editing deployment...')" title="Edit Deployment" class="p-2 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all">
+                      <i class="fa-solid fa-pen-to-square text-xs"></i>
+                    </button>
+                    <button onclick="confirm('Cancel or delete this deployment?') && alert('Deleted.')" title="Delete Deployment" class="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all">
+                      <i class="fa-solid fa-trash-can text-xs"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+
+        <!-- TABLE PAGINATION FOOTER -->
+        <div class="p-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between text-xs text-slate-500">
+          <span>Showing 1–9 of 9 deployments</span>
+          
+          <div class="flex items-center gap-2">
+            <button class="px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-400 font-bold cursor-not-allowed opacity-60">
+              <i class="fa-solid fa-chevron-left text-[10px] mr-1"></i> Previous
+            </button>
+            <button class="px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-400 font-bold cursor-not-allowed opacity-60">
+              Next <i class="fa-solid fa-chevron-right text-[10px] ml-1"></i>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- ==================== NEW DEPLOYMENT SLIDE-OVER MODAL ==================== -->
+  <div id="deploymentModal" class="fixed inset-0 z-50 hidden">
+    <!-- Backdrop Overlay -->
+    <div onclick="toggleDeploymentModal(false)" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"></div>
+
+    <!-- Modal Card Body -->
+    <div class="absolute right-0 top-0 bottom-0 w-full max-w-lg bg-white shadow-2xl flex flex-col justify-between border-l border-slate-200 transition-all">
+      
+      <!-- Modal Header -->
+      <div class="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+        <div>
+          <h2 class="text-lg font-black text-slate-900">Create Deployment</h2>
+          <p class="text-xs text-slate-500 font-medium">Assign an employee to a duty location and operation.</p>
+        </div>
+        <button onclick="toggleDeploymentModal(false)" class="w-8 h-8 rounded-xl bg-slate-200 text-slate-600 hover:bg-slate-300 flex items-center justify-center transition-all">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Modal Scrollable Form -->
+      <div class="p-6 overflow-y-auto space-y-4 text-xs font-semibold text-slate-700">
+        
+        <!-- Employee Select -->
+        <div class="space-y-1">
+          <label class="block">Employee <span class="text-rose-500">*</span></label>
+          <div class="relative">
+            <input type="text" placeholder="Type a name or badge number..." class="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all">
+            <i class="fa-solid fa-user-shield absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+          </div>
+          <p class="text-[10px] text-slate-400 font-normal">Search active station personnel by full name or badge ID.</p>
+        </div>
+
+        <!-- Location & Deployment Type (2 cols) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="space-y-1">
+            <label class="block">Location <span class="text-rose-500">*</span></label>
+            <input type="text" placeholder="e.g. Greenhills Sector" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all">
+          </div>
+
+          <div class="space-y-1">
+            <label class="block">Deployment Type <span class="text-rose-500">*</span></label>
+            <select class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all cursor-pointer">
+              <option selected disabled>Select deployment type</option>
+              <option>Regular Patrol</option>
+              <option>Public Assembly / Rally</option>
+              <option>Disaster Response</option>
+              <option>Special Event</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Event & Status (2 cols) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="space-y-1">
+            <label class="block">Event / Operation <span class="text-rose-500">*</span></label>
+            <input type="text" placeholder="e.g. Fiesta / Major Event" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all">
+          </div>
+
+          <div class="space-y-1">
+            <label class="block">Status <span class="text-rose-500">*</span></label>
+            <select class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all cursor-pointer">
+              <option value="Scheduled" selected>Scheduled</option>
+              <option value="Ongoing">Ongoing</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Start Date & End Date (2 cols) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="space-y-1">
+            <label class="block">Start Date <span class="text-rose-500">*</span></label>
+            <input type="date" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all">
+          </div>
+
+          <div class="space-y-1">
+            <label class="block">End Date</label>
+            <input type="date" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all">
+            <p class="text-[10px] text-slate-400 font-normal">Optional. Leave blank for ongoing duty.</p>
+          </div>
+        </div>
+
+        <!-- Remarks -->
+        <div class="space-y-1">
+          <label class="block">Remarks / Instructions <span class="text-rose-500">*</span></label>
+          <textarea rows="3" placeholder="Enter special tactical instructions or deployment notes..." class="w-full p-3.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all"></textarea>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer Action Buttons -->
+      <div class="p-4 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-2">
+        <button onclick="toggleDeploymentModal(false)" class="px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 font-bold hover:bg-slate-100 transition-all">
+          Cancel
+        </button>
+        <button onclick="alert('Deployment successfully saved!'); toggleDeploymentModal(false);" class="px-5 py-2.5 rounded-xl bg-blue-700 hover:bg-blue-800 text-white font-bold shadow-md shadow-blue-900/20 transition-all">
+          Save
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT CONTROLLER FOR MODAL -->
+  <script>
+    function toggleDeploymentModal(show) {
+      const modal = document.getElementById('deploymentModal');
+      if (show) {
+        modal.classList.remove('hidden');
+      } else {
+        modal.classList.add('hidden');
+      }
+    }
+  </script>
+
+</body>
+</html>

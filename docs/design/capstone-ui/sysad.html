@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>System Administration - San Juan City Police Station HR Admin</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- FontAwesome 6 Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body class="h-full font-sans text-slate-800 antialiased overflow-hidden flex">
+
+  <!-- ==================== LEFT SIDEBAR NAVIGATION ==================== -->
+  <aside class="w-64 bg-[#0B132B] text-slate-300 flex flex-col justify-between shrink-0 h-full z-30 border-r border-slate-800">
+    <div>
+      
+      <!-- BRANDING & LOGO HEADER -->
+      <div class="p-4 border-b border-slate-800/80 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-blue-900 border border-amber-400/50 flex items-center justify-center text-amber-400 text-lg shadow-md shrink-0">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <div class="min-w-0">
+          <h1 class="text-xs font-extrabold text-white tracking-wider uppercase truncate">San Juan City PS</h1>
+        </div>
+      </div>
+
+      <!-- NAVIGATION MENU SECTION -->
+      <div class="px-3 py-4 space-y-6">
+        
+        <!-- DASHBOARD DIRECT LINK -->
+        <div>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-chart-pie w-4 text-center"></i>
+            <span>Dashboard</span>
+          </a>
+        </div>
+
+        <!-- RECRUITMENT MANAGEMENT -->
+        <div class="space-y-1">
+          <div class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider px-3 mb-1.5">Recruitment</div>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-briefcase w-4 text-center"></i>
+            <span>Plantilla Openings</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-id-card-clip w-4 text-center"></i>
+            <span>Applicant Roster</span>
+          </a>
+        </div>
+
+        <!-- PERSONNEL & RECORDS MANAGEMENT -->
+        <div class="space-y-1">
+          <div class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider px-3 mb-1.5">Personnel 201</div>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-users w-4 text-center"></i>
+            <span>Active Personnel</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-map-location-dot w-4 text-center"></i>
+            <span>Duty Deployments</span>
+          </a>
+          <a href="#" class="flex items-center justify-between px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <div class="flex items-center gap-3">
+              <i class="fa-solid fa-calendar-check w-4 text-center"></i>
+              <span>Leave Applications</span>
+            </div>
+            <span class="px-1.5 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-bold">1</span>
+          </a>
+        </div>
+
+        <!-- SYSTEM CONFIGURATION -->
+        <div class="space-y-1">
+          <div class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider px-3 mb-1.5">Settings</div>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-blue-700 text-white shadow-lg shadow-blue-900/40">
+            <i class="fa-solid fa-gears w-4 text-center text-sm"></i>
+            <span>System Administration</span>
+          </a>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- USER FOOTER -->
+    <div class="p-3 border-t border-slate-800/80 bg-slate-950/40">
+      <button onclick="alert('Logging out...')" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all">
+        <i class="fa-solid fa-arrow-right-from-bracket text-red-500"></i>
+        <span>Sign out</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ==================== MAIN CONTENT CONTAINER ==================== -->
+  <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-slate-50">
+
+    <!-- TOP HEADER NAVBAR -->
+    <header class="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between shrink-0 z-20">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-blue-900 text-amber-400 flex items-center justify-center font-bold text-xs shadow-sm">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <div class="flex flex-col">
+          <div class="flex items-center gap-2">
+            <span class="font-extrabold text-xs text-slate-900 tracking-tight">SAN JUAN CITY POLICE STATION</span>
+            <span class="px-2 py-0.5 text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 rounded-md">HRDD Portal</span>
+          </div>
+          <span class="text-[10px] text-slate-400 font-medium">System Administration & Station Controls</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <button class="p-2 rounded-xl text-slate-500 hover:bg-slate-100 relative">
+          <i class="fa-regular fa-bell text-base"></i>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-white"></span>
+        </button>
+
+        <div class="flex items-center gap-3 pl-3 border-l border-slate-200">
+          <div class="w-9 h-9 rounded-full bg-slate-900 text-amber-400 font-bold text-xs flex items-center justify-center border border-slate-700 shadow-sm">
+            MC
+          </div>
+          <div class="text-left leading-tight">
+            <p class="text-xs font-bold text-slate-900">PMAJ M. C. Balneg</p>
+            <p class="text-[10px] text-slate-400">mcbalnegg915@gmail.com</p>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN SCROLLABLE CONTENT -->
+    <main class="flex-1 overflow-y-auto p-6 space-y-6">
+
+      <!-- PAGE TITLE -->
+      <div>
+        <h1 class="text-2xl font-black text-slate-900 tracking-tight">System Administration</h1>
+        <p class="text-xs text-slate-500 font-medium mt-0.5">Manage secure access, organizational records, and system controls for the station.</p>
+      </div>
+
+      <!-- 3-COLUMN CONTROL MODULE GRID -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+        <!-- COLUMN 1: PEOPLE AND ACCESS -->
+        <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden flex flex-col justify-between">
+          <div>
+            <div class="p-5 border-b border-slate-100 bg-slate-50/50">
+              <div class="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 flex items-center justify-center font-bold text-base mb-3">
+                <i class="fa-solid fa-user-gear"></i>
+              </div>
+              <h2 class="text-base font-bold text-slate-900">People and Access</h2>
+              <p class="text-xs text-slate-500 mt-1">Control who can access the station HR system and review account changes.</p>
+            </div>
+
+            <div class="divide-y divide-slate-100">
+              <!-- Manage accounts -->
+              <button onclick="openModal('Manage Accounts', 'Create, update, and secure user access rights.')" class="w-full p-4 text-left hover:bg-slate-50 transition-colors flex items-start gap-3.5 group">
+                <div class="w-9 h-9 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center shrink-0 group-hover:bg-blue-50 group-hover:text-blue-700 transition-colors">
+                  <i class="fa-solid fa-users-gear text-sm"></i>
+                </div>
+                <div>
+                  <p class="text-xs font-bold text-slate-900 group-hover:text-blue-700 transition-colors">Manage Accounts</p>
+                  <p class="text-[11px] text-slate-500 mt-0.5">Create, update, and secure user access.</p>
+                </div>
+              </button>
+
+              <!-- Review approvals -->
+              <button onclick="openModal('Review Approvals', 'Validate personnel profile updates and pending role requests.')" class="w-full p-4 text-left hover:bg-slate-50 transition-colors flex items-start gap-3.5 group">
+                <div class="w-9 h-9 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center shrink-0 group-hover:bg-blue-50 group-hover:text-blue-700 transition-colors">
+                  <i class="fa-solid fa-user-check text-sm"></i>
+                </div>
+                <div>
+                  <p class="text-xs font-bold text-slate-900 group-hover:text-blue-700 transition-colors">Review Approvals</p>
+                  <p class="text-[11px] text-slate-500 mt-0.5">Validate personnel profile updates.</p>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- COLUMN 2: STATION ORGANIZATION -->
+        <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden flex flex-col justify-between">
+          <div>
+            <div class="p-5 border-b border-slate-100 bg-slate-50/50">
+              <div class="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center font-bold text-base mb-3">
+                <i class="fa-solid fa-sitemap"></i>
+              </div>
+              <h2 class="text-base font-bold text-slate-900">Station Organization</h2>
+              <p class="text-xs text-slate-500 mt-1">Keep units, stations, and ranks aligned with the current command structure.</p>
+            </div>
+
+            <div class="divide-y divide-slate-100">
+              <!-- Units and sections -->
+              <button onclick="openModal('Units and Sections', 'Maintain operational unit records and sub-station sectors.')" class="w-full p-4 text-left hover:bg-slate-50 transition-colors flex items-start gap-3.5 group">
+                <div class="w-9 h-9 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center shrink-0 group-hover:bg-amber-50 group-hover:text-amber-700 transition-colors">
+                  <i class="fa-solid fa-building-user text-sm"></i>
+                </div>
+                <div>
+                  <p class="text-xs font-bold text-slate-900 group-hover:text-amber-700 transition-colors">Units and Sections</p>
+                  <p class="text-[11px] text-slate-500 mt-0.5">Maintain operational unit records.</p>
+                </div>
+              </button>
+
+              <!-- Units and stations -->
+              <button onclick="openModal('Units and Stations', 'Manage main station and deployment precinct locations.')" class="w-full p-4 text-left hover:bg-slate-50 transition-colors flex items-start gap-3.5 group">
+                <div class="w-9 h-9 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center shrink-0 group-hover:bg-amber-50 group-hover:text-amber-700 transition-colors">
+                  <i class="fa-solid fa-shield-halved text-sm"></i>
+                </div>
+                <div>
+                  <p class="text-xs font-bold text-slate-900 group-hover:text-amber-700 transition-colors">Units and Stations</p>
+                  <p class="text-[11px] text-slate-500 mt-0.5">Manage station and deployment locations.</p>
+                </div>
+              </button>
+
+              <!-- Ranks -->
+              <button onclick="openModal('Ranks Catalogue', 'Maintain the official PNP personnel rank hierarchy catalogue.')" class="w-full p-4 text-left hover:bg-slate-50 transition-colors flex items-start gap-3.5 group">
+                <div class="w-9 h-9 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center shrink-0 group-hover:bg-amber-50 group-hover:text-amber-700 transition-colors">
+                  <i class="fa-solid fa-award text-sm"></i>
+                </div>
+                <div>
+                  <p class="text-xs font-bold text-slate-900 group-hover:text-amber-700 transition-colors">Ranks</p>
+                  <p class="text-[11px] text-slate-500 mt-0.5">Maintain the personnel rank catalogue.</p>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- COLUMN 3: SYSTEM OVERSIGHT -->
+        <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden flex flex-col justify-between">
+          <div>
+            <div class="p-5 border-b border-slate-100 bg-slate-50/50">
+              <div class="w-10 h-10 rounded-xl bg-purple-50 border border-purple-200 text-purple-700 flex items-center justify-center font-bold text-base mb-3">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+              </div>
+              <h2 class="text-base font-bold text-slate-900">System Oversight</h2>
+              <p class="text-xs text-slate-500 mt-1">Review integrations, security controls, and audit trails behind daily HR operations.</p>
+            </div>
+
+            <div class="divide-y divide-slate-100">
+              <!-- Attendance integration -->
+              <button onclick="openModal('Attendance Integration', 'Configure face biometrics data intake and kiosk terminals.')" class="w-full p-4 text-left hover:bg-slate-50 transition-colors flex items-start gap-3.5 group">
+                <div class="w-9 h-9 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center shrink-0 group-hover:bg-purple-50 group-hover:text-purple-700 transition-colors">
+                  <i class="fa-solid fa-fingerprint text-sm"></i>
+                </div>
+                <div>
+                  <p class="text-xs font-bold text-slate-900 group-hover:text-purple-700 transition-colors">Attendance Integration</p>
+                  <p class="text-[11px] text-slate-500 mt-0.5">Configure attendance data intake.</p>
+                </div>
+              </button>
+
+              <!-- Audit log -->
+              <button onclick="openModal('Audit Log', 'Review system security, login history, and admin operational activity.')" class="w-full p-4 text-left hover:bg-slate-50 transition-colors flex items-start gap-3.5 group">
+                <div class="w-9 h-9 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center shrink-0 group-hover:bg-purple-50 group-hover:text-purple-700 transition-colors">
+                  <i class="fa-solid fa-file-shield text-sm"></i>
+                </div>
+                <div>
+                  <p class="text-xs font-bold text-slate-900 group-hover:text-purple-700 transition-colors">Audit Log</p>
+                  <p class="text-[11px] text-slate-500 mt-0.5">Review security and operational activity.</p>
+                </div>
+              </button>
+
+              <!-- System settings -->
+              <button onclick="openModal('System Settings', 'Configure station-wide global system defaults and parameters.')" class="w-full p-4 text-left hover:bg-slate-50 transition-colors flex items-start gap-3.5 group">
+                <div class="w-9 h-9 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center shrink-0 group-hover:bg-purple-50 group-hover:text-purple-700 transition-colors">
+                  <i class="fa-solid fa-sliders text-sm"></i>
+                </div>
+                <div>
+                  <p class="text-xs font-bold text-slate-900 group-hover:text-purple-700 transition-colors">System Settings</p>
+                  <p class="text-[11px] text-slate-500 mt-0.5">Maintain system-wide settings.</p>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- ==================== GENERIC ADMIN CONTROL MODAL ==================== -->
+  <div id="adminModal" class="fixed inset-0 z-50 hidden">
+    <div onclick="closeModal()" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"></div>
+    
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden transition-all">
+      <div class="p-5 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-blue-900 text-amber-400 flex items-center justify-center font-bold text-sm shadow-sm">
+            <i class="fa-solid fa-gears"></i>
+          </div>
+          <div>
+            <h3 id="modalTitle" class="text-sm font-bold text-slate-900">Admin Control</h3>
+            <p id="modalSubtitle" class="text-[11px] text-slate-500">System settings panel</p>
+          </div>
+        </div>
+        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-700 p-1">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-4 text-xs font-medium text-slate-700">
+        <div class="p-4 bg-slate-50 border border-slate-200/80 rounded-xl space-y-2">
+          <p class="text-xs font-bold text-slate-900">Configuration Module Active</p>
+          <p class="text-[11px] text-slate-500 leading-relaxed">
+            You are modifying security policies and organizational metadata for San Juan City Police Station HR Portal. All changes are logged into the permanent station audit trail.
+          </p>
+        </div>
+
+        <div class="space-y-1">
+          <label class="block font-bold text-slate-800">Administrator Remarks / Log Justification</label>
+          <input type="text" placeholder="Enter justification for changes..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all">
+        </div>
+      </div>
+
+      <div class="p-4 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-2">
+        <button onclick="closeModal()" class="px-4 py-2 border border-slate-200 bg-white text-slate-700 rounded-xl font-bold hover:bg-slate-100 transition-all text-xs">
+          Cancel
+        </button>
+        <button onclick="alert('Settings saved!'); closeModal();" class="px-5 py-2 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded-xl shadow-md transition-all text-xs">
+          Save Admin Settings
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT CONTROLLER -->
+  <script>
+    function openModal(title, subtitle) {
+      document.getElementById('modalTitle').textContent = title;
+      document.getElementById('modalSubtitle').textContent = subtitle;
+      document.getElementById('adminModal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('adminModal').classList.add('hidden');
+    }
+  </script>
+
+</body>
+</html>

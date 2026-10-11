@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Employee Login - PNP San Juan City Employee Portal</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+  </style>
+</head>
+<body class="bg-slate-900 min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-8">
+
+  <!-- MAIN LOGIN CARD CONTAINER (FIXED SIZE: 1024px width x 620px height) -->
+  <div class="w-[1024px] h-[620px] bg-white rounded-2xl shadow-2xl overflow-hidden grid grid-cols-12 border border-slate-200">
+    
+    <!-- LEFT SIDE: EMPLOYEE LOGIN FORM (5 COLS) -->
+    <div class="col-span-5 p-8 sm:p-10 flex flex-col justify-between bg-white h-full">
+      <div>
+        
+        <!-- MOBILE LOGO HEADER -->
+        <div class="flex items-center gap-3 mb-6 lg:hidden">
+          <div class="w-10 h-10 rounded-lg bg-slate-900 flex items-center justify-center text-white font-bold">
+            <i class="fa-solid fa-shield-halved text-amber-500"></i>
+          </div>
+          <div>
+            <p class="text-xs font-bold text-slate-900 uppercase">PNP San Juan City</p>
+            <p class="text-[10px] text-slate-500 uppercase">Employee Portal</p>
+          </div>
+        </div>
+
+        <!-- FORM TITLE & SUBTITLE -->
+        <div class="mb-6">
+          <span class="inline-block px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider text-blue-900 bg-blue-50 border border-blue-100 mb-3">
+            Employee Portal
+          </span>
+          <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Login as HR / </h2>
+          <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
+            Enter your badge number to access your official personnel records, track promotion history and eligibility, file daily attendance, and verify deployment schedules.
+          </p>
+        </div>
+
+        <!-- LOGIN FORM -->
+        <form onsubmit="event.preventDefault();" class="space-y-4">
+          
+          <!-- BADGE NUMBER INPUT -->
+          <div>
+            <label for="badge_number" class="block text-xs font-semibold text-slate-700 mb-1.5">Badge Number</label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <i class="fa-solid fa-id-badge text-sm"></i>
+              </div>
+              <input 
+                type="text" 
+                id="badge_number" 
+                name="badge_number" 
+                required 
+                placeholder="0-12345" 
+                class="w-full pl-10 pr-4 py-2.5 text-xs font-medium text-slate-900 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-800 focus:border-transparent transition-all placeholder:text-slate-400"
+              />
+            </div>
+          </div>
+
+          <!-- PASSWORD INPUT -->
+          <div>
+            <label for="password" class="block text-xs font-semibold text-slate-700 mb-1.5">Password</label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <i class="fa-solid fa-lock text-sm"></i>
+              </div>
+              <input 
+                type="password" 
+                id="password" 
+                name="password" 
+                required 
+                placeholder="••••••••••••" 
+                class="w-full pl-10 pr-10 py-2.5 text-xs font-medium text-slate-900 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-800 focus:border-transparent transition-all placeholder:text-slate-400"
+              />
+              <button 
+                type="button" 
+                onclick="togglePassword()" 
+                class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none"
+              >
+                <i id="eyeIcon" class="fa-regular fa-eye text-xs"></i>
+              </button>
+            </div>
+
+            <!-- FORGOT PASSWORD LINK -->
+            <div class="mt-2 text-right">
+              <a href="#" class="text-[11px] font-semibold text-blue-800 hover:text-blue-900 hover:underline">
+                Forgot password?
+              </a>
+            </div>
+          </div>
+
+          <!-- REMEMBER ME CHECKBOX -->
+          <div class="flex items-center pt-1">
+            <input 
+              type="checkbox" 
+              id="remember" 
+              class="w-4 h-4 text-blue-800 border-slate-300 rounded focus:ring-blue-800 cursor-pointer"
+            />
+            <label for="remember" class="ml-2 text-xs font-medium text-slate-600 cursor-pointer select-none">
+              Remember me on this device
+            </label>
+          </div>
+
+          <!-- LOGIN BUTTON -->
+          <button 
+            type="submit" 
+            class="w-full py-3 px-4 bg-slate-900 hover:bg-blue-900 text-white font-bold text-xs rounded-xl shadow-md transition-all duration-200 flex items-center justify-center mt-2"
+          >
+            <span>Login</span>
+          </button>
+
+        </form>
+
+        <!-- CONTACT HR DIRECTIVE -->
+        <div class="mt-6 text-center text-xs text-slate-500">
+          Don't have an account? 
+          <a href="#" class="font-bold text-blue-800 hover:text-blue-900 hover:underline">Contact HR</a>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- RIGHT SIDE: BRANDING HERO PANEL (7 COLS) -->
+    <div class="col-span-7 bg-slate-950 text-white p-10 flex flex-col justify-between relative overflow-hidden h-full">
+      
+      <!-- BACKGROUND OVERLAY IMAGE WITH TACTICAL GRADIENT -->
+      <div class="absolute inset-0 z-0 opacity-20 bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=1200&q=80');"></div>
+      <div class="absolute inset-0 z-0 bg-gradient-to-t from-slate-950 via-slate-900/90 to-slate-950/80"></div>
+
+      <!-- TOP BRANDING & LOGOS -->
+      <div class="relative z-10 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-xl bg-blue-900/80 border border-blue-500/30 flex items-center justify-center text-white text-xl font-bold shadow-lg backdrop-blur-md">
+            <i class="fa-solid fa-shield-halved text-amber-400"></i>
+          </div>
+          <div>
+            <h1 class="text-sm font-extrabold tracking-wider uppercase text-white">SAN JUAN CITY POLICE STATION</h1>
+            <p class="text-[10px] font-semibold text-amber-400 uppercase tracking-widest">Eastern Police District • NCRPO</p>
+          </div>
+        </div>
+
+        <!-- OFFICIAL BADGE PILL -->
+        <div class="px-3 py-1 bg-white/10 backdrop-blur-md border border-white/15 rounded-full flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span class="text-[10px] font-bold tracking-wider text-slate-200 uppercase">HR Portal</span>
+        </div>
+      </div>
+
+      <!-- MIDDLE HERO MOTTO / SLOGAN -->
+      <div class="relative z-10 my-auto py-6">
+        
+        <!-- SERVICE HONOR JUSTICE BADGE -->
+        <div class="inline-flex items-center gap-2 px-3 py-1 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-400 text-[11px] font-bold tracking-widest uppercase mb-4">
+          <span>Service</span> • <span>Honor</span> • <span>Justice</span>
+        </div>
+
+        <h2 class="text-3xl font-extrabold text-white leading-tight">
+          To Serve and Protect.
+        </h2>
+        
+        <p class="text-slate-300 text-xs mt-3 max-w-md leading-relaxed font-normal">
+          Welcome to the official personnel portal of the San Juan City Police Station. Access your 201 records, submit attendance logs, track promotion history, and view active deployment assignments.
+        </p>
+      </div>
+
+      <!-- BOTTOM FOOTER -->
+      <div class="relative z-10 pt-6 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+        <p>© 2026 San Juan City Police Station</p>
+        <div class="flex items-center gap-4">
+          <a href="#" class="hover:text-white transition-colors">Privacy Policy</a>
+          <span>•</span>
+          <a href="#" class="hover:text-white transition-colors">Help Desk</a>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- JAVASCRIPT FOR SHOW/HIDE PASSWORD TOGGLE -->
+  <script>
+    function togglePassword() {
+      const passwordInput = document.getElementById('password');
+      const eyeIcon = document.getElementById('eyeIcon');
+      
+      if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        eyeIcon.classList.remove('fa-eye');
+        eyeIcon.classList.add('fa-eye-slash');
+      } else {
+        passwordInput.type = 'password';
+        eyeIcon.classList.remove('fa-eye-slash');
+        eyeIcon.classList.add('fa-eye');
+      }
+    }
+  </script>
+
+</body>
+</html>

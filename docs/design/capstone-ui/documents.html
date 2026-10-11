@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>San Juan City Police Station - Applicant Portal</title>
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    /* DIRECT EMBEDDED CSS */
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: #f8fafc; color: #1e293b; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+
+    /* LAYOUT STYLES */
+    .app-container { display: flex; height: 100vh; width: 100vw; overflow: hidden; }
+    
+    /* SIDEBAR */
+    .sidebar { width: 260px; background: #ffffff; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; justify-content: space-between; shrink: 0; z-index: 30; }
+    .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #f1f5f9; }
+    .station-badge { width: 64px; height: 64px; margin: 0 auto 10px; background: #b91c1c; border-radius: 50%; padding: 3px; border: 2px solid #facc15; }
+    .badge-inner { background: #1e3a8a; height: 100%; border-radius: 50%; border: 1px solid #facc15; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-size: 8px; font-weight: bold; }
+    
+    .nav-menu { padding: 15px 12px; }
+    .menu-label { font-size: 10px; font-weight: bold; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; padding: 0 10px 8px; }
+    .nav-btn { width: 100%; display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; border: none; background: transparent; color: #475569; cursor: pointer; text-align: left; transition: all 0.2s; margin-bottom: 4px; }
+    .nav-btn:hover { background: #f1f5f9; color: #0f172a; }
+    .nav-btn.active { background: #0f172a; color: #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+
+    /* HEADER */
+    .top-header { height: 56px; background: #0f172a; color: white; display: flex; align-items: center; justify-between; padding: 0 24px; border-bottom: 1px solid #1e293b; shrink: 0; }
+    .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #cbd5e1; }
+    .user-profile-badge { display: flex; align-items: center; gap: 10px; }
+    .avatar-circle { width: 32px; height: 32px; border-radius: 50%; background: #2563eb; border: 1px solid #60a5fa; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; }
+
+    /* MAIN CONTENT AREA */
+    .main-body { flex: 1; overflow-y: auto; padding: 24px; background: #f8fafc; }
+    .max-w-container { max-width: 1000px; margin: 0 auto; }
+
+    /* HERO CARD */
+    .hero-card { background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #030712 100%); border-radius: 16px; padding: 28px; color: white; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2); border: 1px solid #334155; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; }
+
+    /* DOCUMENT CARDS */
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px; }
+    .doc-card { background: white; border-radius: 16px; border: 1px solid #e2e8f0; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .doc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .doc-title { font-size: 12px; font-weight: 700; color: #0f172a; text-transform: uppercase; }
+    .badge-saved { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; font-size: 10px; font-weight: bold; padding: 2px 8px; border-radius: 6px; }
+
+    .doc-info-badge { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .doc-icon { width: 38px; height: 38px; border-radius: 8px; background: #fee2e2; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 18px; shrink: 0; }
+    .doc-icon-img { background: #dbeafe; color: #2563eb; }
+
+    /* UPLOAD & DELETE BUTTONS ACTION ROW */
+    .doc-actions-row { display: flex; gap: 10px; align-items: center; margin-top: 4px; }
+    
+    .btn-upload-doc { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: #f1f5f9; color: #1e293b; border: 1px solid #cbd5e1; padding: 10px 14px; border-radius: 10px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .btn-upload-doc:hover { background: #e2e8f0; border-color: #94a3b8; color: #0f172a; }
+
+    .btn-delete-doc { display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; padding: 10px 14px; border-radius: 10px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .btn-delete-doc:hover { background: #fee2e2; border-color: #fca5a5; color: #b91c1c; }
+
+    /* BUTTONS */
+    .btn-submit { background: #1d4ed8; color: white; border: none; padding: 12px 28px; border-radius: 10px; font-size: 13px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: background 0.2s; box-shadow: 0 4px 12px rgba(29, 78, 216, 0.25); }
+    .btn-submit:hover { background: #1e40af; }
+
+    /* FLOATING TOAST NOTIFICATION */
+    .toast-notification { position: fixed; top: 20px; right: 20px; z-index: 100; background: #0f172a; color: white; padding: 14px 20px; border-radius: 12px; border: 1px solid #334155; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3); display: flex; align-items: center; gap: 12px; transform: translateY(-150%); opacity: 0; transition: all 0.3s ease-in-out; pointer-events: none; }
+    .toast-notification.active { transform: translateY(0); opacity: 1; }
+    .toast-icon { width: 32px; height: 32px; border-radius: 50%; background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(52, 211, 153, 0.4); color: #34d399; display: flex; align-items: center; justify-content: center; shrink: 0; }
+  </style>
+</head>
+<body>
+
+  <!-- FLOATING SUCCESS TOAST -->
+  <div id="saveToast" class="toast-notification">
+    <div class="toast-icon"><i class="fa-solid fa-circle-check"></i></div>
+    <div>
+      <div id="toastTitle" style="font-size: 13px; font-weight: bold;">Saved Successfully!</div>
+      <div id="toastMessage" style="font-size: 11px; color: #cbd5e1;">Your document status has been updated.</div>
+    </div>
+  </div>
+
+  <div class="app-container">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div>
+        <div class="sidebar-header">
+          <div class="station-badge">
+            <div class="badge-inner">
+              <span>SAN JUAN</span>
+              <i class="fa-solid fa-shield-halved" style="margin: 2px 0;"></i>
+              <span>POLICE</span>
+            </div>
+          </div>
+          <div style="font-size: 12px; font-weight: bold; color: #0f172a; text-transform: uppercase;">San Juan City Police Station</div>
+          <div style="font-size: 10px; color: #94a3b8;">Recruitment Division</div>
+        </div>
+
+        <div class="nav-menu">
+          <div class="menu-label">Menu</div>
+          <button class="nav-btn"><i class="fa-solid fa-table-columns" style="width: 16px;"></i> Dashboard</button>
+          <button class="nav-btn"><i class="fa-regular fa-user" style="width: 16px;"></i> Profile</button>
+          <button class="nav-btn active"><i class="fa-regular fa-file-lines" style="width: 16px;"></i> Documents</button>
+        </div>
+      </div>
+
+      <div style="padding: 16px; border-top: 1px solid #f1f5f9; text-align: center; font-size: 10px; color: #94a3b8;">
+        PNP Recruitment Portal • CY 2026
+      </div>
+    </aside>
+
+    <!-- MAIN RIGHT CONTAINER -->
+    <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+
+      <!-- HEADER BAR -->
+      <header class="top-header">
+        <div class="breadcrumb">
+          <i class="fa-regular fa-rectangle-list"></i>
+          <span>Applicant</span>
+          <i class="fa-solid fa-chevron-right" style="font-size: 8px;"></i>
+          <span style="color: white; font-weight: bold;">Documents</span>
+        </div>
+
+        <div class="user-profile-badge">
+          <div class="avatar-circle">AG</div>
+          <div>
+            <div style="font-size: 12px; font-weight: 600; color: #e2e8f0;">Aldrick Jamlani</div>
+            <div style="font-size: 10px; color: #94a3b8;">aldrick.jamlani@gmail.com</div>
+          </div>
+        </div>
+      </header>
+
+      <!-- SCROLLABLE BODY -->
+      <main class="main-body">
+        <div class="max-w-container">
+
+          <!-- DOCUMENTS TAB HEADER -->
+          <div class="hero-card">
+            <div>
+              <span style="background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(96, 165, 250, 0.3); color: #93c5fd; font-size: 10px; font-weight: bold; padding: 2px 8px; border-radius: 99px; text-transform: uppercase;">Requirements Verification</span>
+              <h1 style="font-size: 20px; font-weight: bold; margin-top: 4px;">Required Documents</h1>
+              <p style="font-size: 12px; color: #cbd5e1; margin-top: 2px;">Upload all required documents (up to 10 MB each). The 2×2 picture must be PNG or JPEG; all other documents must be PDF files.</p>
+            </div>
+
+            <div style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); padding: 12px 20px; border-radius: 12px; text-align: center; width: 220px;">
+              <div style="font-size: 11px; font-weight: bold; color: #cbd5e1; display: flex; justify-content: space-between;">
+                <span>Status</span>
+                <span style="color: #34d399;">5 of 5</span>
+              </div>
+              <div style="height: 6px; background: #1e293b; border-radius: 99px; margin: 8px 0; overflow: hidden;">
+                <div style="height: 100%; width: 100%; background: #10b981;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- DOCUMENT CARDS GRID -->
+          <div class="grid-2">
+
+            <!-- 1. CV / RESUME -->
+            <div class="doc-card" id="card-cv">
+              <div>
+                <div class="doc-header">
+                  <span class="doc-title">CV / Resume <span style="color: #ef4444;">*</span></span>
+                  <span class="badge-saved"><i class="fa-solid fa-check"></i> Saved</span>
+                </div>
+                <div style="font-size: 11px; color: #94a3b8; margin-bottom: 12px;">Format: PDF only (Max 10 MB)</div>
+
+                <div class="doc-info-badge">
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="doc-icon"><i class="fa-regular fa-file-pdf"></i></div>
+                    <div>
+                      <div style="font-size: 12px; font-weight: bold; color: #0f172a;" class="doc-filename">CV_Resume_Jamlani.pdf</div>
+                      <div style="font-size: 10px; color: #94a3b8;">Saved Oct 11, 2026 • 1.2 MB</div>
+                    </div>
+                  </div>
+                  <div>
+                    <button onclick="alert('Opening PDF viewer...')" style="background: none; border: none; cursor: pointer; color: #2563eb; padding: 4px;" title="View Document"><i class="fa-regular fa-eye"></i></button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ACTION BUTTONS ROW -->
+              <div class="doc-actions-row">
+                <label class="btn-upload-doc">
+                  <i class="fa-solid fa-cloud-arrow-up"></i>
+                  <span>Upload Document</span>
+                  <input type="file" accept=".pdf" style="display: none;" onchange="handleFileUpload('CV / Resume')">
+                </label>
+                <button onclick="handleDeleteDoc('CV / Resume')" class="btn-delete-doc" title="Delete Document">
+                  <i class="fa-regular fa-trash-can"></i>
+                  <span>Delete</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 2. PSA BIRTH CERTIFICATE -->
+            <div class="doc-card" id="card-psa">
+              <div>
+                <div class="doc-header">
+                  <span class="doc-title">PSA Birth Certificate <span style="color: #ef4444;">*</span></span>
+                  <span class="badge-saved"><i class="fa-solid fa-check"></i> Saved</span>
+                </div>
+                <div style="font-size: 11px; color: #94a3b8; margin-bottom: 12px;">Format: PDF only (Max 10 MB)</div>
+
+                <div class="doc-info-badge">
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="doc-icon"><i class="fa-regular fa-file-pdf"></i></div>
+                    <div>
+                      <div style="font-size: 12px; font-weight: bold; color: #0f172a;" class="doc-filename">PSA_BirthCert_Jamlani.pdf</div>
+                      <div style="font-size: 10px; color: #94a3b8;">Saved Oct 11, 2026 • 2.4 MB</div>
+                    </div>
+                  </div>
+                  <div>
+                    <button onclick="alert('Opening PDF viewer...')" style="background: none; border: none; cursor: pointer; color: #2563eb; padding: 4px;" title="View Document"><i class="fa-regular fa-eye"></i></button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ACTION BUTTONS ROW -->
+              <div class="doc-actions-row">
+                <label class="btn-upload-doc">
+                  <i class="fa-solid fa-cloud-arrow-up"></i>
+                  <span>Upload Document</span>
+                  <input type="file" accept=".pdf" style="display: none;" onchange="handleFileUpload('PSA Birth Certificate')">
+                </label>
+                <button onclick="handleDeleteDoc('PSA Birth Certificate')" class="btn-delete-doc" title="Delete Document">
+                  <i class="fa-regular fa-trash-can"></i>
+                  <span>Delete</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 3. 2x2 PICTURE -->
+            <div class="doc-card" id="card-photo">
+              <div>
+                <div class="doc-header">
+                  <span class="doc-title">2×2 ID Picture <span style="color: #ef4444;">*</span></span>
+                  <span class="badge-saved"><i class="fa-solid fa-check"></i> Saved</span>
+                </div>
+                <div style="font-size: 11px; color: #94a3b8; margin-bottom: 12px;">Format: PNG or JPEG only</div>
+
+                <div class="doc-info-badge">
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="doc-icon doc-icon-img"><i class="fa-regular fa-image"></i></div>
+                    <div>
+                      <div style="font-size: 12px; font-weight: bold; color: #0f172a;" class="doc-filename">2x2_Jamlani_Photo.jpg</div>
+                      <div style="font-size: 10px; color: #94a3b8;">Saved Oct 11, 2026 • 850 KB</div>
+                    </div>
+                  </div>
+                  <div>
+                    <button onclick="alert('Opening image...')" style="background: none; border: none; cursor: pointer; color: #2563eb; padding: 4px;" title="View Image"><i class="fa-regular fa-eye"></i></button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ACTION BUTTONS ROW -->
+              <div class="doc-actions-row">
+                <label class="btn-upload-doc">
+                  <i class="fa-solid fa-cloud-arrow-up"></i>
+                  <span>Upload Photo</span>
+                  <input type="file" accept="image/jpeg, image/png, image/jpg" style="display: none;" onchange="handleFileUpload('2x2 Picture')">
+                </label>
+                <button onclick="handleDeleteDoc('2x2 Picture')" class="btn-delete-doc" title="Delete Photo">
+                  <i class="fa-regular fa-trash-can"></i>
+                  <span>Delete</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 4. ELIGIBILITY CERTIFICATE -->
+            <div class="doc-card" id="card-eligibility">
+              <div>
+                <div class="doc-header">
+                  <span class="doc-title">Eligibility Certificate <span style="color: #ef4444;">*</span></span>
+                  <span class="badge-saved"><i class="fa-solid fa-check"></i> Saved</span>
+                </div>
+                <div style="font-size: 11px; color: #94a3b8; margin-bottom: 12px;">Format: PDF only (NAPOLCOM / CSC)</div>
+
+                <div class="doc-info-badge">
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="doc-icon"><i class="fa-regular fa-file-pdf"></i></div>
+                    <div>
+                      <div style="font-size: 12px; font-weight: bold; color: #0f172a;" class="doc-filename">NAPOLCOM_CSC_Cert.pdf</div>
+                      <div style="font-size: 10px; color: #94a3b8;">Saved Oct 11, 2026 • 1.8 MB</div>
+                    </div>
+                  </div>
+                  <div>
+                    <button onclick="alert('Opening PDF viewer...')" style="background: none; border: none; cursor: pointer; color: #2563eb; padding: 4px;" title="View Document"><i class="fa-regular fa-eye"></i></button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ACTION BUTTONS ROW -->
+              <div class="doc-actions-row">
+                <label class="btn-upload-doc">
+                  <i class="fa-solid fa-cloud-arrow-up"></i>
+                  <span>Upload Document</span>
+                  <input type="file" accept=".pdf" style="display: none;" onchange="handleFileUpload('Eligibility Certificate')">
+                </label>
+                <button onclick="handleDeleteDoc('Eligibility Certificate')" class="btn-delete-doc" title="Delete Document">
+                  <i class="fa-regular fa-trash-can"></i>
+                  <span>Delete</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 5. COLLEGE DIPLOMA & TOR -->
+            <div class="doc-card" id="card-diploma">
+              <div>
+                <div class="doc-header">
+                  <span class="doc-title">College Diploma & TOR <span style="color: #ef4444;">*</span></span>
+                  <span class="badge-saved"><i class="fa-solid fa-check"></i> Saved</span>
+                </div>
+                <div style="font-size: 11px; color: #94a3b8; margin-bottom: 12px;">Format: PDF only (BSIT Diploma and TOR)</div>
+
+                <div class="doc-info-badge">
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="doc-icon"><i class="fa-regular fa-file-pdf"></i></div>
+                    <div>
+                      <div style="font-size: 12px; font-weight: bold; color: #0f172a;" class="doc-filename">BSIT_Diploma_TOR_WMSU.pdf</div>
+                      <div style="font-size: 10px; color: #94a3b8;">Saved Oct 11, 2026 • 3.5 MB</div>
+                    </div>
+                  </div>
+                  <div>
+                    <button onclick="alert('Opening PDF viewer...')" style="background: none; border: none; cursor: pointer; color: #2563eb; padding: 4px;" title="View Document"><i class="fa-regular fa-eye"></i></button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ACTION BUTTONS ROW -->
+              <div class="doc-actions-row">
+                <label class="btn-upload-doc">
+                  <i class="fa-solid fa-cloud-arrow-up"></i>
+                  <span>Upload Document</span>
+                  <input type="file" accept=".pdf" style="display: none;" onchange="handleFileUpload('College Diploma & TOR')">
+                </label>
+                <button onclick="handleDeleteDoc('College Diploma & TOR')" class="btn-delete-doc" title="Delete Document">
+                  <i class="fa-regular fa-trash-can"></i>
+                  <span>Delete</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; margin-top: 24px;">
+            <button onclick="showSaveToast('All Documents Saved!', 'Your files have been saved to your portal.')" class="btn-submit">
+              <i class="fa-solid fa-floppy-disk"></i> Save All Documents
+            </button>
+          </div>
+
+        </div>
+      </main>
+    </div>
+
+  </div>
+
+  <script>
+    function showSaveToast(title, msg) {
+      const toast = document.getElementById('saveToast');
+      document.getElementById('toastTitle').textContent = title;
+      document.getElementById('toastMessage').textContent = msg;
+
+      toast.classList.add('active');
+      setTimeout(() => {
+        toast.classList.remove('active');
+      }, 3500);
+    }
+
+    function handleFileUpload(docName) {
+      showSaveToast('Document Uploaded!', docName + ' has been updated successfully.');
+    }
+
+    function handleDeleteDoc(docName) {
+      if (confirm("Are you sure you want to delete your uploaded " + docName + "?")) {
+        showSaveToast('Document Deleted', docName + ' has been removed.');
+      }
+    }
+  </script>
+
+</body>
+</html>

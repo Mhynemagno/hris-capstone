@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Overview of Promotion</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- FontAwesome 6 Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body class="h-full font-sans text-slate-800 antialiased overflow-hidden flex">
+
+  <!-- ==================== LEFT SIDEBAR NAVIGATION ==================== -->
+  <aside class="w-64 bg-[#0B132B] text-slate-300 flex flex-col justify-between shrink-0 h-full z-30 border-r border-slate-800">
+    <div>
+      <!-- BRANDING & LOGO HEADER -->
+      <div class="p-4 border-b border-slate-800/80 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-blue-900 border border-amber-400/50 flex items-center justify-center text-amber-400 text-lg shadow-md shrink-0">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <div class="min-w-0">
+          <h1 class="text-xs font-extrabold text-white tracking-wider uppercase truncate">San Juan CPS</h1>
+          <p class="text-[10px] text-slate-400 font-medium">Personnel Portal</p>
+        </div>
+      </div>
+
+      <!-- NAVIGATION MENU SECTION -->
+      <div class="px-3 py-4 space-y-5">
+        <div>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-chart-pie w-4 text-center text-sm"></i>
+            <span>Dashboard</span>
+          </a>
+        </div>
+
+        <div class="space-y-1">
+          <div class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider px-3 mb-1.5">My Portal</div>
+          
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-user-shield w-4 text-center"></i>
+            <span>My Profile 201</span>
+          </a>
+
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-calendar-check w-4 text-center"></i>
+            <span>My Leaves</span>
+          </a>
+
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-map-location-dot w-4 text-center"></i>
+            <span>My Deployments</span>
+          </a>
+
+          <!-- ACTIVE NAVIGATION LINK: PROMOTION STATUS -->
+          <a href="#" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold bg-blue-700 text-white shadow-lg shadow-blue-900/40">
+            <div class="flex items-center gap-3">
+              <i class="fa-solid fa-award w-4 text-center text-amber-300"></i>
+              <span>Promotion Status</span>
+            </div>
+            <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold border border-emerald-500/30">Eligible</span>
+          </a>
+
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-clock-rotate-left w-4 text-center"></i>
+            <span>My Attendance</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- USER FOOTER -->
+    <div class="p-3 border-t border-slate-800/80 bg-slate-950/40 flex items-center justify-between">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <div class="w-8 h-8 rounded-full bg-emerald-700 text-amber-300 font-extrabold text-xs flex items-center justify-center shrink-0 border border-emerald-600">
+          TP
+        </div>
+        <div class="min-w-0">
+          <p class="text-xs font-bold text-white truncate">Pat. T. Peters</p>
+          <p class="text-[10px] text-slate-400 truncate">Badge: 4-15889</p>
+        </div>
+      </div>
+      <button onclick="showToast('Signing out...')" class="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all" title="Sign out">
+        <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ==================== MAIN CONTENT AREA ==================== -->
+  <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-slate-50">
+
+    <!-- TOP HEADER BAR -->
+    <header class="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between shrink-0 z-20">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-blue-900 text-amber-400 flex items-center justify-center font-bold text-xs shadow-sm">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <div class="flex flex-col">
+          <span class="font-extrabold text-xs text-slate-900 tracking-tight">SAN JUAN CITY POLICE STATION</span>
+          <span class="text-[10px] text-slate-400 font-medium">Human Resource Development Division (HRDD)</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <!-- Notification bell -->
+        <button class="p-2 rounded-xl text-slate-500 hover:bg-slate-100 relative">
+          <i class="fa-regular fa-bell text-base"></i>
+          <span class="absolute top-1 right-1 px-1.5 py-0.2 rounded-full bg-blue-600 text-white text-[9px] font-black">1</span>
+        </button>
+
+        <!-- User profile -->
+        <div class="flex items-center gap-3 pl-3 border-l border-slate-200">
+          <div class="w-9 h-9 rounded-full bg-emerald-700 text-amber-300 font-black text-xs flex items-center justify-center border border-emerald-600 shadow-sm">
+            TP
+          </div>
+          <div class="text-left leading-tight hidden sm:block">
+            <p class="text-xs font-bold text-slate-900">Pat. Tyson Bernal Peters</p>
+            <p class="text-[10px] text-slate-400">Patrolman / Traffic & Investigation</p>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN SCROLLABLE CONTENT BODY -->
+    <main class="flex-1 overflow-y-auto p-6 space-y-6">
+
+      <!-- PAGE HEADER & NOTICE BANNER -->
+      <div class="space-y-3">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Overview of Promotion</h1>
+              <span class="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 font-bold text-[10px]">CY 2026 Regular Promotion</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-0.5">Automated readiness review based on official PNP HRDD service records and eligibility criteria.</p>
+          </div>
+
+          <div class="flex items-center gap-2 shrink-0">
+            <button onclick="showToast('Generating official PNP docket summary PDF...')" class="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all">
+              <i class="fa-solid fa-file-pdf text-red-600"></i>
+              <span>Download Docket</span>
+            </button>
+            <button onclick="openApplyModal()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-700/20 transition-all">
+              <i class="fa-solid fa-paper-plane text-amber-300"></i>
+              <span>Submit to Promotion Board</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- READINESS NOTICE BANNER -->
+        <div class="px-4 py-3 rounded-xl bg-slate-200/60 border border-slate-300/70 flex items-center justify-between text-xs text-slate-700">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-circle-info text-blue-600"></i>
+            <span class="font-medium">This is a readiness review, not an automatic promotion decision.</span>
+          </div>
+          <span class="text-[11px] text-slate-500 font-mono">Last Audit: Today at 06:00 AM</span>
+        </div>
+      </div>
+
+      <!-- TARGET RANK & READINESS OVERVIEW CARD -->
+      <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
+          
+          <!-- Target Rank -->
+          <div class="space-y-1">
+            <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Target Rank</p>
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-lg bg-blue-900 text-amber-400 flex items-center justify-center font-bold text-sm">
+                <i class="fa-solid fa-chevron-up"></i>
+              </div>
+              <div>
+                <h2 class="text-base font-extrabold text-slate-900 leading-tight">Police Master Sergeant</h2>
+                <p class="text-[10px] text-slate-500 font-mono">Rank Code: PMSG (Non-Commissioned)</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Time-In-Grade / Years of Service -->
+          <div class="space-y-1 border-t md:border-t-0 md:border-l border-slate-100 pt-4 md:pt-0 md:pl-6">
+            <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Time-in-Grade / Service</p>
+            <div class="flex items-baseline gap-2">
+              <span class="text-2xl font-black text-slate-900 font-mono">2 Yrs 3 Mos</span>
+              <span class="text-xs font-semibold text-emerald-600">(Req: 2 Yrs)</span>
+            </div>
+            <p class="text-[10px] text-slate-400">Total Active Duty: 4 Years 8 Months</p>
+          </div>
+
+          <!-- Readiness Status -->
+          <div class="space-y-1 border-t md:border-t-0 md:border-l border-slate-100 pt-4 md:pt-0 md:pl-6">
+            <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Readiness Status</p>
+            <div>
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-xs">
+                <i class="fa-solid fa-circle-check text-emerald-500"></i>
+                Requirements Met
+              </span>
+            </div>
+            <p class="text-[10px] text-emerald-600 font-medium">Eligible for Board Deliberation</p>
+          </div>
+
+          <!-- Overall Readiness Meter -->
+          <div class="space-y-2 border-t md:border-t-0 md:border-l border-slate-100 pt-4 md:pt-0 md:pl-6">
+            <div class="flex items-center justify-between">
+              <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Compliance Index</p>
+              <span class="text-xs font-extrabold text-emerald-600 font-mono">100% Ready</span>
+            </div>
+            <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+              <div class="bg-emerald-500 h-full rounded-full transition-all duration-500" style="width: 100%"></div>
+            </div>
+            <p class="text-[10px] text-slate-400">4 of 4 Key Pillars Verified</p>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- REQUIREMENTS CHECKLIST & COMPLIANCE AUDIT BREAKDOWN -->
+      <div>
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-xs font-extrabold text-slate-500 uppercase tracking-wider">PNP HR Qualification Criteria Breakdown</h2>
+          <span class="text-[11px] text-slate-400 font-medium"><i class="fa-solid fa-shield-halved mr-1 text-blue-600"></i>Verified via PNP Personnel Database</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
+          <!-- ITEM 1: TIME IN GRADE -->
+          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between space-y-4">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center text-base font-bold">
+                  <i class="fa-solid fa-business-time"></i>
+                </div>
+                <span class="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 font-bold text-[10px]">Passed</span>
+              </div>
+              <div>
+                <h3 class="text-xs font-extrabold text-slate-900 uppercase tracking-wide">1. Length of Service</h3>
+                <p class="text-[11px] text-slate-500 mt-1">Minimum 2 years required as Patrolman in current assignment.</p>
+              </div>
+            </div>
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+              <span class="text-slate-400 font-medium">Recorded:</span>
+              <span class="font-bold text-slate-800 font-mono">2 Yrs 3 Mos</span>
+            </div>
+          </div>
+
+          <!-- ITEM 2: MANDATORY TRAINING -->
+          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between space-y-4">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 border border-purple-100 flex items-center justify-center text-base font-bold">
+                  <i class="fa-solid fa-graduation-cap"></i>
+                </div>
+                <span class="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 font-bold text-[10px]">Completed</span>
+              </div>
+              <div>
+                <h3 class="text-xs font-extrabold text-slate-900 uppercase tracking-wide">2. Mandatory Training</h3>
+                <p class="text-[11px] text-slate-500 mt-1">Police Intelligence Operations Course & Mandatory Career Schooling.</p>
+              </div>
+            </div>
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+              <span class="text-slate-400 font-medium">Certificate:</span>
+              <span class="font-bold text-purple-700 font-mono">PIOC Class 42-2025</span>
+            </div>
+          </div>
+
+          <!-- ITEM 3: PERFORMANCE RATING -->
+          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between space-y-4">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center text-base font-bold">
+                  <i class="fa-solid fa-star text-amber-500"></i>
+                </div>
+                <span class="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 font-bold text-[10px]">Passed</span>
+              </div>
+              <div>
+                <h3 class="text-xs font-extrabold text-slate-900 uppercase tracking-wide">3. IPCR Performance</h3>
+                <p class="text-[11px] text-slate-500 mt-1">Minimum Satisfactory rating for last 2 rating periods.</p>
+              </div>
+            </div>
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+              <span class="text-slate-400 font-medium">IPCR Score:</span>
+              <span class="font-bold text-amber-600 font-mono">4.85 (Outstanding)</span>
+            </div>
+          </div>
+
+          <!-- ITEM 4: CLEARANCES & FIT PERFORMANCES -->
+          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between space-y-4">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center text-base font-bold">
+                  <i class="fa-solid fa-file-shield"></i>
+                </div>
+                <span class="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 font-bold text-[10px]">All Cleared</span>
+              </div>
+              <div>
+                <h3 class="text-xs font-extrabold text-slate-900 uppercase tracking-wide">4. Clearances & Exams</h3>
+                <p class="text-[11px] text-slate-500 mt-1">Admin Clearances, Neuro-Psychiatric Exam & Physical Fitness Test.</p>
+              </div>
+            </div>
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+              <span class="text-slate-400 font-medium">PFT Score:</span>
+              <span class="font-bold text-emerald-700 font-mono">96.0% (Passed)</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- MISSING REQUIREMENTS & ACTION ITEMS SECTION -->
+      <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-4">
+        <div>
+          <h2 class="text-sm font-extrabold text-slate-900">Missing Requirements</h2>
+          <p class="text-xs text-slate-400">Items requiring resolution before promotion docket filing</p>
+        </div>
+
+        <!-- POSITIVE STATUS CARD (Matches original reference requirement) -->
+        <div class="p-5 bg-slate-50 border border-slate-200 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div class="flex items-start gap-3.5">
+            <div class="w-9 h-9 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-base shrink-0 mt-0.5 sm:mt-0">
+              <i class="fa-solid fa-check-double"></i>
+            </div>
+            <div>
+              <p class="text-xs font-bold text-slate-900">Every requirement is on record.</p>
+              <p class="text-[11px] text-slate-500 mt-0.5">Your HRDD dossier is complete and validated. You are eligible for endorsement to the San Juan City Police Promotion Board.</p>
+            </div>
+          </div>
+
+          <button onclick="openApplyModal()" class="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-xs font-bold transition-all shrink-0">
+            Proceed with Docket
+          </button>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ==================== PROMOTION APPLICATION MODAL ==================== -->
+  <div id="applyModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-lg overflow-hidden transform transition-all">
+      
+      <!-- MODAL HEADER -->
+      <div class="bg-[#0B132B] px-6 py-4 text-white flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-blue-700 text-amber-300 flex items-center justify-center font-bold text-xs">
+            <i class="fa-solid fa-award"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold">Submit Promotion Docket</h3>
+            <p class="text-[10px] text-slate-300">San Juan CPS Promotion Board • CY 2026</p>
+          </div>
+        </div>
+        <button onclick="closeApplyModal()" class="text-slate-400 hover:text-white p-1 rounded-lg transition-all">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <!-- MODAL FORM -->
+      <form onsubmit="handleApplySubmit(event)" class="p-6 space-y-4 text-xs">
+        
+        <div class="p-3 bg-blue-50 border border-blue-200 rounded-xl text-[11px] text-blue-900 space-y-1">
+          <p class="font-bold flex items-center gap-1.5">
+            <i class="fa-solid fa-shield-check text-blue-600"></i>
+            Eligibility Verified
+          </p>
+          <p class="text-blue-700">You are applying for promotion to <span class="font-bold">Police Master Sergeant (PMSG)</span>. Your 201 File records will automatically attach to this docket.</p>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1.5">Endorsing Unit Commander</label>
+          <input type="text" readonly value="PCOL R. Santos - Station Commander, San Juan CPS" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-100 text-slate-600 font-medium">
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1.5">Applicant Remarks / Personal Statement</label>
+          <textarea rows="3" required placeholder="State your endorsement request or additional career achievements..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-600 focus:outline-none transition-all font-medium resize-none">Respectfully submitting application for promotion to PMSG for CY 2026 Regular Promotion cycle.</textarea>
+        </div>
+
+        <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
+          <button type="button" onclick="closeApplyModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition-all">Cancel</button>
+          <button type="submit" class="px-5 py-2.5 bg-blue-700 hover:bg-blue-800 text-white rounded-xl font-bold shadow-md shadow-blue-700/20 transition-all">Submit Application</button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- TOAST CONTAINER -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 text-xs font-medium border border-slate-800">
+    <i class="fa-solid fa-circle-check text-emerald-400"></i>
+    <span id="toast-message">Action successful!</span>
+  </div>
+
+  <!-- ==================== JAVASCRIPT APP LOGIC ==================== -->
+  <script>
+    function openApplyModal() {
+      document.getElementById('applyModal').classList.remove('hidden');
+    }
+
+    function closeApplyModal() {
+      document.getElementById('applyModal').classList.add('hidden');
+    }
+
+    function handleApplySubmit(e) {
+      e.preventDefault();
+      closeApplyModal();
+      showToast('Promotion Application Docket submitted to HR Board successfully!');
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      const msg = document.getElementById('toast-message');
+      msg.innerText = message;
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      
+      setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 3500);
+    }
+  </script>
+</body>
+</html>

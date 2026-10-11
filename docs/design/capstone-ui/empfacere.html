@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Attendance - PNP San Juan City Portal</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+  </style>
+</head>
+<body class="bg-slate-100 min-h-screen p-4 sm:p-6 lg:p-8 text-slate-800">
+
+  <div class="max-w-5xl mx-auto space-y-6">
+
+    <!-- PAGE HEADER -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+      <div>
+        <div class="flex items-center gap-2 text-xs font-bold text-blue-900 uppercase tracking-wider">
+          <i class="fa-solid fa-shield-halved text-amber-500"></i> Personnel Monitoring
+        </div>
+        <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight mt-1">My Attendance</h1>
+        <p class="text-xs text-slate-500 mt-0.5">Review your attendance history, or record today's duty attendance using facial biometrics[cite: 7, 8].</p>
+      </div>
+
+      <!-- TODAY'S DATE BADGE -->
+      <div class="flex items-center gap-2 bg-white px-3.5 py-2 rounded-xl border border-slate-200 shadow-sm shrink-0">
+        <i class="fa-regular fa-calendar-check text-blue-900 text-sm"></i>
+        <div class="text-right">
+          <span class="text-[10px] font-bold text-slate-400 uppercase block leading-none">Today's Date</span>
+          <span class="text-xs font-extrabold text-slate-800">October 11, 2026</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- FACIAL SCAN BANNER CARD -->
+    <div class="bg-gradient-to-r from-slate-950 via-slate-900 to-blue-950 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6">
+      
+      <!-- BACKGROUND GRAPHIC ACCENT -->
+      <div class="absolute -right-10 -bottom-10 opacity-10 pointer-events-none">
+        <i class="fa-solid fa-face-smile text-[180px]"></i>
+      </div>
+
+      <div class="space-y-2 relative z-10 text-center md:text-left">
+        <div class="inline-flex items-center gap-2 px-3 py-1 bg-blue-500/20 border border-blue-400/30 rounded-full text-blue-300 text-[11px] font-bold uppercase tracking-wider">
+          <i class="fa-solid fa-expand animate-pulse"></i> Biometric Recognition System
+        </div>
+        <h2 class="text-xl font-extrabold tracking-tight">Record Attendance with Face Verification</h2>
+        <p class="text-xs text-slate-300 max-w-lg leading-relaxed">
+          Ensure your camera is active and well-lit. Position your face inside the frame for duty Time-In or Time-Out logging.
+        </p>
+      </div>
+
+      <!-- SCAN ATTENDANCE TRIGGER BUTTON -->
+      <button onclick="openModal('scanModal')" class="relative z-10 px-6 py-3.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs rounded-xl shadow-lg transition-all transform hover:scale-105 flex items-center justify-center gap-2.5 shrink-0">
+        <i class="fa-solid fa-camera-retro text-base"></i>
+        <span>Scan Attendance Now</span>
+      </button>
+
+    </div>
+
+    <!-- ATTENDANCE HISTORY CONTAINER -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4">
+      
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+          <i class="fa-solid fa-clock-rotate-left text-blue-900"></i> Attendance Logs
+        </h3>
+        <span class="text-xs font-semibold px-2.5 py-0.5 bg-slate-100 text-slate-600 rounded-full">Recent Activity</span>
+      </div>
+
+      <!-- LOG ITEMS -->
+      <div class="space-y-3">
+
+        <!-- LOG ITEM 1 (OCTOBER 2, 2026 - LATE) -->
+        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:border-slate-300 transition-all">
+          
+          <div class="flex items-center gap-3.5">
+            <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center shrink-0">
+              <i class="fa-solid fa-user-clock text-base"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h4 class="text-xs font-bold text-slate-900">October 2, 2026</h4>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-100 text-amber-800 border border-amber-200">
+                  Late
+                </span>
+              </div>
+              <p class="text-[11px] text-slate-500 mt-0.5">Duty Shift: Morning Patrol Operations</p>
+            </div>
+          </div>
+
+          <!-- TIME IN & OUT DETAILED BADGES -->
+          <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-0 pt-2 sm:pt-0 border-slate-200">
+            <div class="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-center">
+              <span class="text-[9px] font-bold text-slate-400 uppercase block leading-none">Time In</span>
+              <span class="text-xs font-bold text-slate-900">18:58</span>
+            </div>
+            <div class="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-center">
+              <span class="text-[9px] font-bold text-slate-400 uppercase block leading-none">Time Out</span>
+              <span class="text-xs font-bold text-slate-900">19:12</span>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- PAGINATION FOOTER -->
+      <div class="flex items-center justify-between pt-4 border-t border-slate-100 text-xs text-slate-500">
+        <span>1–1 of 1 attendance records[cite: 7, 8]</span>
+        
+        <div class="flex items-center gap-2">
+          <button disabled class="px-3 py-1.5 bg-slate-100 text-slate-400 font-bold rounded-lg cursor-not-allowed">
+            <i class="fa-solid fa-chevron-left text-[10px] mr-1"></i> Previous
+          </button>
+          <button disabled class="px-3 py-1.5 bg-slate-100 text-slate-400 font-bold rounded-lg cursor-not-allowed">
+            Next <i class="fa-solid fa-chevron-right text-[10px] ml-1"></i>
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- ========================================== -->
+  <!-- FACIAL SCANNER CAMERA MODAL -->
+  <!-- ========================================== -->
+  <div id="scanModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-md hidden items-center justify-center p-4 z-50">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-slate-200 animate-in fade-in duration-200">
+      
+      <!-- MODAL HEADER -->
+      <div class="px-5 py-4 bg-slate-900 text-white flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-expand text-amber-400 text-sm"></i>
+          <h3 class="text-xs font-bold tracking-wide uppercase">Facial Verification Scanner</h3>
+        </div>
+        <button onclick="closeModal('scanModal')" class="text-slate-400 hover:text-white text-base">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- CAMERA PREVIEW CONTAINER -->
+      <div class="p-6 text-center space-y-4">
+        
+        <div class="relative w-64 h-64 mx-auto bg-slate-900 rounded-2xl overflow-hidden border-2 border-dashed border-blue-500 flex items-center justify-center shadow-inner">
+          <!-- CAMERA OVERLAY GRAPHIC -->
+          <div class="absolute inset-4 border border-amber-400/50 rounded-xl pointer-events-none flex items-center justify-center">
+            <span class="w-full h-[2px] bg-emerald-400/80 animate-bounce"></span>
+          </div>
+
+          <i class="fa-solid fa-user-shield text-6xl text-slate-700"></i>
+          
+          <div class="absolute bottom-3 left-0 right-0 text-[10px] font-bold text-amber-400 uppercase tracking-widest bg-slate-950/80 py-1">
+            Position Face in Frame
+          </div>
+        </div>
+
+        <p class="text-xs text-slate-500">
+          Ensure proper lighting and clear visibility of face.
+        </p>
+
+        <!-- ACTION BUTTONS -->
+        <div class="flex items-center gap-2 pt-2">
+          <button onclick="closeModal('scanModal')" class="w-1/2 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl">
+            Cancel
+          </button>
+          <button onclick="alert('Attendance Verified Successfully!'); closeModal('scanModal');" class="w-1/2 py-2.5 bg-blue-900 hover:bg-slate-900 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-check text-amber-400"></i> Confirm Scan
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- JAVASCRIPT FOR MODAL -->
+  <script>
+    function openModal(id) {
+      document.getElementById(id).classList.remove('hidden');
+      document.getElementById(id).classList.add('flex');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+      document.getElementById(id).classList.remove('flex');
+    }
+  </script>
+
+</body>
+</html>
