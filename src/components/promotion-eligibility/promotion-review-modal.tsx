@@ -55,9 +55,9 @@ export function PromotionReviewModal({ employeeId, onClose }: { employeeId: stri
   const data = detail.data;
   const active = criteria.data ?? [];
   const latest = readiness.data?.[0];
+  const defaultCriterion = latest ? active.find((criterion) => criterion.target_rank_id === latest.target_rank_id) : undefined;
   const chosen = active.find((criterion) => criterion.id === criterionId)
-    ?? active.find((criterion) => criterion.target_rank_id === latest?.target_rank_id)
-    ?? active[0];
+    ?? defaultCriterion;
   const rankById = (id: number | null | undefined) => ranks.data?.find((rank) => rank.id === id);
   const targetRank = rankById(chosen?.target_rank_id);
   const currentRank = rankById(data?.employee.rank_id);
@@ -65,7 +65,7 @@ export function PromotionReviewModal({ employeeId, onClose }: { employeeId: stri
   const ready = entry?.readiness.isReady ?? false;
 
   async function submit() {
-    if (!chosen || create.isPending) return;
+    if (!chosen || create.isPending || readiness.isLoading) return;
     try {
       await create.mutateAsync({ employeeId, targetRankId: chosen.target_rank_id, criterionId: chosen.id, evaluatedOn: manilaToday(), recommendation, notes: notes.trim() || undefined, evidence: [] });
       notifyStaff({ title: "Board endorsement submitted" });
@@ -83,7 +83,7 @@ export function PromotionReviewModal({ employeeId, onClose }: { employeeId: stri
       footer={missing || loading ? <button className={staffButton.secondary} onClick={onClose} type="button">Close</button> : (
         <>
           <button className={staffButton.secondary} onClick={onClose} type="button">Close</button>
-          <button className={staffButton.primary} disabled={create.isPending || !chosen} onClick={() => void submit()} type="button">{create.isPending ? "Submitting…" : "Submit Endorsement"}</button>
+          <button className={staffButton.primary} disabled={create.isPending || readiness.isLoading || !chosen} onClick={() => void submit()} type="button">{create.isPending ? "Submitting…" : "Submit Endorsement"}</button>
         </>
       )}
       icon={<Award aria-hidden="true" className="size-4" />}
@@ -98,10 +98,11 @@ export function PromotionReviewModal({ employeeId, onClose }: { employeeId: stri
         <p className="font-semibold text-slate-600">This employee could not be found.</p>
       ) : (
         <>
-          {active.length > 1 ? (
+          {active.length > 1 || !defaultCriterion ? (
             <div className="space-y-1">
               <StaffLabel htmlFor="review-criterion">Target Rank</StaffLabel>
-              <StaffSelect id="review-criterion" onChange={(event) => setCriterionId(event.target.value)} value={chosen?.id ?? ""}>
+              <StaffSelect id="review-criterion" onChange={(event) => setCriterionId(event.target.value || null)} required={!defaultCriterion} value={chosen?.id ?? ""}>
+                {!defaultCriterion ? <option value="">Choose target rank</option> : null}
                 {active.map((criterion) => {
                   const rank = rankById(criterion.target_rank_id);
                   return <option key={criterion.id} value={criterion.id}>{rank ? `${rank.code} — ${rank.name}` : `Rank #${criterion.target_rank_id}`}</option>;
@@ -109,7 +110,7 @@ export function PromotionReviewModal({ employeeId, onClose }: { employeeId: stri
               </StaffSelect>
             </div>
           ) : null}
-          {!chosen ? <p className="text-[11px] font-semibold text-amber-700">No active promotion criteria exist. Add criteria first.</p> : null}
+          {criteria.error ? <p className="text-[11px] font-semibold text-rose-700" role="alert">{criteria.error.message}</p> : !chosen ? <p className="text-[11px] font-semibold text-amber-700">No active promotion criteria exist. Add criteria first.</p> : null}
 
           <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200/80 bg-slate-50 p-3.5">
             <div>
