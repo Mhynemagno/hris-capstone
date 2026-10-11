@@ -26,9 +26,9 @@ export default async function ProtectedLayout({
   }
 
   const config = getRoleConfig(role);
-  if (role === "hr_personnel" || role === "employee") {
-    // HR and employees use the Capstone UI staff shell.
-    const fallbackName = role === "hr_personnel" ? "HR Personnel" : "Employee";
+  if (role === "hr_personnel" || role === "employee" || role === "system_administrator") {
+    // HR, employees, and system administrators use the Capstone UI staff shell.
+    const fallbackName = role === "hr_personnel" ? "HR Personnel" : role === "employee" ? "Employee" : "System Administrator";
     const displayName = await getStaffDisplayName(user.id, user.email ?? fallbackName);
     return (
       <QueryProvider>
