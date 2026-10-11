@@ -42,4 +42,13 @@ describe("AdminProfileChangeRequestQueue", () => {
 
     expect(navigation.replace).toHaveBeenCalledWith("/admin/profile-change-requests?status=approved", { scroll: false });
   });
+
+  it("shows a successful empty queue without a zero pager", () => {
+    hooks.useAdminProfileChangeRequests.mockReturnValue({ data: { rows: [], count: 0 }, error: null, isLoading: false });
+
+    render(<AdminProfileChangeRequestQueue />);
+
+    expect(screen.getByText(/no profile-change requests/i)).toBeInTheDocument();
+    expect(screen.queryByText("Showing 0 of 0 records")).not.toBeInTheDocument();
+  });
 });

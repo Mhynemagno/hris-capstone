@@ -35,8 +35,10 @@ describe("AttendanceIntegrationSettings", () => {
     const user = userEvent.setup();
     render(<AttendanceIntegrationSettings />);
 
+    expect(screen.getByRole("heading", { name: "CSV/XLSX integration" })).toHaveClass("text-base", "text-slate-900");
     expect(screen.queryByRole("textbox", { name: /template/i })).not.toBeInTheDocument();
     expect(screen.getByText("v1")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Save settings" })).toHaveClass("bg-blue-700");
     await user.click(screen.getByRole("button", { name: "Save settings" }));
 
     expect(mocks.save).toHaveBeenCalledWith({ workdayStart: "08:00", lateGraceMinutes: 15, templateVersion: "v1", isEnabled: true });

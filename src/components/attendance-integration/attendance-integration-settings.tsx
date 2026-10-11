@@ -7,6 +7,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { LoadingState } from "@/components/ui/loading-state";
+import { staffButton } from "@/components/staff-shell/ui/staff-buttons";
 import { useAttendanceSettings, useSaveAttendanceSettings } from "@/hooks/use-attendance-integration";
 import type { AttendanceIntegrationSettings as AttendanceIntegrationSettingsRow } from "@/lib/types/database";
 import { attendanceSettingsSchema } from "@/schemas/attendance-integration";
@@ -60,12 +61,12 @@ function SettingsForm({ settings }: { settings: AttendanceIntegrationSettingsRow
   }
 
   return (
-    <section aria-labelledby="attendance-settings-heading" className="max-w-2xl space-y-4 rounded-xl border p-5">
+    <section aria-labelledby="attendance-settings-heading" className="max-w-2xl space-y-4 rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm">
       <div>
-        <h2 className="font-bold" id="attendance-settings-heading">
+        <h2 className="text-base font-bold text-slate-900" id="attendance-settings-heading">
           CSV/XLSX integration
         </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="mt-1 text-xs text-slate-500">
           Adapter: {settings.adapter_key}. Timezone: {settings.timezone}. Vendor credentials never belong in browser code.
         </p>
       </div>
@@ -123,13 +124,13 @@ function SettingsForm({ settings }: { settings: AttendanceIntegrationSettingsRow
             {success}
           </p>
         ) : null}
-        <Button disabled={save.isPending} type="submit">
+        <Button className={staffButton.primary} disabled={save.isPending} type="submit">
           {save.isPending ? "Saving…" : "Save settings"}
         </Button>
       </form>
-      <aside className="rounded-lg bg-muted p-3 text-sm">
-        <p className="font-medium">Future biometric vendor checklist</p>
-        <p className="mt-1 text-muted-foreground">
+      <aside className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs">
+        <p className="font-bold text-slate-900">Future biometric vendor checklist</p>
+        <p className="mt-1 text-slate-500">
           Keep stable external IDs, preserve event semantics and idempotency, document credentials outside the browser, and test the adapter before replacing CSV/XLSX.
         </p>
       </aside>
