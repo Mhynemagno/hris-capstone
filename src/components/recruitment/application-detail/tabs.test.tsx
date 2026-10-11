@@ -32,7 +32,7 @@ describe("applicant detail tabs", () => {
     render(<OverviewTab applicationId={id} coverNote="I am ready." history={history} onShowDocuments={onShowDocuments} profileDocuments={profileDocuments} />);
     expect(screen.getByRole("region", { name: "AI match" })).toHaveTextContent("82/100");
     expect(screen.getByText("1 of 5 required documents uploaded")).toBeInTheDocument();
-    expect(screen.getByText(/Missing: PSA birth certificate, 2x2 picture, Eligibility, Diploma/)).toBeInTheDocument();
+    expect(screen.getByText(/Missing: PSA Birth Certificate, 2×2 ID Picture, Eligibility Certificate, College Diploma & TOR/)).toBeInTheDocument();
     expect(screen.getByText("Application is under review.")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "View documents" }));
     expect(onShowDocuments).toHaveBeenCalled();
