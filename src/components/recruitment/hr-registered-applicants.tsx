@@ -75,7 +75,7 @@ export function HrRegisteredApplicants() {
     { key: "email", header: "Email", cell: (row) => <span className="inline-flex flex-wrap items-center gap-2 break-all">{row.email ?? "—"}{row.email_confirmed ? null : <Badge variant="warning">Unconfirmed</Badge>}</span> },
     { key: "mobile", header: "Mobile", hideBelow: "lg", cell: (row) => <span className="tabular-nums">{row.phone ?? "—"}</span> },
     { key: "registered", header: "Registered", sortable: true, hideBelow: "md", cell: (row) => <span className="tabular-nums">{formatDate(row.registered_at)}</span> },
-    { key: "stage", header: "Latest stage", cell: (row) => row.latest_application_status ? <ApplicationStageBadge status={row.latest_application_status} /> : <span className="text-muted-foreground">Not yet applied</span> },
+    { key: "stage", header: "Latest stage", cell: (row) => row.latest_application_status ? <ApplicationStageBadge status={row.latest_application_status} /> : <span className="text-muted-foreground">Pending</span> },
   ];
 
   const filtersActive = Boolean(params.rq || params.applied);
@@ -86,7 +86,7 @@ export function HrRegisteredApplicants() {
         <NativeSelect aria-label="Application" className="w-48" onChange={(event) => set({ applied: event.target.value, rpage: "" }, { keepPage: true })} value={params.applied}>
           <option value="">All accounts</option>
           <option value="applied">Applied</option>
-          <option value="not-yet">Not yet applied</option>
+          <option value="not-yet">Pending</option>
         </NativeSelect>
       </FilterBar>
       <DataTable

@@ -12,7 +12,7 @@ export const QUICK_VIEWS: { value: QuickView; label: string }[] = [
   { value: "candidates", label: "Candidates" },
   { value: "hired", label: "Hired" },
   { value: "not-selected", label: "Disqualified" },
-  { value: "not-yet-applied", label: "Not yet applied" },
+  { value: "not-yet-applied", label: "Pending" },
   { value: "all", label: "All" },
 ];
 
@@ -57,7 +57,7 @@ function quickMatches(quick: QuickView, status: ApplicationStatus) {
   return quick === "all";
 }
 
-/** Applications (and, in the "Not yet applied" and "All" views, registered people) after every filter. */
+/** Applications (and, in the "Pending" and "All" views, registered people who have not applied) after every filter. */
 export function buildApplicationRows(applications: HrShortlistApplication[], registered: HrRegisteredApplicant[], params: ApplicationListParams): ApplicationListRow[] {
   // An explicit stage or job (e.g. a dashboard or job-posting link) overrides the quick view.
   const quick: QuickView = params.stage || params.job ? "all" : params.quick;
