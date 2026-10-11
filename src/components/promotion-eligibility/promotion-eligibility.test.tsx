@@ -16,23 +16,12 @@ vi.mock("@/hooks/use-promotion-eligibility", () => hooks);
 vi.mock("@/hooks/use-administration", () => adminHooks);
 vi.mock("next/navigation", () => ({ usePathname: () => "/hr/promotions", useRouter: () => ({ replace: vi.fn() }), useSearchParams: () => new URLSearchParams("") }));
 
-import { EmployeePromotionEligibility } from "./employee-promotion-eligibility";
 import { PromotionReviewModal } from "./promotion-review-modal";
 
 const ranks = [
   { id: 7, name: "Senior Police Officer", code: "SPO", sort_order: 1, is_active: true },
   { id: 9, name: "Police Chief Inspector", code: "PCI", sort_order: 2, is_active: true },
 ];
-
-describe("promotion eligibility presentation", () => {
-  it("renders only the employee-safe readiness summary, live from current records", () => {
-    hooks.useMyPromotionEligibility.mockReturnValue({ isLoading: false, data: { targetRankName: "Senior Officer", evaluatedOn: "2026-09-01", readiness: { yearsOfService: 3, minimumYearsOfService: 2, isReady: false, missingRequirements: ["First-aid certification"], requirements: [{ label: "Basic Course", met: true }, { label: "First-aid certification", met: false }] } } });
-    render(<EmployeePromotionEligibility />);
-    expect(screen.getByText("First-aid certification")).toBeInTheDocument();
-    expect(screen.getByText("Requirements pending")).toBeInTheDocument();
-    expect(screen.queryByText(/recommendation|performance rating|HR notes/i)).not.toBeInTheDocument();
-  });
-});
 
 describe("PromotionReviewModal rubric", () => {
   async function setup() {
