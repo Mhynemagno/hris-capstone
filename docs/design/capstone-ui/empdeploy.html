@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Deployments - PNP San Juan City Portal</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+  </style>
+</head>
+<body class="bg-slate-100 min-h-screen p-4 sm:p-6 lg:p-8 text-slate-800">
+
+  <div class="max-w-5xl mx-auto space-y-6">
+
+    <!-- PAGE HEADER -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+      <div>
+        <div class="flex items-center gap-2 text-xs font-bold text-blue-900 uppercase tracking-wider">
+          <i class="fa-solid fa-shield-halved text-amber-500"></i> Personnel Assignment Module
+        </div>
+        <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight mt-1">My Deployments</h1>
+        <p class="text-xs text-slate-500 mt-0.5">Review your current active duties and deployment history.</p>
+      </div>
+
+      <!-- FILTER / SEARCH BUTTONS -->
+      <div class="flex items-center gap-2">
+        <button class="px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl shadow-sm transition-all flex items-center gap-1.5">
+          <i class="fa-solid fa-filter text-slate-400"></i> Filter Status
+        </button>
+      </div>
+    </div>
+
+    <!-- DEPLOYMENT CARDS CONTAINER -->
+    <div class="space-y-4">
+
+      <!-- CARD 1: ONGOING DEPLOYMENT -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 border-l-4 border-l-blue-900 p-5 hover:border-slate-300 transition-all">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+          
+          <div class="flex items-start gap-3.5">
+            <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-900 flex items-center justify-center shrink-0 mt-0.5">
+              <i class="fa-solid fa-location-dot text-base"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="text-base font-extrabold text-slate-900">Greenhills Area Deployment</h3>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-blue-900 text-white shadow-sm flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Ongoing
+                </span>
+              </div>
+              <p class="text-xs font-semibold text-slate-500 mt-1 flex items-center gap-2">
+                <span><i class="fa-regular fa-calendar text-slate-400"></i> September 28, 2026 – Present</span>
+              </p>
+            </div>
+          </div>
+
+          <!-- PROOF / ATTENDANCE ACTION BUTTON -->
+          <button class="px-4 py-2.5 bg-blue-900 hover:bg-slate-900 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 shrink-0">
+            <i class="fa-solid fa-clipboard-user text-amber-400"></i>
+            <span>Report / Proof of Attendance</span>
+          </button>
+        </div>
+
+        <!-- REMARKS & DETAILS FOOTER -->
+        <div class="pt-3 flex items-start gap-2 bg-slate-50/80 p-3 rounded-xl mt-3 border border-slate-100 text-xs text-slate-700">
+          <i class="fa-solid fa-circle-info text-blue-800 mt-0.5 shrink-0"></i>
+          <div>
+            <span class="font-bold text-slate-900">Remarks:</span> Please report to Greenhills Sub-Station on Monday at 0600H for accounting prior to posting.
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 2: SCHEDULED DEPLOYMENT -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 border-l-4 border-l-amber-500 p-5 hover:border-slate-300 transition-all">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+          
+          <div class="flex items-start gap-3.5">
+            <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center shrink-0 mt-0.5">
+              <i class="fa-solid fa-clock-rotate-left text-base"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="text-base font-extrabold text-slate-900">Manila Area Detail</h3>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1">
+                  Scheduled
+                </span>
+              </div>
+              <p class="text-xs font-semibold text-slate-500 mt-1 flex items-center gap-2">
+                <span><i class="fa-regular fa-calendar text-slate-400"></i> October 5, 2026 – Open Ended</span>
+              </p>
+            </div>
+          </div>
+
+          <!-- PROOF / ATTENDANCE ACTION BUTTON -->
+          <button class="px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 shrink-0">
+            <i class="fa-solid fa-clipboard-user text-blue-800"></i>
+            <span>Report / Proof of Attendance</span>
+          </button>
+        </div>
+
+        <!-- REMARKS & DETAILS FOOTER -->
+        <div class="pt-3 flex items-start gap-2 bg-slate-50/80 p-3 rounded-xl mt-3 border border-slate-100 text-xs text-slate-700">
+          <i class="fa-solid fa-circle-info text-amber-600 mt-0.5 shrink-0"></i>
+          <div>
+            <span class="font-bold text-slate-900">Remarks:</span> Rally civil disturbance management (CDM) standby unit deployment.
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- PAGINATION FOOTER -->
+    <div class="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200 text-xs text-slate-500">
+      <span>Showing <strong>1–2</strong> of <strong>2</strong> deployments</span>
+      
+      <div class="flex items-center gap-2">
+        <button disabled class="px-3 py-1.5 bg-slate-100 text-slate-400 font-bold rounded-lg cursor-not-allowed">
+          <i class="fa-solid fa-chevron-left text-[10px] mr-1"></i> Previous
+        </button>
+        <button disabled class="px-3 py-1.5 bg-slate-100 text-slate-400 font-bold rounded-lg cursor-not-allowed">
+          Next <i class="fa-solid fa-chevron-right text-[10px] ml-1"></i>
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

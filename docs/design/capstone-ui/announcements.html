@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-50 p-8 font-sans">
+
+  <div class="max-w-6xl mx-auto space-y-6">
+    
+    <!-- PAGE HEADER -->
+    <div class="flex items-center justify-between pb-4 border-b border-slate-200">
+      <div>
+        <h1 class="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+          <i class="fa-solid fa-bullhorn text-blue-900"></i> Announcements & Public Content
+        </h1>
+        <p class="text-xs text-slate-500 mt-0.5">Manage public landing page notices, news, and official station emergency contacts.</p>
+      </div>
+      <button class="px-4 py-2 bg-blue-950 hover:bg-blue-900 text-white font-semibold text-xs rounded-xl shadow-sm transition-all flex items-center gap-2">
+        <i class="fa-solid fa-plus text-[10px]"></i> New Announcement
+      </button>
+    </div>
+
+    <!-- TABS & STATS COUNTER -->
+    <div class="flex items-center justify-between">
+      <div class="flex border-b border-slate-200 gap-6 text-xs font-semibold">
+        <a href="#" class="pb-2.5 text-blue-900 border-b-2 border-blue-900 flex items-center gap-2">
+          Announcements <span class="px-2 py-0.5 bg-blue-50 text-blue-900 rounded-full text-[10px]">4</span>
+        </a>
+        <a href="#" class="pb-2.5 text-slate-500 hover:text-slate-800 flex items-center gap-2">
+          Station Contacts <span class="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full text-[10px]">2</span>
+        </a>
+      </div>
+      <span class="text-[11px] text-slate-400">Showing 4 active entries</span>
+    </div>
+
+    <!-- ANNOUNCEMENT ITEM CARD (UPGRADED) -->
+    <div class="space-y-3">
+      
+      <!-- CARD 1: NEWS (PUBLISHED) -->
+      <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200 border-l-4 border-l-blue-900 flex items-start justify-between hover:border-slate-300 transition-all">
+        <div class="space-y-1.5 max-w-2xl">
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200">
+              ● Published
+            </span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-100 text-slate-600">
+              News
+            </span>
+            <span class="text-[11px] text-slate-400 ml-1">First published Oct 9, 2026</span>
+          </div>
+          <h3 class="text-sm font-bold text-slate-900">Oplan Bisita Eskwela (BES) & Community Awareness Information</h3>
+          <p class="text-xs text-slate-500 line-clamp-1">"San Juan CPS Conducts OPLAN Bisita Eskwela (BES) & Community Awareness Information"</p>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button class="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors flex items-center gap-1.5">
+            <i class="fa-regular fa-pen-to-square"></i> Edit
+          </button>
+          <button class="px-3 py-1.5 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg transition-colors">
+            Archive
+          </button>
+        </div>
+      </div>
+
+      <!-- CARD 2: ADVISORY (PUBLISHED) -->
+      <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200 border-l-4 border-l-amber-500 flex items-start justify-between hover:border-slate-300 transition-all">
+        <div class="space-y-1.5 max-w-2xl">
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200">
+              ● Published
+            </span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-50 text-amber-700 border border-amber-200">
+              Advisory
+            </span>
+            <span class="text-[11px] text-slate-400 ml-1">First published Oct 9, 2026</span>
+          </div>
+          <h3 class="text-sm font-bold text-slate-900">INFORMATION AWARENESS</h3>
+          <p class="text-xs text-slate-500 line-clamp-1">NATIONWIDE CRACKDOWN AGAINST ILLEGAL COCKFIGHTING AND E-SABONG</p>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button class="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors flex items-center gap-1.5">
+            <i class="fa-regular fa-pen-to-square"></i> Edit
+          </button>
+          <button class="px-3 py-1.5 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg transition-colors">
+            Archive
+          </button>
+        </div>
+      </div>
+
+      <!-- CARD 3: ARCHIVED -->
+      <div class="bg-slate-50/80 rounded-xl p-4 shadow-sm border border-slate-200 border-l-4 border-l-slate-400 flex items-start justify-between">
+        <div class="space-y-1.5 max-w-2xl opacity-75">
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-200 text-slate-700">
+              Archived
+            </span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-100 text-slate-600">
+              Advisory
+            </span>
+            <span class="text-[11px] text-slate-400 ml-1">First published Oct 9, 2026</span>
+          </div>
+          <h3 class="text-sm font-bold text-slate-800">ACCOUNTING OF PERSONNEL</h3>
+          <p class="text-xs text-slate-500 line-clamp-1">ACCOUNTING OF PERSONNEL PRIOR TO DEPLOYMENT FOR THE 54TH ANNIVERSARY OF MARTIAL LAW</p>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button class="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-100 rounded-lg transition-colors">
+            Edit
+          </button>
+          <button class="px-3 py-1.5 text-xs font-semibold text-white bg-blue-950 hover:bg-blue-900 rounded-lg transition-colors shadow-sm">
+            Publish
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+</body>
+</html>

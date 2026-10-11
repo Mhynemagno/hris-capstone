@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Personnel Dashboard - San Juan City Police Station</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- FontAwesome 6 Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body class="h-full font-sans text-slate-800 antialiased overflow-hidden flex">
+
+  <!-- ==================== LEFT SIDEBAR NAVIGATION ==================== -->
+  <aside class="w-64 bg-[#0B132B] text-slate-300 flex flex-col justify-between shrink-0 h-full z-30 border-r border-slate-800">
+    <div>
+      
+      <!-- BRANDING & LOGO HEADER -->
+      <div class="p-4 border-b border-slate-800/80 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-blue-900 border border-amber-400/50 flex items-center justify-center text-amber-400 text-lg shadow-md shrink-0">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <div class="min-w-0">
+          <h1 class="text-xs font-extrabold text-white tracking-wider uppercase truncate">San Juan CPS</h1>
+          <p class="text-[10px] text-slate-400 font-medium">Personnel Portal</p>
+        </div>
+      </div>
+
+      <!-- NAVIGATION MENU SECTION -->
+      <div class="px-3 py-4 space-y-5">
+        
+        <!-- DASHBOARD DIRECT LINK -->
+        <div>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-blue-700 text-white shadow-lg shadow-blue-900/40">
+            <i class="fa-solid fa-chart-pie w-4 text-center text-sm"></i>
+            <span>Dashboard</span>
+          </a>
+        </div>
+
+        <!-- MY RECORDS -->
+        <div class="space-y-1">
+          <div class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider px-3 mb-1.5">My Portal</div>
+          
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-user-shield w-4 text-center"></i>
+            <span>My Profile 201</span>
+          </a>
+
+          <a href="#" class="flex items-center justify-between px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <div class="flex items-center gap-3">
+              <i class="fa-solid fa-calendar-check w-4 text-center"></i>
+              <span>My Leaves</span>
+            </div>
+            <span class="px-1.5 py-0.5 rounded-full bg-slate-800 text-slate-300 text-[10px] font-mono">15d</span>
+          </a>
+
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-map-location-dot w-4 text-center"></i>
+            <span>My Deployments</span>
+          </a>
+
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-award w-4 text-center"></i>
+            <span>Promotion Status</span>
+          </a>
+
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-clock-rotate-left w-4 text-center"></i>
+            <span>My Attendance</span>
+          </a>
+
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-qrcode w-4 text-center"></i>
+            <span>Scan Kiosk Pass</span>
+          </a>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- USER FOOTER -->
+    <div class="p-3 border-t border-slate-800/80 bg-slate-950/40">
+      <button onclick="alert('Logging out...')" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all">
+        <i class="fa-solid fa-arrow-right-from-bracket text-red-500"></i>
+        <span>Sign out</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ==================== MAIN CONTENT CONTAINER ==================== -->
+  <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-slate-50">
+
+    <!-- TOP HEADER NAVBAR -->
+    <header class="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between shrink-0 z-20">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-blue-900 text-amber-400 flex items-center justify-center font-bold text-xs shadow-sm">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <div class="flex flex-col">
+          <span class="font-extrabold text-xs text-slate-900 tracking-tight">SAN JUAN CITY POLICE STATION</span>
+          <span class="text-[10px] text-slate-400 font-medium">Personnel Self-Service Dashboard</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <!-- Notification bell with badge -->
+        <button class="p-2 rounded-xl text-slate-500 hover:bg-slate-100 relative">
+          <i class="fa-regular fa-bell text-base"></i>
+          <span class="absolute top-1 right-1 px-1.5 py-0.2 rounded-full bg-red-500 text-white text-[9px] font-black">3</span>
+        </button>
+
+        <!-- User profile -->
+        <div class="flex items-center gap-3 pl-3 border-l border-slate-200">
+          <div class="w-9 h-9 rounded-full bg-emerald-700 text-amber-300 font-black text-xs flex items-center justify-center border border-emerald-600 shadow-sm">
+            TP
+          </div>
+          <div class="text-left leading-tight">
+            <p class="text-xs font-bold text-slate-900">Pat. Tyson Bernal Peters</p>
+            <p class="text-[10px] text-slate-400">prt.print18@gmail.com</p>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN SCROLLABLE CONTENT -->
+    <main class="flex-1 overflow-y-auto p-6 space-y-6">
+
+      <!-- ==================== POLICE OFFICER PROFILE CARD ==================== -->
+      <div class="bg-gradient-to-r from-[#0B132B] via-slate-900 to-blue-950 rounded-2xl p-6 text-white border border-slate-800 shadow-lg relative overflow-hidden">
+        <!-- Background Shield Watermark -->
+        <i class="fa-solid fa-shield-halved absolute -right-10 -bottom-10 text-[180px] text-white/5 pointer-events-none"></i>
+
+        <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          
+          <!-- Officer Info -->
+          <div class="flex items-center gap-5">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-400 to-amber-200 text-slate-950 font-black text-xl flex items-center justify-center shrink-0 border-2 border-amber-300/50 shadow-md">
+              TP
+            </div>
+            <div class="space-y-1">
+              <div class="flex items-center gap-2.5">
+                <h1 class="text-2xl font-black tracking-tight text-white">Tyson Bernal Peters</h1>
+                <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 font-bold text-[10px] uppercase tracking-wider flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span>Active</span>
+                </span>
+              </div>
+              <p class="text-xs text-amber-400 font-bold tracking-wide">PAT — Patrolman / Patrolwoman</p>
+              <p class="text-[11px] text-slate-300"><i class="fa-solid fa-building-shield mr-1.5 text-blue-400"></i>Traffic and Investigation Section • San Juan CPS</p>
+            </div>
+          </div>
+
+          <!-- Quick Action QR Pass -->
+          <button onclick="alert('Generating Biometric Kiosk QR Pass...')" class="px-4 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border border-white/20 rounded-xl font-bold text-xs transition-all flex items-center gap-2.5 self-start lg:self-auto shrink-0 shadow-md">
+            <i class="fa-solid fa-qrcode text-amber-400 text-base"></i>
+            <span>Show Biometric Pass</span>
+          </button>
+
+        </div>
+
+        <!-- Sub Metadata Grid Cards -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-6 mt-6 border-t border-slate-800 text-xs">
+          <div class="bg-white/5 p-3 rounded-xl border border-white/10">
+            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Badge Number</p>
+            <p class="text-sm font-bold font-mono text-amber-300 mt-0.5">4-15889</p>
+          </div>
+
+          <div class="bg-white/5 p-3 rounded-xl border border-white/10">
+            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Years of Service</p>
+            <p class="text-sm font-bold text-white mt-0.5">2 yrs 3 mos</p>
+          </div>
+
+          <div class="bg-white/5 p-3 rounded-xl border border-white/10">
+            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Station Sector</p>
+            <p class="text-sm font-bold text-white mt-0.5 truncate">Sub-Station 1</p>
+          </div>
+
+          <div class="bg-white/5 p-3 rounded-xl border border-white/10">
+            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Promotion Status</p>
+            <p class="text-sm font-bold text-emerald-400 mt-0.5">PMSG Eligible</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== 3-COLUMN DASHBOARD WIDGETS ==================== -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- LEFT COLUMN: DEPLOYMENT & ATTENDANCE (8 COLS) -->
+        <div class="lg:col-span-8 space-y-6">
+          
+          <!-- CURRENT FIELD DEPLOYMENT WIDGET -->
+          <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-700 border border-amber-200 flex items-center justify-center font-bold text-xs">
+                  <i class="fa-solid fa-map-location-dot"></i>
+                </div>
+                <div>
+                  <h2 class="text-sm font-bold text-slate-900">Current Field Assignment</h2>
+                  <p class="text-[11px] text-slate-400">Active duty assignment details</p>
+                </div>
+              </div>
+
+              <span class="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-bold text-[10px] uppercase">
+                Ongoing Shift
+              </span>
+            </div>
+
+            <div class="p-4 bg-slate-50 border border-slate-200/80 rounded-xl space-y-3">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <p class="text-base font-black text-slate-900">Greenhills Mobile Patrol Sector</p>
+                  <p class="text-xs text-slate-500"><i class="fa-solid fa-location-dot text-rose-500 mr-1"></i> Greenhills Shopping Complex & Perimeter Patrol</p>
+                </div>
+                <div class="text-left sm:text-right">
+                  <span class="text-[10px] text-slate-400 uppercase font-bold block">Operation Type</span>
+                  <span class="text-xs font-bold text-slate-800">Mobile Patrol / Regular Duty</span>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-3 border-t border-slate-200/60 text-xs">
+                <div>
+                  <span class="text-[10px] text-slate-400 font-semibold block">Shift Period:</span>
+                  <span class="font-mono font-bold text-slate-800">Sep 28, 2026 – No end date</span>
+                </div>
+                <div>
+                  <span class="text-[10px] text-slate-400 font-semibold block">Tactical Unit:</span>
+                  <span class="font-bold text-slate-800">Traffic & Investigation</span>
+                </div>
+                <div>
+                  <span class="text-[10px] text-slate-400 font-semibold block">Commanding Officer:</span>
+                  <span class="font-bold text-slate-800">PMAJ M. C. Balneg</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TODAY'S ATTENDANCE PUNCH & QUICK METRICS -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            
+            <!-- Attendance Today -->
+            <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-4 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-900">Today's Attendance</span>
+                <span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold text-[10px] border border-emerald-200">Verified</span>
+              </div>
+              
+              <div class="p-3 bg-emerald-50/50 rounded-xl border border-emerald-200/80 flex items-center justify-between">
+                <div>
+                  <span class="text-[10px] text-emerald-800 font-extrabold uppercase block">Time In Scan</span>
+                  <span class="text-lg font-black font-mono text-emerald-950">05:19 AM</span>
+                </div>
+                <div class="text-right">
+                  <span class="text-[10px] text-slate-400 block">Kiosk ID</span>
+                  <span class="text-xs font-bold text-slate-700 font-mono">SJ-KIOSK-001</span>
+                </div>
+              </div>
+
+              <p class="text-[10px] text-slate-400 italic"><i class="fa-solid fa-camera mr-1"></i> Biometric face scan recorded at Sub-Station 1 Lobby.</p>
+            </div>
+
+            <!-- Promotion Board Readiness Progress -->
+            <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-4 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-900">Promotion Board Status</span>
+                <span class="text-[10px] font-mono font-bold text-blue-700">100% Ready</span>
+              </div>
+
+              <div class="space-y-1.5">
+                <div class="flex justify-between text-[11px] font-bold">
+                  <span class="text-slate-700">Target Rank: PMSG</span>
+                  <span class="text-emerald-600"><i class="fa-solid fa-circle-check"></i> Eligible</span>
+                </div>
+                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden p-0.5 border border-slate-200">
+                  <div class="bg-emerald-500 h-full rounded-full" style="width: 100%"></div>
+                </div>
+              </div>
+
+              <p class="text-[10px] text-slate-500">All Time-In-Grade (2 yrs) and Police Intelligence Course criteria passed.</p>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- RIGHT COLUMN: LEAVE BALANCES & ANNOUNCEMENTS (4 COLS) -->
+        <div class="lg:col-span-4 space-y-6">
+          
+          <!-- LEAVE BALANCES CARD -->
+          <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h2 class="text-sm font-bold text-slate-900">Leave Entitlements</h2>
+              <a href="#" class="text-[11px] font-bold text-blue-700 hover:underline">File Leave</a>
+            </div>
+
+            <div class="space-y-2.5">
+              
+              <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-7 h-7 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center text-xs font-bold">
+                    <i class="fa-solid fa-notes-medical"></i>
+                  </div>
+                  <div>
+                    <p class="text-xs font-bold text-slate-900">Sick Leave</p>
+                    <p class="text-[10px] text-slate-400">15 Days / Year</p>
+                  </div>
+                </div>
+                <span class="font-black text-slate-900 text-base font-mono">15d</span>
+              </div>
+
+              <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold">
+                    <i class="fa-solid fa-calendar-check"></i>
+                  </div>
+                  <div>
+                    <p class="text-xs font-bold text-slate-900">Mandatory Leave</p>
+                    <p class="text-[10px] text-slate-400">2 Days / Year</p>
+                  </div>
+                </div>
+                <span class="font-black text-slate-900 text-base font-mono">2d</span>
+              </div>
+
+              <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-7 h-7 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center text-xs font-bold">
+                    <i class="fa-solid fa-star"></i>
+                  </div>
+                  <div>
+                    <p class="text-xs font-bold text-slate-900">Special Privilege</p>
+                    <p class="text-[10px] text-slate-400">3 Days / Year</p>
+                  </div>
+                </div>
+                <span class="font-black text-slate-900 text-base font-mono">3d</span>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- STATION MEMOS & NOTIFICATIONS -->
+          <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 space-y-3">
+            <h2 class="text-sm font-bold text-slate-900 border-b border-slate-100 pb-3">Announcements</h2>
+
+            <div class="space-y-3 text-xs">
+              <div class="p-3 bg-blue-50/60 border border-blue-200/80 rounded-xl space-y-1">
+                <span class="text-[9px] font-extrabold uppercase text-blue-700 bg-blue-100 px-1.5 py-0.2 rounded">Station Memo</span>
+                <p class="font-bold text-slate-900">CY 2026 Regular Promotion Board Interview</p>
+                <p class="text-[11px] text-slate-600">All eligible PSSg rank candidates are instructed to submit IPCR forms by Oct 15.</p>
+              </div>
+
+              <div class="p-3 bg-slate-50 border border-slate-200/80 rounded-xl space-y-1">
+                <span class="text-[9px] font-extrabold uppercase text-slate-500 bg-slate-200 px-1.5 py-0.2 rounded">Biometrics Notice</span>
+                <p class="font-bold text-slate-900">Kiosk Terminal 2 Maintenance</p>
+                <p class="text-[11px] text-slate-600">Sub-station 2 kiosk scanner undergoes scheduled recalibration today.</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </main>
+
+  </div>
+
+</body>
+</html>

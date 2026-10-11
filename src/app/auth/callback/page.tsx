@@ -13,25 +13,36 @@ function isOtpType(value: string | null): value is OtpType {
   return OTP_TYPES.includes(value as OtpType);
 }
 
+/**
+ * Email scanners often open a one-time confirmation link before the applicant does. Supabase then
+ * confirms the address but reports the applicant's own click as expired, so sign-up link errors say
+ * the email may already be confirmed instead of calling the link invalid.
+ */
+const SIGNUP_LINK_USED = "/login?as=applicant&message=email_confirmed_or_used";
+const INVITATION_EXPIRED = "/login?as=employee&error=invitation_expired";
+
 function AuthCallback() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const code = searchParams.get("code");
   const tokenHash = searchParams.get("token_hash");
   const type = searchParams.get("type");
-  // Supabase sends error / error_code back when the link itself was expired or already used.
-  const linkError = searchParams.get("error_code") ?? searchParams.get("error");
-  const signupFlow = searchParams.get("flow") === "signup";
-  const nextPath = getSafeNextPath(searchParams.get("next"));
+  const signupFlow = searchParams.get("flow") === "signup" || type === "signup";
+  const requestedNext = searchParams.get("next");
+  // A confirmed applicant lands in the portal; the posting they chose was remembered at registration.
+  const destination = requestedNext ? getSafeNextPath(requestedNext) : signupFlow ? "/applicant" : "/";
+  const queryError = searchParams.get("error_code") ?? searchParams.get("error");
 
   useEffect(() => {
     let active = true;
 
     async function complete() {
-      // Sign-up links belong to applicants; invitation and reset links to staff.
-      const loginPage = signupFlow ? "/login?as=applicant" : "/login?as=employee";
+      // Supabase sends error / error_code back when the link itself was expired or already used,
+      // in the query string or (implicit flow) in the URL hash.
+      const hash = new URLSearchParams(window.location.hash.slice(1));
+      const linkError = queryError ?? hash.get("error_code") ?? hash.get("error");
       if (linkError) {
-        if (active) router.replace(`${loginPage}&error=invitation_expired`);
+        if (active) router.replace(signupFlow ? SIGNUP_LINK_USED : INVITATION_EXPIRED);
         return;
       }
       const supabase = createBrowserSupabaseClient();
@@ -53,15 +64,13 @@ function AuthCallback() {
       }
 
       if (!active) return;
-      if (!error) router.replace(nextPath);
-      // Supabase only redirects with a code after it confirmed the email, so a sign-up code that cannot be
-      // exchanged here (opened in another browser) still means the account is confirmed.
-      else router.replace(signupFlow && code ? `${loginPage}&message=email_confirmed` : `${loginPage}&error=invitation_expired`);
+      if (!error) router.replace(destination);
+      else router.replace(signupFlow ? SIGNUP_LINK_USED : INVITATION_EXPIRED);
     }
 
     void complete();
     return () => { active = false; };
-  }, [code, linkError, nextPath, router, signupFlow, tokenHash, type]);
+  }, [code, destination, queryError, router, signupFlow, tokenHash, type]);
 
   return <p aria-live="polite">Completing sign-in…</p>;
 }

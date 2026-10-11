@@ -1,5 +1,5 @@
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
-import type { ApplicantEducation, ApplicantEducationLevel, ApplicantProfileDocumentKind, HrRegisteredApplicant } from "@/lib/types/database";
+import type { ApplicantEducation, ApplicantEducationLevel, ApplicantProfileDocumentKind, ApplicationStatusHistory, HrRegisteredApplicant } from "@/lib/types/database";
 import { APPLICANT_EDUCATION_LEVELS, applicantEducationSchema, type ApplicantEducationInput } from "@/schemas/applicant-portal";
 
 const applicantProfileDocumentBucket = "applicant-profile-documents";
@@ -56,4 +56,15 @@ export async function listHrRegisteredApplicants() {
   const { data, error } = await createBrowserSupabaseClient().rpc("list_hr_registered_applicants");
   throwIfError(error);
   return ((data ?? []) as HrRegisteredApplicant[]).map((row) => ({ ...row, application_count: Number(row.application_count ?? 0) }));
+}
+
+/** The applicant's own application history (RLS limits it to their applications), oldest first. */
+export async function listMyApplicationHistory(applicationId: string) {
+  const { data, error } = await createBrowserSupabaseClient()
+    .from("application_status_history")
+    .select("*")
+    .eq("application_id", applicationId)
+    .order("created_at");
+  throwIfError(error);
+  return (data ?? []) as ApplicationStatusHistory[];
 }

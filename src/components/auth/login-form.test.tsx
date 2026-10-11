@@ -35,4 +35,26 @@ describe("LoginForm", () => {
     expect(password).toHaveAttribute("type", "text");
     expect(screen.getByRole("button", { name: "Hide password" }).parentElement).toContainElement(password);
   });
+
+  it("asks applicants for their email address and offers Remember me", () => {
+    render(<LoginForm mode="applicant" nextPath="/" />);
+    const email = screen.getByLabelText("Email Address");
+    expect(email).toHaveAttribute("type", "email");
+    expect(email).toHaveAttribute("name", "identifier");
+    expect(email).toHaveAttribute("placeholder", "juan.delacruz@email.com");
+    const remember = screen.getByRole("checkbox", { name: "Remember me on this device" });
+    expect(remember).toBeChecked();
+    expect(remember).toHaveAttribute("name", "remember");
+    expect(screen.getByRole("link", { name: "Forgot password?" })).toHaveAttribute("href", "/forgot-password");
+    expect(screen.getByRole("button", { name: "Login" })).toBeInTheDocument();
+    const password = screen.getByLabelText("Password");
+    fireEvent.click(screen.getByRole("button", { name: "Show password" }));
+    expect(password).toHaveAttribute("type", "text");
+  });
+
+  it("shows the applicant's notice and error above the fields", () => {
+    render(<LoginForm error="We could not sign you in." mode="applicant" nextPath="/" notice="Email confirmed. Please log in." />);
+    expect(screen.getByRole("status")).toHaveTextContent("Email confirmed. Please log in.");
+    expect(screen.getByRole("alert")).toHaveTextContent("We could not sign you in.");
+  });
 });

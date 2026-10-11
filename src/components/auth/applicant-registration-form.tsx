@@ -7,14 +7,16 @@ import { useState, type FormEvent } from "react";
 import { ErrorState } from "@/components/ui/error-state";
 import { FormField } from "@/components/ui/form-field";
 import { DUPLICATE_EMAIL_MESSAGE, isDuplicateEmailError, isObfuscatedExistingUser } from "@/lib/auth/duplicate-email";
+import { preferredJobIdFromNext } from "@/lib/auth/recruitment-next-path";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { APPLICANT_QUALIFIERS, applicantRegistrationSchema } from "@/schemas/auth";
 
 type RegistrationField = "email" | "mobileNumber" | "lastName" | "firstName" | "middleName" | "qualifier" | "birthdate" | "password" | "confirmPassword";
 type RegistrationErrors = Partial<Record<RegistrationField, string>>;
 
+/** Capstone UI loginapp.html input style. */
 const inputClassName =
-  "h-11 w-full rounded-md border bg-white px-3 text-slate-950 outline-none placeholder:text-slate-400 focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/20 aria-invalid:border-destructive";
+  "h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-xs font-medium text-slate-900 transition-all placeholder:text-slate-400 focus:border-transparent focus:bg-white focus:ring-2 focus:ring-blue-800 focus:outline-none aria-invalid:border-red-500";
 
 /** Confirmation links return through the callback, which knows a sign-up link may be opened in another browser. */
 function confirmationRedirect(nextPath: string) {
@@ -30,8 +32,8 @@ function PasswordField({ autoComplete, error, id, label, name }: { autoComplete:
     <FormField error={error} htmlFor={id} label={label} required>
       <div className="relative">
         <input aria-describedby={error ? `${id}-error` : undefined} aria-invalid={error ? true : undefined} autoComplete={autoComplete} className={`${inputClassName} pr-12`} id={id} minLength={6} name={name} required type={visible ? "text" : "password"} />
-        <button aria-controls={id} aria-label={visible ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`} aria-pressed={visible} className="absolute inset-y-0 right-0 flex size-11 items-center justify-center rounded-r-md text-slate-500 outline-none hover:text-slate-950 focus-visible:ring-3 focus-visible:ring-primary/20" onClick={() => setVisible((current) => !current)} type="button">
-          {visible ? <EyeOff aria-hidden="true" className="size-5" /> : <Eye aria-hidden="true" className="size-5" />}
+        <button aria-controls={id} aria-label={visible ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`} aria-pressed={visible} className="absolute inset-y-0 right-0 flex size-10 items-center justify-center rounded-r-xl text-slate-400 outline-none hover:text-slate-600 focus-visible:ring-2 focus-visible:ring-blue-800" onClick={() => setVisible((current) => !current)} type="button">
+          {visible ? <EyeOff aria-hidden="true" className="size-3.5" /> : <Eye aria-hidden="true" className="size-3.5" />}
         </button>
       </div>
     </FormField>
@@ -61,6 +63,7 @@ export function ApplicantRegistrationForm({ loginHref = "/login?as=applicant", n
     }
     setFieldErrors({});
     setPending(true);
+    const preferredJobId = preferredJobIdFromNext(nextPath);
     try {
       const { data, error: authError } = await createBrowserSupabaseClient().auth.signUp({
         email: result.data.email,
@@ -74,10 +77,12 @@ export function ApplicantRegistrationForm({ loginHref = "/login?as=applicant", n
             phone: result.data.mobileNumber,
             date_of_birth: result.data.birthdate,
             full_name: result.data.fullName,
-            // Marks a self-registration so the applicant number is emailed (invited staff accounts are not).
+            // Marks a self-registration (invited staff accounts start without it).
             registration: "applicant",
+            // The posting they clicked Apply on; their Documents-page Save applies to it.
+            ...(preferredJobId ? { preferred_job_opening_id: String(preferredJobId) } : {}),
           },
-          emailRedirectTo: confirmationRedirect(nextPath ?? "/jobs"),
+          emailRedirectTo: confirmationRedirect("/applicant"),
         },
       });
       if (authError) {
@@ -93,7 +98,7 @@ export function ApplicantRegistrationForm({ loginHref = "/login?as=applicant", n
         setConfirmationPending(true);
         return;
       }
-      router.replace(nextPath ?? "/jobs");
+      router.replace("/applicant/documents");
       router.refresh();
     } catch {
       setError("We could not reach the server. Check your connection and try again.");
@@ -104,11 +109,10 @@ export function ApplicantRegistrationForm({ loginHref = "/login?as=applicant", n
 
   if (confirmationPending) {
     return (
-      <div aria-live="polite" className="space-y-3 rounded-lg border border-primary/25 bg-accent p-4 text-foreground" role="status">
+      <div aria-live="polite" className="space-y-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-slate-900" role="status">
         <p className="font-semibold">Check your email</p>
-        <p className="text-sm text-slate-700">We created your account. Open the confirmation link we sent before signing in.</p>
-        <p className="text-sm text-slate-700">We also emailed your applicant number. You will use it with your password to log in.</p>
-        <a className="inline-flex min-h-11 items-center font-medium text-primary underline underline-offset-4" href={loginHref}>
+        <p className="text-sm text-slate-700">Check your email to confirm your account, then log in with your email address.</p>
+        <a className="inline-flex min-h-11 items-center text-xs font-bold text-blue-800 underline underline-offset-4 hover:text-blue-900" href={loginHref}>
           Return to sign in
         </a>
       </div>
@@ -136,7 +140,7 @@ export function ApplicantRegistrationForm({ loginHref = "/login?as=applicant", n
         </div>
       </div>
       {error ? <ErrorState message={error} /> : null}
-      <button className="h-11 w-full rounded-md bg-primary px-4 font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60" disabled={pending} type="submit">
+      <button className="flex w-full items-center justify-center rounded-xl bg-slate-900 px-4 py-3 text-xs font-bold text-white shadow-md transition-all duration-200 hover:bg-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-800 focus-visible:ring-offset-2 disabled:opacity-60" disabled={pending} type="submit">
         {pending ? "Registering…" : "Register"}
       </button>
     </form>

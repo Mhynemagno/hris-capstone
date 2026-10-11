@@ -10,9 +10,9 @@ describe("requiredDocumentStatus", () => {
       total: 5,
       complete: false,
       missing: [
-        { kind: "psa", label: "PSA birth certificate" },
-        { kind: "photo", label: "2x2 picture" },
-        { kind: "eligibility", label: "Eligibility" },
+        { kind: "psa", label: "PSA Birth Certificate" },
+        { kind: "photo", label: "2×2 ID Picture" },
+        { kind: "eligibility", label: "Eligibility Certificate" },
       ],
     });
   });

@@ -30,3 +30,10 @@ export function formatDateTime(value: string | null | undefined) {
 export function formatDateRange(start: string | null | undefined, end: string | null | undefined, openEnd = "present") {
   return `${formatDate(start) ?? ""} to ${formatDate(end) ?? openEnd}`;
 }
+
+/** A date-time picker value ("2026-10-18T06:00") read as Philippine time, as an ISO timestamp. */
+export function manilaLocalToIso(value: string) {
+  if (!value) return null;
+  const date = new Date(`${value.length === 16 ? `${value}:00` : value}+08:00`);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}

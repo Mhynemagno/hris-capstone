@@ -1,40 +1,60 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { render, screen, within } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const applications = vi.hoisted(() => ({ rows: [{ id: "x", status: "Panel Interview", job_openings: { title: "Patrolman" } }] as unknown[] }));
+const state = vi.hoisted(() => ({ rows: [] as unknown[], history: [] as unknown[], documents: [] as unknown[] }));
 vi.mock("@/hooks/use-applicant-portal", () => ({
-  useMyApplicationStatuses: () => ({ data: { rows: applications.rows }, error: null, isLoading: false }),
+  useMyApplicationStatuses: () => ({ data: { rows: state.rows }, error: null, isLoading: false }),
+  useMyApplicationHistory: () => ({ data: state.history, error: null, isLoading: false }),
 }));
 vi.mock("@/hooks/use-recruitment", () => ({
-  useApplicantProfile: () => ({ data: { first_name: "Juan" }, error: null, isLoading: false }),
-  useApplicantProfileDocuments: () => ({ data: [{ kind: "eligibility" }, { kind: "photo" }], error: null, isLoading: false }),
+  useApplicantProfile: () => ({ data: { first_name: "Aldrick" }, error: null, isLoading: false }),
+  useApplicantProfileDocuments: () => ({ data: state.documents, error: null, isLoading: false }),
 }));
 
 import { ApplicantDashboard } from "./applicant-dashboard";
 
+const fiveDocuments = ["resume", "psa", "photo", "eligibility", "diploma"].map((kind) => ({ kind }));
+
 describe("ApplicantDashboard", () => {
-  it("shows the PDF recruitment process, progress, and the latest application's tracker", () => {
-    render(<ApplicantDashboard />);
-    expect(screen.getByRole("heading", { level: 1, name: "Welcome, Juan" })).toBeVisible();
-    expect(screen.getAllByText("Panel Interview").length).toBeGreaterThan(0);
-    expect(screen.getByText("7 / 8")).toBeVisible();
-    expect(screen.getByRole("list", { name: "Application progress" })).toBeVisible();
-    expect(screen.getByRole("heading", { name: "Recruitment process" })).toBeVisible();
-    expect(screen.getAllByText("Character & Background Investigation").length).toBeGreaterThan(0);
-    expect(screen.getByRole("heading", { name: "PNP minimum qualifications" })).toBeVisible();
-    expect(screen.getByText("Baccalaureate Degree")).toBeVisible();
-    expect(screen.getByText("2 of 5")).toBeVisible();
-    expect(screen.getByText("Upload your CV / Resume, PSA birth certificate, 2x2 picture, Eligibility, and Diploma.")).toBeVisible();
-    expect(screen.getByRole("link", { name: "View application status" })).toHaveAttribute("href", "/applicant/applications");
-    expect(screen.getByRole("link", { name: "Manage documents" })).toHaveAttribute("href", "/applicant/documents");
-    expect(screen.getByRole("link", { name: "Browse job openings" })).toHaveAttribute("href", "/jobs");
+  beforeEach(() => {
+    state.rows = [];
+    state.history = [];
+    state.documents = [{ kind: "resume" }, { kind: "psa" }, { kind: "photo" }];
   });
 
-  it("points a new applicant to job openings from the latest-application card", () => {
-    applications.rows = [];
+  it("guides a new applicant to upload documents", () => {
     render(<ApplicantDashboard />);
-    expect(screen.getByRole("link", { name: "Start an application" })).toHaveAttribute("href", "/jobs");
-    expect(screen.queryByRole("link", { name: "View application status" })).not.toBeInTheDocument();
-    expect(screen.getByText("0 / 8")).toBeVisible();
+    expect(screen.getByRole("heading", { level: 1, name: "Welcome, Aldrick!" })).toBeVisible();
+    expect(screen.getByText(/Monitor your application progress and manage your documentary requirements for CY \d{4} Recruitment\./)).toBeVisible();
+    const latest = screen.getByRole("region", { name: "Latest application" });
+    expect(latest).toHaveTextContent("Pending");
+    expect(latest).toHaveTextContent("0 / 8");
+    const documents = screen.getByRole("region", { name: "Documents" });
+    expect(documents).toHaveTextContent("3 of 5");
+    expect(within(documents).getByRole("link", { name: /Manage documents/ })).toHaveAttribute("href", "/applicant/documents");
+    const next = screen.getByRole("region", { name: "Next Action Required" });
+    expect(next).toHaveTextContent("Upload your required documents");
+    expect(within(next).getByRole("link", { name: /View Schedule Details/ })).toHaveAttribute("href", "/applicant/documents");
+    const process = screen.getByRole("region", { name: "Recruitment process" });
+    expect(within(process).getAllByRole("listitem")).toHaveLength(8);
+    expect(process).toHaveTextContent("Background Investigation");
+    expect(screen.queryByText(/Job openings/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/minimum qualifications/i)).not.toBeInTheDocument();
+  });
+
+  it("shows the latest application's stage, progress and schedule", () => {
+    state.documents = fiveDocuments;
+    state.rows = [{ id: "a1", status: "Physical Agility Test", stage_result: "scheduled", stage_scheduled_at: "2026-10-17T22:00:00Z", stage_venue: "Grandstand Sports Complex", submitted_at: "2026-10-09T02:00:00Z", job_openings: { title: "San Juan City Recruitment" } }];
+    state.history = [{ previous_status: "Application Submission", next_status: "Physical Agility Test", created_at: "2026-10-10T02:00:00Z" }];
+    render(<ApplicantDashboard />);
+    const latest = screen.getByRole("region", { name: "Latest application" });
+    expect(latest).toHaveTextContent("SAN JUAN CITY RECRUITMENT - CY 2026");
+    expect(latest).toHaveTextContent("Physical Agility Test");
+    expect(latest).toHaveTextContent("2 / 8");
+    expect(within(latest).getByRole("link", { name: /View application status/ })).toHaveAttribute("href", "/applicant/applications");
+    expect(screen.getByRole("region", { name: "Documents" })).toHaveTextContent("Required documents uploaded and verified.");
+    expect(screen.getByRole("region", { name: "Next Action Required" })).toHaveTextContent("Physical Agility Test AttendanceScheduled on October 18, 2026 (6:00 AM) at Grandstand Sports Complex.");
+    const progress = screen.getByRole("region", { name: "Latest application progress" });
+    expect(progress).toHaveTextContent("Completed & Verified on October 10, 2026.");
   });
 });

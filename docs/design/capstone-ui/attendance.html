@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attendance Logs - San Juan City Police Station HR Admin</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- FontAwesome 6 Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body class="h-full font-sans text-slate-800 antialiased overflow-hidden flex">
+
+  <!-- ==================== LEFT SIDEBAR NAVIGATION ==================== -->
+  <aside class="w-64 bg-[#0B132B] text-slate-300 flex flex-col justify-between shrink-0 h-full z-30 border-r border-slate-800">
+    <div>
+      
+      <!-- BRANDING & LOGO HEADER -->
+      <div class="p-4 border-b border-slate-800/80 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-blue-900 border border-amber-400/50 flex items-center justify-center text-amber-400 text-lg shadow-md shrink-0">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <div class="min-w-0">
+          <h1 class="text-xs font-extrabold text-white tracking-wider uppercase truncate">San Juan City PS</h1>
+        </div>
+      </div>
+
+      <!-- NAVIGATION MENU SECTION -->
+      <div class="px-3 py-4 space-y-6">
+        
+        <!-- DASHBOARD DIRECT LINK -->
+        <div>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-chart-pie w-4 text-center"></i>
+            <span>Dashboard</span>
+          </a>
+        </div>
+
+        <!-- RECRUITMENT MANAGEMENT -->
+        <div class="space-y-1">
+          <div class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider px-3 mb-1.5">Recruitment</div>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-briefcase w-4 text-center"></i>
+            <span>Plantilla Openings</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-id-card-clip w-4 text-center"></i>
+            <span>Applicant Roster</span>
+          </a>
+        </div>
+
+        <!-- PERSONNEL & RECORDS MANAGEMENT -->
+        <div class="space-y-1">
+          <div class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider px-3 mb-1.5">Personnel 201</div>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-users w-4 text-center"></i>
+            <span>Active Personnel</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-blue-700 text-white shadow-lg shadow-blue-900/40">
+            <i class="fa-solid fa-clock-rotate-left w-4 text-center text-sm"></i>
+            <span>Attendance Logs</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-map-location-dot w-4 text-center"></i>
+            <span>Duty Deployments</span>
+          </a>
+          <a href="#" class="flex items-center justify-between px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <div class="flex items-center gap-3">
+              <i class="fa-solid fa-calendar-check w-4 text-center"></i>
+              <span>Leave Applications</span>
+            </div>
+            <span class="px-1.5 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-bold">1</span>
+          </a>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- USER FOOTER -->
+    <div class="p-3 border-t border-slate-800/80 bg-slate-950/40">
+      <button onclick="alert('Logging out...')" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all">
+        <i class="fa-solid fa-arrow-right-from-bracket text-red-500"></i>
+        <span>Sign out</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ==================== MAIN CONTENT CONTAINER ==================== -->
+  <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-slate-50">
+
+    <!-- TOP HEADER NAVBAR -->
+    <header class="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between shrink-0 z-20">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-blue-900 text-amber-400 flex items-center justify-center font-bold text-xs shadow-sm">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <div class="flex flex-col">
+          <div class="flex items-center gap-2">
+            <span class="font-extrabold text-xs text-slate-900 tracking-tight">SAN JUAN CITY POLICE STATION</span>
+            <span class="px-2 py-0.5 text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 rounded-md">HRDD Portal</span>
+          </div>
+          <span class="text-[10px] text-slate-400 font-medium">Personnel Management • Face Biometrics & Attendance Logs</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <button class="p-2 rounded-xl text-slate-500 hover:bg-slate-100 relative">
+          <i class="fa-regular fa-bell text-base"></i>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-white"></span>
+        </button>
+
+        <div class="flex items-center gap-3 pl-3 border-l border-slate-200">
+          <div class="w-9 h-9 rounded-full bg-slate-900 text-amber-400 font-bold text-xs flex items-center justify-center border border-slate-700 shadow-sm">
+            MC
+          </div>
+          <div class="text-left leading-tight">
+            <p class="text-xs font-bold text-slate-900">PMAJ M. C. Balneg</p>
+            <p class="text-[10px] text-slate-400">mcbalnegg915@gmail.com</p>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN SCROLLABLE CONTENT -->
+    <main class="flex-1 overflow-y-auto p-6 space-y-6">
+
+      <!-- PAGE TITLE & UNIFIED TOOLBAR -->
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div>
+          <h1 class="text-2xl font-black text-slate-900 tracking-tight">Attendance Logs</h1>
+          <p class="text-xs text-slate-500 font-medium mt-0.5">Review imported and face-scanned attendance records, resolve unmatched device IDs, or launch kiosk mode.</p>
+        </div>
+
+        <!-- UNIFIED ACTION BUTTONS TOOLBAR -->
+        <div class="flex flex-wrap items-center gap-2">
+          <button onclick="alert('Importing attendance file...')" class="px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 font-bold text-xs rounded-xl shadow-sm transition-all flex items-center gap-1.5">
+            <i class="fa-solid fa-file-import text-blue-700"></i>
+            <span>Import Attendance</span>
+          </button>
+
+          <button onclick="alert('Opening Face Registration Manager...')" class="px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 font-bold text-xs rounded-xl shadow-sm transition-all flex items-center gap-1.5">
+            <i class="fa-solid fa-id-card text-purple-600"></i>
+            <span>Face Registration</span>
+          </button>
+
+          <button onclick="alert('Viewing Unmatched Device IDs...')" class="px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 font-bold text-xs rounded-xl shadow-sm transition-all flex items-center gap-1.5">
+            <i class="fa-solid fa-triangle-exclamation text-amber-500"></i>
+            <span>Unmatched IDs</span>
+          </button>
+
+          <button onclick="toggleKioskModal(true)" class="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs rounded-xl shadow-md shadow-blue-900/20 transition-all flex items-center gap-1.5">
+            <i class="fa-solid fa-expand text-xs"></i>
+            <span>Launch Attendance Kiosk</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- MAIN TABLE CONTAINER CARD -->
+      <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
+        
+        <!-- SEARCH & FILTER BAR -->
+        <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div class="flex items-center gap-2">
+            <h2 class="text-base font-bold text-slate-900">Recent Attendance Logs</h2>
+            <span class="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-extrabold rounded-md font-mono">6 Records</span>
+          </div>
+
+          <div class="flex flex-col sm:flex-row items-center gap-3">
+            <div class="relative w-full sm:w-64">
+              <input type="text" id="searchInput" onkeyup="renderAttendanceTable()" placeholder="Search name or external ID..." class="w-full pl-9 pr-4 py-2 text-xs font-medium rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all">
+              <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+            </div>
+
+            <div class="relative w-full sm:w-40">
+              <select id="statusFilter" onchange="renderAttendanceTable()" class="w-full pl-3 pr-8 py-2 text-xs font-semibold rounded-xl border border-slate-200 bg-white text-slate-700 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer">
+                <option value="ALL" selected>All Statuses</option>
+                <option value="Present">Present</option>
+                <option value="Partial">Partial</option>
+                <option value="Late">Late</option>
+              </select>
+              <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-[9px] pointer-events-none"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- ATTENDANCE RECORDS TABLE CONTAINER -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="border-b border-slate-100 bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                <th class="py-3.5 px-6">Date</th>
+                <th class="py-3.5 px-4">Personnel Name</th>
+                <th class="py-3.5 px-4">External ID</th>
+                <th class="py-3.5 px-4">Time In</th>
+                <th class="py-3.5 px-4">Time Out</th>
+                <th class="py-3.5 px-4">Status</th>
+                <th class="py-3.5 px-4">Source</th>
+                <th class="py-3.5 px-6 text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody id="attendanceTbody" class="divide-y divide-slate-100 text-slate-700 font-medium">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- TABLE PAGINATION FOOTER -->
+        <div class="p-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between text-xs text-slate-500">
+          <span id="showingLogsCount">1–6 of 6 attendance records</span>
+          
+          <div class="flex items-center gap-2">
+            <button class="px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-400 font-bold cursor-not-allowed opacity-60">
+              <i class="fa-solid fa-chevron-left text-[10px] mr-1"></i> Previous
+            </button>
+            <button class="px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-400 font-bold cursor-not-allowed opacity-60">
+              Next <i class="fa-solid fa-chevron-right text-[10px] ml-1"></i>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- ==================== EMPLOYEE ATTENDANCE DETAILS MODAL ==================== -->
+  <div id="attendanceDetailsModal" class="fixed inset-0 z-50 hidden">
+    <div onclick="closeDetailsModal()" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"></div>
+    
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden transition-all">
+      
+      <!-- Modal Header -->
+      <div class="p-5 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-blue-900 text-amber-400 flex items-center justify-center font-bold text-sm shadow-sm">
+            <i class="fa-solid fa-user-clock"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-slate-900">Employee Attendance Record</h3>
+            <p class="text-[11px] text-slate-500">Detailed biometrics log and station verification</p>
+          </div>
+        </div>
+        <button onclick="closeDetailsModal()" class="text-slate-400 hover:text-slate-700 p-1">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 space-y-5 text-xs font-medium text-slate-700">
+        
+        <!-- Employee Profile Header -->
+        <div class="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center gap-4">
+          <div id="detailsAvatar" class="w-12 h-12 rounded-full bg-blue-100 border-2 border-blue-300 text-blue-900 font-black text-sm flex items-center justify-center shrink-0 shadow-sm">
+            --
+          </div>
+          <div class="space-y-0.5">
+            <h4 id="detailsEmpName" class="text-base font-black text-slate-900">---</h4>
+            <p id="detailsRankAndBadge" class="text-[11px] text-slate-500 font-mono">Rank: --- • Badge: ---</p>
+            <p class="text-[10px] text-blue-700 font-bold"><i class="fa-solid fa-building-shield mr-1"></i> San Juan City Police Station — Admin Division</p>
+          </div>
+        </div>
+
+        <!-- Attendance Summary Grid -->
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-3 bg-white border border-slate-200 rounded-xl space-y-1">
+            <span class="text-[10px] font-extrabold uppercase text-slate-400">Log Date</span>
+            <p id="detailsLogDate" class="text-xs font-bold text-slate-900">---</p>
+          </div>
+
+          <div class="p-3 bg-white border border-slate-200 rounded-xl space-y-1">
+            <span class="text-[10px] font-extrabold uppercase text-slate-400">Attendance Status</span>
+            <div id="detailsStatusBadge">---</div>
+          </div>
+
+          <div class="p-3 bg-slate-50/80 border border-slate-200/80 rounded-xl space-y-1">
+            <span class="text-[10px] font-extrabold uppercase text-emerald-700"><i class="fa-solid fa-arrow-right-to-bracket mr-1"></i> Time In</span>
+            <p id="detailsTimeIn" class="text-sm font-black font-mono text-emerald-950">---</p>
+          </div>
+
+          <div class="p-3 bg-slate-50/80 border border-slate-200/80 rounded-xl space-y-1">
+            <span class="text-[10px] font-extrabold uppercase text-rose-700"><i class="fa-solid fa-arrow-right-from-bracket mr-1"></i> Time Out</span>
+            <p id="detailsTimeOut" class="text-sm font-black font-mono text-rose-950">---</p>
+          </div>
+        </div>
+
+        <!-- Biometric Verification Meta -->
+        <div class="p-3.5 bg-blue-50/50 border border-blue-200/80 rounded-xl space-y-2">
+          <div class="flex items-center justify-between text-[11px]">
+            <span class="font-bold text-slate-700"><i class="fa-solid fa-camera text-blue-600 mr-1.5"></i> Verification Source:</span>
+            <span id="detailsSource" class="font-extrabold text-blue-900 bg-blue-100 px-2 py-0.5 rounded border border-blue-200">Face Scan Biometrics</span>
+          </div>
+          <div class="flex items-center justify-between text-[11px] pt-1.5 border-t border-blue-100">
+            <span class="text-slate-500">Terminal Kiosk ID:</span>
+            <span id="detailsDevice" class="font-mono font-bold text-slate-800">SJ-KIOSK-001 (HQ Lobby)</span>
+          </div>
+          <div class="flex items-center justify-between text-[11px]">
+            <span class="text-slate-500">Facial Match Score:</span>
+            <span class="font-mono font-bold text-emerald-700"><i class="fa-solid fa-shield-check mr-1"></i> 99.4% Verified</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-4 border-t border-slate-100 bg-slate-50 flex items-center justify-end">
+        <button onclick="closeDetailsModal()" class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold transition-all text-xs">
+          Close Window
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ==================== ATTENDANCE KIOSK LAUNCHER MODAL ==================== -->
+  <div id="kioskModal" class="fixed inset-0 z-50 hidden bg-slate-950 text-white flex flex-col justify-between p-8">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-blue-900 border border-amber-400/50 flex items-center justify-center text-amber-400 text-lg shadow-md">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <div>
+          <h2 class="text-sm font-extrabold uppercase tracking-widest text-amber-400">San Juan City Police Station</h2>
+          <p class="text-xs text-slate-400 font-medium">Biometric Face Recognition Attendance Kiosk</p>
+        </div>
+      </div>
+
+      <button onclick="toggleKioskModal(false)" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl border border-slate-700 transition-all flex items-center gap-2">
+        <i class="fa-solid fa-xmark"></i>
+        <span>Exit Kiosk Mode</span>
+      </button>
+    </div>
+
+    <div class="flex flex-col items-center justify-center space-y-6 my-auto">
+      <div class="relative w-80 h-80 rounded-3xl border-4 border-dashed border-blue-500/60 bg-slate-900/80 flex items-center justify-center shadow-2xl overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-b from-blue-500/10 via-transparent to-blue-500/10 animate-pulse"></div>
+        <div class="text-center space-y-3 z-10 p-6">
+          <div class="w-20 h-20 rounded-full bg-blue-900/60 text-blue-400 border border-blue-500/40 flex items-center justify-center mx-auto text-3xl">
+            <i class="fa-solid fa-user-gear"></i>
+          </div>
+          <div>
+            <p class="text-sm font-bold text-white">Look at the Camera</p>
+            <p class="text-[11px] text-slate-400">Position face inside frame for instant scan</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="text-center space-y-1">
+        <p class="text-3xl font-black font-mono tracking-wider text-amber-400">05:54:22 AM</p>
+        <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">Sunday, October 11, 2026</p>
+      </div>
+    </div>
+
+    <div class="p-4 bg-slate-900/60 rounded-2xl border border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+      <div class="flex items-center gap-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+        <span class="font-bold text-slate-200">Device Terminal Active • Station Sub-Station 1</span>
+      </div>
+      <span>System Status: Operational</span>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT STATE & CONTROLLER -->
+  <script>
+    // DATASET FOR ATTENDANCE LOGS
+    const attendanceRecords = [
+      {
+        id: 1,
+        date: "October 11, 2026",
+        name: "Maria Cristina Balneg",
+        rank: "PMAJ",
+        externalId: "1-60482",
+        timeIn: "00:49",
+        timeOut: "—",
+        status: "Partial",
+        source: "Face scan",
+        avatarBg: "bg-purple-100 text-purple-800 border-purple-200",
+        device: "SJ-KIOSK-001 (HQ Main Gate)"
+      },
+      {
+        id: 2,
+        date: "October 10, 2026",
+        name: "Maria Cristina Balneg",
+        rank: "PMAJ",
+        externalId: "1-60482",
+        timeIn: "17:38",
+        timeOut: "—",
+        status: "Partial",
+        source: "Face scan",
+        avatarBg: "bg-purple-100 text-purple-800 border-purple-200",
+        device: "SJ-KIOSK-001 (HQ Main Gate)"
+      },
+      {
+        id: 3,
+        date: "October 9, 2026",
+        name: "Maria Cristina Balneg",
+        rank: "PMAJ",
+        externalId: "1-60482",
+        timeIn: "18:30",
+        timeOut: "18:33",
+        status: "Late",
+        source: "Face scan",
+        avatarBg: "bg-purple-100 text-purple-800 border-purple-200",
+        device: "SJ-KIOSK-002 (Sub-Station 1)"
+      },
+      {
+        id: 4,
+        date: "October 2, 2026",
+        name: "Tyson Peters",
+        rank: "PSSg",
+        externalId: "4-15889",
+        timeIn: "18:58",
+        timeOut: "19:12",
+        status: "Late",
+        source: "Face scan",
+        avatarBg: "bg-emerald-100 text-emerald-800 border-emerald-200",
+        device: "SJ-KIOSK-001 (HQ Main Gate)"
+      },
+      {
+        id: 5,
+        date: "September 27, 2026",
+        name: "Jhestine Luxwell",
+        rank: "PCpl",
+        externalId: "0-00055",
+        timeIn: "12:12",
+        timeOut: "—",
+        status: "Partial",
+        source: "Face scan",
+        avatarBg: "bg-blue-100 text-blue-800 border-blue-200",
+        device: "SJ-KIOSK-003 (Greenhills Sector)"
+      },
+      {
+        id: 6,
+        date: "September 25, 2026",
+        name: "Jhestine Luxwell",
+        rank: "PCpl",
+        externalId: "0-00067",
+        timeIn: "05:19",
+        timeOut: "11:54",
+        status: "Present",
+        source: "Face scan",
+        avatarBg: "bg-blue-100 text-blue-800 border-blue-200",
+        device: "SJ-KIOSK-001 (HQ Main Gate)"
+      }
+    ];
+
+    // RENDER TABLE
+    function renderAttendanceTable() {
+      const tbody = document.getElementById('attendanceTbody');
+      const searchVal = document.getElementById('searchInput').value.toLowerCase();
+      const statusVal = document.getElementById('statusFilter').value;
+
+      tbody.innerHTML = '';
+
+      const filtered = attendanceRecords.filter(rec => {
+        const matchesSearch = rec.name.toLowerCase().includes(searchVal) || rec.externalId.toLowerCase().includes(searchVal);
+        const matchesStatus = (statusVal === 'ALL') || (rec.status === statusVal);
+        return matchesSearch && matchesStatus;
+      });
+
+      document.getElementById('showingLogsCount').textContent = `1–${filtered.length} of ${filtered.length} attendance records`;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" class="py-8 text-center text-slate-400 font-medium">
+              No attendance logs found.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      filtered.forEach(rec => {
+        const initials = rec.name.split(' ').map(n => n[0]).join('').substring(0, 2);
+
+        let statusBadge = '';
+        if (rec.status === 'Present') {
+          statusBadge = `<span class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[10px] uppercase tracking-wider">Present</span>`;
+        } else if (rec.status === 'Partial') {
+          statusBadge = `<span class="px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 font-bold text-[10px] uppercase tracking-wider">Partial</span>`;
+        } else {
+          statusBadge = `<span class="px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200 font-bold text-[10px] uppercase tracking-wider">Late</span>`;
+        }
+
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50/80 transition-colors">
+            <td class="py-4 px-6 font-semibold text-slate-900">${rec.date}</td>
+            <td class="py-4 px-4">
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-full ${rec.avatarBg} font-bold text-xs flex items-center justify-center shrink-0 border">
+                  ${initials}
+                </div>
+                <div>
+                  <p class="font-bold text-slate-900">${rec.name}</p>
+                  <p class="text-[10px] font-mono text-slate-400">${rec.externalId}</p>
+                </div>
+              </div>
+            </td>
+            <td class="py-4 px-4 font-mono font-bold text-slate-700">${rec.externalId}</td>
+            <td class="py-4 px-4 font-mono text-slate-800 font-semibold">${rec.timeIn}</td>
+            <td class="py-4 px-4 font-mono ${rec.timeOut === '—' ? 'text-slate-400' : 'text-slate-800 font-semibold'}">${rec.timeOut}</td>
+            <td class="py-4 px-4">${statusBadge}</td>
+            <td class="py-4 px-4">
+              <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200 font-bold text-[10px]">
+                <i class="fa-solid fa-camera text-[9px]"></i> ${rec.source}
+              </span>
+            </td>
+            <td class="py-4 px-6 text-center">
+              <button onclick="openDetailsModal(${rec.id})" class="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="View Details">
+                <i class="fa-solid fa-eye text-xs"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    // OPEN DETAILS MODAL
+    function openDetailsModal(id) {
+      const rec = attendanceRecords.find(r => r.id === id);
+      if (!rec) return;
+
+      const initials = rec.name.split(' ').map(n => n[0]).join('').substring(0, 2);
+
+      document.getElementById('detailsAvatar').textContent = initials;
+      document.getElementById('detailsEmpName').textContent = rec.name;
+      document.getElementById('detailsRankAndBadge').textContent = `Rank: ${rec.rank} • Badge / ID: ${rec.externalId}`;
+      document.getElementById('detailsLogDate').textContent = rec.date;
+      document.getElementById('detailsTimeIn').textContent = rec.timeIn;
+      document.getElementById('detailsTimeOut').textContent = rec.timeOut;
+      document.getElementById('detailsDevice').textContent = rec.device;
+
+      let statusBadge = '';
+      if (rec.status === 'Present') {
+        statusBadge = `<span class="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[10px] uppercase">Present</span>`;
+      } else if (rec.status === 'Partial') {
+        statusBadge = `<span class="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 font-bold text-[10px] uppercase">Partial</span>`;
+      } else {
+        statusBadge = `<span class="px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 font-bold text-[10px] uppercase">Late</span>`;
+      }
+      document.getElementById('detailsStatusBadge').innerHTML = statusBadge;
+
+      document.getElementById('attendanceDetailsModal').classList.remove('hidden');
+    }
+
+    function closeDetailsModal() {
+      document.getElementById('attendanceDetailsModal').classList.add('hidden');
+    }
+
+    function toggleKioskModal(show) {
+      const modal = document.getElementById('kioskModal');
+      if (show) {
+        modal.classList.remove('hidden');
+      } else {
+        modal.classList.add('hidden');
+      }
+    }
+
+    // INITIAL LOAD
+    document.addEventListener('DOMContentLoaded', () => {
+      renderAttendanceTable();
+    });
+  </script>
+
+</body>
+</html>

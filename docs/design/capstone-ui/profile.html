@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>San Juan City Police Station - Applicant Portal</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- FontAwesome Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Google Font: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            pnp: {
+              navy: '#0b192c',
+              dark: '#1e293b',
+              blue: '#1d4ed8',
+              teal: '#0f766e',
+              lightTeal: '#008080'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+</head>
+<body class="h-full flex flex-col font-sans text-slate-800 antialiased overflow-hidden selection:bg-blue-100 selection:text-blue-900">
+
+  <!-- FLOATING PROFILE UPDATED NOTICE / TOAST ALERT -->
+  <div id="saveToast" class="fixed top-5 right-5 z-50 transform translate-y-[-150%] opacity-0 transition-all duration-300 ease-in-out pointer-events-none">
+    <div class="bg-slate-900 text-white px-5 py-3.5 rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-3">
+      <div class="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-400 flex items-center justify-center shrink-0">
+        <i class="fa-solid fa-circle-check text-base"></i>
+      </div>
+      <div>
+        <h4 class="text-xs font-bold text-white">Profile Updated Successfully!</h4>
+        <p class="text-[11px] text-slate-300">Your personal and academic details have been saved.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN WRAPPER -->
+  <div class="flex h-screen w-screen overflow-hidden">
+
+    <!-- 1. LEFT SIDEBAR NAVIGATION -->
+    <aside id="sidebar" class="w-64 bg-white border-r border-slate-200 flex flex-col justify-between shrink-0 transition-transform duration-300 z-30 absolute md:relative -translate-x-full md:translate-x-0 h-full">
+      <div>
+        <!-- STATION LOGO & TITLE -->
+        <div class="p-5 flex flex-col items-center border-b border-slate-100 text-center">
+          <div class="w-16 h-16 mb-2 relative flex items-center justify-center">
+            <div class="w-16 h-16 rounded-full bg-red-700 border-2 border-yellow-400 p-1 shadow-md flex items-center justify-center text-white font-bold text-xs">
+              <div class="w-full h-full rounded-full bg-blue-900 flex flex-col items-center justify-center text-[8px] text-center font-bold tracking-tighter leading-tight border border-yellow-400">
+                <span class="text-yellow-300 text-[7px] leading-none">SAN JUAN</span>
+                <i class="fa-solid fa-shield-halved text-amber-400 text-xs my-0.5"></i>
+                <span class="text-[6px] text-white leading-none">POLICE</span>
+              </div>
+            </div>
+          </div>
+          <h2 class="text-xs font-bold text-slate-900 uppercase tracking-tight leading-snug">
+            San Juan City Police Station
+          </h2>
+          <span class="text-[10px] text-slate-400 font-medium">Recruitment Division</span>
+        </div>
+
+        <!-- NAVIGATION MENU ITEMS -->
+        <div class="px-3 py-4">
+          <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-3 mb-2">Menu</div>
+          <nav class="space-y-1">
+            
+            <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs font-semibold transition-all duration-150 bg-slate-900 text-white shadow-sm">
+              <i class="fa-solid fa-table-columns w-4 text-center"></i>
+              <span>Dashboard</span>
+            </button>
+
+            <button onclick="switchTab('profile')" id="nav-profile" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-150">
+              <i class="fa-regular fa-user w-4 text-center"></i>
+              <span>Profile</span>
+            </button>
+
+            <button onclick="switchTab('documents')" id="nav-documents" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-150">
+              <i class="fa-regular fa-file-lines w-4 text-center"></i>
+              <span>Documents</span>
+            </button>
+
+            <button onclick="switchTab('application-status')" id="nav-application-status" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-150">
+              <i class="fa-regular fa-clock w-4 text-center"></i>
+              <span>Application Status</span>
+            </button>
+
+          </nav>
+        </div>
+      </div>
+
+      <!-- SIDEBAR FOOTER INFO -->
+      <div class="p-4 border-t border-slate-100 bg-slate-50 text-center">
+        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">PNP San Juan Recruitment Portal</p>
+      </div>
+    </aside>
+
+    <!-- SIDEBAR OVERLAY FOR MOBILE -->
+    <div id="sidebarOverlay" onclick="toggleMobileSidebar()" class="fixed inset-0 bg-slate-900/40 z-20 hidden md:hidden transition-opacity"></div>
+
+    <!-- MAIN RIGHT CONTAINER -->
+    <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-slate-50">
+
+      <!-- 2. TOP HEADER BAR -->
+      <header class="h-14 bg-[#0F172A] text-white flex items-center justify-between px-4 sm:px-6 shrink-0 z-20 border-b border-slate-800">
+        <!-- LEFT: MOBILE TOGGLE & BREADCRUMB -->
+        <div class="flex items-center gap-3">
+          <button onclick="toggleMobileSidebar()" class="md:hidden p-1.5 rounded-md hover:bg-slate-800 text-slate-300">
+            <i class="fa-solid fa-bars text-lg"></i>
+          </button>
+          
+          <div class="flex items-center gap-2 text-xs font-medium text-slate-300">
+            <i class="fa-regular fa-rectangle-list text-slate-400"></i>
+            <span>Applicant</span>
+            <i class="fa-solid fa-chevron-right text-[10px] text-slate-500"></i>
+            <span id="breadcrumb-current" class="text-white font-bold">Dashboard</span>
+          </div>
+        </div>
+
+        <!-- RIGHT: NOTIFICATION & USER PROFILE DROPDOWN -->
+        <div class="flex items-center gap-3">
+          
+          <!-- NOTIFICATION BELL WITH DROPDOWN -->
+          <div class="relative">
+            <button id="notifBellBtn" onclick="toggleNotificationDrawer(event)" class="relative p-2 rounded-full hover:bg-slate-800 text-slate-300 hover:text-white transition-colors focus:outline-none">
+              <i class="fa-regular fa-bell text-base"></i>
+              <span id="notifBadge" class="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center ring-2 ring-[#0F172A]">
+                3
+              </span>
+            </button>
+
+            <!-- FLOATING NOTIFICATION DRAWER -->
+            <div id="notificationDrawer" class="hidden absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 overflow-hidden text-slate-800">
+              
+              <div class="p-3.5 bg-slate-900 text-white flex justify-between items-center border-b border-slate-800">
+                <div class="flex items-center gap-2">
+                  <i class="fa-solid fa-bell text-blue-400 text-xs"></i>
+                  <h3 class="font-bold text-xs uppercase tracking-wider">Notifications</h3>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span id="unreadCountBadge" class="text-[10px] bg-blue-900 text-blue-200 border border-blue-700/50 px-2 py-0.5 rounded-full font-semibold">
+                    3 Unread
+                  </span>
+                  <button onclick="toggleNotificationDrawer(event)" class="text-slate-400 hover:text-white text-xs p-1">
+                    <i class="fa-solid fa-xmark"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- NOTIFICATION FILTER TABS -->
+              <div class="flex border-b border-slate-100 bg-slate-50 text-[11px] font-semibold text-slate-600">
+                <button onclick="filterNotifs('all')" id="notif-tab-all" class="flex-1 py-2 text-center border-b-2 border-blue-600 text-blue-600 bg-white">All</button>
+                <button onclick="filterNotifs('unread')" id="notif-tab-unread" class="flex-1 py-2 text-center border-b-2 border-transparent hover:text-slate-900">Unread</button>
+              </div>
+
+              <!-- NOTIFICATION LIST CONTAINER -->
+              <div id="notifListContainer" class="divide-y divide-slate-100 max-h-[340px] overflow-y-auto">
+                
+                <!-- NOTIF ITEM 1 -->
+                <div id="notif-item-1" class="notif-item unread action p-3.5 bg-blue-50/50 hover:bg-blue-50 transition-colors relative group">
+                  <div class="flex items-start justify-between gap-2 mb-1">
+                    <span class="inline-flex items-center gap-1.5 text-[11px] font-bold text-blue-800">
+                      <span class="dot-indicator w-2 h-2 rounded-full bg-blue-600"></span>
+                      Physical Agility Test Scheduled
+                    </span>
+                    <span class="text-[10px] text-slate-400 font-medium shrink-0">10m ago</span>
+                  </div>
+                  <p class="text-xs text-slate-600 mb-2 leading-relaxed">
+                    You have been moved to Stage 2: <strong>Physical Agility Test</strong>. Venue: Grandstand Sports Complex.
+                  </p>
+                  <div class="flex items-center justify-between pt-1 text-[11px]">
+                    <button onclick="handleNotifAction('application-status')" class="font-semibold text-blue-700 hover:underline flex items-center gap-1">
+                      <span>View details</span>
+                      <i class="fa-solid fa-arrow-right text-[9px]"></i>
+                    </button>
+                    <div class="flex items-center gap-2 text-slate-400">
+                      <button onclick="markAsRead('notif-item-1')" title="Mark as read" class="hover:text-slate-700"><i class="fa-solid fa-check"></i></button>
+                      <button onclick="deleteNotif('notif-item-1')" title="Delete" class="hover:text-red-600"><i class="fa-regular fa-trash-can"></i></button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- NOTIF ITEM 2 -->
+                <div id="notif-item-2" class="notif-item unread action p-3.5 bg-blue-50/50 hover:bg-blue-50 transition-colors relative group">
+                  <div class="flex items-start justify-between gap-2 mb-1">
+                    <span class="inline-flex items-center gap-1.5 text-[11px] font-bold text-amber-700">
+                      <span class="dot-indicator w-2 h-2 rounded-full bg-amber-500"></span>
+                      Document Verification Update
+                    </span>
+                    <span class="text-[10px] text-slate-400 font-medium shrink-0">2h ago</span>
+                  </div>
+                  <p class="text-xs text-slate-600 mb-2 leading-relaxed">
+                    Your uploaded <strong>Civil Service Certificate</strong> has been verified and approved by HR.
+                  </p>
+                  <div class="flex items-center justify-between pt-1 text-[11px]">
+                    <button onclick="handleNotifAction('documents')" class="font-semibold text-amber-700 hover:underline flex items-center gap-1">
+                      <span>Manage Documents</span>
+                      <i class="fa-solid fa-arrow-right text-[9px]"></i>
+                    </button>
+                    <div class="flex items-center gap-2 text-slate-400">
+                      <button onclick="markAsRead('notif-item-2')" title="Mark as read" class="hover:text-slate-700"><i class="fa-solid fa-check"></i></button>
+                      <button onclick="deleteNotif('notif-item-2')" title="Delete" class="hover:text-red-600"><i class="fa-regular fa-trash-can"></i></button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- NOTIF ITEM 3 -->
+                <div id="notif-item-3" class="notif-item unread p-3.5 bg-blue-50/50 hover:bg-blue-50 transition-colors relative group">
+                  <div class="flex items-start justify-between gap-2 mb-1">
+                    <span class="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-800">
+                      <span class="dot-indicator w-2 h-2 rounded-full bg-blue-600"></span>
+                      Welcome to San Juan Portal
+                    </span>
+                    <span class="text-[10px] text-slate-400 font-medium shrink-0">1d ago</span>
+                  </div>
+                  <p class="text-xs text-slate-600 mb-2 leading-relaxed">
+                    Your applicant account (CY 2026) has been registered. Complete all requirements early.
+                  </p>
+                  <div class="flex items-center justify-between pt-1 text-[11px]">
+                    <span class="text-[10px] text-slate-400">System Notification</span>
+                    <div class="flex items-center gap-2 text-slate-400">
+                      <button onclick="markAsRead('notif-item-3')" title="Mark as read" class="hover:text-slate-700"><i class="fa-solid fa-check"></i></button>
+                      <button onclick="deleteNotif('notif-item-3')" title="Delete" class="hover:text-red-600"><i class="fa-regular fa-trash-can"></i></button>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- DRAWER FOOTER ACTIONS -->
+              <div class="p-2.5 bg-slate-50 text-center border-t border-slate-100 flex justify-between items-center px-4">
+                <button onclick="markAllAsRead()" class="text-xs text-slate-600 font-medium hover:text-slate-900 transition-colors">
+                  Mark all as read
+                </button>
+                <button onclick="clearAllNotifs()" class="text-xs text-red-600 font-medium hover:text-red-800 transition-colors">
+                  Clear all
+                </button>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- TOP RIGHT USER PROFILE DROPDOWN MENU -->
+          <div class="relative pl-3 border-l border-slate-800">
+            <button onclick="toggleUserDropdown(event)" id="userDropdownBtn" class="flex items-center gap-2.5 focus:outline-none group">
+              <div class="w-8 h-8 rounded-full bg-blue-600 border border-blue-400 flex items-center justify-center font-bold text-xs text-white shadow-sm">
+                AG
+              </div>
+              <div class="hidden sm:block text-left">
+                <p class="text-xs font-semibold text-slate-200 leading-tight group-hover:text-white transition-colors">Aldrick Jamlani</p>
+                <p class="text-[10px] text-slate-400 leading-tight">aldrick.jamlani@gmail.com</p>
+              </div>
+              <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 ml-1"></i>
+            </button>
+
+            <!-- DROPDOWN MENU PANEL -->
+            <div id="userDropdownMenu" class="hidden absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 text-slate-700 text-xs z-50">
+              <div class="px-4 py-2 border-b border-slate-100 sm:hidden">
+                <p class="font-bold text-slate-900">Aldrick Jamlani</p>
+                <p class="text-[10px] text-slate-500 truncate">aldrick.jamlani@gmail.com</p>
+              </div>
+              
+              <button onclick="switchTab('profile'); closeUserDropdown();" class="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center gap-2.5 text-slate-700 font-medium">
+                <i class="fa-regular fa-user w-4 text-slate-400"></i> View Profile
+              </button>
+
+              <button onclick="switchTab('documents'); closeUserDropdown();" class="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center gap-2.5 text-slate-700 font-medium">
+                <i class="fa-regular fa-file-lines w-4 text-slate-400"></i> My Documents
+              </button>
+
+              <div class="border-t border-slate-100 my-1"></div>
+
+              <button onclick="signOutPrompt()" class="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 flex items-center gap-2.5 font-semibold">
+                <i class="fa-solid fa-arrow-right-from-bracket w-4"></i> Sign Out
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </header>
+
+      <!-- 3. MAIN SCROLLABLE CONTENT BODY -->
+      <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+
+        <!-- ==================== TAB 1: DASHBOARD ==================== -->
+        <div id="tab-dashboard" class="tab-content space-y-6">
+          
+          <!-- WELCOME HEADER -->
+          <div>
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Welcome, Aldrick!</h1>
+            <p class="text-xs text-slate-500 mt-0.5">Monitor your application progress and manage your documentary requirements for CY 2026 Recruitment.</p>
+          </div>
+
+          <!-- TOP SUMMARY CARDS -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            
+            <!-- Card 1: Latest application -->
+            <div class="bg-white rounded-xl p-5 border border-slate-200/90 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+              <div>
+                <div class="flex items-center gap-2 text-xs text-slate-500 font-semibold mb-2">
+                  <i class="fa-solid fa-sliders text-teal-600"></i>
+                  <span>Latest application</span>
+                </div>
+                <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                  SAN JUAN CITY RECRUITMENT - CY 2026
+                </div>
+                <h3 class="text-lg font-bold text-slate-900 mt-1">Physical Agility Test</h3>
+                <div class="mt-2 inline-block px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 text-xs font-bold">
+                  2 / 8
+                </div>
+              </div>
+              <div class="mt-4 pt-3 border-t border-slate-100">
+                <button onclick="switchTab('application-status')" class="text-xs font-bold text-teal-700 hover:text-teal-900 hover:underline inline-flex items-center gap-1">
+                  View application status <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Card 2: Documents -->
+            <div class="bg-white rounded-xl p-5 border border-slate-200/90 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+              <div>
+                <div class="flex items-center gap-2 text-xs text-slate-500 font-semibold mb-2">
+                  <i class="fa-regular fa-folder-open text-teal-600"></i>
+                  <span>Documents</span>
+                </div>
+                <h3 class="text-lg font-bold text-slate-900">5 of 5</h3>
+                <p class="text-xs text-slate-500 mt-1">Required documents uploaded and verified.</p>
+              </div>
+              <div class="mt-4 pt-3 border-t border-slate-100">
+                <button onclick="switchTab('documents')" class="text-xs font-bold text-teal-700 hover:text-teal-900 hover:underline inline-flex items-center gap-1">
+                  Manage documents <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Card 3: Next Action Required -->
+            <div class="bg-white rounded-xl p-5 border border-amber-200/90 bg-amber-50/20 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+              <div>
+                <div class="flex items-center gap-2 text-xs text-amber-700 font-semibold mb-2">
+                  <i class="fa-regular fa-calendar-check text-amber-600"></i>
+                  <span>Next Action Required</span>
+                </div>
+                <h3 class="text-sm font-bold text-slate-900 mt-1">Physical Agility Test Attendance</h3>
+                <p class="text-xs text-slate-600 leading-relaxed mt-1">
+                  Scheduled on <strong>Oct 18, 2026 (6:00 AM)</strong> at Grandstand Sports Complex.
+                </p>
+              </div>
+              <div class="mt-4 pt-3 border-t border-amber-100">
+                <button onclick="switchTab('application-status')" class="text-xs font-bold text-amber-700 hover:text-amber-900 hover:underline inline-flex items-center gap-1">
+                  View Schedule Details <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- MIDDLE GRID: RECRUITMENT PROCESS & QUALIFICATIONS -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            
+            <!-- Recruitment Process Card -->
+            <div class="bg-white rounded-xl p-5 border border-slate-200/90 shadow-sm">
+              <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider mb-4">Recruitment process</h3>
+              
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5 text-xs font-medium text-slate-700">
+                <!-- Left Column (Stages 1 to 4) -->
+                <div class="space-y-2.5">
+                  <div class="flex items-center gap-2">
+                    <span class="font-bold text-teal-700 w-4">1.</span>
+                    <span>Application Submission</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="font-bold text-teal-700 w-4">2.</span>
+                    <span>Physical Agility Test</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="font-bold text-teal-700 w-4">3.</span>
+                    <span>Physical & Medical Exam</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="font-bold text-teal-700 w-4">4.</span>
+                    <span>Neuro-Psychiatric Exam</span>
+                  </div>
+                </div>
+
+                <!-- Right Column (Stages 5 to 8) -->
+                <div class="space-y-2.5">
+                  <div class="flex items-center gap-2">
+                    <span class="font-bold text-teal-700 w-4">5.</span>
+                    <span>Drug Test</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="font-bold text-teal-700 w-4">6.</span>
+                    <span>Background Investigation</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="font-bold text-teal-700 w-4">7.</span>
+                    <span>Panel Interview</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="font-bold text-teal-700 w-4">8.</span>
+                    <span>Final Evaluation</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- QUALIFICATIONS & ELIGIBILITY COMBINED -->
+            <div class="space-y-4">
+              <div class="bg-white rounded-xl p-5 border border-slate-200/90 shadow-sm">
+                <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider mb-3">General Qualifications</h3>
+                <ul class="space-y-1.5 text-xs text-slate-700 list-disc list-inside">
+                  <li>A citizen of the Philippines</li>
+                  <li>A person of good moral character</li>
+                  <li>Must pass BMI, Agility Test, Neuro, Medical Exam, and Drug Test</li>
+                  <li>Holder of a formal Baccalaureate Degree from a recognized institution</li>
+                  <li>Must not be less than 21 nor more than 30 years of age</li>
+                </ul>
+              </div>
+
+              <div class="bg-white rounded-xl p-5 border border-slate-200/90 shadow-sm">
+                <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider mb-3">Acceptable Eligibilities</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-700 font-medium">
+                  <div class="p-2 bg-slate-50 rounded-lg border border-slate-100 flex items-center gap-2">
+                    <i class="fa-solid fa-check text-teal-600"></i> PNP Entrance NAPOLCOM
+                  </div>
+                  <div class="p-2 bg-slate-50 rounded-lg border border-slate-100 flex items-center gap-2">
+                    <i class="fa-solid fa-check text-teal-600"></i> Civil Service Professional
+                  </div>
+                  <div class="p-2 bg-slate-50 rounded-lg border border-slate-100 flex items-center gap-2">
+                    <i class="fa-solid fa-check text-teal-600"></i> RA 1080 (Bar / Board)
+                  </div>
+                  <div class="p-2 bg-slate-50 rounded-lg border border-slate-100 flex items-center gap-2">
+                    <i class="fa-solid fa-check text-teal-600"></i> PD 907 (Honor Graduate)
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- BOTTOM CARD: LATEST APPLICATION PROGRESS TIMELINE -->
+          <div class="bg-white rounded-xl p-5 border border-slate-200/90 shadow-sm space-y-4">
+            <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-3">Latest application progress</h3>
+            
+            <div class="space-y-4 pl-2">
+              <div class="flex items-start gap-3">
+                <div class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs shrink-0 mt-0.5">
+                  <i class="fa-solid fa-check text-[10px]"></i>
+                </div>
+                <div>
+                  <h4 class="text-xs font-bold text-slate-900">Application Submission</h4>
+                  <p class="text-[11px] text-slate-500">Completed & Verified on October 10, 2026.</p>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-3">
+                <div class="w-5 h-5 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-xs shrink-0 mt-0.5">
+                  <i class="fa-regular fa-clock text-[10px]"></i>
+                </div>
+                <div>
+                  <h4 class="text-xs font-bold text-slate-900">Physical Agility Test</h4>
+                  <p class="text-[11px] text-slate-600">You are now scheduled for the physical agility test.</p>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-3 opacity-60">
+                <div class="w-5 h-5 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-xs shrink-0 mt-0.5">
+                  <i class="fa-regular fa-clock text-[10px]"></i>
+                </div>
+                <div>
+                  <h4 class="text-xs font-semibold text-slate-700">Physical & Medical Examination</h4>
+                  <p class="text-[11px] text-slate-400">Pending physical agility test evaluation.</p>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-3 opacity-60">
+                <div class="w-5 h-5 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-xs shrink-0 mt-0.5">
+                  <i class="fa-regular fa-clock text-[10px]"></i>
+                </div>
+                <div>
+                  <h4 class="text-xs font-semibold text-slate-700">Neuro-Psychiatric Examination</h4>
+                  <p class="text-[11px] text-slate-400">Scheduled upon medical clearance.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ==================== TAB 2: PROFILE PAGE ==================== -->
+        <div id="tab-profile" class="tab-content hidden space-y-6 max-w-5xl mx-auto pb-12">
+          
+          <!-- TOP HERO / PROFILE HEADER CARD -->
+          <div class="relative bg-gradient-to-r from-slate-900 via-slate-800 to-blue-950 rounded-2xl p-6 sm:p-8 text-white shadow-xl overflow-hidden border border-slate-700/50">
+            <!-- Background Gradient Accent -->
+            <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-blue-600/20 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+              <div class="flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left">
+                
+                <!-- Avatar Upload Ring (REQUIRED PHOTO UPLOAD: JPG / PNG ONLY) -->
+                <div class="relative group shrink-0">
+                  <div class="w-28 h-28 rounded-2xl bg-slate-800 border-2 border-blue-400/60 flex flex-col items-center justify-center overflow-hidden shadow-2xl relative">
+                    <span class="text-3xl font-extrabold text-white tracking-wider">AG</span>
+                    <span class="absolute bottom-0 inset-x-0 bg-blue-900/90 text-blue-200 text-[9px] font-bold py-0.5 text-center uppercase tracking-tight">2x2 Photo</span>
+                  </div>
+                  <label for="photo-upload" class="absolute -bottom-2 -right-2 w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center cursor-pointer hover:bg-blue-500 transition-all shadow-lg border-2 border-slate-900 group-hover:scale-105" title="Upload Required 2x2 ID Picture (JPG or PNG)">
+                    <i class="fa-solid fa-camera text-xs"></i>
+                    <!-- Restricted strictly to JPG, JPEG, PNG -->
+                    <input id="photo-upload" type="file" accept="image/jpeg, image/png, image/jpg" class="hidden" required>
+                  </label>
+                </div>
+
+                <div>
+                  <div class="flex items-center justify-center sm:justify-start gap-2.5 flex-wrap">
+                    <h1 class="text-2xl font-extrabold tracking-tight">Aldrick Gonzales Jamlani</h1>
+                  </div>
+
+                  <!-- STRICTLY REQUIRED PHOTO NOTICE -->
+                  <div class="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-red-500/20 border border-red-400/40 text-red-200 text-[11px] font-semibold">
+                    <i class="fa-solid fa-circle-exclamation text-red-400 text-xs shrink-0"></i>
+                    <span><strong>Required:</strong> 2x2 ID Picture (Format: JPG or PNG only, Max 5 MB)</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Applicant Number Badge -->
+              <div class="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/15 text-center md:text-right w-full md:w-auto shrink-0 shadow-inner">
+                <span class="text-[10px] font-bold text-slate-300 uppercase tracking-widest block">Applicant Number</span>
+                <span class="text-2xl font-black text-white font-mono tracking-wider">2-02613</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- FORM CONTAINER -->
+          <form class="space-y-6" onsubmit="handleProfileSave(event)">
+            
+            <!-- SECTION I: PERSONAL INFORMATION -->
+            <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
+              <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-7 h-7 rounded-lg bg-blue-600/30 border border-blue-500/40 flex items-center justify-center text-blue-400 text-xs">
+                    <i class="fa-solid fa-id-card"></i>
+                  </div>
+                  <h2 class="text-xs font-bold uppercase tracking-wider">I. Personal Information</h2>
+                </div>
+                <span class="text-[10px] text-slate-400 font-medium">* Required fields</span>
+              </div>
+
+              <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 text-xs">
+                
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1.5">Last Name <span class="text-red-500">*</span></label>
+                  <input type="text" value="Jamlani" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 font-medium text-slate-800 bg-slate-50/50 outline-none transition-all" required>
+                </div>
+
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1.5">First Name <span class="text-red-500">*</span></label>
+                  <input type="text" value="Aldrick" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 font-medium text-slate-800 bg-slate-50/50 outline-none transition-all" required>
+                </div>
+
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1.5">Middle Name</label>
+                  <input type="text" value="Gonzales" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 font-medium text-slate-800 bg-slate-50/50 outline-none transition-all">
+                </div>
+
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1.5">Qualifier / Extension</label>
+                  <input type="text" value="None" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 font-medium text-slate-800 bg-slate-50/50 outline-none transition-all">
+                </div>
+
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1.5">Date of Birth <span class="text-red-500">*</span></label>
+                  <input type="date" value="2000-10-14" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 font-medium text-slate-800 bg-slate-50/50 outline-none transition-all" required>
+                </div>
+
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1.5">Place of Birth <span class="text-red-500">*</span></label>
+                  <input type="text" value="Zamboanga City" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 font-medium text-slate-800 bg-slate-50/50 outline-none transition-all" required>
+                </div>
+
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1.5">Citizenship <span class="text-red-500">*</span></label>
+                  <input type="text" value="Filipino" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 font-medium text-slate-800 bg-slate-50/50 outline-none transition-all" required>
+                </div>
+
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1.5">Gender <span class="text-red-500">*</span></label>
+                  <select class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 font-medium text-slate-800 bg-slate-50/50 outline-none transition-all" required>
+                    <option value="Male" selected>Male</option>
+                    <option value="Female">Female</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1.5">Civil Status <span class="text-red-500">*</span></label>
+                  <select class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 font-medium text-slate-800 bg-slate-50/50 outline-none transition-all" required>
+                    <option value="Single" selected>Single</option>
+                    <option value="Married">Married</option>
+                    <option value="Widowed">Widowed</option>
+                    <option value="Separated">Separated</option>
+                  </select>
+                </div>
+
+                <!-- RELIGION DROPDOWN FIELD -->
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1.5">Religion</label>
+                  <select class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 font-medium text-slate-800 bg-slate-50/50 outline-none transition-all">
+                    <option value="" disabled>Select Religion</option>
+                    <option value="Roman Catholic" selected>Roman Catholic</option>
+                    <option value="Islam">Islam</option>
+                    <option value="Iglesia ni Cristo (INC)">Iglesia ni Cristo (INC)</option>
+                    <option value="Christian">Christian</option>
+                    <option value="Seventh-Day Adventist">Seventh-Day Adventist</option>
+                    <option value="Baptist">Baptist</option>
+                    <option value="Jehovah's Witnesses">Jehovah’s Witnesses</option>
+                    <option value="Others">Others</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1.5">Mobile Number <span class="text-red-500">*</span></label>
+                  <input type="text" value="+639178452910" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 font-medium text-slate-800 bg-slate-50/50 outline-none transition-all" required>
+                </div>
+
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1.5">Email Address <span class="text-red-500">*</span></label>
+                  <input type="email" value="aldrick.jamlani@gmail.com" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 font-medium text-slate-800 bg-slate-50/50 outline-none transition-all" required>
+                </div>
+
+                <!-- Home Address -->
+                <div class="md:col-span-2 lg:col-span-3">
+                  <label class="block font-semibold text-slate-700 mb-1.5">Home Address <span class="text-red-500">*</span></label>
+                  <textarea rows="2" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 font-medium text-slate-800 bg-slate-50/50 outline-none transition-all" placeholder="House No., Street, Barangay, City/Municipality, Province" required>San Jose Gusu, Zamboanga City, 7000, Philippines</textarea>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- SECTION II: EDUCATIONAL BACKGROUND -->
+            <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
+              <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-7 h-7 rounded-lg bg-teal-600/30 border border-teal-500/40 flex items-center justify-center text-teal-400 text-xs">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                  </div>
+                  <h2 class="text-xs font-bold uppercase tracking-wider">II. Educational Background</h2>
+                </div>
+              </div>
+
+              <div class="p-6 space-y-6 text-xs">
+                
+                <!-- Primary Education -->
+                <div class="bg-slate-50/60 rounded-xl p-4 border border-slate-100">
+                  <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-school text-teal-600 text-xs"></i> Primary Education
+                  </h3>
+                  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div>
+                      <label class="block font-semibold text-slate-600 mb-1">Name of School <span class="text-red-500">*</span></label>
+                      <input type="text" placeholder="Elementary School Name" class="w-full px-3 py-2 rounded-lg border border-slate-200 font-medium text-slate-800 bg-white outline-none focus:border-blue-600" required>
+                    </div>
+                    <div>
+                      <label class="block font-semibold text-slate-600 mb-1">Course Completed</label>
+                      <input type="text" value="Primary Education" class="w-full px-3 py-2 rounded-lg border border-slate-200 font-medium text-slate-800 bg-white outline-none focus:border-blue-600">
+                    </div>
+                    <div>
+                      <label class="block font-semibold text-slate-600 mb-1">Year Graduated <span class="text-red-500">*</span></label>
+                      <input type="text" placeholder="YYYY" class="w-full px-3 py-2 rounded-lg border border-slate-200 font-medium text-slate-800 bg-white outline-none focus:border-blue-600" required>
+                    </div>
+                    <div>
+                      <label class="block font-semibold text-slate-600 mb-1">Location <span class="text-red-500">*</span></label>
+                      <input type="text" placeholder="City, Province" class="w-full px-3 py-2 rounded-lg border border-slate-200 font-medium text-slate-800 bg-white outline-none focus:border-blue-600" required>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Secondary Education -->
+                <div class="bg-slate-50/60 rounded-xl p-4 border border-slate-100">
+                  <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-building-columns text-teal-600 text-xs"></i> Secondary Education
+                  </h3>
+                  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div>
+                      <label class="block font-semibold text-slate-600 mb-1">Name of School <span class="text-red-500">*</span></label>
+                      <input type="text" placeholder="High School Name" class="w-full px-3 py-2 rounded-lg border border-slate-200 font-medium text-slate-800 bg-white outline-none focus:border-blue-600" required>
+                    </div>
+                    <div>
+                      <label class="block font-semibold text-slate-600 mb-1">Course / Strand</label>
+                      <input type="text" placeholder="Junior / Senior High" class="w-full px-3 py-2 rounded-lg border border-slate-200 font-medium text-slate-800 bg-white outline-none focus:border-blue-600">
+                    </div>
+                    <div>
+                      <label class="block font-semibold text-slate-600 mb-1">Year Graduated <span class="text-red-500">*</span></label>
+                      <input type="text" placeholder="YYYY" class="w-full px-3 py-2 rounded-lg border border-slate-200 font-medium text-slate-800 bg-white outline-none focus:border-blue-600" required>
+                    </div>
+                    <div>
+                      <label class="block font-semibold text-slate-600 mb-1">Location <span class="text-red-500">*</span></label>
+                      <input type="text" placeholder="City, Province" class="w-full px-3 py-2 rounded-lg border border-slate-200 font-medium text-slate-800 bg-white outline-none focus:border-blue-600" required>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Tertiary Education -->
+                <div class="bg-blue-50/40 rounded-xl p-4 border border-blue-100">
+                  <h3 class="text-xs font-bold text-blue-900 uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-user-graduate text-blue-600 text-xs"></i> Tertiary / Bachelor's Degree
+                  </h3>
+                  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div>
+                      <label class="block font-semibold text-slate-700 mb-1">Name of Institution <span class="text-red-500">*</span></label>
+                      <input type="text" value="Western Mindanao State University" class="w-full px-3 py-2 rounded-lg border border-blue-200 font-medium text-slate-800 bg-white outline-none focus:border-blue-600" required>
+                    </div>
+                    <div>
+                      <label class="block font-semibold text-slate-700 mb-1">Degree / Course <span class="text-red-500">*</span></label>
+                      <input type="text" value="BS Information Technology" class="w-full px-3 py-2 rounded-lg border border-blue-200 font-medium text-slate-800 bg-white outline-none focus:border-blue-600" required>
+                    </div>
+                    <div>
+                      <label class="block font-semibold text-slate-700 mb-1">Year Graduated <span class="text-red-500">*</span></label>
+                      <input type="text" value="2023" class="w-full px-3 py-2 rounded-lg border border-blue-200 font-medium text-slate-800 bg-white outline-none focus:border-blue-600" required>
+                    </div>
+                    <div>
+                      <label class="block font-semibold text-slate-700 mb-1">Location <span class="text-red-500">*</span></label>
+                      <input type="text" value="Zamboanga City" class="w-full px-3 py-2 rounded-lg border border-blue-200 font-medium text-slate-800 bg-white outline-none focus:border-blue-600" required>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Graduate Degree (Master's / Doctorate - OPTIONAL) -->
+                <div class="bg-slate-50/60 rounded-xl p-4 border border-slate-100">
+                  <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                      <i class="fa-solid fa-award text-amber-600 text-xs"></i> Graduate Studies / Post-Graduate Degree
+                    </h3>
+                    <span class="text-[10px] font-bold text-slate-400 bg-slate-200 px-2 py-0.5 rounded uppercase">Optional</span>
+                  </div>
+                  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div>
+                      <label class="block font-semibold text-slate-600 mb-1">Name of Institution</label>
+                      <input type="text" placeholder="e.g. Master's / Doctoral School" class="w-full px-3 py-2 rounded-lg border border-slate-200 font-medium text-slate-800 bg-white outline-none focus:border-blue-600">
+                    </div>
+                    <div>
+                      <label class="block font-semibold text-slate-600 mb-1">Degree / Program</label>
+                      <input type="text" placeholder="e.g. Master in Public Administration" class="w-full px-3 py-2 rounded-lg border border-slate-200 font-medium text-slate-800 bg-white outline-none focus:border-blue-600">
+                    </div>
+                    <div>
+                      <label class="block font-semibold text-slate-600 mb-1">Year Graduated / Units</label>
+                      <input type="text" placeholder="e.g. 2025 / 36 Units Earned" class="w-full px-3 py-2 rounded-lg border border-slate-200 font-medium text-slate-800 bg-white outline-none focus:border-blue-600">
+                    </div>
+                    <div>
+                      <label class="block font-semibold text-slate-600 mb-1">Location</label>
+                      <input type="text" placeholder="City, Province" class="w-full px-3 py-2 rounded-lg border border-slate-200 font-medium text-slate-800 bg-white outline-none focus:border-blue-600">
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- SAVE BUTTON -->
+            <div class="flex justify-end pt-2">
+              <button type="submit" class="px-7 py-3 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-xs font-bold transition-all shadow-lg hover:shadow-blue-600/20 flex items-center gap-2 cursor-pointer">
+                <i class="fa-solid fa-floppy-disk"></i>
+                <span>Save Changes & Update Profile</span>
+              </button>
+            </div>
+
+          </form>
+
+        </div>
+
+        <!-- ==================== TAB 3: DOCUMENTS PAGE ==================== -->
+        <div id="tab-documents" class="tab-content hidden space-y-6">
+          <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+            <div class="flex justify-between items-center mb-4">
+              <div>
+                <h2 class="text-lg font-bold text-slate-900">Submitted Documents</h2>
+                <p class="text-xs text-slate-500">5 of 5 Required documents uploaded and verified.</p>
+              </div>
+              <span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 font-bold text-xs rounded-full">Complete</span>
+            </div>
+
+            <div class="divide-y divide-slate-100 text-xs">
+              <div class="py-3 flex items-center justify-between">
+                <span class="font-medium text-slate-800"><i class="fa-regular fa-file-pdf text-red-500 mr-2"></i>Civil Service & NAPOLCOM Certificates</span>
+                <span class="text-emerald-600 font-semibold"><i class="fa-solid fa-check-circle mr-1"></i>Verified</span>
+              </div>
+              <div class="py-3 flex items-center justify-between">
+                <span class="font-medium text-slate-800"><i class="fa-regular fa-file-pdf text-red-500 mr-2"></i>BSIT College Diploma & Transcript of Records</span>
+                <span class="text-emerald-600 font-semibold"><i class="fa-solid fa-check-circle mr-1"></i>Verified</span>
+              </div>
+              <div class="py-3 flex items-center justify-between">
+                <span class="font-medium text-slate-800"><i class="fa-regular fa-file-pdf text-red-500 mr-2"></i>PSA Birth Certificate</span>
+                <span class="text-emerald-600 font-semibold"><i class="fa-solid fa-check-circle mr-1"></i>Verified</span>
+              </div>
+              <div class="py-3 flex items-center justify-between">
+                <span class="font-medium text-slate-800"><i class="fa-regular fa-file-pdf text-red-500 mr-2"></i>Clearances (NBI, Police, Court)</span>
+                <span class="text-emerald-600 font-semibold"><i class="fa-solid fa-check-circle mr-1"></i>Verified</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== TAB 4: APPLICATION STATUS PAGE ==================== -->
+        <div id="tab-application-status" class="tab-content hidden space-y-6">
+          <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+            <h2 class="text-lg font-bold text-slate-900 mb-1">Detailed Application Status</h2>
+            <p class="text-xs text-slate-500 mb-6">SAN JUAN CITY RECRUITMENT - CY 2026</p>
+
+            <div class="p-4 bg-amber-50 border border-amber-200 rounded-xl mb-6 flex items-start gap-3 text-xs text-amber-900">
+              <i class="fa-solid fa-bell text-amber-600 text-base mt-0.5"></i>
+              <div>
+                <span class="font-bold">Next Action Required: Physical Agility Test</span>
+                <p class="mt-0.5">Reporting time: 6:00 AM at San Juan Grandstand Sports Complex. Please bring complete PT uniform and valid ID.</p>
+              </div>
+            </div>
+
+            <div class="border-t border-slate-100 pt-4 space-y-3">
+              <h3 class="text-xs font-bold text-slate-800 uppercase">Venue & Instructions</h3>
+              <ul class="text-xs text-slate-600 space-y-1.5 list-disc list-inside">
+                <li>Proper Attire: White Plain T-Shirt, Navy Blue Shorts, Running Shoes.</li>
+                <li>Bring 2 hard copies of your Applicant Admission Slip.</li>
+                <li>Arrive at least 30 minutes prior to call time for attendance verification.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    // 1. Dynamic Sidebar Tab Switching Logic
+    function switchTab(tabId) {
+      const tabs = document.querySelectorAll('.tab-content');
+      tabs.forEach(tab => tab.classList.add('hidden'));
+
+      const targetTab = document.getElementById('tab-' + tabId);
+      if (targetTab) {
+        targetTab.classList.remove('hidden');
+      }
+
+      // Update Sidebar Nav styling
+      const navItems = document.querySelectorAll('.nav-item');
+      navItems.forEach(item => {
+        item.classList.remove('bg-slate-900', 'text-white', 'shadow-sm');
+        item.classList.add('text-slate-600', 'hover:bg-slate-100');
+      });
+
+      const activeNav = document.getElementById('nav-' + tabId);
+      if (activeNav) {
+        activeNav.classList.add('bg-slate-900', 'text-white', 'shadow-sm');
+        activeNav.classList.remove('text-slate-600', 'hover:bg-slate-100');
+      }
+
+      // Update Breadcrumb text
+      const breadcrumb = document.getElementById('breadcrumb-current');
+      if (breadcrumb) {
+        const titles = {
+          'dashboard': 'Dashboard',
+          'profile': 'Profile',
+          'documents': 'Documents',
+          'application-status': 'Application Status'
+        };
+        breadcrumb.textContent = titles[tabId] || 'Dashboard';
+      }
+
+      // Close mobile sidebar if open
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+      if (!sidebar.classList.contains('-translate-x-full')) {
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+      }
+    }
+
+    // 2. Profile Save Notification Toast Handler
+    function handleProfileSave(event) {
+      event.preventDefault();
+      const toast = document.getElementById('saveToast');
+      toast.classList.remove('translate-y-[-150%]', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-[-150%]', 'opacity-0');
+      }, 3500);
+    }
+
+    // 3. Mobile Sidebar Toggle
+    function toggleMobileSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+      sidebar.classList.toggle('-translate-x-full');
+      overlay.classList.toggle('hidden');
+    }
+
+    // 4. User Profile Dropdown Toggle
+    function toggleUserDropdown(event) {
+      if (event) event.stopPropagation();
+      const menu = document.getElementById('userDropdownMenu');
+      const notifDrawer = document.getElementById('notificationDrawer');
+      if (notifDrawer) notifDrawer.classList.add('hidden');
+      menu.classList.toggle('hidden');
+    }
+
+    function closeUserDropdown() {
+      const menu = document.getElementById('userDropdownMenu');
+      if (menu) menu.classList.add('hidden');
+    }
+
+    // 5. Notification Drawer Toggle
+    function toggleNotificationDrawer(event) {
+      if (event) event.stopPropagation();
+      const drawer = document.getElementById('notificationDrawer');
+      const userMenu = document.getElementById('userDropdownMenu');
+      if (userMenu) userMenu.classList.add('hidden');
+      drawer.classList.toggle('hidden');
+    }
+
+    // Close Dropdowns on outside click
+    document.addEventListener('click', function(event) {
+      const drawer = document.getElementById('notificationDrawer');
+      const bellBtn = document.getElementById('notifBellBtn');
+      const userMenu = document.getElementById('userDropdownMenu');
+      const userBtn = document.getElementById('userDropdownBtn');
+
+      if (drawer && !drawer.classList.contains('hidden')) {
+        if (!drawer.contains(event.target) && !bellBtn.contains(event.target)) {
+          drawer.classList.add('hidden');
+        }
+      }
+
+      if (userMenu && !userMenu.classList.contains('hidden')) {
+        if (!userMenu.contains(event.target) && !userBtn.contains(event.target)) {
+          userMenu.classList.add('hidden');
+        }
+      }
+    });
+
+    // 6. Notification Action Handler
+    function handleNotifAction(targetTabId) {
+      switchTab(targetTabId);
+      document.getElementById('notificationDrawer').classList.add('hidden');
+    }
+
+    // 7. Filter Notifications
+    function filterNotifs(type) {
+      const items = document.querySelectorAll('.notif-item');
+      const tabAll = document.getElementById('notif-tab-all');
+      const tabUnread = document.getElementById('notif-tab-unread');
+
+      if (type === 'all') {
+        tabAll.classList.add('border-blue-600', 'text-blue-600', 'bg-white');
+        tabAll.classList.remove('border-transparent');
+        tabUnread.classList.remove('border-blue-600', 'text-blue-600', 'bg-white');
+        tabUnread.classList.add('border-transparent');
+      } else {
+        tabUnread.classList.add('border-blue-600', 'text-blue-600', 'bg-white');
+        tabUnread.classList.remove('border-transparent');
+        tabAll.classList.remove('border-blue-600', 'text-blue-600', 'bg-white');
+        tabAll.classList.add('border-transparent');
+      }
+
+      items.forEach(item => {
+        if (type === 'all' || item.classList.contains('unread')) {
+          item.classList.remove('hidden');
+        } else {
+          item.classList.add('hidden');
+        }
+      });
+    }
+
+    // 8. Notification Item Helpers
+    function markAsRead(itemId) {
+      const item = document.getElementById(itemId);
+      if (item) {
+        item.classList.remove('unread', 'bg-blue-50/50');
+        item.classList.add('opacity-75');
+        updateUnreadCount();
+      }
+    }
+
+    function deleteNotif(itemId) {
+      const item = document.getElementById(itemId);
+      if (item) {
+        item.remove();
+        updateUnreadCount();
+      }
+    }
+
+    function markAllAsRead() {
+      const unreadItems = document.querySelectorAll('.notif-item.unread');
+      unreadItems.forEach(item => {
+        item.classList.remove('unread', 'bg-blue-50/50');
+        item.classList.add('opacity-75');
+      });
+      updateUnreadCount();
+    }
+
+    function clearAllNotifs() {
+      const container = document.getElementById('notifListContainer');
+      container.innerHTML = '<div class="p-6 text-center text-xs text-slate-400">No notifications available</div>';
+      updateUnreadCount();
+    }
+
+    function updateUnreadCount() {
+      const unreadCount = document.querySelectorAll('.notif-item.unread').length;
+      const notifBadge = document.getElementById('notifBadge');
+      const unreadCountBadge = document.getElementById('unreadCountBadge');
+
+      if (unreadCount > 0) {
+        notifBadge.textContent = unreadCount;
+        notifBadge.classList.remove('hidden');
+        unreadCountBadge.textContent = `${unreadCount} Unread`;
+      } else {
+        notifBadge.classList.add('hidden');
+        unreadCountBadge.textContent = `0 Unread`;
+      }
+    }
+
+    function signOutPrompt() {
+      if (confirm("Are you sure you want to sign out from PNP Recruitment Portal?")) {
+        alert("Signed out successfully.");
+      }
+    }
+  </script>
+
+</body>
+</html>

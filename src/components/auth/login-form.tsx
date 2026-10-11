@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Lock, Mail } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -12,11 +12,97 @@ import { PasswordInput } from "./password-input";
 type LoginFormProps = {
   error?: string;
   notice?: string;
-  /** Which login the visitor chose; kept so a failed attempt returns to the same page. */
-  /** There is no generic login: staff sign in with their badge number, applicants with their applicant number. */
+  /**
+   * Which login the visitor chose; kept so a failed attempt returns to the same page.
+   * Staff sign in with their badge number, applicants with their email address.
+   */
   mode: "employee" | "applicant";
   nextPath: string;
 };
+
+const applicantInputClassName =
+  "w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 text-xs font-medium text-slate-900 transition-all placeholder:text-slate-400 focus:border-transparent focus:bg-white focus:ring-2 focus:ring-blue-800 focus:outline-none";
+
+/** Capstone UI loginapp.html: email, password with show/hide, Forgot password?, Remember me, Login. */
+function ApplicantFields({ pending }: { pending: boolean }) {
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  return (
+    <>
+      <div>
+        <label className="mb-1.5 block text-xs font-semibold text-slate-700" htmlFor="login-identifier">Email Address</label>
+        <div className="relative">
+          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
+            <Mail aria-hidden="true" className="size-4" />
+          </div>
+          <input
+            autoComplete="email"
+            className={`${applicantInputClassName} pr-4 pl-10`}
+            id="login-identifier"
+            inputMode="email"
+            name="identifier"
+            placeholder="juan.delacruz@email.com"
+            required
+            type="email"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label className="mb-1.5 block text-xs font-semibold text-slate-700" htmlFor="login-password">Password</label>
+        <div className="relative">
+          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
+            <Lock aria-hidden="true" className="size-4" />
+          </div>
+          <input
+            autoComplete="current-password"
+            className={`${applicantInputClassName} pr-10 pl-10`}
+            id="login-password"
+            name="password"
+            placeholder="••••••••••••"
+            required
+            type={passwordVisible ? "text" : "password"}
+          />
+          <button
+            aria-label={passwordVisible ? "Hide password" : "Show password"}
+            aria-pressed={passwordVisible}
+            className="absolute inset-y-0 right-0 flex items-center rounded-r-xl pr-3.5 text-slate-400 hover:text-slate-600 focus:outline-none focus-visible:text-slate-700"
+            onClick={() => setPasswordVisible((visible) => !visible)}
+            type="button"
+          >
+            {passwordVisible ? <EyeOff aria-hidden="true" className="size-3.5" /> : <Eye aria-hidden="true" className="size-3.5" />}
+          </button>
+        </div>
+
+        <div className="mt-2 text-right">
+          <Link className="text-[11px] font-semibold text-blue-800 hover:text-blue-900 hover:underline" href="/forgot-password">
+            Forgot password?
+          </Link>
+        </div>
+      </div>
+
+      <div className="flex items-center pt-1">
+        <input
+          className="size-4 cursor-pointer rounded border-slate-300 text-blue-800 accent-blue-800 focus:ring-blue-800"
+          defaultChecked
+          id="login-remember"
+          name="remember"
+          type="checkbox"
+        />
+        <label className="ml-2 cursor-pointer text-xs font-medium text-slate-600 select-none" htmlFor="login-remember">
+          Remember me on this device
+        </label>
+      </div>
+
+      <button
+        className="mt-2 flex w-full items-center justify-center rounded-xl bg-slate-900 px-4 py-3 text-xs font-bold text-white shadow-md transition-all duration-200 hover:bg-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-800 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+        disabled={pending}
+        type="submit"
+      >
+        <span>{pending ? "Signing in…" : "Login"}</span>
+      </button>
+    </>
+  );
+}
 
 export function LoginForm({ error, mode, nextPath, notice }: LoginFormProps) {
   const [pending, setPending] = useState(false);
@@ -27,6 +113,26 @@ export function LoginForm({ error, mode, nextPath, notice }: LoginFormProps) {
     window.addEventListener("pageshow", reset);
     return () => window.removeEventListener("pageshow", reset);
   }, []);
+
+  if (mode === "applicant") {
+    return (
+      <form
+        action="/auth/login"
+        aria-busy={pending}
+        className="space-y-4"
+        method="post"
+        noValidate
+        // Do not preventDefault: the native POST to /auth/login sets the session cookies and redirects.
+        onSubmit={() => setPending(true)}
+      >
+        <input name="next" type="hidden" value={nextPath} />
+        <input name="as" type="hidden" value={mode} />
+        {notice ? <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-800" role="status">{notice}</p> : null}
+        {error ? <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700" role="alert">{error}</p> : null}
+        <ApplicantFields pending={pending} />
+      </form>
+    );
+  }
 
   return (
     <form
@@ -40,14 +146,13 @@ export function LoginForm({ error, mode, nextPath, notice }: LoginFormProps) {
     >
       <input name="next" type="hidden" value={nextPath} />
       <input name="as" type="hidden" value={mode} />
-      <FormField htmlFor="login-identifier" label={mode === "applicant" ? "Applicant Number" : "Badge Number"}>
+      <FormField htmlFor="login-identifier" label="Badge Number">
         <input
           autoComplete="username"
           className="h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-slate-950 shadow-sm outline-none focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/20"
           id="login-identifier"
-          inputMode={mode === "applicant" ? "numeric" : "text"}
+          inputMode="text"
           name="identifier"
-          pattern={mode === "applicant" ? "[0-9]*" : undefined}
           type="text"
         />
       </FormField>

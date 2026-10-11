@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Job Postings - San Juan City Police Station HR Admin</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- FontAwesome 6 Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body class="h-full font-sans text-slate-800 antialiased overflow-hidden flex">
+
+  <!-- ==================== LEFT SIDEBAR NAVIGATION ==================== -->
+  <aside class="w-64 bg-[#0B132B] text-slate-300 flex flex-col justify-between shrink-0 h-full z-30 border-r border-slate-800">
+    <div>
+      
+      <!-- BRANDING & LOGO HEADER -->
+      <div class="p-4 border-b border-slate-800/80 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-blue-900 border border-amber-400/50 flex items-center justify-center text-amber-400 text-lg shadow-md shrink-0">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <div class="min-w-0">
+          <h1 class="text-xs font-extrabold text-white tracking-wider uppercase truncate">San Juan City PS</h1>
+        </div>
+      </div>
+
+      <!-- NAVIGATION MENU SECTION -->
+      <div class="px-3 py-4 space-y-6">
+        
+        <!-- DASHBOARD DIRECT LINK -->
+        <div>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-chart-pie w-4 text-center"></i>
+            <span>Dashboard</span>
+          </a>
+        </div>
+
+        <!-- RECRUITMENT MANAGEMENT -->
+        <div class="space-y-1">
+          <div class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider px-3 mb-1.5">Recruitment</div>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-blue-700 text-white shadow-lg shadow-blue-900/40">
+            <i class="fa-solid fa-briefcase w-4 text-center text-sm"></i>
+            <span>Plantilla Openings</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-id-card-clip w-4 text-center"></i>
+            <span>Applicant Roster</span>
+          </a>
+        </div>
+
+        <!-- PERSONNEL & RECORDS MANAGEMENT -->
+        <div class="space-y-1">
+          <div class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider px-3 mb-1.5">Personnel 201</div>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-users w-4 text-center"></i>
+            <span>Active Personnel</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-map-location-dot w-4 text-center"></i>
+            <span>Duty Deployments</span>
+          </a>
+          <a href="#" class="flex items-center justify-between px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <div class="flex items-center gap-3">
+              <i class="fa-solid fa-calendar-check w-4 text-center"></i>
+              <span>Leave Applications</span>
+            </div>
+            <span class="px-1.5 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-bold">1</span>
+          </a>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- USER FOOTER -->
+    <div class="p-3 border-t border-slate-800/80 bg-slate-950/40">
+      <button onclick="alert('Logging out...')" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all">
+        <i class="fa-solid fa-arrow-right-from-bracket text-red-500"></i>
+        <span>Sign out</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ==================== MAIN CONTENT CONTAINER ==================== -->
+  <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-slate-50">
+
+    <!-- TOP HEADER NAVBAR -->
+    <header class="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between shrink-0 z-20">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-blue-900 text-amber-400 flex items-center justify-center font-bold text-xs shadow-sm">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <div class="flex flex-col">
+          <div class="flex items-center gap-2">
+            <span class="font-extrabold text-xs text-slate-900 tracking-tight">SAN JUAN CITY POLICE STATION</span>
+            <span class="px-2 py-0.5 text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 rounded-md">HRDD Portal</span>
+          </div>
+          <span class="text-[10px] text-slate-400 font-medium">Recruitment Module • Plantilla & Job Openings</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <button class="p-2 rounded-xl text-slate-500 hover:bg-slate-100 relative">
+          <i class="fa-regular fa-bell text-base"></i>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-white"></span>
+        </button>
+
+        <div class="flex items-center gap-3 pl-3 border-l border-slate-200">
+          <div class="w-9 h-9 rounded-full bg-slate-900 text-amber-400 font-bold text-xs flex items-center justify-center border border-slate-700 shadow-sm">
+            MC
+          </div>
+          <div class="text-left leading-tight">
+            <p class="text-xs font-bold text-slate-900">PMAJ M. C. Balneg</p>
+            <p class="text-[10px] text-slate-400">mcbalnegg915@gmail.com</p>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN SCROLLABLE CONTENT -->
+    <main class="flex-1 overflow-y-auto p-6 space-y-6">
+
+      <!-- PAGE TITLE & NEW POSTING ACTION -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 class="text-2xl font-black text-slate-900 tracking-tight">RECRUITMENT OPENINGS</h1>
+          <p class="text-xs text-slate-500 font-medium mt-0.5">Manage recruitment openings and vacancies for San Juan City Police Station.</p>
+        </div>
+
+        <button onclick="alert('Create new job posting...')" class="px-4 py-2.5 bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs rounded-xl shadow-md shadow-blue-900/20 transition-all flex items-center gap-2 self-start sm:self-auto">
+          <i class="fa-solid fa-plus text-xs"></i>
+          <span>Create Recruitment</span>
+        </button>
+      </div>
+
+      <!-- MAIN TABLE CONTAINER CARD -->
+      <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
+        
+        <!-- FILTER TABS & SEARCH BAR HEADER -->
+        <div class="p-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50">
+          
+          <!-- STATUS TABS -->
+          <div class="flex items-center gap-1.5 bg-slate-200/60 p-1 rounded-xl text-xs font-bold text-slate-600">
+            <button class="px-3 py-1.5 rounded-lg bg-white text-slate-900 shadow-sm transition-all flex items-center gap-1.5">
+              <span>All</span>
+              <span class="px-1.5 py-0.2 bg-slate-100 text-slate-700 text-[10px] rounded-md font-mono">4</span>
+            </button>
+            <button class="px-3 py-1.5 rounded-lg hover:text-slate-900 transition-all flex items-center gap-1.5">
+              <span>Published</span>
+              <span class="px-1.5 py-0.2 bg-emerald-100 text-emerald-800 text-[10px] rounded-md font-mono">1</span>
+            </button>
+            <button class="px-3 py-1.5 rounded-lg hover:text-slate-900 transition-all flex items-center gap-1.5">
+              <span>Draft</span>
+              <span class="px-1.5 py-0.2 bg-slate-200 text-slate-700 text-[10px] rounded-md font-mono">0</span>
+            </button>
+            <button class="px-3 py-1.5 rounded-lg hover:text-slate-900 transition-all flex items-center gap-1.5">
+              <span>Closed</span>
+              <span class="px-1.5 py-0.2 bg-slate-200 text-slate-700 text-[10px] rounded-md font-mono">3</span>
+            </button>
+          </div>
+
+          <!-- SEARCH INPUT -->
+          <div class="relative w-full md:w-72">
+            <input type="text" placeholder="Search job postings..." class="w-full pl-9 pr-4 py-2 text-xs font-medium rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all">
+            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+          </div>
+
+        </div>
+
+        <!-- JOB POSTINGS TABLE -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="border-b border-slate-100 bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                <th class="py-3.5 px-6">Posting Title <i class="fa-solid fa-arrow-down-up text-[9px] ml-1 text-slate-400"></i></th>
+                <th class="py-3.5 px-4">Status</th>
+                <th class="py-3.5 px-4 text-center">Applications</th>
+                <th class="py-3.5 px-4">Deadline <i class="fa-solid fa-arrow-down-up text-[9px] ml-1 text-slate-400"></i></th>
+                <th class="py-3.5 px-4">Updated <i class="fa-solid fa-arrow-down text-[9px] ml-1 text-slate-700"></i></th>
+                <th class="py-3.5 px-6 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 text-slate-700 font-medium">
+              
+              <!-- ROW 1 -->
+              <tr class="hover:bg-slate-50/80 transition-colors">
+                <td class="py-4 px-6">
+                  <p class="font-bold text-slate-900 text-sm">SAN JUAN CITY RECRUITMENT - CY 2026</p>
+                  <p class="text-[11px] text-slate-400">San Juan City Police Station</p>
+                </td>
+                <td class="py-4 px-4">
+                  <span class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[10px] uppercase tracking-wider">
+                    Published
+                  </span>
+                </td>
+                <td class="py-4 px-4 text-center">
+                  <span class="font-bold text-slate-900 font-mono text-sm">2</span>
+                </td>
+                <td class="py-4 px-4">
+                  <p class="font-semibold text-slate-800">October 14, 2026</p>
+                  <p class="text-[10px] text-emerald-600 font-bold">Closes in 3 days</p>
+                </td>
+                <td class="py-4 px-4 text-slate-500">
+                  October 9, 2026
+                </td>
+                <!-- VIEW, EDIT, DELETE ICONS ONLY -->
+                <td class="py-4 px-6 text-center">
+                  <div class="flex items-center justify-center gap-1.5">
+                    <button onclick="alert('Viewing posting details...')" title="View Posting" class="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
+                      <i class="fa-solid fa-eye text-xs"></i>
+                    </button>
+                    <button onclick="alert('Editing posting...')" title="Edit Posting" class="p-2 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all">
+                      <i class="fa-solid fa-pen-to-square text-xs"></i>
+                    </button>
+                    <button onclick="confirm('Are you sure you want to delete this posting?') && alert('Deleted.')" title="Delete Posting" class="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all">
+                      <i class="fa-solid fa-trash-can text-xs"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- ROW 2 -->
+              <tr class="hover:bg-slate-50/80 transition-colors">
+                <td class="py-4 px-6">
+                  <p class="font-bold text-slate-900 text-sm">Patrolman/Patrolwoman Recruitment</p>
+                  <p class="text-[11px] text-slate-400">San Juan City Police Station - Admin</p>
+                </td>
+                <td class="py-4 px-4">
+                  <span class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200 font-bold text-[10px] uppercase tracking-wider">
+                    Closed
+                  </span>
+                </td>
+                <td class="py-4 px-4 text-center">
+                  <span class="font-bold text-slate-400 font-mono text-sm">0</span>
+                </td>
+                <td class="py-4 px-4">
+                  <p class="font-semibold text-slate-800">October 9, 2026</p>
+                  <p class="text-[10px] text-slate-400 font-semibold">Closed</p>
+                </td>
+                <td class="py-4 px-4 text-slate-500">
+                  October 9, 2026
+                </td>
+                <!-- VIEW, EDIT, DELETE ICONS ONLY -->
+                <td class="py-4 px-6 text-center">
+                  <div class="flex items-center justify-center gap-1.5">
+                    <button onclick="alert('Viewing posting details...')" title="View Posting" class="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
+                      <i class="fa-solid fa-eye text-xs"></i>
+                    </button>
+                    <button onclick="alert('Editing posting...')" title="Edit Posting" class="p-2 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all">
+                      <i class="fa-solid fa-pen-to-square text-xs"></i>
+                    </button>
+                    <button onclick="confirm('Are you sure you want to delete this posting?') && alert('Deleted.')" title="Delete Posting" class="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all">
+                      <i class="fa-solid fa-trash-can text-xs"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- ROW 3 -->
+              <tr class="hover:bg-slate-50/80 transition-colors">
+                <td class="py-4 px-6">
+                  <p class="font-bold text-slate-900 text-sm">PCpl Vacancy</p>
+                  <p class="text-[11px] text-slate-400">San Juan City PS</p>
+                </td>
+                <td class="py-4 px-4">
+                  <span class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200 font-bold text-[10px] uppercase tracking-wider">
+                    Closed
+                  </span>
+                </td>
+                <td class="py-4 px-4 text-center">
+                  <span class="font-bold text-slate-900 font-mono text-sm">1</span>
+                </td>
+                <td class="py-4 px-4">
+                  <p class="font-semibold text-slate-800">September 30, 2026</p>
+                  <p class="text-[10px] text-slate-400 font-semibold">Closed</p>
+                </td>
+                <td class="py-4 px-4 text-slate-500">
+                  October 2, 2026
+                </td>
+                <!-- VIEW, EDIT, DELETE ICONS ONLY -->
+                <td class="py-4 px-6 text-center">
+                  <div class="flex items-center justify-center gap-1.5">
+                    <button onclick="alert('Viewing posting details...')" title="View Posting" class="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
+                      <i class="fa-solid fa-eye text-xs"></i>
+                    </button>
+                    <button onclick="alert('Editing posting...')" title="Edit Posting" class="p-2 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all">
+                      <i class="fa-solid fa-pen-to-square text-xs"></i>
+                    </button>
+                    <button onclick="confirm('Are you sure you want to delete this posting?') && alert('Deleted.')" title="Delete Posting" class="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all">
+                      <i class="fa-solid fa-trash-can text-xs"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- ROW 4 -->
+              <tr class="hover:bg-slate-50/80 transition-colors">
+                <td class="py-4 px-6">
+                  <p class="font-bold text-slate-900 text-sm">Be one of us</p>
+                  <p class="text-[11px] text-slate-400">San Juan City Police Station - Admin</p>
+                </td>
+                <td class="py-4 px-4">
+                  <span class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200 font-bold text-[10px] uppercase tracking-wider">
+                    Closed
+                  </span>
+                </td>
+                <td class="py-4 px-4 text-center">
+                  <span class="font-bold text-slate-400 font-mono text-sm">0</span>
+                </td>
+                <td class="py-4 px-4">
+                  <p class="font-semibold text-slate-800">September 27, 2026</p>
+                  <p class="text-[10px] text-slate-400 font-semibold">Closed</p>
+                </td>
+                <td class="py-4 px-4 text-slate-500">
+                  September 27, 2026
+                </td>
+                <!-- VIEW, EDIT, DELETE ICONS ONLY -->
+                <td class="py-4 px-6 text-center">
+                  <div class="flex items-center justify-center gap-1.5">
+                    <button onclick="alert('Viewing posting details...')" title="View Posting" class="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
+                      <i class="fa-solid fa-eye text-xs"></i>
+                    </button>
+                    <button onclick="alert('Editing posting...')" title="Edit Posting" class="p-2 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all">
+                      <i class="fa-solid fa-pen-to-square text-xs"></i>
+                    </button>
+                    <button onclick="confirm('Are you sure you want to delete this posting?') && alert('Deleted.')" title="Delete Posting" class="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all">
+                      <i class="fa-solid fa-trash-can text-xs"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+
+        <!-- TABLE PAGINATION FOOTER -->
+        <div class="p-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between text-xs text-slate-500">
+          <span>Showing 1–4 of 4 postings</span>
+          
+          <div class="flex items-center gap-2">
+            <button class="px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-400 font-bold cursor-not-allowed opacity-60">
+              <i class="fa-solid fa-chevron-left text-[10px] mr-1"></i> Previous
+            </button>
+            <button class="px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-400 font-bold cursor-not-allowed opacity-60">
+              Next <i class="fa-solid fa-chevron-right text-[10px] ml-1"></i>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+
+  </div>
+
+</body>
+</html>

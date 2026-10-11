@@ -34,7 +34,9 @@ async function styleSignature(page: Page, probes: readonly string[] = PROBES) {
       const element = document.querySelector(selector);
       if (!element) { out[selector] = null; continue; }
       const style = getComputedStyle(element);
-      out[selector] = Object.fromEntries(properties.map((name) => [name, style.getPropertyValue(name)]));
+      // Chromium's lab() colour conversion differs in the fifth decimal between Windows and Linux builds;
+      // three decimals keep the snapshot meaningful and identical across platforms.
+      out[selector] = Object.fromEntries(properties.map((name) => [name, style.getPropertyValue(name).replace(/-?\d+\.\d+/g, (value) => Number(value).toFixed(3))]));
     }
     return out;
   }, { probes: [...probes], properties: [...PROPERTIES] });
@@ -42,7 +44,7 @@ async function styleSignature(page: Page, probes: readonly string[] = PROBES) {
 
 async function signInApplicant(page: Page) {
   await page.goto("/login?as=applicant&next=/applicant");
-  await page.getByLabel("Applicant Number").fill("202604");
+  await page.getByLabel("Email Address").fill("demo.applicant@example.test");
   await page.getByRole("textbox", { name: "Password" }).fill(demoPassword);
   await page.getByRole("button", { name: "Login" }).click();
   await expect(page).toHaveURL(/\/applicant$/, { timeout: 30_000 });
@@ -51,12 +53,14 @@ async function signInApplicant(page: Page) {
 test.describe("applicant and public pages keep their current look", () => {
   test.use({ viewport: { width: 1366, height: 900 } });
 
-  for (const path of ["/login", "/applicant/register"]) {
+  for (const path of ["/login", "/login?as=applicant", "/applicant/register"]) {
     test(`static page ${path}`, async ({ page }) => {
       await page.goto(path);
       await page.waitForLoadState("networkidle");
-      await expect(page).toHaveScreenshot(`${path.replaceAll("/", "_")}.png`, { fullPage: true, maxDiffPixelRatio: 0.002, animations: "disabled", caret: "hide" });
-      expect(JSON.stringify(await styleSignature(page), null, 2)).toMatchSnapshot(`${path.replaceAll("/", "_")}.styles.json`);
+      const name = path.replaceAll("/", "_").replace("?as=", "_as_");
+      // The Recruitment Notice names whichever posting is open when the test runs.
+      await expect(page).toHaveScreenshot(`${name}.png`, { fullPage: true, maxDiffPixelRatio: 0.002, animations: "disabled", caret: "hide", mask: [page.locator("[data-recruitment-notice]")] });
+      expect(JSON.stringify(await styleSignature(page), null, 2)).toMatchSnapshot(`${name}.styles.json`);
     });
   }
 

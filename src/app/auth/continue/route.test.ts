@@ -48,4 +48,16 @@ describe("post-login continuation", () => {
     const response = await GET(new NextRequest("http://localhost/auth/continue?next=/jobs/42"));
     expect(response.headers.get("location")).toBe("http://localhost/jobs/42");
   });
+
+  it("sends a signed-out visitor to the applicant login and keeps an applicant destination", async () => {
+    getAuthenticatedUser.mockResolvedValue(null);
+    const response = await GET(new NextRequest("http://localhost/auth/continue?next=/applicant"));
+    expect(response.headers.get("location")).toBe("http://localhost/login?as=applicant&next=%2Fapplicant");
+  });
+
+  it("sends a signed-out visitor without an applicant destination to the employee login", async () => {
+    getAuthenticatedUser.mockResolvedValue(null);
+    const response = await GET(new NextRequest("http://localhost/auth/continue"));
+    expect(response.headers.get("location")).toBe("http://localhost/login?as=employee");
+  });
 });

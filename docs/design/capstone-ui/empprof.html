@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Personnel Profile - PNP San Juan City Recruitment Portal</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+  </style>
+</head>
+<body class="bg-slate-100 min-h-screen p-4 sm:p-6 lg:p-8 font-sans text-slate-800">
+
+  <div class="max-w-5xl mx-auto space-y-6">
+
+    <!-- HEADER / PROFILE OVERVIEW CARD -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+      <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-6 border-b border-slate-100">
+        
+        <div class="flex items-center gap-5">
+          <!-- PROFILE PHOTO -->
+          <div class="relative">
+            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80" alt="Tyson Bernal Peters" class="w-24 h-24 rounded-2xl object-cover border-2 border-slate-200 shadow-sm" />
+            <button class="absolute -bottom-2 -right-2 bg-slate-900 hover:bg-blue-900 text-white p-2 rounded-xl text-xs shadow-md transition-all" title="Change photo">
+              <i class="fa-solid fa-camera"></i>
+            </button>
+          </div>
+
+          <!-- USER INFO -->
+          <div>
+            <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Tyson Bernal Peters</h1>
+            <p class="text-xs font-bold text-slate-500 mt-0.5">PAT — Patrolman / Patrolwoman</p>
+            
+            <div class="flex flex-wrap gap-2 mt-3">
+              <span class="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-[11px] font-bold">
+                ● Active
+              </span>
+              <span class="px-2.5 py-1 bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-[11px] font-bold">
+                Badge: 4-15889
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ACTION BUTTONS -->
+        <div class="flex flex-wrap gap-2">
+          <button class="px-3.5 py-2 bg-blue-900 hover:bg-slate-900 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center gap-1.5">
+            <i class="fa-solid fa-pen-to-square"></i> Request Profile Change
+          </button>
+          <button class="px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl shadow-sm transition-all">
+            <i class="fa-solid fa-key"></i> Change Password
+          </button>
+        </div>
+
+      </div>
+
+      <!-- SERVICE DETAILS GRID -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 pt-6">
+        <div>
+          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Years of Service</span>
+          <p class="text-xs font-bold text-slate-800 mt-0.5">2 years 3 months</p>
+        </div>
+        <div>
+          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Unit / Section</span>
+          <p class="text-xs font-bold text-slate-800 mt-0.5">Traffic & Investigation Section</p>
+        </div>
+        <div>
+          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Born</span>
+          <p class="text-xs font-bold text-slate-800 mt-0.5">January 15, 2004</p>
+        </div>
+        <div>
+          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Gender</span>
+          <p class="text-xs font-bold text-slate-800 mt-0.5">Male</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ELIGIBILITY SECTION WITH PDF VIEW / UPDATE -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4">
+      
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-900 flex items-center justify-center">
+            <i class="fa-solid fa-graduation-cap text-sm"></i>
+          </div>
+          <h2 class="text-sm font-bold text-slate-900">Eligibility</h2>
+        </div>
+        <button class="px-3 py-1.5 bg-slate-900 hover:bg-blue-900 text-white font-bold text-xs rounded-lg shadow-sm flex items-center gap-1.5 transition-all">
+          <i class="fa-solid fa-plus text-[10px] text-amber-400"></i> Add Eligibility
+        </button>
+      </div>
+
+      <!-- ELIGIBILITY ITEM CARD -->
+      <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:border-slate-300 transition-all">
+        <div class="space-y-1">
+          <div class="flex items-center gap-2">
+            <h3 class="text-xs font-bold text-slate-900">Registered Criminologist (RCrim) Licensure</h3>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700 flex items-center gap-1">
+              <i class="fa-solid fa-file-pdf"></i> PDF
+            </span>
+          </div>
+          <p class="text-[11px] text-slate-500">Issued: June 14, 2022</p>
+        </div>
+
+        <!-- ACTION BUTTONS (VIEW PDF & UPDATE) -->
+        <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+          <a href="#" target="_blank" onclick="alert('Opening Certificate in PDF Viewer...'); return false;" class="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold text-xs rounded-lg shadow-sm flex items-center gap-1.5 transition-colors">
+            <i class="fa-regular fa-eye text-blue-800"></i> View
+          </a>
+          <label class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-900 font-bold text-xs rounded-lg shadow-sm flex items-center gap-1.5 cursor-pointer transition-colors">
+            <i class="fa-solid fa-cloud-arrow-up"></i> Update
+            <input type="file" accept="application/pdf" class="hidden" onchange="alert('PDF Updated Successfully!');" />
+          </label>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- CERTIFICATION / TRAINING SECTION WITH PDF VIEW / UPDATE -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4">
+      
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-900 flex items-center justify-center">
+            <i class="fa-solid fa-award text-sm"></i>
+          </div>
+          <h2 class="text-sm font-bold text-slate-900">Certification / Training</h2>
+        </div>
+        <button class="px-3 py-1.5 bg-slate-900 hover:bg-blue-900 text-white font-bold text-xs rounded-lg shadow-sm flex items-center gap-1.5 transition-all">
+          <i class="fa-solid fa-plus text-[10px] text-amber-400"></i> Add Training
+        </button>
+      </div>
+
+      <div class="space-y-3">
+        
+        <!-- TRAINING ITEM 1 -->
+        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:border-slate-300 transition-all">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <h3 class="text-xs font-bold text-slate-900">Police Intelligence Operations Course</h3>
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700 flex items-center gap-1">
+                <i class="fa-solid fa-file-pdf"></i> PDF
+              </span>
+            </div>
+            <p class="text-[11px] text-slate-500">Completed February 8, 2021</p>
+          </div>
+
+          <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <a href="#" target="_blank" onclick="alert('Opening Certificate in PDF Viewer...'); return false;" class="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold text-xs rounded-lg shadow-sm flex items-center gap-1.5 transition-colors">
+              <i class="fa-regular fa-eye text-blue-800"></i> View
+            </a>
+            <label class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-900 font-bold text-xs rounded-lg shadow-sm flex items-center gap-1.5 cursor-pointer transition-colors">
+              <i class="fa-solid fa-cloud-arrow-up"></i> Update
+              <input type="file" accept="application/pdf" class="hidden" onchange="alert('PDF Updated Successfully!');" />
+            </label>
+          </div>
+        </div>
+
+        <!-- TRAINING ITEM 2 -->
+        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:border-slate-300 transition-all">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <h3 class="text-xs font-bold text-slate-900">Criminal Investigation Course</h3>
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700 flex items-center gap-1">
+                <i class="fa-solid fa-file-pdf"></i> PDF
+              </span>N
+            </div>
+            <p class="text-[11px] text-slate-500">Completed May 3, 2009</p>
+          </div>
+
+          <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <a href="#" target="_blank" onclick="alert('Opening Certificate in PDF Viewer...'); return false;" class="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold text-xs rounded-lg shadow-sm flex items-center gap-1.5 transition-colors">
+              <i class="fa-regular fa-eye text-blue-800"></i> View
+            </a>
+            <label class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-900 font-bold text-xs rounded-lg shadow-sm flex items-center gap-1.5 cursor-pointer transition-colors">
+              <i class="fa-solid fa-cloud-arrow-up"></i> Update
+              <input type="file" accept="application/pdf" class="hidden" onchange="alert('PDF Updated Successfully!');" />
+            </label>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</body>
+</html>

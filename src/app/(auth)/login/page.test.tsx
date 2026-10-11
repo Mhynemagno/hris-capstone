@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({ redirect: (url: string) => { throw new Error(`REDIRECT ${url}`); } }));
+vi.mock("@/lib/recruitment/recruitment-notice", () => ({ getRecruitmentNotice: async () => ({ title: "Patrolman / Patrolwoman (Cycle 2026)" }) }));
 
 import LoginPage from "./page";
 
@@ -29,7 +30,10 @@ describe("LoginPage", () => {
 
   it("offers sign-up on the applicant login", async () => {
     await renderLogin({ as: "applicant" });
-    expect(screen.getByRole("heading", { level: 1, name: "Applicant login" })).toBeVisible();
+    expect(screen.getByRole("heading", { level: 1, name: "Login as Applicant" })).toBeVisible();
+    expect(screen.getByText("Enter your registered email address below to access your application status and updates.")).toBeVisible();
+    expect(screen.getByText(/Current Hiring Pool for/)).toHaveTextContent("Patrolman / Patrolwoman (Cycle 2026)");
+    expect(screen.getByText("San Juan City PNP Online Recruitment & Applicant Portal System")).toBeVisible();
     expect(screen.getByRole("link", { name: "Sign up" })).toHaveAttribute("href", "/applicant/register");
     expect(screen.getByRole("link", { name: "Login as Employee" })).toHaveAttribute("href", "/login?as=employee");
   });
@@ -41,7 +45,7 @@ describe("LoginPage", () => {
   it("keeps the apply return path on the applicant login", async () => {
     const next = "/applicant/applications?jobId=5";
     await renderLogin({ as: "applicant", next });
-    expect(screen.getByText("PNP San Juan Recruitment")).toBeVisible();
+    expect(screen.getAllByText("Applicant Portal").length).toBeGreaterThan(0);
     expect(screen.getByRole("link", { name: "Sign up" })).toHaveAttribute("href", `/applicant/register?next=${encodeURIComponent(next)}`);
     expect(document.querySelector('input[name="next"]')).toHaveValue(next);
   });
@@ -50,6 +54,11 @@ describe("LoginPage", () => {
     await renderLogin({ as: "employee", error: "account_disabled" });
     expect(screen.getByText(/This account can no longer sign in/)).toBeVisible();
   });
+  it("says the email may already be confirmed when a confirmation link was used", async () => {
+    await renderLogin({ as: "applicant", message: "email_confirmed_or_used" });
+    expect(screen.getByRole("status")).toHaveTextContent("Your email may already be confirmed. Try logging in.");
+  });
+
   it("confirms a verified email instead of showing an error", async () => {
     await renderLogin({ as: "applicant", message: "email_confirmed" });
     expect(screen.getByRole("status")).toHaveTextContent("Email confirmed. Please log in.");

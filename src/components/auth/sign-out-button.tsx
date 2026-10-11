@@ -7,6 +7,7 @@ import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { clearSessionOnlyCookie } from "@/lib/supabase/remember-me";
 
 type SignOutButtonProps = {
   className?: string;
@@ -30,6 +31,7 @@ export function SignOutButton({
       // Local scope: signing out here must not end the same account's sessions on other devices.
       const result = await createBrowserSupabaseClient().auth.signOut({ scope: "local" });
       if (result.error) throw result.error;
+      clearSessionOnlyCookie();
       router.replace("/");
       router.refresh();
     } catch (cause) {

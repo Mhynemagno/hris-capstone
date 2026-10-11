@@ -1,7 +1,7 @@
 import type { Page } from "@playwright/test";
 
 /**
- * There is no email login: staff sign in with their badge number and applicants with their applicant number.
+ * Staff sign in with their badge number and applicants with their email address.
  * These are the fictitious accounts from supabase/seed.sql.
  */
 export type LoginAccount = { mode: "employee" | "applicant"; identifier: string };
@@ -11,7 +11,7 @@ const DEMO_ACCOUNTS: Record<string, LoginAccount> = {
   "demo.hr@example.test": { mode: "employee", identifier: "0-00002" },
   "demo.management@example.test": { mode: "employee", identifier: "0-00003" },
   "demo.employee@example.test": { mode: "employee", identifier: "0-00001" },
-  "demo.applicant@example.test": { mode: "applicant", identifier: "202604" },
+  "demo.applicant@example.test": { mode: "applicant", identifier: "demo.applicant@example.test" },
 };
 
 export function loginAccountFor(account: string | LoginAccount): LoginAccount {
@@ -24,7 +24,7 @@ export function loginAccountFor(account: string | LoginAccount): LoginAccount {
 /** Fills the login form already on screen (the employee or applicant login) for the account. */
 export async function fillLogin(page: Page, account: string | LoginAccount, password: string) {
   const { mode, identifier } = loginAccountFor(account);
-  await page.getByLabel(mode === "applicant" ? "Applicant Number" : "Badge Number").fill(identifier);
+  await page.getByLabel(mode === "applicant" ? "Email Address" : "Badge Number").fill(identifier);
   await page.getByRole("textbox", { name: "Password" }).fill(password);
   await page.getByRole("button", { name: "Login" }).click();
 }
@@ -33,4 +33,15 @@ export async function fillLogin(page: Page, account: string | LoginAccount, pass
 export async function openLoginAndSignIn(page: Page, account: string | LoginAccount, password: string) {
   await page.goto(`/login?as=${loginAccountFor(account).mode}`);
   await fillLogin(page, account, password);
+}
+
+/** Signs out from any shell: staff use the sidebar's Sign out, applicants the account menu's Logout. */
+export async function signOutFromShell(page: Page) {
+  const signOut = page.getByRole("button", { name: "Sign out" });
+  if (await signOut.isVisible()) {
+    await signOut.click();
+  } else {
+    await page.getByRole("button", { name: /^Account menu for / }).click();
+    await page.getByRole("menuitem", { name: "Logout" }).click();
+  }
 }

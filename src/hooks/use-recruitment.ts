@@ -33,6 +33,7 @@ import {
   resubmitApplication,
   saveJobOpening,
   submitApplication,
+  submitMyApplication,
   transitionApplicationStatus,
   withdrawJobOpening,
   addApplicationRemark,
@@ -127,6 +128,19 @@ export function useMyApplication(applicationId: string) {
 
 export function useMyApplicationForJob(jobId: number) {
   return useQuery({ queryKey: queryKeys.recruitment.applicationForJob(jobId), queryFn: () => getMyApplicationForJob(jobId), enabled: Number.isInteger(jobId) && jobId > 0 });
+}
+
+/** Documents-page Save: submits the application to the remembered (or newest open) posting. */
+export function useSubmitMyApplication() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: submitMyApplication,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["recruitment", "my-applications"] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.profileDocuments() });
+      void queryClient.invalidateQueries({ queryKey: ["reporting"] });
+    },
+  });
 }
 
 export function useSubmitApplication() {

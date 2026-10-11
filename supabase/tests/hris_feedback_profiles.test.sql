@@ -31,17 +31,18 @@ values
   ('00000000-0000-4000-8000-000000016001', 'authenticated', 'authenticated', 'number-one@example.test', now(), now(), '{"first_name":"Uno","last_name":"Applicant"}'::jsonb),
   ('00000000-0000-4000-8000-000000016002', 'authenticated', 'authenticated', 'number-two@example.test', now(), now(), '{"first_name":"Dos","last_name":"Applicant"}'::jsonb);
 
+-- Numbers are issued when HR accepts an application (20261011090001), from the same per-year counter.
 select extensions.is(
-  (select applicant_number::text like extract(year from now() at time zone 'Asia/Manila')::text || '%' from public.applicants where profile_id = '00000000-0000-4000-8000-000000016001'),
+  private.next_applicant_number(private.applicant_registration_year(now()))::text like extract(year from now() at time zone 'Asia/Manila')::text || '%',
   true,
-  'A new applicant number starts with the registration year'
+  'A new applicant number starts with the current year'
 );
 select extensions.is(
-  (select second.applicant_number - first.applicant_number
-   from public.applicants first, public.applicants second
-   where first.profile_id = '00000000-0000-4000-8000-000000016001' and second.profile_id = '00000000-0000-4000-8000-000000016002'),
+  (with first_number as materialized (select private.next_applicant_number(private.applicant_registration_year(now())) as value),
+        second_number as materialized (select private.next_applicant_number(private.applicant_registration_year(now())) as value from first_number)
+   select second_number.value - first_number.value from first_number, second_number),
   1::bigint,
-  'Applicants registered in the same year are numbered consecutively'
+  'Numbers issued in the same year are consecutive'
 );
 
 insert into private.applicant_number_counters (registration_year, last_value) values (2031, 99);

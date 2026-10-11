@@ -252,7 +252,10 @@ export type AppliedJob = Pick<JobOpening, "id" | "title" | "description" | "loca
 export type Applicant = {
   id: string;
   profile_id: string;
-  applicant_number: number;
+  /** Issued when HR accepts the application (passes Application Submission); null until then. */
+  applicant_number: number | null;
+  /** The posting the applicant chose on the public site; their Documents-page Save applies to it. */
+  preferred_job_opening_id: number | null;
   first_name: string;
   middle_name: string | null;
   last_name: string;
@@ -335,6 +338,9 @@ export type Application = {
   status: "Application Submission" | "Physical Agility Test" | "Physical & Medical Examination" | "Neuro-Psychiatric Examination" | "Drug Test" | "Character & Background Investigation" | "Panel Interview" | "Final Evaluation" | "Shortlisted" | "Not Selected" | "Hired";
   /** Pending / For Evaluation, Verified or Scheduled within the current stage. */
   stage_result?: "pending" | "verified" | "scheduled";
+  /** When and where a Scheduled stage takes place (set by HR with the Scheduled result). */
+  stage_scheduled_at?: string | null;
+  stage_venue?: string | null;
   cover_note: string | null;
   submitted_at: string;
   reviewed_at: string | null;

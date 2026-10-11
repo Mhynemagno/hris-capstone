@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { formatDate } from "../src/lib/format-date";
-import { openLoginAndSignIn, type LoginAccount } from "./demo-accounts";
+import { openLoginAndSignIn, type LoginAccount, signOutFromShell } from "./demo-accounts";
 
 // One end-to-end journey per capstone objective (see docs/capstone-objectives-verification.md).
 // Every test creates its own uniquely named records in the LOCAL Supabase stack only
@@ -36,7 +36,7 @@ async function signIn(page: Page, account: string | LoginAccount, home: string, 
 }
 
 async function signOut(page: Page) {
-  await page.getByRole("button", { name: "Sign out" }).click();
+  await signOutFromShell(page);
   await expect(page).toHaveURL(/^https?:\/\/[^/]+\/$/);
 }
 
@@ -184,8 +184,13 @@ test.describe("Objective 2: recruitment management", () => {
     await expect(page).toHaveURL(/\/hr\/jobs$/);
     await signOut(page);
 
-    // A new applicant registers (hiring links a login to exactly one employee record).
-    await page.goto("/applicant/register");
+    // A visitor applies from the public posting: the privacy notice, then registration remembers the posting.
+    await page.goto("/jobs");
+    await page.getByRole("link", { name: `View details for ${title}` }).click();
+    await page.getByRole("button", { name: "Apply now" }).click();
+    await page.getByRole("checkbox", { name: /I have read and agree/ }).check();
+    await page.getByRole("button", { name: "I Agree & Continue" }).click();
+    await expect(page).toHaveURL(/\/applicant\/register\?next=/);
     await page.getByLabel(/^Email/).fill(applicantEmail);
     await page.getByLabel(/^Mobile Number/).fill("09171234567");
     await page.getByLabel(/^Last Name/).fill(`Candidate ${runId}`);
@@ -196,50 +201,41 @@ test.describe("Objective 2: recruitment management", () => {
     await page.locator("#registration-password").fill(demoPassword);
     await page.locator("#registration-confirm-password").fill(demoPassword);
     await page.getByRole("button", { name: "Register" }).click();
-    await expect(page).toHaveURL(/\/jobs$/, { timeout: 30_000 });
+    await expect(page).toHaveURL(/\/applicant\/documents$/, { timeout: 30_000 });
 
     // The personal data sheet requires the personal information and Primary, Secondary and
-    // Bachelor's Degree education (qualifier, birthdate and mobile number come from registration;
-    // citizenship defaults to Filipino).
+    // Tertiary education (qualifier, birthdate and mobile number come from registration;
+    // citizenship defaults to Filipino). There is no applicant number until HR accepts the application.
     await page.goto("/applicant/profile");
-    // Applicants sign in with their applicant number (emailed after sign-up and shown on the profile).
-    const applicantNumber = (await page.getByText("Applicant number", { exact: true }).locator("xpath=following-sibling::p[1]").innerText()).trim();
-    await page.getByLabel(/^Place of birth/).fill("San Juan City");
+    await expect(page.getByText("Applicant Number").locator("..")).toContainText("Pending");
+    await page.getByLabel(/^Place of Birth/).fill("San Juan City");
     await page.getByLabel(/^Gender/).selectOption("female");
-    await page.getByLabel(/^Civil status/).selectOption("single");
-    await page.getByLabel(/^Religion/).fill("Roman Catholic");
-    await page.getByLabel(/^Home address/).fill("12 Mabini St., San Juan City");
-    for (const [level, school, course, year] of [["Primary", "San Juan Elementary School", "Primary Education", "2010"], ["Secondary", "San Juan National High School", "Senior High School", "2016"], ["Bachelor's Degree", "Polytechnic University of the Philippines", "BS Criminology", "2020"]]) {
+    await page.getByLabel(/^Civil Status/).selectOption("single");
+    await page.getByLabel(/^Religion/).selectOption("Roman Catholic");
+    await page.getByLabel(/^Home Address/).fill("12 Mabini St., San Juan City");
+    for (const [level, school, course, year] of [["Primary Education", "San Juan Elementary School", "Primary Education", "2010"], ["Secondary Education", "San Juan National High School", "Senior High School", "2016"], ["Tertiary / Bachelor's Degree", "Polytechnic University of the Philippines", "BS Criminology", "2020"]]) {
       const group = page.getByRole("group", { name: level, exact: true });
-      await group.getByLabel(/^Name of school/).fill(school);
-      await group.getByLabel(/^Course completed/).fill(course);
-      await group.getByLabel(/^Year graduated/).fill(year);
+      await group.getByLabel(/^Name of (School|Institution)/).fill(school);
+      await group.getByLabel(/^(Course Completed|Course \/ Strand|Degree \/ Course)/).fill(course);
+      await group.getByLabel(/^Year Graduated/).fill(year);
       await group.getByLabel(/^Location/).fill("Metro Manila");
     }
-    await page.getByRole("button", { name: "Save profile" }).click();
-    await expect(page.getByRole("status").filter({ hasText: "Profile saved." })).toBeVisible();
+    await page.getByRole("button", { name: "Save Changes & Update Profile" }).click();
+    await expect(page.getByRole("status").filter({ hasText: "Profile Updated Successfully!" })).toBeVisible();
+
+    // Each document uploads as soon as it is chosen; Save All Documents then submits the application.
     await page.goto("/applicant/documents");
     // A minimal PNG (1x1 pixel) for the 2x2 picture, which must be an image.
     const png = { name: "photo.png", mimeType: "image/png", buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64") };
-    for (const [label, file] of [["CV / Resume", pdf("resume.pdf")], ["PSA birth certificate", pdf("psa.pdf")], ["2x2 picture", png], ["Eligibility", pdf("eligibility.pdf")], ["Diploma", pdf("diploma.pdf")]] as const) {
-      await page.getByLabel(`Upload ${label} document`).setInputFiles(file);
+    for (const [label, file] of [["CV / Resume", pdf("resume.pdf")], ["PSA Birth Certificate", pdf("psa.pdf")], ["2×2 ID Picture", png], ["Eligibility Certificate", pdf("eligibility.pdf")], ["College Diploma & TOR", pdf("diploma.pdf")]] as const) {
+      await page.getByLabel(`Upload ${label}`).setInputFiles(file);
+      await expect(page.getByRole("region", { name: label }).getByText("Saved", { exact: true })).toBeVisible({ timeout: 15_000 });
     }
-    await page.getByRole("button", { name: "Save documents" }).click();
-    await expect(page.getByRole("status").filter({ hasText: "Documents saved." })).toBeVisible();
-    await expect(page.getByText("5 of 5 required documents saved")).toBeVisible();
-
-    await page.goto("/jobs");
-    await page.getByRole("link", { name: `View details for ${title}` }).click();
-    await page.getByRole("button", { name: "Apply now" }).click();
-    await page.getByRole("checkbox", { name: /I have read and agree/ }).check();
-    await page.getByRole("button", { name: "I Agree & Continue" }).click();
-    await expect(page).toHaveURL(/\/applicant\/apply\/\d+$/);
-    await expect(page.getByLabel("CV (PDF)")).toHaveCount(0);
-    await page.getByRole("button", { name: "Submit application" }).click();
-    await expect(page.getByRole("status").filter({ hasText: "Application submitted" })).toBeVisible({ timeout: 30_000 });
-    const trackHref = await page.getByRole("link", { name: "Track application" }).getAttribute("href");
-    const applicationId = trackHref?.split("/").pop() as string;
-    expect(applicationId).toMatch(/^[0-9a-f-]{36}$/);
+    await expect(page.getByText("5 of 5")).toBeVisible();
+    await page.getByRole("button", { name: "Save All Documents" }).click();
+    await expect(page.getByRole("status").filter({ hasText: "All Documents Saved!" }).first()).toBeVisible({ timeout: 30_000 });
+    await page.goto("/applicant/applications");
+    await expect(page.getByText("Next Action Required: Application Submission")).toBeVisible();
     await signOut(page);
 
     // HR tracks the application through its statuses and records the hiring decision.
@@ -248,7 +244,9 @@ test.describe("Objective 2: recruitment management", () => {
     // The queue names each application by its applicant.
     const review = page.getByRole("link", { name: `Aplica Candidate ${runId}`, exact: true });
     await expect(review).toBeVisible({ timeout: 15_000 });
-    await expect(review).toHaveAttribute("href", `/hr/applications/${applicationId}`);
+    const reviewHref = await review.getAttribute("href");
+    const applicationId = reviewHref?.split("/").pop() as string;
+    expect(applicationId).toMatch(/^[0-9a-f-]{36}$/);
     await page.goto(`/hr/applications/${applicationId}`);
     await expect(page.getByRole("heading", { level: 1, name: new RegExp(`Candidate ${runId}`) })).toBeVisible();
     await page.getByRole("tab", { name: /Documents/ }).click();
@@ -292,9 +290,13 @@ test.describe("Objective 2: recruitment management", () => {
     await expect(page.getByRole("link", { name: new RegExp(`View record for Aplica Candidate ${runId}`) })).toBeVisible({ timeout: 15_000 });
     await signOut(page);
 
-    // The applicant is kept informed of every status change.
-    await signIn(page, { mode: "applicant", identifier: applicantNumber }, "/applicant");
+    // The applicant signs in with their email: accepting the application issued their applicant number,
+    // and every status change reached their notifications.
+    await signIn(page, { mode: "applicant", identifier: applicantEmail }, "/applicant");
+    await page.goto("/applicant/profile");
+    await expect(page.getByText("Applicant Number").locator("..")).toContainText(/\d-\d{5,}/);
     await page.goto("/notifications");
+    await expect(page.getByText("Your applicant number").first()).toBeVisible();
     await expect(page.getByText("Application updated").first()).toBeVisible();
   });
 });

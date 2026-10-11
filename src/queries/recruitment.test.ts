@@ -385,3 +385,62 @@ describe("loadMyProfileDocumentFile", () => {
     await expect(loadMyProfileDocumentFile({ object_path: `applicant-profiles/${userId}/a.pdf`, file_name: "resume.pdf", mime_type: "application/pdf" })).rejects.toThrow("We could not attach your saved CV. Try again.");
   });
 });
+
+describe("submitMyApplication", () => {
+  const resume = { kind: "resume", object_path: "applicant-profiles/u/cv.pdf", file_name: "cv.pdf", mime_type: "application/pdf" };
+
+  /** One chainable query per table, resolving to the given result wherever the chain ends. */
+  function tables(results: Record<string, { data: unknown; error: null }>) {
+    mocks.from.mockImplementation((table: string) => {
+      const result = results[table] ?? { data: null, error: null };
+      const query: Record<string, ReturnType<typeof vi.fn>> = {};
+      for (const method of ["select", "not", "order", "eq"]) query[method] = vi.fn(() => query);
+      query.limit = vi.fn().mockResolvedValue(result);
+      query.maybeSingle = vi.fn().mockResolvedValue(result);
+      (query as unknown as PromiseLike<unknown>).then = ((resolve: (value: unknown) => unknown) => Promise.resolve(result).then(resolve)) as never;
+      return query;
+    });
+  }
+
+  beforeEach(() => {
+    vi.resetAllMocks();
+    mocks.getUser.mockResolvedValue({ data: { user: { id: userId } }, error: null });
+    mocks.upload.mockResolvedValue({ error: null });
+    mocks.download.mockResolvedValue({ data: new Blob(["%PDF"], { type: "application/pdf" }), error: null });
+  });
+
+  it("does not submit again while an application is active", async () => {
+    tables({ applications: { data: [{ id: applicationId, status: "Physical Agility Test" }], error: null } });
+    await expect(recruitmentQueries.submitMyApplication()).resolves.toEqual({ outcome: "already-active" });
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it("reports when no posting is open", async () => {
+    tables({ applications: { data: [], error: null } });
+    mocks.rpc.mockResolvedValue({ data: null, error: null });
+    await expect(recruitmentQueries.submitMyApplication()).resolves.toEqual({ outcome: "no-open-posting" });
+    expect(mocks.rpc).toHaveBeenCalledWith("my_application_target_job");
+  });
+
+  it("submits the saved CV to the target posting", async () => {
+    tables({
+      applications: { data: [], error: null },
+      applicant_profile_documents: { data: [resume], error: null },
+      applicants: { data: { id: "323e4567-e89b-42d3-a456-426614174000" }, error: null },
+      job_openings: { data: { title: "Patrolman / Patrolwoman (Cycle 2026)" }, error: null },
+    });
+    mocks.rpc.mockImplementation(async (name: string) => (name === "my_application_target_job" ? { data: 7, error: null } : { data: applicationId, error: null }));
+    await expect(recruitmentQueries.submitMyApplication()).resolves.toEqual({ outcome: "submitted", applicationId, jobTitle: "Patrolman / Patrolwoman (Cycle 2026)" });
+    expect(mocks.rpc).toHaveBeenCalledWith("submit_application", expect.objectContaining({ target_job_opening_id: 7 }));
+  });
+});
+
+describe("setMyPreferredJobOpening", () => {
+  beforeEach(() => vi.resetAllMocks());
+
+  it("remembers the posting through the applicant-only RPC", async () => {
+    mocks.rpc.mockResolvedValue({ error: null });
+    await recruitmentQueries.setMyPreferredJobOpening(12);
+    expect(mocks.rpc).toHaveBeenCalledWith("set_my_preferred_job_opening", { target_job_opening_id: 12 });
+  });
+});

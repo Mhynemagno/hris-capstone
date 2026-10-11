@@ -18,13 +18,16 @@ export const APPLICANT_EDUCATION_LEVELS = [
   { level: "graduate", label: "Graduate Degree", required: false },
 ] as const;
 
+/** The religions offered on the applicant profile (Capstone UI profile.html). A saved value outside the list is kept. */
+export const RELIGION_OPTIONS = ["Roman Catholic", "Islam", "Iglesia ni Cristo (INC)", "Christian", "Seventh-Day Adventist", "Baptist", "Jehovah's Witnesses", "Others"] as const;
+
 /** The documents an applicant saves on the Documents page; all are required before applying. Only the 2x2 picture is an image. */
 export const APPLICANT_PROFILE_DOCUMENT_KINDS = [
-  { kind: "resume", label: "CV / Resume", accept: "application/pdf", formats: "PDF only" },
-  { kind: "psa", label: "PSA birth certificate", accept: "application/pdf", formats: "PDF only" },
-  { kind: "photo", label: "2x2 picture", accept: "image/png,image/jpeg", formats: "PNG or JPEG image" },
-  { kind: "eligibility", label: "Eligibility", accept: "application/pdf", formats: "PDF only" },
-  { kind: "diploma", label: "Diploma", accept: "application/pdf", formats: "PDF only" },
+  { kind: "resume", label: "CV / Resume", accept: "application/pdf", formats: "PDF only", formatLine: "Format: PDF only (Max 10 MB)" },
+  { kind: "psa", label: "PSA Birth Certificate", accept: "application/pdf", formats: "PDF only", formatLine: "Format: PDF only (Max 10 MB)" },
+  { kind: "photo", label: "2×2 ID Picture", accept: "image/png,image/jpeg", formats: "PNG or JPEG image", formatLine: "Format: PNG or JPEG only" },
+  { kind: "eligibility", label: "Eligibility Certificate", accept: "application/pdf", formats: "PDF only", formatLine: "Format: PDF only (NAPOLCOM / CSC)" },
+  { kind: "diploma", label: "College Diploma & TOR", accept: "application/pdf", formats: "PDF only", formatLine: "Format: PDF only (Diploma and TOR)" },
 ] as const;
 
 const applicantPhotoDocumentMimeTypes = ["image/png", "image/jpeg"] as const;

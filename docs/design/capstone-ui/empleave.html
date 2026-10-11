@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Leave Portal - San Juan City Police Station</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- FontAwesome 6 Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body class="h-full font-sans text-slate-800 antialiased overflow-hidden flex">
+
+  <!-- ==================== LEFT SIDEBAR NAVIGATION ==================== -->
+  <aside class="w-64 bg-[#0B132B] text-slate-300 flex flex-col justify-between shrink-0 h-full z-30 border-r border-slate-800">
+    <div>
+      <!-- BRANDING & LOGO HEADER -->
+      <div class="p-4 border-b border-slate-800/80 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-blue-900 border border-amber-400/50 flex items-center justify-center text-amber-400 text-lg shadow-md shrink-0">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <div class="min-w-0">
+          <h1 class="text-xs font-extrabold text-white tracking-wider uppercase truncate">San Juan CPS</h1>
+          <p class="text-[10px] text-slate-400 font-medium">Personnel Portal</p>
+        </div>
+      </div>
+
+      <!-- NAVIGATION MENU SECTION -->
+      <div class="px-3 py-4 space-y-5">
+        <div>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-chart-pie w-4 text-center text-sm"></i>
+            <span>Dashboard</span>
+          </a>
+        </div>
+
+        <div class="space-y-1">
+          <div class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider px-3 mb-1.5">My Portal</div>
+          
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-user-shield w-4 text-center"></i>
+            <span>My Profile 201</span>
+          </a>
+
+          <!-- ACTIVE NAVIGATION LINK: MY LEAVES -->
+          <a href="#" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold bg-blue-700 text-white shadow-lg shadow-blue-900/40">
+            <div class="flex items-center gap-3">
+              <i class="fa-solid fa-calendar-check w-4 text-center"></i>
+              <span>My Leaves</span>
+            </div>
+            <span class="px-2 py-0.5 rounded-full bg-blue-800 text-amber-300 text-[10px] font-mono">15d left</span>
+          </a>
+
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-map-location-dot w-4 text-center"></i>
+            <span>My Deployments</span>
+          </a>
+
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-award w-4 text-center"></i>
+            <span>Promotion Status</span>
+          </a>
+
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-clock-rotate-left w-4 text-center"></i>
+            <span>My Attendance</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- USER FOOTER -->
+    <div class="p-3 border-t border-slate-800/80 bg-slate-950/40 flex items-center justify-between">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <div class="w-8 h-8 rounded-full bg-emerald-700 text-amber-300 font-extrabold text-xs flex items-center justify-center shrink-0 border border-emerald-600">
+          TP
+        </div>
+        <div class="min-w-0">
+          <p class="text-xs font-bold text-white truncate">Pat. T. Peters</p>
+          <p class="text-[10px] text-slate-400 truncate">Badge: 4-15889</p>
+        </div>
+      </div>
+      <button onclick="alert('Logging out...')" class="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all" title="Sign out">
+        <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ==================== MAIN CONTENT AREA ==================== -->
+  <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-slate-50">
+
+    <!-- TOP HEADER BAR -->
+    <header class="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between shrink-0 z-20">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-blue-900 text-amber-400 flex items-center justify-center font-bold text-xs shadow-sm">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <div class="flex flex-col">
+          <span class="font-extrabold text-xs text-slate-900 tracking-tight">SAN JUAN CITY POLICE STATION</span>
+          <span class="text-[10px] text-slate-400 font-medium">Leave & Leave Balance Management</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <!-- Notification bell -->
+        <button class="p-2 rounded-xl text-slate-500 hover:bg-slate-100 relative">
+          <i class="fa-regular fa-bell text-base"></i>
+          <span class="absolute top-1 right-1 px-1.5 py-0.2 rounded-full bg-red-500 text-white text-[9px] font-black">2</span>
+        </button>
+
+        <!-- User profile -->
+        <div class="flex items-center gap-3 pl-3 border-l border-slate-200">
+          <div class="w-9 h-9 rounded-full bg-emerald-700 text-amber-300 font-black text-xs flex items-center justify-center border border-emerald-600 shadow-sm">
+            TP
+          </div>
+          <div class="text-left leading-tight hidden sm:block">
+            <p class="text-xs font-bold text-slate-900">Pat. Tyson Bernal Peters</p>
+            <p class="text-[10px] text-slate-400">Traffic & Investigation</p>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN SCROLLABLE CONTENT BODY -->
+    <main class="flex-1 overflow-y-auto p-6 space-y-6">
+
+      <!-- PAGE TITLE & HEADER CTA -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">My Leave Portal</h1>
+            <span class="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-bold text-[10px]">CY 2026 Credits</span>
+          </div>
+          <p class="text-xs text-slate-500 mt-0.5">Track your available leave credits, monitor approval workflows, and file official leave applications.</p>
+        </div>
+
+        <button onclick="openLeaveModal()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-700/20 transition-all shrink-0">
+          <i class="fa-solid fa-plus text-xs"></i>
+          <span>Request New Leave</span>
+        </button>
+      </div>
+
+      <!-- ==================== LEAVE CREDITS METRIC CARDS ==================== -->
+      <div>
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-xs font-extrabold text-slate-500 uppercase tracking-wider">Leave Credit Entitlements</h2>
+          <span class="text-[11px] text-slate-400 font-medium"><i class="fa-solid fa-circle-info mr-1 text-blue-500"></i>Standard PNP HR Leave Allocations</span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+          <!-- MANDATORY LEAVE CARD -->
+          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 border border-purple-100 flex items-center justify-center text-base font-bold">
+                  <i class="fa-solid fa-calendar-minus"></i>
+                </div>
+                <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-semibold text-[10px]">Mandatory</span>
+              </div>
+              <div>
+                <p class="text-xs font-bold text-slate-500">MANDATORY LEAVE</p>
+                <div class="flex items-baseline gap-1.5 mt-1">
+                  <span class="text-2xl font-black text-slate-900 font-mono" id="ml-left">0</span>
+                  <span class="text-xs font-semibold text-slate-400">/ 2 Days Left</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="mt-4 pt-3 border-t border-slate-100 space-y-1.5">
+              <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                <div class="bg-purple-500 h-full rounded-full" style="width: 0%"></div>
+              </div>
+              <p class="text-[10px] text-slate-400">2 days standard entitlement fully consumed</p>
+            </div>
+          </div>
+
+          <!-- SICK LEAVE CARD -->
+          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 border border-rose-100 flex items-center justify-center text-base font-bold">
+                  <i class="fa-solid fa-notes-medical"></i>
+                </div>
+                <span class="px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-100 font-semibold text-[10px]">Med Cert Reqd</span>
+              </div>
+              <div>
+                <p class="text-xs font-bold text-slate-500">SICK LEAVE</p>
+                <div class="flex items-baseline gap-1.5 mt-1">
+                  <span class="text-2xl font-black text-emerald-600 font-mono" id="sl-left">15</span>
+                  <span class="text-xs font-semibold text-slate-400">/ 15 Days Left</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-100 space-y-1.5">
+              <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                <div class="bg-emerald-500 h-full rounded-full" style="width: 100%"></div>
+              </div>
+              <p class="text-[10px] text-slate-400">Full 15 days available for CY 2026</p>
+            </div>
+          </div>
+
+          <!-- SPECIAL PRIVILEGE LEAVE CARD -->
+          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center text-base font-bold">
+                  <i class="fa-solid fa-star"></i>
+                </div>
+                <span class="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-100 font-semibold text-[10px]">Non-cumulative</span>
+              </div>
+              <div>
+                <p class="text-xs font-bold text-slate-500">SPECIAL PRIVILEGE LEAVE</p>
+                <div class="flex items-baseline gap-1.5 mt-1">
+                  <span class="text-2xl font-black text-slate-900 font-mono" id="spl-left">3</span>
+                  <span class="text-xs font-semibold text-slate-400">/ 3 Days Left</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-100 space-y-1.5">
+              <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                <div class="bg-amber-500 h-full rounded-full" style="width: 100%"></div>
+              </div>
+              <p class="text-[10px] text-slate-400">Non-cumulative / Non-commutative</p>
+            </div>
+          </div>
+
+          <!-- PATERNITY LEAVE CARD -->
+          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center text-base font-bold">
+                  <i class="fa-solid fa-baby-carriage"></i>
+                </div>
+                <span class="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100 font-semibold text-[10px]">Paternity</span>
+              </div>
+              <div>
+                <p class="text-xs font-bold text-slate-500">PATERNITY LEAVE</p>
+                <div class="flex items-baseline gap-1.5 mt-1">
+                  <span class="text-2xl font-black text-slate-900 font-mono" id="pl-left">7</span>
+                  <span class="text-xs font-semibold text-slate-400">/ 7 Days Left</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-100 space-y-1.5">
+              <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                <div class="bg-blue-500 h-full rounded-full" style="width: 100%"></div>
+              </div>
+              <p class="text-[10px] text-slate-400">Available upon submission of marriage/birth doc</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ==================== LEAVE REQUEST HISTORY SECTION ==================== -->
+      <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
+        
+        <!-- HISTORY TABLE HEADER & FILTERS -->
+        <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-base font-bold text-slate-900">Leave Application History</h2>
+            <p class="text-xs text-slate-400">Review status, details, and feedback from San Juan CPS HR</p>
+          </div>
+
+          <!-- FILTER TABS -->
+          <div class="flex items-center bg-slate-100 p-1 rounded-xl text-xs font-semibold text-slate-600 self-start sm:self-auto">
+            <button onclick="filterLeaveHistory('all')" id="filter-all" class="px-3 py-1.5 rounded-lg bg-white text-slate-900 shadow-sm transition-all">All Requests</button>
+            <button onclick="filterLeaveHistory('Pending')" id="filter-pending" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition-all">For Approval</button>
+            <button onclick="filterLeaveHistory('Approved')" id="filter-approved" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition-all">Approved</button>
+          </div>
+        </div>
+
+        <!-- TABLE LAYOUT -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200/70 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
+                <th class="py-3.5 px-6">Leave Category</th>
+                <th class="py-3.5 px-4">Inclusive Dates</th>
+                <th class="py-3.5 px-4">Duration</th>
+                <th class="py-3.5 px-4">Reason / HR Feedback</th>
+                <th class="py-3.5 px-4">Approval Status</th>
+                <th class="py-3.5 px-6 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="leave-history-tbody" class="divide-y divide-slate-100 text-xs font-medium">
+              <!-- Dynamically populated via JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- TABLE FOOTER PAGINATION -->
+        <div class="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+          <span id="history-counter-text">Showing 2 of 2 requests</span>
+          <div class="flex items-center gap-2">
+            <button disabled class="px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-400 cursor-not-allowed">Previous</button>
+            <button disabled class="px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-400 cursor-not-allowed">Next</button>
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ==================== NEW LEAVE REQUEST MODAL ==================== -->
+  <div id="leaveModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-lg overflow-hidden transform transition-all">
+      
+      <!-- MODAL HEADER -->
+      <div class="bg-[#0B132B] px-6 py-4 text-white flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-blue-700 text-amber-300 flex items-center justify-center font-bold text-xs">
+            <i class="fa-solid fa-file-signature"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold">File Leave Application</h3>
+            <p class="text-[10px] text-slate-300">San Juan CPS Personnel HR Department</p>
+          </div>
+        </div>
+        <button onclick="closeLeaveModal()" class="text-slate-400 hover:text-white p-1 rounded-lg transition-all">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <!-- MODAL FORM -->
+      <form id="leaveForm" onsubmit="handleLeaveSubmit(event)" class="p-6 space-y-4 text-xs">
+        
+        <!-- Leave Type Dropdown -->
+        <div>
+          <label class="block font-bold text-slate-700 mb-1.5">Leave Type <span class="text-red-500">*</span></label>
+          <select id="leaveType" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-600 focus:outline-none transition-all font-medium">
+            <option value="" disabled selected>Select category...</option>
+            <option value="Mandatory Leave">Mandatory Leave (2 Days/Yr)</option>
+            <option value="Sick Leave">Sick Leave (15 Days/Yr)</option>
+            <option value="Special Privilege Leave">Special Privilege Leave (3 Days/Yr)</option>
+            <option value="Paternity Leave">Paternity Leave (7 Days/Yr)</option>
+          </select>
+        </div>
+
+        <!-- Dates Grid -->
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1.5">Start Date <span class="text-red-500">*</span></label>
+            <input type="date" id="startDate" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-600 focus:outline-none transition-all font-medium">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1.5">End Date <span class="text-red-500">*</span></label>
+            <input type="date" id="endDate" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-600 focus:outline-none transition-all font-medium">
+          </div>
+        </div>
+
+        <!-- Reason / Justification -->
+        <div>
+          <label class="block font-bold text-slate-700 mb-1.5">Reason / Remarks <span class="text-red-500">*</span></label>
+          <textarea id="leaveReason" rows="3" required placeholder="Provide reason for leave application..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-600 focus:outline-none transition-all font-medium resize-none"></textarea>
+        </div>
+
+        <!-- Notice Banner -->
+        <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-800 flex items-start gap-2">
+          <i class="fa-solid fa-triangle-exclamation text-amber-600 text-xs mt-0.5"></i>
+          <span>Applications require Station Commander / HR endorsement before deployment schedule adjustment.</span>
+        </div>
+
+        <!-- MODAL FOOTER BUTTONS -->
+        <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+          <button type="button" onclick="closeLeaveModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition-all">Cancel</button>
+          <button type="submit" class="px-5 py-2.5 bg-blue-700 hover:bg-blue-800 text-white rounded-xl font-bold shadow-md shadow-blue-700/20 transition-all">Submit Application</button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== JAVASCRIPT APP LOGIC ==================== -->
+  <script>
+    // Initial Leave History Data
+    let leaveData = [
+      {
+        id: 102,
+        type: "Mandatory Leave",
+        icon: "fa-calendar-minus",
+        iconBg: "bg-purple-100 text-purple-700",
+        startDate: "Oct 5, 2026",
+        endDate: "Oct 6, 2026",
+        duration: "2 Days",
+        reason: "Personal / Family errand schedule",
+        hrNotes: "Awaiting endorsement from Station Chief",
+        status: "Pending"
+      },
+      {
+        id: 101,
+        type: "Mandatory Leave",
+        icon: "fa-calendar-minus",
+        iconBg: "bg-purple-100 text-purple-700",
+        startDate: "Sep 27, 2026",
+        endDate: "Sep 28, 2026",
+        duration: "2 Days",
+        reason: "Emergency family concern",
+        hrNotes: "Notes from HR: OK.",
+        status: "Approved"
+      }
+    ];
+
+    let currentFilter = 'all';
+
+    // DOM Ready Initialization
+    window.onload = function() {
+      renderLeaveHistory();
+    };
+
+    // Render Table Rows
+    function renderLeaveHistory() {
+      const tbody = document.getElementById('leave-history-tbody');
+      tbody.innerHTML = '';
+
+      const filtered = leaveData.filter(item => {
+        if (currentFilter === 'all') return true;
+        return item.status === currentFilter;
+      });
+
+      document.getElementById('history-counter-text').innerText = `Showing ${filtered.length} of ${leaveData.length} leave requests`;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="py-8 text-center text-slate-400 italic">No leave applications found under this filter.</td>
+          </tr>
+        `;
+        return;
+      }
+
+      filtered.forEach(item => {
+        let statusBadge = '';
+        let actionButtons = '';
+
+        if (item.status === 'Pending') {
+          statusBadge = `<span class="px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 font-bold text-[10px] inline-flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>For Approval</span>`;
+          actionButtons = `<button onclick="cancelRequest(${item.id})" class="px-3 py-1.5 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-[11px] transition-all">Cancel Request</button>`;
+        } else if (item.status === 'Approved') {
+          statusBadge = `<span class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[10px] inline-flex items-center gap-1.5"><i class="fa-solid fa-circle-check text-emerald-500"></i>Approved</span>`;
+          actionButtons = `<button onclick="alert('Viewing archival details for Request #${item.id}')" class="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 font-bold text-[11px] transition-all">View Record</button>`;
+        }
+
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50/80 transition-all";
+        tr.innerHTML = `
+          <td class="py-4 px-6">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg ${item.iconBg} flex items-center justify-center font-bold text-xs shrink-0">
+                <i class="fa-solid ${item.icon}"></i>
+              </div>
+              <span class="font-bold text-slate-900">${item.type}</span>
+            </div>
+          </td>
+          <td class="py-4 px-4 font-mono font-semibold text-slate-800">${item.startDate} – ${item.endDate}</td>
+          <td class="py-4 px-4"><span class="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-mono font-bold text-[11px]">${item.duration}</span></td>
+          <td class="py-4 px-4">
+            <p class="text-slate-800 font-medium">${item.reason}</p>
+            <p class="text-[10px] text-slate-400 mt-0.5">${item.hrNotes}</p>
+          </td>
+          <td class="py-4 px-4">${statusBadge}</td>
+          <td class="py-4 px-6 text-right">${actionButtons}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Filter Trigger
+    function filterLeaveHistory(status) {
+      currentFilter = status;
+      ['all', 'pending', 'approved'].forEach(tab => {
+        const btn = document.getElementById(`filter-${tab}`);
+        if (tab === status.toLowerCase()) {
+          btn.className = "px-3 py-1.5 rounded-lg bg-white text-slate-900 shadow-sm transition-all font-bold";
+        } else {
+          btn.className = "px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition-all font-medium";
+        }
+      });
+      renderLeaveHistory();
+    }
+
+    // Modal Control
+    function openLeaveModal() {
+      document.getElementById('leaveModal').classList.remove('hidden');
+    }
+
+    function closeLeaveModal() {
+      document.getElementById('leaveModal').classList.add('hidden');
+      document.getElementById('leaveForm').reset();
+    }
+
+    // Handle Submission
+    function handleLeaveSubmit(e) {
+      e.preventDefault();
+      
+      const type = document.getElementById('leaveType').value;
+      const start = document.getElementById('startDate').value;
+      const end = document.getElementById('endDate').value;
+      const reason = document.getElementById('leaveReason').value;
+
+      let icon = "fa-calendar-check";
+      let iconBg = "bg-blue-100 text-blue-700";
+
+      if (type.includes("Sick")) { icon = "fa-notes-medical"; iconBg = "bg-rose-100 text-rose-700"; }
+      if (type.includes("Special")) { icon = "fa-star"; iconBg = "bg-amber-100 text-amber-700"; }
+      if (type.includes("Paternity")) { icon = "fa-baby-carriage"; iconBg = "bg-blue-100 text-blue-700"; }
+
+      const newRequest = {
+        id: Date.now(),
+        type: type,
+        icon: icon,
+        iconBg: iconBg,
+        startDate: start,
+        endDate: end,
+        duration: "Requested",
+        reason: reason,
+        hrNotes: "Submitted to HR portal • Pending Review",
+        status: "Pending"
+      };
+
+      leaveData.unshift(newRequest);
+      renderLeaveHistory();
+      closeLeaveModal();
+    }
+
+    // Cancel Pending Request
+    function cancelRequest(id) {
+      if (confirm("Are you sure you want to cancel this leave application?")) {
+        leaveData = leaveData.filter(item => item.id !== id);
+        renderLeaveHistory();
+      }
+    }
+  </script>
+</body>
+</html>

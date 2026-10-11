@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { fillLogin } from "./demo-accounts";
+import { fillLogin, signOutFromShell } from "./demo-accounts";
 
 const demoPassword = process.env.HRIS_E2E_PASSWORD ?? "DemoPass!2026";
 const roles = [
@@ -17,7 +17,8 @@ for (const role of roles) {
 
     await fillLogin(page, role.email, demoPassword);
     await expect(page).toHaveURL(new RegExp(`${role.home}$`));
-    await expect(page.getByRole("button", { name: new RegExp(`Account menu for ${role.email}`) })).toBeVisible();
+    // Applicants' account menu is named after the applicant; staff menus after their email.
+    await expect(page.getByRole("button", { name: role.home === "/applicant" ? "Account menu for Demo Applicant" : new RegExp(`Account menu for ${role.email}`) })).toBeVisible();
 
     await page.reload();
     await expect(page).toHaveURL(new RegExp(`${role.home}$`));
@@ -27,7 +28,7 @@ for (const role of roles) {
     await expect(page.getByRole("heading", { name: "Access denied" })).toBeVisible();
 
     await page.goto(role.home);
-    await page.getByRole("button", { name: "Sign out" }).click();
+    await signOutFromShell(page);
     await expect(page).toHaveURL(/^https?:\/\/[^/]+\/$/);
 
     await page.goto(role.home);
@@ -37,7 +38,7 @@ for (const role of roles) {
 
 test("invalid credentials show a safe error and do not create a session", async ({ page }) => {
   await page.goto("/login?as=applicant&next=/applicant");
-  await page.getByLabel("Applicant Number").fill("202604");
+  await page.getByLabel("Email Address").fill("demo.applicant@example.test");
   await page.getByRole("textbox", { name: "Password" }).fill("incorrect-local-test-password");
   await page.getByRole("button", { name: "Login" }).click();
 

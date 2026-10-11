@@ -249,6 +249,13 @@ otp_expiry = 3600
 # subject = "You have been invited"
 # content_path = "./supabase/templates/invite.html"
 
+# Applicant sign-up confirmation (Capstone UI email.html). The token_hash link is verified by
+# /auth/callback in any browser, so it does not depend on the PKCE code verifier. Paste the same
+# file into the hosted project's Authentication > Email Templates > Confirm signup.
+[auth.email.template.confirmation]
+subject = "Confirm Your Email Address"
+content_path = "./supabase/templates/confirmation.html"
+
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]
 # enabled = true

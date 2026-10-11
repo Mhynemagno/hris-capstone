@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Applicant Roster - San Juan City Police Station HR Admin</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- FontAwesome 6 Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body class="h-full font-sans text-slate-800 antialiased overflow-hidden flex">
+
+  <!-- ==================== LEFT SIDEBAR NAVIGATION ==================== -->
+  <aside class="w-64 bg-[#0B132B] text-slate-300 flex flex-col justify-between shrink-0 h-full z-30 border-r border-slate-800">
+    <div>
+      
+      <!-- BRANDING & LOGO HEADER -->
+      <div class="p-4 border-b border-slate-800/80 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-blue-900 border border-amber-400/50 flex items-center justify-center text-amber-400 text-lg shadow-md shrink-0">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <div class="min-w-0">
+          <h1 class="text-xs font-extrabold text-white tracking-wider uppercase truncate">San Juan City PS</h1>
+        </div>
+      </div>
+
+      <!-- NAVIGATION MENU SECTION -->
+      <div class="px-3 py-4 space-y-6">
+        
+        <!-- DASHBOARD DIRECT LINK -->
+        <div>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-chart-pie w-4 text-center"></i>
+            <span>Dashboard</span>
+          </a>
+        </div>
+
+        <!-- RECRUITMENT MANAGEMENT -->
+        <div class="space-y-1">
+          <div class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider px-3 mb-1.5">Recruitment</div>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-briefcase w-4 text-center"></i>
+            <span>Plantilla Openings</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-blue-700 text-white shadow-lg shadow-blue-900/40">
+            <i class="fa-solid fa-id-card-clip w-4 text-center text-sm"></i>
+            <span>Applicant Roster</span>
+          </a>
+        </div>
+
+        <!-- PERSONNEL & RECORDS MANAGEMENT -->
+        <div class="space-y-1">
+          <div class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider px-3 mb-1.5">Personnel 201</div>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-users w-4 text-center"></i>
+            <span>Active Personnel</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-map-location-dot w-4 text-center"></i>
+            <span>Duty Deployments</span>
+          </a>
+          <a href="#" class="flex items-center justify-between px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <div class="flex items-center gap-3">
+              <i class="fa-solid fa-calendar-check w-4 text-center"></i>
+              <span>Leave Applications</span>
+            </div>
+            <span class="px-1.5 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-bold">1</span>
+          </a>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- USER FOOTER -->
+    <div class="p-3 border-t border-slate-800/80 bg-slate-950/40">
+      <button onclick="alert('Logging out...')" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all">
+        <i class="fa-solid fa-arrow-right-from-bracket text-red-500"></i>
+        <span>Sign out</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ==================== MAIN CONTENT CONTAINER ==================== -->
+  <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-slate-50">
+
+    <!-- TOP HEADER NAVBAR -->
+    <header class="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between shrink-0 z-20">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-blue-900 text-amber-400 flex items-center justify-center font-bold text-xs shadow-sm">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <div class="flex flex-col">
+          <div class="flex items-center gap-2">
+            <span class="font-extrabold text-xs text-slate-900 tracking-tight">SAN JUAN CITY POLICE STATION</span>
+            <span class="px-2 py-0.5 text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 rounded-md">HRDD Portal</span>
+          </div>
+          <span class="text-[10px] text-slate-400 font-medium">Recruitment Module • Applicant Tracking & Roster</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <button class="p-2 rounded-xl text-slate-500 hover:bg-slate-100 relative">
+          <i class="fa-regular fa-bell text-base"></i>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-white"></span>
+        </button>
+
+        <div class="flex items-center gap-3 pl-3 border-l border-slate-200">
+          <div class="w-9 h-9 rounded-full bg-slate-900 text-amber-400 font-bold text-xs flex items-center justify-center border border-slate-700 shadow-sm">
+            MC
+          </div>
+          <div class="text-left leading-tight">
+            <p class="text-xs font-bold text-slate-900">PMAJ M. C. Balneg</p>
+            <p class="text-[10px] text-slate-400">mcbalnegg915@gmail.com</p>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN SCROLLABLE CONTENT -->
+    <main class="flex-1 overflow-y-auto p-6 space-y-6">
+
+      <!-- PAGE TITLE & TOP SUB-NAVIGATION TABS -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+        <div>
+          <h1 class="text-2xl font-black text-slate-900 tracking-tight">APPLICANT ROSTER</h1>
+          <p class="text-xs text-slate-500 font-medium mt-0.5">Review and track candidates for recruitment openings.</p>
+        </div>
+
+        <!-- MAIN SUB-MODULE TABS -->
+        <div class="flex items-center gap-2 bg-slate-200/70 p-1 rounded-xl text-xs font-bold text-slate-600 self-start md:self-auto">
+          <button class="px-4 py-2 rounded-lg bg-white text-blue-900 shadow-sm transition-all flex items-center gap-2">
+            <i class="fa-solid fa-file-signature text-blue-700"></i>
+            <span>Applications</span>
+          </button>
+          <button class="px-4 py-2 rounded-lg hover:text-slate-900 transition-all flex items-center gap-2">
+            <i class="fa-solid fa-address-card text-slate-500"></i>
+            <span>Registered Applicants</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- MAIN TABLE CONTAINER CARD -->
+      <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
+        
+        <!-- UNIFIED CLEAN FILTER BAR (NO REDUNDANT STATUS BUTTONS) -->
+        <div class="p-4 border-b border-slate-100 bg-slate-50/50">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
+            
+            <!-- SEARCH FIELD (4 cols) -->
+            <div class="lg:col-span-4 relative">
+              <input type="text" placeholder="Search name or applicant number..." class="w-full pl-9 pr-4 py-2 text-xs font-medium rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all">
+              <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+            </div>
+
+            <!-- JOB POSTING FILTER (3 cols) -->
+            <div class="lg:col-span-3 relative">
+              <select class="w-full pl-3 pr-8 py-2 text-xs font-semibold rounded-xl border border-slate-200 bg-white text-slate-700 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer">
+                <option selected>Recruitment Openings</option>
+                <option>SAN JUAN CITY RECRUITMENT - CY 2026</option>
+              </select>
+              <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-[9px] pointer-events-none"></i>
+            </div>
+
+            <!-- STATUS / STAGES FILTER (3 cols) -->
+            <div class="lg:col-span-3 relative">
+              <select class="w-full pl-3 pr-8 py-2 text-xs font-semibold rounded-xl border border-slate-200 bg-white text-slate-700 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer">
+                <option selected>Status</option>
+                <option>Active / Pending</option>
+                <option>Physical Agility Test</option>
+                <option>Physical & Medical Exam</option>
+                <option>Hired</option>
+                <option>Disqualified</option>
+              </select>
+              <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-[9px] pointer-events-none"></i>
+            </div>
+
+            <!-- MORE FILTERS BUTTON (2 cols) -->
+            <div class="lg:col-span-2">
+              <button class="w-full py-2 px-3 text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-100 transition-all flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-sliders text-slate-500"></i>
+                <span>More filters</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- APPLICATIONS ROSTER TABLE -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="border-b border-slate-100 bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                <th class="py-3.5 px-6">Applicant <i class="fa-solid fa-arrow-down-up text-[9px] ml-1 text-slate-400"></i></th>
+                <th class="py-3.5 px-4">RECRUITMENT OPENING</th>
+                <th class="py-3.5 px-4">STATUS</th>
+                <th class="py-3.5 px-4 text-center">AI Match Score <i class="fa-solid fa-arrow-down text-[9px] ml-1 text-slate-700"></i></th>
+                <th class="py-3.5 px-4">Submitted <i class="fa-solid fa-arrow-down-up text-[9px] ml-1 text-slate-400"></i></th>
+                <th class="py-3.5 px-6 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 text-slate-700 font-medium">
+              
+              <!-- CANDIDATE ROW 1 -->
+              <tr class="hover:bg-slate-50/80 transition-colors">
+                
+                <!-- APPLICANT NAME & NO. -->
+                <td class="py-4 px-6">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-blue-100 border border-blue-300 text-blue-800 font-extrabold text-xs flex items-center justify-center shrink-0 shadow-sm">
+                      AJ
+                    </div>
+                    <div>
+                      <p class="font-bold text-slate-900 text-sm">Aldrick Jamlani</p>
+                      <p class="text-[11px] font-mono text-slate-400">ID: 2-02613</p>
+                    </div>
+                  </div>
+                </td>
+
+                <!-- JOB POSTING -->
+                <td class="py-4 px-4">
+                  <p class="font-bold text-slate-800">SAN JUAN CITY RECRUITMENT - CY 2026</p>
+                  <p class="text-[10px] text-slate-400">Patrolman Plantilla Position</p>
+                </td>
+
+                <!-- STATUS & STAGE BADGES -->
+                <td class="py-4 px-4 space-y-1">
+                  <span class="inline-block px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 font-bold text-[10px] uppercase tracking-wider">
+                    Pending / For Evaluation
+                  </span>
+                </td>
+
+                <!-- AI MATCH METRICS -->
+                <td class="py-4 px-4">
+                  <div class="flex flex-col items-center justify-center space-y-1">
+                    <div class="flex items-center gap-2">
+                      <div class="w-24 bg-slate-200 h-2 rounded-full overflow-hidden p-0.5 border border-slate-300">
+                        <div class="bg-emerald-500 h-full rounded-full" style="width: 100%"></div>
+                      </div>
+                      <span class="font-black text-emerald-700 text-xs font-mono">5 / 5</span>
+                    </div>
+                    <span class="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.2 rounded border border-emerald-200">Excellent Match</span>
+                  </div>
+                </td>
+
+                <!-- SUBMITTED DATE -->
+                <td class="py-4 px-4">
+                  <p class="font-semibold text-slate-800">October 11, 2026</p>
+                </td>
+
+                <!-- ACTIONS -->
+                <td class="py-4 px-6 text-center">
+                  <div class="flex items-center justify-center gap-1.5">
+                    <button onclick="alert('Viewing profile...')" title="View Profile" class="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
+                      <i class="fa-solid fa-eye text-xs"></i>
+                    </button>
+                    <button onclick="alert('Editing applicant details...')" title="Edit Candidate" class="p-2 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all">
+                      <i class="fa-solid fa-pen-to-square text-xs"></i>
+                    </button>
+                    <button onclick="confirm('Disqualify or remove applicant?') && alert('Removed.')" title="Delete Candidate" class="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all">
+                      <i class="fa-solid fa-trash-can text-xs"></i>
+                    </button>
+                  </div>
+                </td>
+
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+
+        <!-- TABLE PAGINATION FOOTER -->
+        <div class="p-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between text-xs text-slate-500">
+          <span>Showing 1–1 of 1 applications</span>
+          
+          <div class="flex items-center gap-2">
+            <button class="px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-400 font-bold cursor-not-allowed opacity-60">
+              <i class="fa-solid fa-chevron-left text-[10px] mr-1"></i> Previous
+            </button>
+            <button class="px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-400 font-bold cursor-not-allowed opacity-60">
+              Next <i class="fa-solid fa-chevron-right text-[10px] ml-1"></i>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+
+  </div>
+
+</body>
+</html>

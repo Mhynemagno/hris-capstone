@@ -18,7 +18,14 @@ function canContinueTo(role: Awaited<ReturnType<typeof getCurrentRole>>, pathnam
 
 export async function GET(request: NextRequest) {
   const user = await getAuthenticatedUser();
-  if (!user) return NextResponse.redirect(new URL("/login", request.url));
+  if (!user) {
+    // Keep where the visitor was going (e.g. the portal link in an email) and pick the matching login.
+    const nextPath = getSafeNextPath(request.nextUrl.searchParams.get("next"));
+    const login = new URL("/login", request.url);
+    login.searchParams.set("as", isWithin(nextPath, "/applicant") || isWithin(nextPath, "/jobs") ? "applicant" : "employee");
+    if (nextPath !== "/") login.searchParams.set("next", nextPath);
+    return NextResponse.redirect(login);
+  }
 
   const role = await getCurrentRole();
   if (!role) return NextResponse.redirect(new URL("/unauthorized", request.url));

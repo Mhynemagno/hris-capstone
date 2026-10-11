@@ -32,7 +32,7 @@ describe("applicant detail tabs", () => {
     render(<OverviewTab applicationId={id} coverNote="I am ready." history={history} onShowDocuments={onShowDocuments} profileDocuments={profileDocuments} />);
     expect(screen.getByRole("region", { name: "AI match" })).toHaveTextContent("82/100");
     expect(screen.getByText("1 of 5 required documents uploaded")).toBeInTheDocument();
-    expect(screen.getByText(/Missing: PSA birth certificate, 2x2 picture, Eligibility, Diploma/)).toBeInTheDocument();
+    expect(screen.getByText(/Missing: PSA Birth Certificate, 2×2 ID Picture, Eligibility Certificate, College Diploma & TOR/)).toBeInTheDocument();
     expect(screen.getByText("Application is under review.")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "View documents" }));
     expect(onShowDocuments).toHaveBeenCalled();
@@ -87,7 +87,7 @@ describe("applicant detail tabs", () => {
   });
 
   it("shows Not provided for empty profile fields", () => {
-    render(<ProfileTab applicant={{ id: "a", profile_id: "p", applicant_number: 1, first_name: "Ana", middle_name: null, last_name: "Reyes", qualifier: null, place_of_birth: null, date_of_birth: "1998-04-12", gender: "female", civil_status: null, religion: null, citizenship: "Filipino", profile_image_path: null, phone: "0917", address: null, created_at: "", updated_at: "" }} />);
+    render(<ProfileTab applicant={{ id: "a", profile_id: "p", applicant_number: 1, preferred_job_opening_id: null, first_name: "Ana", middle_name: null, last_name: "Reyes", qualifier: null, place_of_birth: null, date_of_birth: "1998-04-12", gender: "female", civil_status: null, religion: null, citizenship: "Filipino", profile_image_path: null, phone: "0917", address: null, created_at: "", updated_at: "" }} />);
     expect(screen.getByRole("heading", { name: "Personal" })).toBeInTheDocument();
     expect(screen.getByText("April 12, 1998")).toBeInTheDocument();
     expect(screen.getAllByText("Not provided").length).toBeGreaterThan(0);

@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Personnel Reports - San Juan City Police Station HR Admin</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- FontAwesome 6 Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body class="h-full font-sans text-slate-800 antialiased overflow-hidden flex">
+
+  <!-- ==================== LEFT SIDEBAR NAVIGATION ==================== -->
+  <aside class="w-64 bg-[#0B132B] text-slate-300 flex flex-col justify-between shrink-0 h-full z-30 border-r border-slate-800">
+    <div>
+      
+      <!-- BRANDING & LOGO HEADER -->
+      <div class="p-4 border-b border-slate-800/80 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-blue-900 border border-amber-400/50 flex items-center justify-center text-amber-400 text-lg shadow-md shrink-0">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <div class="min-w-0">
+          <h1 class="text-xs font-extrabold text-white tracking-wider uppercase truncate">San Juan City PS</h1>
+        </div>
+      </div>
+
+      <!-- NAVIGATION MENU SECTION -->
+      <div class="px-3 py-4 space-y-6">
+        
+        <!-- DASHBOARD DIRECT LINK -->
+        <div>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-chart-pie w-4 text-center"></i>
+            <span>Dashboard</span>
+          </a>
+        </div>
+
+        <!-- RECRUITMENT MANAGEMENT -->
+        <div class="space-y-1">
+          <div class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider px-3 mb-1.5">Recruitment</div>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-briefcase w-4 text-center"></i>
+            <span>Plantilla Openings</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-id-card-clip w-4 text-center"></i>
+            <span>Applicant Roster</span>
+          </a>
+        </div>
+
+        <!-- PERSONNEL & RECORDS MANAGEMENT -->
+        <div class="space-y-1">
+          <div class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider px-3 mb-1.5">Personnel 201</div>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-users w-4 text-center"></i>
+            <span>Active Personnel</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <i class="fa-solid fa-map-location-dot w-4 text-center"></i>
+            <span>Duty Deployments</span>
+          </a>
+          <a href="#" class="flex items-center justify-between px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <div class="flex items-center gap-3">
+              <i class="fa-solid fa-calendar-check w-4 text-center"></i>
+              <span>Leave Applications</span>
+            </div>
+            <span class="px-1.5 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-bold">1</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-blue-700 text-white shadow-lg shadow-blue-900/40">
+            <i class="fa-solid fa-file-invoice w-4 text-center text-sm"></i>
+            <span>Reports & Exports</span>
+          </a>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- USER FOOTER -->
+    <div class="p-3 border-t border-slate-800/80 bg-slate-950/40">
+      <button onclick="alert('Logging out...')" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all">
+        <i class="fa-solid fa-arrow-right-from-bracket text-red-500"></i>
+        <span>Sign out</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ==================== MAIN CONTENT CONTAINER ==================== -->
+  <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-slate-50">
+
+    <!-- TOP HEADER NAVBAR -->
+    <header class="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between shrink-0 z-20">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-blue-900 text-amber-400 flex items-center justify-center font-bold text-xs shadow-sm">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <div class="flex flex-col">
+          <div class="flex items-center gap-2">
+            <span class="font-extrabold text-xs text-slate-900 tracking-tight">SAN JUAN CITY POLICE STATION</span>
+            <span class="px-2 py-0.5 text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 rounded-md">HRDD Portal</span>
+          </div>
+          <span class="text-[10px] text-slate-400 font-medium">Personnel Management • Official Analytics & Station Reports</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <button class="p-2 rounded-xl text-slate-500 hover:bg-slate-100 relative">
+          <i class="fa-regular fa-bell text-base"></i>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-white"></span>
+        </button>
+
+        <div class="flex items-center gap-3 pl-3 border-l border-slate-200">
+          <div class="w-9 h-9 rounded-full bg-slate-900 text-amber-400 font-bold text-xs flex items-center justify-center border border-slate-700 shadow-sm">
+            MC
+          </div>
+          <div class="text-left leading-tight">
+            <p class="text-xs font-bold text-slate-900">PMAJ M. C. Balneg</p>
+            <p class="text-[10px] text-slate-400">mcbalnegg915@gmail.com</p>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN SCROLLABLE CONTENT -->
+    <main class="flex-1 overflow-y-auto p-6 space-y-6">
+
+      <!-- PAGE TITLE & HEADER -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 class="text-2xl font-black text-slate-900 tracking-tight">Reports & Analytics</h1>
+          <p class="text-xs text-slate-500 font-medium mt-0.5">Filter, export, or print role-appropriate personnel and operational reports.</p>
+        </div>
+
+        <button onclick="alert('Exporting full station summary CSV...')" class="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-2 self-start sm:self-auto">
+          <i class="fa-solid fa-file-excel text-emerald-400"></i>
+          <span>Export Station Masterlist</span>
+        </button>
+      </div>
+
+      <!-- CATEGORIES GRID (6 REPORT CARDS) -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        
+        <!-- CARD 1: APPLICANT TRACKING -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-sm hover:shadow-md hover:border-blue-300 transition-all flex flex-col justify-between space-y-4">
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 flex items-center justify-center font-bold text-base">
+                <i class="fa-solid fa-user-plus"></i>
+              </div>
+              <span class="px-2.5 py-0.5 bg-slate-100 text-slate-600 rounded-md text-[10px] font-bold uppercase tracking-wider">Recruitment</span>
+            </div>
+
+            <div>
+              <h3 class="text-base font-bold text-slate-900">Applicant Tracking</h3>
+              <p class="text-xs text-slate-500 font-normal mt-1 leading-relaxed">
+                Comprehensive roster of job applicants, recruitment stage progression, and screening results.
+              </p>
+            </div>
+          </div>
+
+          <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+            <span class="text-[10px] text-slate-400 font-medium">Updated 2 hrs ago</span>
+            <button onclick="openReportModal('Applicant Tracking Report')" class="px-3.5 py-2 bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-1.5">
+              <i class="fa-solid fa-print text-[11px]"></i>
+              <span>Generate</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- CARD 2: HIRING DECISIONS -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-sm hover:shadow-md hover:border-blue-300 transition-all flex flex-col justify-between space-y-4">
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center font-bold text-base">
+                <i class="fa-solid fa-user-check"></i>
+              </div>
+              <span class="px-2.5 py-0.5 bg-slate-100 text-slate-600 rounded-md text-[10px] font-bold uppercase tracking-wider">Recruitment</span>
+            </div>
+
+            <div>
+              <h3 class="text-base font-bold text-slate-900">Hiring Decisions</h3>
+              <p class="text-xs text-slate-500 font-normal mt-1 leading-relaxed">
+                Final selection summaries, board approvals, and appointed personnel plantilla positions.
+              </p>
+            </div>
+          </div>
+
+          <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+            <span class="text-[10px] text-slate-400 font-medium">Updated Yesterday</span>
+            <button onclick="openReportModal('Hiring Decisions Summary')" class="px-3.5 py-2 bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-1.5">
+              <i class="fa-solid fa-print text-[11px]"></i>
+              <span>Generate</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- CARD 3: EMPLOYEE PERFORMANCE -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-sm hover:shadow-md hover:border-blue-300 transition-all flex flex-col justify-between space-y-4">
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="w-10 h-10 rounded-xl bg-purple-50 border border-purple-200 text-purple-700 flex items-center justify-center font-bold text-base">
+                <i class="fa-solid fa-chart-line"></i>
+              </div>
+              <span class="px-2.5 py-0.5 bg-slate-100 text-slate-600 rounded-md text-[10px] font-bold uppercase tracking-wider">Personnel 201</span>
+            </div>
+
+            <div>
+              <h3 class="text-base font-bold text-slate-900">Employee Performance</h3>
+              <p class="text-xs text-slate-500 font-normal mt-1 leading-relaxed">
+                Individual and unit performance rating metrics, commendations, and IPCR evaluation summaries.
+              </p>
+            </div>
+          </div>
+
+          <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+            <span class="text-[10px] text-slate-400 font-medium">Monthly Audit</span>
+            <button onclick="openReportModal('Employee Performance Report')" class="px-3.5 py-2 bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-1.5">
+              <i class="fa-solid fa-print text-[11px]"></i>
+              <span>Generate</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- CARD 4: DEPLOYMENTS -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-sm hover:shadow-md hover:border-blue-300 transition-all flex flex-col justify-between space-y-4">
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center font-bold text-base">
+                <i class="fa-solid fa-map-location-dot"></i>
+              </div>
+              <span class="px-2.5 py-0.5 bg-slate-100 text-slate-600 rounded-md text-[10px] font-bold uppercase tracking-wider">Operations</span>
+            </div>
+
+            <div>
+              <h3 class="text-base font-bold text-slate-900">Duty Deployments</h3>
+              <p class="text-xs text-slate-500 font-normal mt-1 leading-relaxed">
+                Field assignment logs, rally police duty coverage, disaster response, and sector patrol breakdowns.
+              </p>
+            </div>
+          </div>
+
+          <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+            <span class="text-[10px] text-slate-400 font-medium">Real-time Data</span>
+            <button onclick="openReportModal('Duty Deployments Master Report')" class="px-3.5 py-2 bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-1.5">
+              <i class="fa-solid fa-print text-[11px]"></i>
+              <span>Generate</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- CARD 5: ATTENDANCE & LEAVE -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-sm hover:shadow-md hover:border-blue-300 transition-all flex flex-col justify-between space-y-4">
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="w-10 h-10 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 flex items-center justify-center font-bold text-base">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+              </div>
+              <span class="px-2.5 py-0.5 bg-slate-100 text-slate-600 rounded-md text-[10px] font-bold uppercase tracking-wider">Attendance</span>
+            </div>
+
+            <div>
+              <h3 class="text-base font-bold text-slate-900">Attendance & Leave</h3>
+              <p class="text-xs text-slate-500 font-normal mt-1 leading-relaxed">
+                Biometric face-scan logs, tardiness reports, and filed leave entitlement usage history.
+              </p>
+            </div>
+          </div>
+
+          <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+            <span class="text-[10px] text-slate-400 font-medium">Daily Logs</span>
+            <button onclick="openReportModal('Attendance & Leave Summary')" class="px-3.5 py-2 bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-1.5">
+              <i class="fa-solid fa-print text-[11px]"></i>
+              <span>Generate</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- CARD 6: PROMOTION & TRAINING NEEDS -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-sm hover:shadow-md hover:border-blue-300 transition-all flex flex-col justify-between space-y-4">
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="w-10 h-10 rounded-xl bg-teal-50 border border-teal-200 text-teal-700 flex items-center justify-center font-bold text-base">
+                <i class="fa-solid fa-award"></i>
+              </div>
+              <span class="px-2.5 py-0.5 bg-slate-100 text-slate-600 rounded-md text-[10px] font-bold uppercase tracking-wider">Career Board</span>
+            </div>
+
+            <div>
+              <h3 class="text-base font-bold text-slate-900">Promotion & Training Needs</h3>
+              <p class="text-xs text-slate-500 font-normal mt-1 leading-relaxed">
+                Rank readiness evaluations, mandatory training course gaps, and promotion board recommendations.
+              </p>
+            </div>
+          </div>
+
+          <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+            <span class="text-[10px] text-slate-400 font-medium">CY 2026 Cycle</span>
+            <button onclick="openReportModal('Promotion & Training Needs Report')" class="px-3.5 py-2 bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-1.5">
+              <i class="fa-solid fa-print text-[11px]"></i>
+              <span>Generate</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- ==================== OFFICIAL REPORT GENERATOR PREVIEW MODAL ==================== -->
+  <div id="reportModal" class="fixed inset-0 z-50 hidden">
+    <div onclick="closeReportModal()" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"></div>
+    
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden transition-all">
+      
+      <!-- Header -->
+      <div class="p-5 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-blue-900 text-amber-400 flex items-center justify-center font-bold text-sm shadow-sm">
+            <i class="fa-solid fa-file-invoice"></i>
+          </div>
+          <div>
+            <h3 id="reportTitle" class="text-sm font-bold text-slate-900">Generate Report</h3>
+            <p class="text-[11px] text-slate-500">Configure parameters and print official PNP station document</p>
+          </div>
+        </div>
+        <button onclick="closeReportModal()" class="text-slate-400 hover:text-slate-700 p-1">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Body / Form -->
+      <div class="p-6 space-y-4 text-xs font-semibold text-slate-700">
+        
+        <!-- Official Document Banner -->
+        <div class="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl text-center space-y-1">
+          <p class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Republic of the Philippines • PNP</p>
+          <p class="text-sm font-black text-slate-900 uppercase">SAN JUAN CITY POLICE STATION</p>
+          <p class="text-[11px] text-blue-700 font-bold">Human Resource and Doctrine Development Section</p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="space-y-1">
+            <label class="block">Date Range From <span class="text-rose-500">*</span></label>
+            <input type="date" value="2026-10-01" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all">
+          </div>
+
+          <div class="space-y-1">
+            <label class="block">Date Range To <span class="text-rose-500">*</span></label>
+            <input type="date" value="2026-10-11" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="space-y-1">
+            <label class="block">Station Sub-Unit / Sector</label>
+            <select class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all cursor-pointer">
+              <option selected>All Station Sections</option>
+              <option>Administration Division</option>
+              <option>Sub-Station 1 (Greenhills)</option>
+              <option>Patrol Division</option>
+            </select>
+          </div>
+
+          <div class="space-y-1">
+            <label class="block">Export Format</label>
+            <select class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all cursor-pointer">
+              <option value="PDF" selected>PDF Document (.pdf)</option>
+              <option value="EXCEL">Excel Spreadsheet (.xlsx)</option>
+              <option value="PRINT">Direct Print View</option>
+            </select>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Footer -->
+      <div class="p-4 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-2">
+        <button onclick="closeReportModal()" class="px-4 py-2.5 border border-slate-200 bg-white text-slate-700 rounded-xl font-bold hover:bg-slate-100 transition-all text-xs">
+          Cancel
+        </button>
+        <button onclick="alert('Downloading official report document...'); closeReportModal();" class="px-5 py-2.5 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded-xl shadow-md transition-all text-xs flex items-center gap-1.5">
+          <i class="fa-solid fa-download text-xs"></i>
+          <span>Download Official Report</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT CONTROLLER -->
+  <script>
+    function openReportModal(reportName) {
+      document.getElementById('reportTitle').textContent = reportName;
+      document.getElementById('reportModal').classList.remove('hidden');
+    }
+
+    function closeReportModal() {
+      document.getElementById('reportModal').classList.add('hidden');
+    }
+  </script>
+
+</body>
+</html>

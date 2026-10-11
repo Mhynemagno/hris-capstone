@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn(), refresh: vi.fn() }) }));
 vi.mock("@/lib/supabase/client", () => ({ createBrowserSupabaseClient: () => ({ auth: { signUp: vi.fn() } }) }));
+vi.mock("@/lib/recruitment/recruitment-notice", () => ({ getRecruitmentNotice: async () => null }));
 
 import ApplicantRegistrationPage from "./page";
 
@@ -11,6 +12,12 @@ async function renderRegister(params: { next?: string } = {}) {
 }
 
 describe("ApplicantRegistrationPage", () => {
+  it("uses the applicant portal frame", async () => {
+    await renderRegister();
+    expect(screen.getByRole("heading", { level: 1, name: "Create Applicant Account" })).toBeVisible();
+    expect(screen.getByText("There is no active recruitment at the moment. Please check back for new openings.")).toBeInTheDocument();
+  });
+
   it("shows a centered Login link back to sign-in", async () => {
     await renderRegister();
     const link = screen.getByRole("link", { name: "Login" });

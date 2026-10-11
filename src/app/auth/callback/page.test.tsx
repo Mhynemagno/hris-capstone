@@ -1,5 +1,5 @@
 import { render, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   exchangeCodeForSession: vi.fn(),
@@ -33,6 +33,10 @@ describe("AuthCallbackPage", () => {
     mocks.replace.mockReset();
     mocks.verifyOtp.mockReset();
     mocks.searchParams = new URLSearchParams();
+  });
+
+  afterEach(() => {
+    window.location.hash = "";
   });
 
   it("exchanges a PKCE code before redirecting to a safe destination", async () => {
@@ -72,19 +76,41 @@ describe("AuthCallbackPage", () => {
     expect(mocks.replace).toHaveBeenCalledWith("/jobs");
   });
 
-  it("shows the invalid-link error straight away when Supabase reports an expired link", async () => {
+  it("tells a new applicant their email may already be confirmed when Supabase reports a used or expired link", async () => {
     mocks.searchParams = new URLSearchParams("error=access_denied&error_code=otp_expired&flow=signup&next=/jobs");
     render(<AuthCallbackPage />);
-    await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith("/login?as=applicant&error=invitation_expired"));
+    await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith("/login?as=applicant&message=email_confirmed_or_used"));
     expect(mocks.exchangeCodeForSession).not.toHaveBeenCalled();
   });
 
-  it("tells a new applicant their email is confirmed when the code cannot be exchanged in this browser", async () => {
+  it("reads an expired sign-up link reported in the URL hash", async () => {
+    window.location.hash = "#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired";
+    mocks.searchParams = new URLSearchParams("flow=signup");
+    render(<AuthCallbackPage />);
+    await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith("/login?as=applicant&message=email_confirmed_or_used"));
+    expect(mocks.getSession).not.toHaveBeenCalled();
+  });
+
+  it("verifies the confirmation email's token_hash link and opens the applicant portal", async () => {
+    mocks.searchParams = new URLSearchParams("token_hash=abc&type=email&flow=signup");
+    mocks.verifyOtp.mockResolvedValue({ error: null });
+    render(<AuthCallbackPage />);
+    await waitFor(() => expect(mocks.verifyOtp).toHaveBeenCalledWith({ token_hash: "abc", type: "email" }));
+    expect(mocks.replace).toHaveBeenCalledWith("/applicant");
+  });
+
+  it("keeps invitation errors as invitation_expired", async () => {
+    mocks.searchParams = new URLSearchParams("error_code=otp_expired");
+    render(<AuthCallbackPage />);
+    await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith("/login?as=employee&error=invitation_expired"));
+  });
+
+  it("tells a new applicant their email may already be confirmed when the code cannot be exchanged in this browser", async () => {
     mocks.searchParams = new URLSearchParams("code=auth-code&flow=signup&next=/jobs");
     mocks.exchangeCodeForSession.mockResolvedValue({ error: new Error("code verifier missing") });
     mocks.getSession.mockResolvedValue({ data: { session: null }, error: null });
     render(<AuthCallbackPage />);
-    await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith("/login?as=applicant&message=email_confirmed"));
+    await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith("/login?as=applicant&message=email_confirmed_or_used"));
   });
 
   it("keeps the invalid-link error for a failed non-sign-up code", async () => {
