@@ -14,7 +14,22 @@ export const loginSchema = z.object({
 });
 export const internalLoginSchema = z.object({ identifier: z.string().trim().min(1), password: passwordSchema });
 
-export type LoginMode = "applicant" | "employee";
+export type LoginMode = "applicant" | "employee" | "admin";
+
+/** The Admin & HR Login's Access Level (Capstone UI sample.html). The account's real role must match it. */
+export const ADMIN_ACCESS_LEVELS = {
+  hr: { role: "hr_personnel", label: "HR Admin" },
+  sysad: { role: "system_administrator", label: "System Administrator" },
+} as const;
+export type AdminAccessLevel = keyof typeof ADMIN_ACCESS_LEVELS;
+export function adminAccessLevel(value: unknown): AdminAccessLevel {
+  return value === "sysad" ? "sysad" : "hr";
+}
+
+export const adminLoginSchema = z.object({
+  identifier: z.string().trim().transform((value) => value.toLowerCase()).pipe(z.email("Enter your email address.")),
+  password: passwordSchema,
+});
 
 /** Applicants sign in with their email; an applicant number (issued once HR accepts them) still works. */
 const applicantLoginIdentifierSchema = z.string().trim().transform((value, context) => {
@@ -29,7 +44,7 @@ const badgeNumberLoginSchema = z.string().trim().transform((value) => value.toUp
 /** Validates the public identifier only; any badge or applicant-number lookup remains server-only. */
 export function loginIdentifierSchema(mode: "applicant"): z.ZodObject<{ identifier: typeof applicantLoginIdentifierSchema; password: typeof passwordSchema }>;
 export function loginIdentifierSchema(mode: "employee"): z.ZodObject<{ identifier: typeof badgeNumberLoginSchema; password: typeof passwordSchema }>;
-export function loginIdentifierSchema(mode: LoginMode) {
+export function loginIdentifierSchema(mode: "applicant" | "employee") {
   return mode === "applicant"
     ? z.object({ identifier: applicantLoginIdentifierSchema, password: passwordSchema })
     : z.object({ identifier: badgeNumberLoginSchema, password: passwordSchema });

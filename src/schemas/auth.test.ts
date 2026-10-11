@@ -8,6 +8,7 @@ import {
   loginSchema,
   resetPasswordSchema,
 } from "./auth";
+import { adminAccessLevel, adminLoginSchema, ADMIN_ACCESS_LEVELS } from "./auth";
 
 const validRegistration = {
   email: "applicant@example.com",
@@ -122,5 +123,20 @@ describe("applicant login identifier", () => {
     const result = loginIdentifierSchema("applicant").safeParse({ identifier: "juan", password: "secret1" });
     expect(result.success).toBe(false);
     expect(result.error?.issues[0]?.message).toBe("Enter your email address.");
+  });
+});
+
+describe("admin login schema", () => {
+  it("accepts an email, trimmed and lowercased", () => {
+    expect(adminLoginSchema.parse({ identifier: " MC.Balneg@Example.TEST ", password: "secret1" }).identifier).toBe("mc.balneg@example.test");
+  });
+  it("rejects a badge number", () => {
+    expect(adminLoginSchema.safeParse({ identifier: "0-00002", password: "secret1" }).success).toBe(false);
+  });
+  it("maps access levels to roles, defaulting to HR Admin", () => {
+    expect(adminAccessLevel("sysad")).toBe("sysad");
+    expect(adminAccessLevel("anything")).toBe("hr");
+    expect(ADMIN_ACCESS_LEVELS.sysad.role).toBe("system_administrator");
+    expect(ADMIN_ACCESS_LEVELS.hr.label).toBe("HR Admin");
   });
 });

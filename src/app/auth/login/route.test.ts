@@ -132,3 +132,60 @@ describe("password login route", () => {
     });
   });
 });
+
+describe("admin & HR login", () => {
+  function clientWithRole(role: string | null) {
+    const signOut = vi.fn().mockResolvedValue({ error: null });
+    const from = vi.fn((table: string) => ({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          maybeSingle: vi.fn().mockResolvedValue(table === "profiles" ? { data: { is_active: true }, error: null } : { data: role ? { role } : null, error: null }),
+        }),
+      }),
+    }));
+    createServerSupabaseClient.mockResolvedValue({ auth: { signInWithPassword, signOut }, from });
+    return { signOut };
+  }
+
+  beforeEach(() => {
+    signInWithPassword.mockReset();
+    cookieStore.set.mockReset();
+    cookieStore.delete.mockReset();
+    signInWithPassword.mockResolvedValue({ data: { user: { id: "u1" } }, error: null });
+  });
+
+  it("signs HR in with their email when HR Admin is chosen", async () => {
+    clientWithRole("hr_personnel");
+    const response = await POST(loginRequest({ as: "admin", access_level: "hr", identifier: "HR@Example.test", password: "secret1", remember: "on", next: "/hr" }));
+    expect(signInWithPassword).toHaveBeenCalledWith({ email: "hr@example.test", password: "secret1" });
+    expect(response.headers.get("location")).toBe("http://localhost/auth/continue?next=%2Fhr");
+    expect(cookieStore.delete).toHaveBeenCalledWith("hris-session-only");
+  });
+
+  it("signs a SysAd in when System Administrator is chosen", async () => {
+    clientWithRole("system_administrator");
+    const response = await POST(loginRequest({ as: "admin", access_level: "sysad", identifier: "admin@example.test", password: "secret1" }));
+    expect(response.headers.get("location")).toContain("/auth/continue");
+    expect(cookieStore.set).toHaveBeenCalledWith("hris-session-only", "1", expect.objectContaining({ path: "/" }));
+  });
+
+  it("signs an HR account straight back out when System Administrator is chosen", async () => {
+    const { signOut } = clientWithRole("hr_personnel");
+    const response = await POST(loginRequest({ as: "admin", access_level: "sysad", identifier: "hr@example.test", password: "secret1", next: "/admin" }));
+    expect(signOut).toHaveBeenCalled();
+    expect(response.headers.get("location")).toBe("http://localhost/login?as=admin&next=%2Fadmin&error=wrong_access_level&level=sysad");
+  });
+
+  it("refuses an employee account at the admin login", async () => {
+    const { signOut } = clientWithRole("employee");
+    const response = await POST(loginRequest({ as: "admin", access_level: "hr", identifier: "employee@example.test", password: "secret1" }));
+    expect(signOut).toHaveBeenCalled();
+    expect(response.headers.get("location")).toBe("http://localhost/login?as=admin&error=wrong_access_level&level=hr");
+  });
+
+  it("rejects a badge number without calling Supabase", async () => {
+    const response = await POST(loginRequest({ as: "admin", access_level: "hr", identifier: "0-00002", password: "secret1" }));
+    expect(response.headers.get("location")).toBe("http://localhost/login?as=admin&error=invalid_credentials");
+    expect(signInWithPassword).not.toHaveBeenCalled();
+  });
+});
