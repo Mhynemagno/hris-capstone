@@ -152,7 +152,7 @@ begin
 end;
 $$;
 
--- HR, SysAd, and employee accounts with an active linked personnel record may use the same
+-- HR, SysAd, management, and employee accounts with an active linked personnel record may use the same
 -- badge-number entry point. Their assigned role still determines the post-login destination.
 create or replace function public.resolve_login_identifier(target_mode text, target_identifier text)
 returns text
@@ -180,7 +180,7 @@ begin
      where upper(employee.employee_number) = upper(normalized_identifier)
        and employee.employment_status = 'active'
        and profile.is_active
-       and user_role.role in ('employee'::public.app_role, 'hr_personnel'::public.app_role, 'system_administrator'::public.app_role);
+       and user_role.role in ('employee'::public.app_role, 'hr_personnel'::public.app_role, 'management'::public.app_role, 'system_administrator'::public.app_role);
   else
     return null;
   end if;

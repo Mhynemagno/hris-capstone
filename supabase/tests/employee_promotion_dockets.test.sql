@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(17);
+select extensions.plan(18);
 
 select extensions.has_table('public', 'employee_promotion_dockets', 'Employee promotion dockets table exists');
 select extensions.has_function('public', 'submit_employee_promotion_docket', array['uuid', 'text'], 'Employee promotion docket RPC exists');
@@ -70,6 +70,8 @@ select extensions.ok(public.get_my_promotion_readiness() is null, 'An employee a
 set local role postgres;
 select extensions.is(public.resolve_login_identifier('employee', 'DOCKET-HR'), 'docket-hr@example.test', 'An active HR personnel record can use badge login');
 select extensions.is(public.resolve_login_identifier('employee', 'DOCKET-SA'), 'docket-sysad@example.test', 'An active SysAd personnel record can use badge login');
+update public.user_roles set role = 'management'::public.app_role where user_id = '00000000-0000-4000-8000-000000002604';
+select extensions.is(public.resolve_login_identifier('employee', 'DOCKET-OTHER'), 'docket-other@example.test', 'An active management personnel record can still use badge login');
 
 select * from extensions.finish();
 
