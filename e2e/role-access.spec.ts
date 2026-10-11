@@ -48,27 +48,20 @@ test("invalid credentials show a safe error and do not create a session", async 
   await expect(page).toHaveURL(/\/login\?/);
 });
 
-test("an HR account cannot sign in as System Administrator at the Admin & HR Login", async ({ page }) => {
-  await page.goto("/login?as=admin");
-  await page.getByLabel("Access Level").selectOption("sysad");
-  await page.getByLabel("Email Address").fill("demo.hr@example.test");
-  await page.getByRole("textbox", { name: "Password" }).fill(demoPassword);
-  await page.getByRole("button", { name: "Login" }).click();
-
-  await expect(page).toHaveURL(/\/login\?.*error=wrong_access_level/);
-  await expect(page.getByText("This account does not have System Administrator access.")).toBeVisible();
-  await page.goto("/hr");
-  await expect(page).toHaveURL(/\/login\?/);
-});
-
-test("HR and System Administrators can sign in at the Admin & HR Login with their badge number", async ({ page }) => {
-  for (const [level, badge, home] of [["hr", "0-00002", "/hr"], ["sysad", "0-00004", "/admin"]] as const) {
-    await page.goto("/login?as=admin");
-    await page.getByLabel("Access Level").selectOption(level);
-    await page.getByLabel("Email Address or Badge Number").fill(badge);
+test("employees, HR and System Administrators all sign in at the Employee / HR login with their badge number", async ({ page }) => {
+  for (const [badge, home] of [["0-00001", "/employee"], ["0-00002", "/hr"], ["0-00004", "/admin"]] as const) {
+    await page.goto("/login?as=employee");
+    await expect(page.getByLabel("Access Level")).toHaveCount(0);
+    await page.getByLabel("Badge Number").fill(badge);
     await page.getByRole("textbox", { name: "Password" }).fill(demoPassword);
     await page.getByRole("button", { name: "Login" }).click();
     await expect(page).toHaveURL(new RegExp(`${home}$`), { timeout: 30_000 });
     await page.context().clearCookies();
   }
+});
+
+test("the old Admin & HR Login link opens the Employee / HR login", async ({ page }) => {
+  await page.goto("/login?as=admin");
+  await expect(page).toHaveURL(/\/login\?as=employee/);
+  await expect(page.getByRole("heading", { level: 1, name: "Employee / HR" })).toBeVisible();
 });

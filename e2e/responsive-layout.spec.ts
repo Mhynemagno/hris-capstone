@@ -66,11 +66,11 @@ test("the applicant login fits a phone", async ({ page }) => {
   expect(overflow).toBeLessThanOrEqual(0);
 });
 
-test("the Admin & HR Login fits a phone", async ({ page }) => {
+test("the Employee / HR login fits a phone", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/login?as=admin");
+  await page.goto("/login?as=employee");
   await page.waitForLoadState("networkidle");
-  await expect(page.getByRole("heading", { level: 1, name: "Admin & HR Login" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Employee / HR" })).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(0);
 });

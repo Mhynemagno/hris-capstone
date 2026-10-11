@@ -7,14 +7,13 @@ import { getSafeNextPath } from "@/lib/auth/safe-redirect";
 import { getPublicSupabaseConfig } from "@/lib/supabase/env";
 import { SESSION_ONLY_COOKIE } from "@/lib/supabase/remember-me";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { ADMIN_ACCESS_LEVELS, adminAccessLevel, adminLoginSchema, internalLoginSchema, loginIdentifierSchema } from "@/schemas/auth";
+import { internalLoginSchema, loginIdentifierSchema } from "@/schemas/auth";
 
-function loginRedirect(request: NextRequest, nextPath: string, error?: string, mode?: string, extra: Record<string, string> = {}) {
+function loginRedirect(request: NextRequest, nextPath: string, error?: string, mode?: string) {
   const url = new URL("/login", request.url);
   if (mode) url.searchParams.set("as", mode);
   if (nextPath !== "/") url.searchParams.set("next", nextPath);
   if (error) url.searchParams.set("error", error);
-  for (const [key, value] of Object.entries(extra)) url.searchParams.set(key, value);
   return NextResponse.redirect(url, 303);
 }
 
@@ -25,16 +24,14 @@ export async function POST(request: NextRequest) {
     typeof nextValue === "string" ? nextValue : undefined,
   );
   const asValue = formData.get("as");
-  const mode = asValue === "employee" || asValue === "applicant" || asValue === "admin" ? asValue : undefined;
+  // The old Admin & HR Login ("admin") is now the Employee / HR login.
+  const mode = asValue === "applicant" ? "applicant" : asValue === "employee" || asValue === "admin" ? "employee" : undefined;
   const credentials = { identifier: formData.get("identifier"), password: formData.get("password") };
-  const accessLevel = adminAccessLevel(formData.get("access_level"));
-  const result = mode === "admin"
-    ? adminLoginSchema.safeParse(credentials)
-    : mode === "applicant"
-      ? loginIdentifierSchema("applicant").safeParse(credentials)
-      : mode === "employee"
-        ? loginIdentifierSchema("employee").safeParse(credentials)
-        : internalLoginSchema.safeParse({ identifier: formData.get("identifier") ?? formData.get("email"), password: formData.get("password") });
+  const result = mode === "applicant"
+    ? loginIdentifierSchema("applicant").safeParse(credentials)
+    : mode === "employee"
+      ? loginIdentifierSchema("employee").safeParse(credentials)
+      : internalLoginSchema.safeParse({ identifier: formData.get("identifier") ?? formData.get("email"), password: formData.get("password") });
 
   if (!result.success) {
     return loginRedirect(request, nextPath, "invalid_credentials", mode);
@@ -60,7 +57,7 @@ export async function POST(request: NextRequest) {
   // Record "Remember me" before Supabase writes its session cookies, so they are written as session
   // cookies when it is unticked. Employees have no such box yet: their sessions stay persistent.
   const cookieStore = await cookies();
-  if ((mode === "applicant" || mode === "admin") && formData.get("remember") !== "on") cookieStore.set(SESSION_ONLY_COOKIE, "1", { path: "/", sameSite: "lax" });
+  if (mode === "applicant" && formData.get("remember") !== "on") cookieStore.set(SESSION_ONLY_COOKIE, "1", { path: "/", sameSite: "lax" });
   else cookieStore.delete(SESSION_ONLY_COOKIE);
 
   const supabase = await createServerSupabaseClient();
@@ -78,13 +75,6 @@ export async function POST(request: NextRequest) {
     if (profile?.is_active === false) {
       await supabase.auth.signOut();
       return loginRedirect(request, nextPath, "account_disabled", mode);
-    }
-    if (mode === "admin") {
-      const { data: roleRow } = await supabase.from("user_roles").select("role").eq("user_id", data.user.id).maybeSingle();
-      if (roleRow?.role !== ADMIN_ACCESS_LEVELS[accessLevel].role) {
-        await supabase.auth.signOut();
-        return loginRedirect(request, nextPath, "wrong_access_level", mode, { level: accessLevel });
-      }
     }
   }
 

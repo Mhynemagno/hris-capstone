@@ -61,9 +61,9 @@ describe("post-login continuation", () => {
     expect(response.headers.get("location")).toBe("http://localhost/login?as=employee");
   });
 
-  it("sends a signed-out visitor bound for /hr to the admin login", async () => {
+  it("sends a signed-out visitor bound for /hr to the Employee / HR login", async () => {
     getAuthenticatedUser.mockResolvedValue(null);
     const response = await GET(new NextRequest("http://localhost/auth/continue?next=/hr/leave-requests"));
-    expect(response.headers.get("location")).toBe("http://localhost/login?as=admin&next=%2Fhr%2Fleave-requests");
+    expect(response.headers.get("location")).toBe("http://localhost/login?as=employee&next=%2Fhr%2Fleave-requests");
   });
 });

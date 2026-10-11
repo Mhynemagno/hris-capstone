@@ -14,28 +14,7 @@ export const loginSchema = z.object({
 });
 export const internalLoginSchema = z.object({ identifier: z.string().trim().min(1), password: passwordSchema });
 
-export type LoginMode = "applicant" | "employee" | "admin";
-
-/** The Admin & HR Login's Access Level (Capstone UI sample.html). The account's real role must match it. */
-export const ADMIN_ACCESS_LEVELS = {
-  hr: { role: "hr_personnel", label: "HR Admin" },
-  sysad: { role: "system_administrator", label: "System Administrator" },
-} as const;
-export type AdminAccessLevel = keyof typeof ADMIN_ACCESS_LEVELS;
-export function adminAccessLevel(value: unknown): AdminAccessLevel {
-  return value === "sysad" ? "sysad" : "hr";
-}
-
-/** HR / SysAd sign in with their email or, when they have a personnel record, their badge number. */
-export const adminLoginSchema = z.object({
-  identifier: z.string().trim().transform((value, context) => {
-    if (z.email().safeParse(value).success) return { kind: "email" as const, value: value.toLowerCase() };
-    if (value && value.length <= 32 && !value.includes("@")) return { kind: "badge_number" as const, value: value.toUpperCase() };
-    context.addIssue({ code: "custom", message: "Enter your email address or Badge Number." });
-    return z.NEVER;
-  }),
-  password: passwordSchema,
-});
+export type LoginMode = "applicant" | "employee";
 
 /** Applicants sign in with their email; an applicant number (issued once HR accepts them) still works. */
 const applicantLoginIdentifierSchema = z.string().trim().transform((value, context) => {
@@ -45,7 +24,16 @@ const applicantLoginIdentifierSchema = z.string().trim().transform((value, conte
   context.addIssue({ code: "custom", message: "Enter your email address." });
   return z.NEVER;
 });
-const badgeNumberLoginSchema = z.string().trim().transform((value) => value.toUpperCase()).pipe(z.string().min(1, "Enter your Badge Number.").max(32, "Enter a valid Badge Number."));
+/**
+ * The Employee / HR login: employees, HR and System Administrators type their badge number.
+ * An email still works for an HR or SysAd account that has no personnel record (so no badge).
+ */
+const badgeNumberLoginSchema = z.string().trim().transform((value, context) => {
+  if (z.email().safeParse(value).success) return { kind: "email" as const, value: value.toLowerCase() };
+  if (value && value.length <= 32 && !value.includes("@")) return { kind: "badge_number" as const, value: value.toUpperCase() };
+  context.addIssue({ code: "custom", message: value ? "Enter a valid Badge Number." : "Enter your Badge Number." });
+  return z.NEVER;
+});
 
 /** Validates the public identifier only; any badge or applicant-number lookup remains server-only. */
 export function loginIdentifierSchema(mode: "applicant"): z.ZodObject<{ identifier: typeof applicantLoginIdentifierSchema; password: typeof passwordSchema }>;

@@ -21,7 +21,7 @@ export function ApplicantAuthFrame({
 }: {
   children: ReactNode;
   notice?: RecruitmentNotice;
-  /** Replaces the applicant motto and Recruitment Notice (the Admin & HR Login, sample.html). */
+  /** Replaces the applicant motto and Recruitment Notice (the Employee / HR login). */
   hero?: ReactNode;
   mobilePortalLabel?: string;
   footerNote?: string | null;
