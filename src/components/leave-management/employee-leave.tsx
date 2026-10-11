@@ -2,18 +2,14 @@
 
 import { Info } from "lucide-react";
 import Link from "next/link";
-import { Fragment, useState, type FormEvent, type KeyboardEvent } from "react";
+import { Fragment, useState, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
 
+import { StaffInput, StaffLabel, StaffSelect, StaffTextarea } from "@/components/staff-shell/ui/staff-fields";
 import { staffButton } from "@/components/staff-shell/ui/staff-buttons";
 import { StaffPager, staffTable } from "@/components/staff-shell/ui/staff-table-card";
 import { StatusPill } from "@/components/staff-shell/ui/status-pill";
-import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
-import { FormField } from "@/components/ui/form-field";
-import { Input } from "@/components/ui/input";
 import { LoadingState } from "@/components/ui/loading-state";
-import { nativeSelectClassName } from "@/components/ui/native-select";
-import { Textarea } from "@/components/ui/textarea";
 import {
   useCancelLeaveRequest,
   useMyLeaveBalances,
@@ -40,7 +36,7 @@ export function leaveDays(startsOn: string, endsOn: string) {
 }
 
 /** Days still available of a limited leave type, or null when the type has no yearly limit. */
-export function remainingLeaveDays(balance: LeaveBalance | undefined) {
+export function remainingLeaveDays(balance: Pick<LeaveBalance, "days_per_year" | "used_days"> | undefined) {
   if (!balance || balance.days_per_year === null) return null;
   return Math.max(balance.days_per_year - balance.used_days, 0);
 }
@@ -72,6 +68,8 @@ const EMPTY_HISTORY: Record<HistoryTab, string> = {
   approved: "No approved leave requests yet.",
 };
 const PAGE_SIZE = 10;
+/** Below md each table row becomes a card: the cell label comes from data-label. */
+const cardCell = "max-md:flex max-md:items-start max-md:justify-between max-md:gap-3 max-md:px-1 max-md:py-1.5 max-md:text-right max-md:before:shrink-0 max-md:before:text-left max-md:before:text-[10px] max-md:before:font-bold max-md:before:tracking-wider max-md:before:text-slate-500 max-md:before:uppercase max-md:before:content-[attr(data-label)]";
 const HEADINGS = ["Leave Category", "Inclusive Dates", "Duration", "Reason / HR Feedback", "Approval Status", "Actions"];
 
 /** Leave Application History: tabs, a table with word-form dates, HR feedback, status pills and the cancel flow. */
@@ -144,36 +142,36 @@ export function EmployeeLeaveList() {
       <div aria-labelledby={`leave-tab-${tab}`} id="leave-history-panel" role="tabpanel">
         {result.isLoading ? <LoadingState label="Loading your leave history…" /> : result.error ? <ErrorState message={result.error.message} onRetry={() => void result.refetch()} /> : (
           <div className="overflow-x-auto">
-            <table className={staffTable.table}>
-              <thead className={staffTable.thead}>
+            <table className={cn(staffTable.table, "max-md:block max-md:min-w-0")}>
+              <thead className={cn(staffTable.thead, "max-md:sr-only")}>
                 <tr className="border-b border-slate-100">
                   {HEADINGS.map((heading) => <th className={cn(staffTable.th, heading === "Actions" && "text-right")} key={heading} scope="col">{heading}</th>)}
                 </tr>
               </thead>
-              <tbody className={staffTable.tbody}>
+              <tbody className={cn(staffTable.tbody, "max-md:block max-md:space-y-3 max-md:divide-y-0 max-md:p-3")}>
                 {rows.length ? rows.map((request) => {
                   const style = leaveTypeStyle(request.leave_type_name);
                   const confirming = confirmingId === request.id;
                   const hasRemarks = Boolean(request.reason || request.decision_note || request.excess_days > 0);
                   return (
                     <Fragment key={request.id}>
-                      <tr className={staffTable.tr}>
-                        <td className={staffTable.td}>
+                      <tr className={cn(staffTable.tr, "max-md:block max-md:rounded-xl max-md:border max-md:border-slate-200 max-md:p-3")}>
+                        <td className={cn(staffTable.td, cardCell)} data-label="Leave Category">
                           <div className="flex items-center gap-3">
                             <span className={cn("flex size-8 shrink-0 items-center justify-center rounded-lg border", LEAVE_TONE_CLASSES[style.tone])}><style.Icon aria-hidden="true" className="size-3.5" /></span>
                             <span className="font-bold text-slate-900">{request.leave_type_name}</span>
                           </div>
                         </td>
-                        <td className={cn(staffTable.td, "text-slate-600")}>{leaveDateRange(request.starts_on, request.ends_on, formatDate)}</td>
-                        <td className={cn(staffTable.td, "tabular-nums")}>{dayCount(leaveDays(request.starts_on, request.ends_on))}</td>
-                        <td className={cn(staffTable.td, "max-w-xs space-y-1")}>
+                        <td className={cn(staffTable.td, cardCell, "text-slate-600")} data-label="Inclusive Dates">{leaveDateRange(request.starts_on, request.ends_on, formatDate)}</td>
+                        <td className={cn(staffTable.td, cardCell, "tabular-nums")} data-label="Duration">{dayCount(leaveDays(request.starts_on, request.ends_on))}</td>
+                        <td className={cn(staffTable.td, cardCell, "max-w-xs space-y-1 max-md:max-w-none")} data-label="Reason / HR Feedback">
                           {request.reason ? <p className="whitespace-pre-line text-slate-600">{request.reason}</p> : null}
                           {request.decision_note ? <p className="font-semibold text-slate-800">Notes from HR: {request.decision_note}</p> : null}
                           {request.excess_days > 0 ? <p className="text-amber-700">{dayCount(request.excess_days)} beyond the yearly limit, deducted from your retirement benefits.</p> : null}
                           {hasRemarks ? null : <p className="text-slate-500">No remarks</p>}
                         </td>
-                        <td className={staffTable.td}><StatusPill tone={LEAVE_STATUS[request.status].tone}>{LEAVE_STATUS[request.status].label}</StatusPill></td>
-                        <td className={cn(staffTable.td, "text-right")}>
+                        <td className={cn(staffTable.td, cardCell)} data-label="Approval Status"><StatusPill tone={LEAVE_STATUS[request.status].tone}>{LEAVE_STATUS[request.status].label}</StatusPill></td>
+                        <td className={cn(staffTable.td, cardCell, "text-right")} data-label="Actions">
                           {request.status === "pending" && !confirming ? (
                             <button
                               aria-label={`Cancel request: ${request.leave_type_name}, ${formatDateRange(request.starts_on, request.ends_on)}`}
@@ -188,8 +186,8 @@ export function EmployeeLeaveList() {
                         </td>
                       </tr>
                       {confirming ? (
-                        <tr className="bg-rose-50/40">
-                          <td className="px-6 py-4" colSpan={HEADINGS.length}>
+                        <tr className="bg-rose-50/40 max-md:block max-md:rounded-xl">
+                          <td className="px-6 py-4 max-md:block" colSpan={HEADINGS.length}>
                             <p className="text-xs font-semibold text-slate-800" id={`cancel-${request.id}-prompt`}>Cancel this leave request? HR will no longer review it and this cannot be undone.</p>
                             <div className="mt-2 flex flex-wrap gap-2">
                               <button aria-describedby={`cancel-${request.id}-prompt`} className={staffButton.danger} disabled={cancel.isPending} onClick={() => void cancelRequest(request.id)} type="button">{cancel.isPending ? "Cancelling…" : "Yes, cancel request"}</button>
@@ -200,13 +198,13 @@ export function EmployeeLeaveList() {
                       ) : null}
                     </Fragment>
                   );
-                }) : <tr><td className="px-6 py-10 text-center text-xs text-slate-500" colSpan={HEADINGS.length}>{EMPTY_HISTORY[tab]}</td></tr>}
+                }) : <tr className="max-md:block"><td className="px-6 py-10 text-center text-xs text-slate-500 max-md:block" colSpan={HEADINGS.length}>{EMPTY_HISTORY[tab]}</td></tr>}
               </tbody>
             </table>
           </div>
         )}
       </div>
-      <StaffPager noun="leave requests" onPageChange={setPage} page={page} pageSize={PAGE_SIZE} total={total} />
+      {result.isLoading || result.error ? null : <StaffPager noun="leave requests" onPageChange={setPage} page={page} pageSize={PAGE_SIZE} total={total} />}
     </section>
   );
 }
@@ -235,7 +233,7 @@ export function EmployeeLeaveCredits() {
             const style = leaveTypeStyle(type.name);
             const limit = type.days_per_year;
             const balance = balances.data?.find((entry) => entry.leave_type_id === type.id);
-            const remaining = limit === null ? null : Math.max(limit - (balance?.used_days ?? 0), 0);
+            const remaining = remainingLeaveDays({ days_per_year: limit, used_days: balance?.used_days ?? 0 });
             const percent = limit && remaining !== null ? Math.round((remaining / limit) * 100) : 0;
             const headingId = `leave-credit-${type.id}`;
             const note = type.description || style.footnote;
@@ -271,6 +269,19 @@ export function EmployeeLeaveCredits() {
         </ul>
       ) : <p className="rounded-xl border border-dashed border-slate-200 px-4 py-6 text-center text-xs text-slate-500" role="status">No leave types are available right now. Contact HR.</p>}
     </section>
+  );
+}
+
+/** A Capstone modal field: label, control, optional hint and an inline error tied to the control. */
+function Field({ children, description, error, htmlFor, label, required }: { children: (aria: { "aria-describedby"?: string; "aria-invalid"?: true }) => ReactNode; description?: string; error?: string; htmlFor: string; label: string; required?: boolean }) {
+  const describedBy = [description ? `${htmlFor}-description` : null, error ? `${htmlFor}-error` : null].filter(Boolean).join(" ") || undefined;
+  return (
+    <div>
+      <StaffLabel htmlFor={htmlFor} required={required}>{label}</StaffLabel>
+      {children({ "aria-describedby": describedBy, ...(error ? { "aria-invalid": true as const } : {}) })}
+      {description ? <p className="mt-1 text-[11px] text-slate-500" id={`${htmlFor}-description`}>{description}</p> : null}
+      {error ? <p className="mt-1 text-[11px] font-semibold text-rose-700" id={`${htmlFor}-error`} role="alert">{error}</p> : null}
+    </div>
   );
 }
 
@@ -342,78 +353,65 @@ export function EmployeeLeaveRequestForm({ onCancel, onSubmitted }: { onCancel?:
   }
 
   return (
-    <form className={onCancel ? "space-y-5" : "max-w-3xl space-y-5"} noValidate onSubmit={onSubmit}>
-      <FormField
-        description={activeTypes.length ? balanceHint(balance, year) : "No leave types are available right now. Contact HR."}
-        error={fieldErrors.leaveTypeId}
-        htmlFor="leave-type"
-        label="Leave type"
-        required
-      >
-        <select
-          className={nativeSelectClassName}
-          id="leave-type"
-          name="leaveTypeId"
-          onChange={(event) => setLeaveTypeId(event.target.value)}
-          required
-          value={leaveTypeId}
-        >
-          <option value="">Choose a type</option>
-          {activeTypes.map((type) => (
-            <option key={type.id} value={type.id}>
-              {type.name}
-            </option>
-          ))}
-        </select>
-      </FormField>
+    <form className={onCancel ? "space-y-4" : "max-w-3xl space-y-4"} noValidate onSubmit={onSubmit}>
+      <Field description={activeTypes.length ? balanceHint(balance, year) : "No leave types are available right now. Contact HR."} error={fieldErrors.leaveTypeId} htmlFor="leave-type" label="Leave type" required>
+        {(aria) => (
+          <StaffSelect {...aria} id="leave-type" name="leaveTypeId" onChange={(event) => setLeaveTypeId(event.target.value)} required value={leaveTypeId}>
+            <option value="">Choose a type</option>
+            {activeTypes.map((type) => <option key={type.id} value={type.id}>{type.name}</option>)}
+          </StaffSelect>
+        )}
+      </Field>
       <div className="grid gap-4 sm:grid-cols-2">
-        <FormField error={fieldErrors.startsOn} htmlFor="starts-on" label="Start date" required>
-          <Input
-            id="starts-on"
-            max={maxDate}
-            min={minDate}
-            name="startsOn"
-            onChange={(event) => { setStartsOn(event.target.value); setFieldErrors((current) => ({ ...current, startsOn: leaveDateError(event.target.value, minDate, maxDate) })); }}
-            required
-            type="date"
-            value={startsOn}
-          />
-        </FormField>
-        <FormField error={fieldErrors.endsOn} htmlFor="ends-on" label="End date" required>
-          <Input
-            id="ends-on"
-            max={maxDate}
-            min={validStart && validStart > minDate ? validStart : minDate}
-            name="endsOn"
-            onChange={(event) => { setEndsOn(event.target.value); setFieldErrors((current) => ({ ...current, endsOn: leaveDateError(event.target.value, minDate, maxDate) })); }}
-            required
-            type="date"
-            value={endsOn}
-          />
-        </FormField>
+        <Field error={fieldErrors.startsOn} htmlFor="starts-on" label="Start date" required>
+          {(aria) => (
+            <StaffInput
+              {...aria}
+              id="starts-on"
+              max={maxDate}
+              min={minDate}
+              name="startsOn"
+              onChange={(event) => { setStartsOn(event.target.value); setFieldErrors((current) => ({ ...current, startsOn: leaveDateError(event.target.value, minDate, maxDate) })); }}
+              required
+              type="date"
+              value={startsOn}
+            />
+          )}
+        </Field>
+        <Field error={fieldErrors.endsOn} htmlFor="ends-on" label="End date" required>
+          {(aria) => (
+            <StaffInput
+              {...aria}
+              id="ends-on"
+              max={maxDate}
+              min={validStart && validStart > minDate ? validStart : minDate}
+              name="endsOn"
+              onChange={(event) => { setEndsOn(event.target.value); setFieldErrors((current) => ({ ...current, endsOn: leaveDateError(event.target.value, minDate, maxDate) })); }}
+              required
+              type="date"
+              value={endsOn}
+            />
+          )}
+        </Field>
       </div>
       {selectedType?.requires_attachment ? (
-        <FormField description="Required for this leave type, e.g. a medical certificate (PDF or image, up to 10 MB)." error={fieldErrors.document} htmlFor="leave-document" label="Supporting document" required>
-          <Input accept="application/pdf,image/png,image/jpeg,image/webp" id="leave-document" onChange={(event) => setDocument(event.target.files?.[0] ?? null)} type="file" />
-        </FormField>
+        <Field description="Required for this leave type, e.g. a medical certificate (PDF or image, up to 10 MB)." error={fieldErrors.document} htmlFor="leave-document" label="Supporting document" required>
+          {(aria) => <StaffInput {...aria} accept="application/pdf,image/png,image/jpeg,image/webp" id="leave-document" onChange={(event) => setDocument(event.target.files?.[0] ?? null)} type="file" />}
+        </Field>
       ) : null}
-      <FormField error={fieldErrors.reason} htmlFor="leave-notes" label="Notes">
-        <Textarea id="leave-notes" maxLength={2000} name="reason" onChange={(event) => setNotes(event.target.value)} rows={4} value={notes} />
-      </FormField>
+      <Field error={fieldErrors.reason} htmlFor="leave-notes" label="Notes">
+        {(aria) => <StaffTextarea {...aria} id="leave-notes" maxLength={2000} name="reason" onChange={(event) => setNotes(event.target.value)} rows={3} value={notes} />}
+      </Field>
       {error ? <ErrorState message={error} /> : null}
       {success ? (
-        <p className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm" role="status">
+        <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-800" role="status">
           {success}{" "}
-          <Link className="font-medium underline" href="/employee/leave">
-            View leave history
-          </Link>
+          <Link className="font-bold underline" href="/employee/leave">View leave history</Link>
         </p>
       ) : null}
-      <div className="flex flex-wrap gap-2">
-        <Button disabled={submit.isPending || !activeTypes.length} type="submit">
-          {submit.isPending ? "Submitting…" : "Submit request"}
-        </Button>
-        {onCancel ? <Button disabled={submit.isPending} onClick={onCancel} type="button" variant="outline">Cancel</Button> : null}
+      <div className="flex flex-wrap justify-end gap-2 pt-1">
+        {onCancel ? <button className={staffButton.secondary} disabled={submit.isPending} onClick={onCancel} type="button">Cancel</button> : null}
+        <button className={staffButton.primary} disabled={submit.isPending || !activeTypes.length} type="submit">{submit.isPending ? "Submitting…" : "Submit request"}</button>
       </div>
     </form>
   );

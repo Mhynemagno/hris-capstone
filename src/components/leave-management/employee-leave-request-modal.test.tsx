@@ -44,6 +44,14 @@ describe("EmployeeLeaveRequestModal", () => {
     expect(within(dialog).getByLabelText(/Start date/)).toBeVisible();
   });
 
+  it("styles the fields and buttons like the Capstone mockup modal", () => {
+    render(<EmployeeLeaveRequestModal onOpenChange={vi.fn()} open />);
+    for (const field of [screen.getByRole("combobox", { name: /Leave type/ }), screen.getByLabelText(/Start date/), screen.getByLabelText(/Notes/)]) {
+      expect(field).toHaveClass("rounded-xl", "bg-slate-50", "border-slate-200");
+    }
+    expect(screen.getByRole("button", { name: "Submit request" })).toHaveClass("bg-blue-700");
+  });
+
   it("asks to close from Cancel and the close button", async () => {
     const onOpenChange = vi.fn();
     const user = userEvent.setup();

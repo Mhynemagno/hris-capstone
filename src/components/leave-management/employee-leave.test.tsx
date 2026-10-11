@@ -66,11 +66,23 @@ describe("EmployeeLeaveList", () => {
     const { rerender } = render(<EmployeeLeaveList />);
     expect(screen.getByText("Loading your leave history…")).toBeVisible();
     expect(screen.queryByText(/No leave requests yet/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Showing/)).not.toBeInTheDocument();
 
     mocks.listState = { isLoading: false, error: new Error("History unavailable") };
     rerender(<EmployeeLeaveList />);
     expect(screen.getByRole("alert")).toHaveTextContent("History unavailable");
     expect(screen.queryByText(/No leave requests yet/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Showing/)).not.toBeInTheDocument();
+  });
+
+  it("stacks each request as a labelled card below the md breakpoint", () => {
+    mocks.rows = [{ ...pendingRow, decision_note: "OK." }];
+    render(<EmployeeLeaveList />);
+    expect(screen.getByRole("table")).toHaveClass("max-md:block");
+    const labels = ["Leave Category", "Inclusive Dates", "Duration", "Reason / HR Feedback", "Approval Status", "Actions"];
+    const cells = within(screen.getAllByRole("row")[1]).getAllByRole("cell");
+    expect(cells.map((cell) => cell.getAttribute("data-label"))).toEqual(labels);
+    expect(cells[0].closest("tr")).toHaveClass("max-md:block");
   });
 
   it("loads ten leave requests at a time and lets the employee change pages", async () => {
