@@ -18,6 +18,9 @@ export const APPLICANT_EDUCATION_LEVELS = [
   { level: "graduate", label: "Graduate Degree", required: false },
 ] as const;
 
+/** The religions offered on the applicant profile (Capstone UI profile.html). A saved value outside the list is kept. */
+export const RELIGION_OPTIONS = ["Roman Catholic", "Islam", "Iglesia ni Cristo (INC)", "Christian", "Seventh-Day Adventist", "Baptist", "Jehovah's Witnesses", "Others"] as const;
+
 /** The documents an applicant saves on the Documents page; all are required before applying. Only the 2x2 picture is an image. */
 export const APPLICANT_PROFILE_DOCUMENT_KINDS = [
   { kind: "resume", label: "CV / Resume", accept: "application/pdf", formats: "PDF only" },
