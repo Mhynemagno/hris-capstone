@@ -1,11 +1,6 @@
-import { EmployeeLeaveRequestForm } from "@/components/leave-management/employee-leave";
-import { PageHeader } from "@/components/ui/page-header";
+import { redirect } from "next/navigation";
 
+/** Old "request leave" links now open the File Leave Application modal on the leave portal. */
 export default function NewLeavePage() {
-  return (
-    <section className="space-y-6">
-      <PageHeader title="Request leave" />
-      <EmployeeLeaveRequestForm />
-    </section>
-  );
+  redirect("/employee/leave?request=1");
 }
