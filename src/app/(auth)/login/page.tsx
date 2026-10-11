@@ -103,7 +103,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           Don&apos;t have an applicant account?{" "}
           <Link className="font-bold text-blue-800 hover:text-blue-900 hover:underline" href={registerHref}>Sign up</Link>
         </div>
-        <p className="mt-2 text-center text-[11px] text-slate-400">
+        <p className="mt-2 text-center text-[11px] text-slate-500">
           Station personnel?{" "}
           <Link className="font-semibold text-slate-500 hover:text-slate-700 hover:underline" href={switchHref("employee", nextPath)}>Login as Employee</Link>
         </p>

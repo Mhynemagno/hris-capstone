@@ -90,14 +90,14 @@ export function AppShell({ children, config, email }: AppShellProps) {
               />
             </Link>
             <h2 className="text-xs leading-snug font-bold tracking-tight text-slate-900 uppercase">San Juan City Police Station</h2>
-            <span className="text-[10px] font-medium text-slate-400">Recruitment Division</span>
+            <span className="text-[10px] font-medium text-slate-500">Recruitment Division</span>
           </SidebarHeader>
           <SidebarContent className="px-3 py-4">
-            <div className="mb-2 px-3 text-[10px] font-bold tracking-wider text-slate-400 uppercase">Menu</div>
+            <div className="mb-2 px-3 text-[10px] font-bold tracking-wider text-slate-500 uppercase">Menu</div>
             <SidebarNavigation activeHref={activeNavigationItem?.href} config={config} />
           </SidebarContent>
           <SidebarFooter className="border-t border-slate-100 bg-slate-50 p-4 text-center">
-            <p className="text-[10px] font-bold text-slate-400">PNP San Juan Recruitment Portal</p>
+            <p className="text-[10px] font-bold text-slate-500">PNP San Juan Recruitment Portal</p>
           </SidebarFooter>
         </Sidebar>
         <SidebarInset className="min-w-0 overflow-y-auto overscroll-contain bg-slate-50" id="main-content">

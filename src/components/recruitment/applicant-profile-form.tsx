@@ -246,7 +246,7 @@ export function ApplicantProfileForm() {
                 <legend className={cn("float-left mb-3 flex w-full items-center gap-2 pr-20 text-xs font-bold tracking-wider uppercase", look.titleClassName)}>
                   <look.Icon aria-hidden="true" className={cn("size-3.5", look.iconClassName)} /> {look.title}
                 </legend>
-                {!required ? <span className="absolute top-4 right-4 rounded bg-slate-200 px-2 py-0.5 text-[10px] font-bold text-slate-400 uppercase">Optional</span> : null}
+                {!required ? <span className="absolute top-4 right-4 rounded bg-slate-200 px-2 py-0.5 text-[10px] font-bold text-slate-600 uppercase">Optional</span> : null}
                 <div className="clear-left grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
                   {(["schoolName", "degreeCourse", "yearGraduated", "location"] as const).map((field) => {
                     const id = `education-${level}-${field}`;

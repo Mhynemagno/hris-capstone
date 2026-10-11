@@ -140,7 +140,7 @@ export function ApplicantProfileDocuments({ applyJobId = null }: { applyJobId?: 
                     </span>
                   ) : null}
                 </div>
-                <div className="mb-3 text-[11px] text-slate-400">{formatLine}</div>
+                <div className="mb-3 text-[11px] text-slate-500">{formatLine}</div>
 
                 {document ? (
                   <div className="mb-3.5 flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-3">
@@ -150,7 +150,7 @@ export function ApplicantProfileDocuments({ applyJobId = null }: { applyJobId?: 
                       </div>
                       <div className="min-w-0">
                         <div className="truncate text-xs font-bold text-slate-900">{document.file_name}</div>
-                        <div className="text-[10px] text-slate-400">Saved {formatDate(document.updated_at)} • {formatSize(document.size_bytes)}</div>
+                        <div className="text-[10px] text-slate-500">Saved {formatDate(document.updated_at)} • {formatSize(document.size_bytes)}</div>
                       </div>
                     </div>
                     <button aria-label={`View ${label}`} className="rounded p-1 text-blue-600 hover:text-blue-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600" onClick={() => void openDocument(document.object_path)} title={isImage ? "View Image" : "View Document"} type="button">
@@ -158,7 +158,7 @@ export function ApplicantProfileDocuments({ applyJobId = null }: { applyJobId?: 
                     </button>
                   </div>
                 ) : (
-                  <div className="mb-3.5 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-3 text-center text-[11px] font-medium text-slate-400">Not uploaded yet</div>
+                  <div className="mb-3.5 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-3 text-center text-[11px] font-medium text-slate-500">Not uploaded yet</div>
                 )}
               </div>
 

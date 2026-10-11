@@ -71,7 +71,7 @@ export function ApplicantStatusCard() {
                 {remarks.map((remark, index) => <li key={index}>{remark}</li>)}
               </ul>
             ) : (
-              <p className="text-xs text-slate-400">No remarks from HR yet.</p>
+              <p className="text-xs text-slate-500">No remarks from HR yet.</p>
             )}
           </div>
         ) : null}

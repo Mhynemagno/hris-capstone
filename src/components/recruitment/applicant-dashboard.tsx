@@ -70,7 +70,7 @@ export function ApplicantDashboard() {
               <h2 id="dashboard-latest">Latest application</h2>
             </div>
             {latest ? (
-              <div className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+              <div className="text-[10px] font-bold tracking-wider text-slate-500 uppercase">
                 {(latest.job_openings?.title ?? "San Juan City Recruitment").toUpperCase()} - CY {cycleYear}
               </div>
             ) : null}
@@ -135,22 +135,22 @@ export function ApplicantDashboard() {
         <h2 className="border-b border-slate-100 pb-3 text-xs font-bold tracking-wider text-slate-900 uppercase" id="dashboard-progress">Latest application progress</h2>
         <ol aria-label="Application progress" className="space-y-4 pl-2">
           {timeline.map((step) => (
-            <li className={cn("flex items-start gap-3", step.state === "upcoming" && "opacity-60")} key={step.label}>
+            <li className="flex items-start gap-3" key={step.label}>
               <span
                 aria-hidden="true"
                 className={cn(
                   "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full text-xs",
-                  step.state === "done" ? "bg-emerald-100 text-emerald-700" : step.state === "current" ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-500",
+                  step.state === "done" ? "bg-emerald-100 text-emerald-700" : step.state === "current" ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-400 opacity-60",
                 )}
               >
                 {step.state === "done" ? <Check className="size-2.5" /> : <Clock className="size-2.5" />}
               </span>
               <div>
-                <h3 className={cn("text-xs", step.state === "upcoming" ? "font-semibold text-slate-700" : "font-bold text-slate-900")}>
+                <h3 className={cn("text-xs", step.state === "upcoming" ? "font-semibold text-slate-500" : "font-bold text-slate-900")}>
                   {step.label}
                   <span className="sr-only"> ({step.state === "done" ? "completed" : step.state === "current" ? "current stage" : "upcoming"})</span>
                 </h3>
-                <p className={cn("text-[11px]", step.state === "done" ? "text-slate-500" : step.state === "current" ? "text-slate-600" : "text-slate-400")}>{step.detail}</p>
+                <p className={cn("text-[11px]", step.state === "done" ? "text-slate-500" : step.state === "current" ? "text-slate-600" : "text-slate-500")}>{step.detail}</p>
               </div>
             </li>
           ))}

@@ -13,9 +13,10 @@ import type { RecruitmentNotice } from "@/lib/recruitment/recruitment-notice";
 export function ApplicantAuthFrame({ children, notice }: { children: ReactNode; notice: RecruitmentNotice }) {
   return (
     <main className="capstone-ui flex min-h-svh items-center justify-center bg-slate-900 p-4 font-sans sm:p-6 lg:p-8">
-      <div className="grid w-full max-w-[1024px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl lg:h-[620px] lg:grid-cols-12">
+      {/* The mockup card is 1024×620; it grows instead of clipping when the form or the font needs more room. */}
+      <div className="grid w-full max-w-[1024px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl lg:min-h-[620px] lg:grid-cols-12">
         {/* LEFT SIDE: FORM (5 COLS) */}
-        <div className="flex h-full flex-col justify-between bg-white p-8 sm:p-10 lg:col-span-5 lg:overflow-y-auto">
+        <div className="flex h-full flex-col justify-between bg-white p-8 sm:p-10 lg:col-span-5">
           <div>
             {/* MOBILE LOGO HEADER */}
             <div className="mb-6 flex items-center gap-3 lg:hidden">
@@ -31,13 +32,13 @@ export function ApplicantAuthFrame({ children, notice }: { children: ReactNode; 
           </div>
 
           {/* FOOTER NOTE */}
-          <div className="mt-8 border-t border-slate-100 pt-4 text-center text-[11px] text-slate-400">
+          <div className="mt-8 border-t border-slate-100 pt-4 text-center text-[11px] text-slate-500">
             San Juan City PNP Online Recruitment &amp; Applicant Portal System
           </div>
         </div>
 
         {/* RIGHT SIDE: BRANDING HERO PANEL (7 COLS) */}
-        <div className="relative flex min-h-[420px] flex-col justify-between overflow-hidden bg-slate-950 p-10 text-white lg:col-span-7 lg:h-full">
+        <div className="relative flex min-h-[420px] flex-col justify-between overflow-hidden bg-slate-950 p-10 text-white lg:col-span-7">
           <div aria-hidden="true" className="absolute inset-0 z-0 bg-gradient-to-t from-slate-950 via-slate-900/90 to-slate-950/80" />
 
           {/* TOP BRANDING & LOGOS */}
@@ -76,7 +77,8 @@ export function ApplicantAuthFrame({ children, notice }: { children: ReactNode; 
               <p className="mb-1 flex items-center gap-2 text-xs font-bold text-amber-400">
                 <Megaphone aria-hidden="true" className="size-3.5" /> Recruitment Notice
               </p>
-              <p className="text-[11px] leading-snug text-slate-300">
+              {/* Two lines tall whatever the posting, so the card does not jump between openings. */}
+              <p className="line-clamp-2 min-h-[2lh] text-[11px] leading-snug text-slate-300" data-recruitment-notice>
                 {notice
                   ? <>Current Hiring Pool for <strong>{notice.title}</strong> is now open for verified candidates.</>
                   : "There is no active recruitment at the moment. Please check back for new openings."}

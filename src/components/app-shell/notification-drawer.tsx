@@ -132,7 +132,7 @@ export function NotificationDrawer() {
           </div>
 
           {visible.length === 0 ? (
-            <p className="p-6 text-center text-xs text-slate-400">No notifications available</p>
+            <p className="p-6 text-center text-xs text-slate-500">No notifications available</p>
           ) : (
             <ul className="max-h-[340px] divide-y divide-slate-100 overflow-y-auto">
               {visible.map((row) => {
@@ -145,7 +145,7 @@ export function NotificationDrawer() {
                         {row.title}
                         {isUnread ? <span className="sr-only"> (unread)</span> : null}
                       </span>
-                      <span className="shrink-0 text-[10px] font-medium text-slate-400">{timeAgo(row.created_at)}</span>
+                      <span className="shrink-0 text-[10px] font-medium text-slate-500">{timeAgo(row.created_at)}</span>
                     </div>
                     <p className="mb-2 text-xs leading-relaxed text-slate-600">{row.body}</p>
                     <div className="flex items-center justify-between pt-1 text-[11px]">
@@ -155,7 +155,7 @@ export function NotificationDrawer() {
                           <ArrowRight aria-hidden="true" className="size-2.5" />
                         </Link>
                       ) : (
-                        <span className="text-[10px] text-slate-400">System Notification</span>
+                        <span className="text-[10px] text-slate-500">System Notification</span>
                       )}
                       <div className="flex items-center gap-2 text-slate-400">
                         {isUnread ? (

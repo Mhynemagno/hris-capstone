@@ -3,11 +3,13 @@ import { openLoginAndSignIn } from "./demo-accounts";
 
 // Every role's main screens must fit a 390px phone without page-level
 // horizontal scrolling (wide tables scroll inside their own container).
-// Applicant and public text stays at 14px or more. The HR/Admin workspace uses
-// the denser approved scale (spec 2026-10-07 §3.2), whose smallest step is 12px
-// (table headers and badges); redesigned HR screens are also checked at laptop widths.
+// Public text stays at 14px or more. The HR/Admin workspace uses the denser
+// approved scale (spec 2026-10-07 §3.2), whose smallest step is 12px (table headers
+// and badges); redesigned HR screens are also checked at laptop widths. Applicant
+// screens copy the Capstone UI mockups 1:1 (spec 2026-10-11), whose smallest text is
+// 9px (badges and captions).
 const WORKSPACE_MIN_FONT = 12;
-const APPLICANT_MIN_FONT = 14;
+const APPLICANT_MIN_FONT = 9;
 const sets: [string, string, string[]][] = [
   ["demo.admin@example.test", "/admin", ["/admin", "/admin/users", "/admin/departments", "/admin/ranks", "/admin/settings", "/admin/audit-logs", "/admin/profile-change-requests", "/admin/integrations/attendance"]],
   ["demo.hr@example.test", "/hr", ["/hr", "/hr/employees", "/hr/jobs", "/hr/applications", "/hr/leave-requests", "/hr/deployments", "/hr/promotions", "/hr/promotions/criteria", "/hr/attendance", "/hr/public-site", "/reports"]],
@@ -48,4 +50,13 @@ test("the public landing page fits a phone and keeps text readable", async ({ pa
   const small = await page.evaluate(() => [...document.querySelectorAll("body *")].filter((el) => el.childNodes.length && [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent!.trim()) && parseFloat(getComputedStyle(el).fontSize) < 14 && (el as HTMLElement).offsetParent !== null).map((el) => `${el.tagName}:${parseFloat(getComputedStyle(el).fontSize)}:${el.textContent!.trim().slice(0, 30)}`).slice(0, 3));
   expect(overflow).toBeLessThanOrEqual(0);
   expect(small).toEqual([]);
+});
+
+test("the applicant login fits a phone", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/login?as=applicant");
+  await page.waitForLoadState("networkidle");
+  await expect(page.getByRole("heading", { level: 1, name: "Login as Applicant" })).toBeVisible();
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
 });
