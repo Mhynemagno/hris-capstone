@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   performanceRatingSchema,
   promotionCriterionSchema,
+  promotionDocketSchema,
   promotionEvaluationFiltersSchema,
 } from "./promotion-eligibility";
 
@@ -44,5 +45,10 @@ describe("promotion eligibility schemas", () => {
 
   it("bounds page size while normalizing directory filters", () => {
     expect(promotionEvaluationFiltersSchema.parse({ page: "2", pageSize: "200", readiness: "ready", recommendation: "recommended" })).toEqual({ page: 2, pageSize: 100, readiness: "ready", recommendation: "recommended" });
+  });
+
+  it("requires substantive, trimmed remarks for an employee promotion docket", () => {
+    expect(promotionDocketSchema.safeParse({ criterionId: employeeId, remarks: "  " }).success).toBe(false);
+    expect(promotionDocketSchema.parse({ criterionId: employeeId, remarks: "  Board-ready record  " })).toEqual({ criterionId: employeeId, remarks: "Board-ready record" });
   });
 });

@@ -6,7 +6,7 @@ vi.mock("@/lib/supabase/client", () => ({
   createBrowserSupabaseClient: () => ({ rpc }),
 }));
 
-import { createPromotionCriterion, promotionEvaluationFilters } from "./promotion-eligibility";
+import { createPromotionCriterion, promotionEvaluationFilters, submitEmployeePromotionDocket } from "./promotion-eligibility";
 
 describe("promotion eligibility queries", () => {
   it("normalizes bounded HR directory filters before requesting data", () => {
@@ -27,6 +27,16 @@ describe("promotion eligibility queries", () => {
       target_minimum_years: 3,
       target_minimum_rating: null,
       target_requirements: requirements,
+    });
+  });
+
+  it("submits only the validated employee docket RPC payload", async () => {
+    const docketId = "123e4567-e89b-42d3-a456-426614174099";
+    rpc.mockResolvedValue({ data: docketId, error: null });
+    await expect(submitEmployeePromotionDocket({ criterionId: "123e4567-e89b-42d3-a456-426614174000", remarks: " Board-ready record " })).resolves.toBe(docketId);
+    expect(rpc).toHaveBeenCalledWith("submit_employee_promotion_docket", {
+      target_criterion_id: "123e4567-e89b-42d3-a456-426614174000",
+      target_remarks: "Board-ready record",
     });
   });
 });

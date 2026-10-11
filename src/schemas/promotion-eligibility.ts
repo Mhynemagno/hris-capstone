@@ -10,6 +10,34 @@ export const promotionRecordKindSchema = z.enum(["qualification", "certification
 export const promotionRecommendationSchema = z.enum(["recommended", "not_recommended", "deferred"]);
 export const promotionReadinessSchema = z.enum(["ready", "not_ready"]);
 
+export const promotionDocketSchema = z.object({
+  criterionId: uuidSchema,
+  remarks: z.string().trim().min(1, "Explain why you are ready for HR review.").max(2000),
+});
+
+const promotionReadinessResponseSchema = z.object({
+  yearsOfService: z.number().int().min(0),
+  minimumYearsOfService: z.number().int().min(0),
+  isReady: z.boolean(),
+  missingRequirements: z.array(z.string()),
+  requirements: z.array(z.object({ label: z.string(), met: z.boolean() })),
+});
+
+export const myPromotionReadinessSchema = z.object({
+  criterionId: uuidSchema,
+  currentRankName: z.string(),
+  targetRankName: z.string(),
+  targetRankCode: z.string(),
+  evaluatedOn: z.string().nullable(),
+  docket: z.object({
+    id: uuidSchema,
+    criterionId: uuidSchema,
+    remarks: z.string(),
+    submittedAt: z.string(),
+  }).nullable(),
+  readiness: promotionReadinessResponseSchema,
+});
+
 export const promotionCriterionRequirementSchema = z.object({
   id: uuidSchema.optional(),
   recordKind: promotionRecordKindSchema,
@@ -123,3 +151,4 @@ export type PromotionEvaluationInput = z.infer<typeof promotionEvaluationSchema>
 export type PromotionEvaluationUpdateInput = z.infer<typeof promotionEvaluationUpdateSchema>;
 export type PromotionEvaluationFilters = z.infer<typeof promotionEvaluationFiltersSchema>;
 export type PromotionReadinessFilters = z.infer<typeof promotionReadinessFiltersSchema>;
+export type PromotionDocketInput = z.infer<typeof promotionDocketSchema>;
