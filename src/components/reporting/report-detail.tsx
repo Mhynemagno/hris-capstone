@@ -198,13 +198,13 @@ export function ReportDetail({ role, reportKey, initialFilters, autoAction = nul
   useEffect(() => {
     if (!printReport) return;
     window.print();
-    setPrintReport(null);
+    queueMicrotask(() => setPrintReport(null));
   }, [printReport]);
 
   useEffect(() => {
     if (!autoAction || autoDone.current || !query.data) return;
     autoDone.current = true;
-    void (autoAction === "print" ? print() : download());
+    queueMicrotask(() => void (autoAction === "print" ? print() : download()));
   });
 
   const departmentName = departments.data?.find((department) => String(department.id) === String(applied.departmentId ?? ""))?.name;
