@@ -25,7 +25,13 @@ describe("recordStageResult", () => {
     mocks.rpc.mockResolvedValue({ error: null });
     await recordStageResult({ applicationId, result: "scheduled", note: "Monday 8 AM" });
     expect(mocks.upload).not.toHaveBeenCalled();
-    expect(mocks.rpc).toHaveBeenCalledWith("record_stage_result", { target_application_id: applicationId, target_result: "scheduled", target_note: "Monday 8 AM", target_document: null });
+    expect(mocks.rpc).toHaveBeenCalledWith("record_stage_result", { target_application_id: applicationId, target_result: "scheduled", target_note: "Monday 8 AM", target_document: null, target_scheduled_at: null, target_venue: null });
+  });
+
+  it("sends the schedule with a Scheduled result", async () => {
+    mocks.rpc.mockResolvedValue({ error: null });
+    await recordStageResult({ applicationId, result: "scheduled", scheduledAt: "2026-10-17T22:00:00.000Z", venue: " Grandstand " });
+    expect(mocks.rpc).toHaveBeenCalledWith("record_stage_result", expect.objectContaining({ target_scheduled_at: "2026-10-17T22:00:00.000Z", target_venue: "Grandstand" }));
   });
 
   it("uploads the supporting document under the application, then records the result with it", async () => {

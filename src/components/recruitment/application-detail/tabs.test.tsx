@@ -87,7 +87,7 @@ describe("applicant detail tabs", () => {
   });
 
   it("shows Not provided for empty profile fields", () => {
-    render(<ProfileTab applicant={{ id: "a", profile_id: "p", applicant_number: 1, first_name: "Ana", middle_name: null, last_name: "Reyes", qualifier: null, place_of_birth: null, date_of_birth: "1998-04-12", gender: "female", civil_status: null, religion: null, citizenship: "Filipino", profile_image_path: null, phone: "0917", address: null, created_at: "", updated_at: "" }} />);
+    render(<ProfileTab applicant={{ id: "a", profile_id: "p", applicant_number: 1, preferred_job_opening_id: null, first_name: "Ana", middle_name: null, last_name: "Reyes", qualifier: null, place_of_birth: null, date_of_birth: "1998-04-12", gender: "female", civil_status: null, religion: null, citizenship: "Filipino", profile_image_path: null, phone: "0917", address: null, created_at: "", updated_at: "" }} />);
     expect(screen.getByRole("heading", { name: "Personal" })).toBeInTheDocument();
     expect(screen.getByText("April 12, 1998")).toBeInTheDocument();
     expect(screen.getAllByText("Not provided").length).toBeGreaterThan(0);

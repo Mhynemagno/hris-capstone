@@ -54,3 +54,14 @@ export async function markAllNotificationsRead() {
   const { error } = await createBrowserSupabaseClient().rpc("mark_all_notifications_read");
   throwIfError(error);
 }
+
+export async function deleteNotification(notificationId: string) {
+  const targetNotificationId = uuidSchema.parse(notificationId);
+  const { error } = await createBrowserSupabaseClient().rpc("delete_my_notification", { target_notification_id: targetNotificationId });
+  throwIfError(error);
+}
+
+export async function deleteAllNotifications() {
+  const { error } = await createBrowserSupabaseClient().rpc("delete_my_notifications");
+  throwIfError(error);
+}

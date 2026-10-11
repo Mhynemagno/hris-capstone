@@ -474,13 +474,13 @@ export async function transitionApplicationStatus(input: ApplicationStatusTransi
 const stageDocumentBucket = "recruitment-stage-documents";
 const stageDocumentTypes: Record<string, string> = { "application/pdf": "pdf", "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" };
 
-export type StageResultInput = { applicationId: string; result: RecordableResult; note?: string; file?: File | null };
+export type StageResultInput = { applicationId: string; result: RecordableResult; note?: string; file?: File | null; scheduledAt?: string | null; venue?: string };
 
 /**
  * Records Verified / Scheduled / Passed / Failed for the application's current stage. A supporting document is
  * uploaded first (under applications/<id>/) and removed again if the result cannot be recorded.
  */
-export async function recordStageResult({ applicationId, result, note, file }: StageResultInput) {
+export async function recordStageResult({ applicationId, result, note, file, scheduledAt, venue }: StageResultInput) {
   const id = applicationStatusTransitionSchema.shape.applicationId.parse(applicationId);
   const client = createBrowserSupabaseClient();
   let document: { objectPath: string; fileName: string; mimeType: string; sizeBytes: number } | null = null;
@@ -492,7 +492,7 @@ export async function recordStageResult({ applicationId, result, note, file }: S
     throwIfError(uploadError);
     document = { objectPath, fileName: file.name.slice(0, 255), mimeType: file.type, sizeBytes: file.size };
   }
-  const { error } = await client.rpc("record_stage_result", { target_application_id: id, target_result: result, target_note: note?.trim() || null, target_document: document });
+  const { error } = await client.rpc("record_stage_result", { target_application_id: id, target_result: result, target_note: note?.trim() || null, target_document: document, target_scheduled_at: scheduledAt ?? null, target_venue: venue?.trim() || null });
   if (error) {
     if (document) await client.storage.from(stageDocumentBucket).remove([document.objectPath]).catch(() => undefined);
     throw new Error(error.message);
@@ -587,6 +587,40 @@ export async function submitApplication(input: SubmitApplicationInput) {
     }
     throw cause;
   }
+}
+
+export async function setMyPreferredJobOpening(jobId: number) {
+  const id = jobOpeningSchema.shape.id.unwrap().parse(jobId);
+  const { error } = await createBrowserSupabaseClient().rpc("set_my_preferred_job_opening", { target_job_opening_id: id });
+  throwIfError(error);
+}
+
+export type SubmitMyApplicationResult =
+  | { outcome: "submitted"; applicationId: string }
+  | { outcome: "already-active" }
+  | { outcome: "no-open-posting" };
+
+/** The Documents-page Save: submits one application to the remembered (or newest open) posting once all documents are on file. */
+export async function submitMyApplication(): Promise<SubmitMyApplicationResult> {
+  const client = createBrowserSupabaseClient();
+  const { data: active, error: activeError } = await client
+    .from("applications")
+    .select("id, status")
+    .not("status", "in", '("Hired","Not Selected")')
+    .limit(1);
+  throwIfError(activeError);
+  if ((active ?? []).length > 0) return { outcome: "already-active" };
+
+  const { data: target, error: targetError } = await client.rpc("my_application_target_job");
+  throwIfError(targetError);
+  if (typeof target !== "number") return { outcome: "no-open-posting" };
+
+  const documents = await listApplicantProfileDocuments();
+  const resume = documents.find((document) => document.kind === "resume");
+  if (!resume) throw new Error("Please upload required documents");
+  const cv = await loadMyProfileDocumentFile(resume);
+  const applicationId = await submitApplication({ applicationId: crypto.randomUUID(), jobId: target, documents: [{ kind: "cv", file: cv }] });
+  return { outcome: "submitted", applicationId };
 }
 
 export async function deleteDraftJobOpening(jobId: number) {

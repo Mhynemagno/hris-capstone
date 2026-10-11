@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useForm, type DefaultValues } from "react-hook-form";
 
 import { ApplicantProfilePhotoControl } from "@/components/recruitment/applicant-profile-photo-control";
+import { formatApplicantNumber } from "@/lib/recruitment/applicant-number";
 import { ErrorState } from "@/components/ui/error-state";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
@@ -30,11 +31,6 @@ const coursePlaceholders: Partial<Record<(typeof APPLICANT_EDUCATION_LEVELS)[num
   elementary: "e.g. Primary Education",
   secondary: "e.g. Junior / Senior High School",
 };
-
-function formatApplicantNumber(value: number) {
-  const digits = String(value).padStart(6, "0");
-  return `${digits.slice(0, 1)}-${digits.slice(1)}`;
-}
 
 function educationDefaults(rows: ApplicantEducation[] | undefined) {
   const byLevel = new Map((rows ?? []).map((row) => [row.level, row]));
@@ -77,7 +73,7 @@ export function ApplicantProfileForm() {
   return <div className="max-w-3xl space-y-6">
     {profile.data ? <section className="flex flex-col gap-4 rounded-2xl border bg-card p-5 sm:flex-row sm:items-center sm:p-6">
       <ApplicantProfilePhotoControl applicant={profile.data} />
-      <div><p className="text-sm text-muted-foreground">Applicant number</p><p className="text-xl font-semibold tracking-tight">{formatApplicantNumber(profile.data.applicant_number)}</p></div>
+      <div><p className="text-sm text-muted-foreground">Applicant number</p><p className="text-xl font-semibold tracking-tight">{formatApplicantNumber(profile.data.applicant_number) ?? "Pending"}</p></div>
     </section> : null}
 
     <form className="space-y-6" noValidate onSubmit={form.handleSubmit(async ({ education: educationValues, ...values }) => {

@@ -15,6 +15,8 @@ vi.mock("@/lib/supabase/client", () => ({
 }));
 
 import {
+  deleteAllNotifications,
+  deleteNotification,
   getUnreadNotificationCount,
   listNotifications,
   markAllNotificationsRead,
@@ -91,5 +93,17 @@ describe("notification queries", () => {
 
     expect(mocks.rpc).toHaveBeenNthCalledWith(1, "mark_notification_read", { target_notification_id: notificationId });
     expect(mocks.rpc).toHaveBeenNthCalledWith(2, "mark_all_notifications_read");
+  });
+
+  it("deletes one notification through the owner-only RPC", async () => {
+    mocks.rpc.mockResolvedValue({ error: null });
+    await deleteNotification(notificationId);
+    expect(mocks.rpc).toHaveBeenCalledWith("delete_my_notification", { target_notification_id: notificationId });
+  });
+
+  it("clears all of my notifications", async () => {
+    mocks.rpc.mockResolvedValue({ error: null });
+    await deleteAllNotifications();
+    expect(mocks.rpc).toHaveBeenCalledWith("delete_my_notifications");
   });
 });

@@ -4,6 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { queryKeys } from "@/lib/query-keys";
 import {
+  deleteAllNotifications,
+  deleteNotification,
   getUnreadNotificationCount,
   listNotifications,
   markAllNotificationsRead,
@@ -51,4 +53,14 @@ export function useMarkAllNotificationsRead() {
     mutationFn: markAllNotificationsRead,
     onSuccess: invalidate,
   });
+}
+
+export function useDeleteNotification() {
+  const invalidate = useNotificationInvalidation();
+  return useMutation({ mutationFn: deleteNotification, onSuccess: invalidate });
+}
+
+export function useDeleteAllNotifications() {
+  const invalidate = useNotificationInvalidation();
+  return useMutation({ mutationFn: deleteAllNotifications, onSuccess: invalidate });
 }
