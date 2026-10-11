@@ -7,9 +7,9 @@ vi.mock("@/components/recruitment/applicant-application-status", () => ({ Applic
 import ApplicantApplicationsPage from "./page";
 
 describe("ApplicantApplicationsPage", () => {
-  it("sends old ?jobId links to the one-page apply flow", async () => {
+  it("sends old ?jobId links to the Documents page, which remembers the posting", async () => {
     await expect(ApplicantApplicationsPage({ searchParams: Promise.resolve({ jobId: "5" }) })).rejects.toThrow("NEXT_REDIRECT");
-    expect(mocks.redirect).toHaveBeenCalledWith("/applicant/apply/5");
+    expect(mocks.redirect).toHaveBeenCalledWith("/applicant/documents?apply=5");
   });
 
   it("shows the status list without a jobId", async () => {

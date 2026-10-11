@@ -7,6 +7,7 @@ import { useState, type FormEvent } from "react";
 import { ErrorState } from "@/components/ui/error-state";
 import { FormField } from "@/components/ui/form-field";
 import { DUPLICATE_EMAIL_MESSAGE, isDuplicateEmailError, isObfuscatedExistingUser } from "@/lib/auth/duplicate-email";
+import { preferredJobIdFromNext } from "@/lib/auth/recruitment-next-path";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { APPLICANT_QUALIFIERS, applicantRegistrationSchema } from "@/schemas/auth";
 
@@ -61,6 +62,7 @@ export function ApplicantRegistrationForm({ loginHref = "/login?as=applicant", n
     }
     setFieldErrors({});
     setPending(true);
+    const preferredJobId = preferredJobIdFromNext(nextPath);
     try {
       const { data, error: authError } = await createBrowserSupabaseClient().auth.signUp({
         email: result.data.email,
@@ -74,10 +76,12 @@ export function ApplicantRegistrationForm({ loginHref = "/login?as=applicant", n
             phone: result.data.mobileNumber,
             date_of_birth: result.data.birthdate,
             full_name: result.data.fullName,
-            // Marks a self-registration so the applicant number is emailed (invited staff accounts are not).
+            // Marks a self-registration (invited staff accounts start without it).
             registration: "applicant",
+            // The posting they clicked Apply on; their Documents-page Save applies to it.
+            ...(preferredJobId ? { preferred_job_opening_id: String(preferredJobId) } : {}),
           },
-          emailRedirectTo: confirmationRedirect(nextPath ?? "/jobs"),
+          emailRedirectTo: confirmationRedirect("/applicant"),
         },
       });
       if (authError) {
@@ -93,7 +97,7 @@ export function ApplicantRegistrationForm({ loginHref = "/login?as=applicant", n
         setConfirmationPending(true);
         return;
       }
-      router.replace(nextPath ?? "/jobs");
+      router.replace("/applicant/documents");
       router.refresh();
     } catch {
       setError("We could not reach the server. Check your connection and try again.");
@@ -106,8 +110,7 @@ export function ApplicantRegistrationForm({ loginHref = "/login?as=applicant", n
     return (
       <div aria-live="polite" className="space-y-3 rounded-lg border border-primary/25 bg-accent p-4 text-foreground" role="status">
         <p className="font-semibold">Check your email</p>
-        <p className="text-sm text-slate-700">We created your account. Open the confirmation link we sent before signing in.</p>
-        <p className="text-sm text-slate-700">We also emailed your applicant number. You will use it with your password to log in.</p>
+        <p className="text-sm text-slate-700">Check your email to confirm your account, then log in with your email address.</p>
         <a className="inline-flex min-h-11 items-center font-medium text-primary underline underline-offset-4" href={loginHref}>
           Return to sign in
         </a>

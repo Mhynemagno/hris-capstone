@@ -58,7 +58,7 @@ describe("ApplicantRegistrationForm", { timeout: 20_000 }, () => {
     expect(container.querySelector(".md\\:grid-cols-2")).toHaveClass("grid");
   });
 
-  it("normalizes the mobile number, sends structured account metadata, and opens job openings", async () => {
+  it("normalizes the mobile number, sends structured account metadata, and opens the Documents page", async () => {
     const user = userEvent.setup();
     mocks.signUp.mockResolvedValue({ data: { session: { access_token: "test" } }, error: null });
 
@@ -84,9 +84,9 @@ describe("ApplicantRegistrationForm", { timeout: 20_000 }, () => {
     }));
     const redirect = new URL(mocks.signUp.mock.calls[0]?.[0].options.emailRedirectTo);
     expect(redirect.pathname).toBe("/auth/callback");
-    expect(redirect.searchParams.get("next")).toBe("/jobs");
+    expect(redirect.searchParams.get("next")).toBe("/applicant");
     expect(redirect.searchParams.get("flow")).toBe("signup");
-    expect(mocks.replace).toHaveBeenCalledWith("/jobs");
+    expect(mocks.replace).toHaveBeenCalledWith("/applicant/documents");
     expect(mocks.refresh).toHaveBeenCalledOnce();
   });
 
@@ -98,11 +98,12 @@ describe("ApplicantRegistrationForm", { timeout: 20_000 }, () => {
     await user.click(screen.getByRole("button", { name: "Register" }));
     expect(mocks.signUp.mock.calls[0]?.[0].options.data.qualifier).toBeNull();
     expect(await screen.findByRole("status")).toHaveTextContent("Check your email");
-    expect(screen.getByRole("status")).toHaveTextContent("We also emailed your applicant number. You will use it with your password to log in.");
+    expect(screen.getByRole("status")).toHaveTextContent("Check your email to confirm your account, then log in with your email address.");
+    expect(screen.getByRole("status")).not.toHaveTextContent("applicant number");
     expect(mocks.replace).not.toHaveBeenCalled();
   });
 
-  it("carries a safe next destination through confirmation and sign-in", async () => {
+  it("remembers the posting the visitor was applying for", async () => {
     const user = userEvent.setup();
     mocks.signUp.mockResolvedValueOnce({ data: { session: null }, error: null });
     render(<ApplicantRegistrationForm loginHref="/login?next=%2Fapplicant%2Fapplications%3FjobId%3D5" nextPath="/applicant/applications?jobId=5" />);
@@ -110,18 +111,20 @@ describe("ApplicantRegistrationForm", { timeout: 20_000 }, () => {
     await user.click(screen.getByRole("button", { name: "Register" }));
     const redirect = new URL(mocks.signUp.mock.calls[0]?.[0].options.emailRedirectTo);
     expect(redirect.pathname).toBe("/auth/callback");
-    expect(redirect.searchParams.get("next")).toBe("/applicant/applications?jobId=5");
+    expect(mocks.signUp.mock.calls[0]?.[0].options.data.preferred_job_opening_id).toBe("5");
+    expect(redirect.searchParams.get("next")).toBe("/applicant");
     expect(redirect.searchParams.get("flow")).toBe("signup");
     expect(await screen.findByRole("link", { name: "Return to sign in" })).toHaveAttribute("href", "/login?next=%2Fapplicant%2Fapplications%3FjobId%3D5");
   });
 
-  it("continues to the next destination when sign-up returns a session", async () => {
+  it("opens the Documents page for the chosen posting when sign-up returns a session", async () => {
     const user = userEvent.setup();
     mocks.signUp.mockResolvedValueOnce({ data: { session: { access_token: "test" } }, error: null });
     render(<ApplicantRegistrationForm nextPath="/jobs/7" />);
     fillValidForm();
     await user.click(screen.getByRole("button", { name: "Register" }));
-    expect(mocks.replace).toHaveBeenCalledWith("/jobs/7");
+    expect(mocks.signUp.mock.calls[0]?.[0].options.data.preferred_job_opening_id).toBe("7");
+    expect(mocks.replace).toHaveBeenCalledWith("/applicant/documents");
   });
 
   it("shows the duplicate-email message on the email field when the address is taken", async () => {
