@@ -38,7 +38,7 @@ function createHandler(
     rpc: async (name: string, args: Record<string, unknown>) => {
       rpcCalls.push(name);
       assertEquals(args, { target_user_id: targetId });
-      if (name === "remove_applicant_account_data") {
+      if (name === "remove_managed_account_data") {
         return {
           data: { removes: [], storage: options.storage ?? {} },
           error: null,
@@ -168,9 +168,9 @@ Deno.test("deletes a selected account and writes a readable audit row", async ()
   });
 });
 
-Deno.test("explains why an account with dependent records cannot be deleted", async () => {
+Deno.test("explains why an account cannot be deleted (own account or last administrator)", async () => {
   const message =
-    "Ada cannot be deleted. It is still used by 3 leave decisions. Deactivate the account to block sign-in while keeping everything the person created or decided.";
+    "Ada cannot be deleted. At least one active system administrator is required.";
   const { handler, getDeleteUserCalls, getAuditInsert } = createHandler({
     blockedMessage: message,
   });
@@ -183,21 +183,23 @@ Deno.test("explains why an account with dependent records cannot be deleted", as
   assertEquals(getAuditInsert(), null);
 });
 
-Deno.test("reports a conflict when the auth deletion is blocked by a new dependency", async () => {
+Deno.test("reports a failed auth deletion without the old \"records depend on it\" advice", async () => {
   const { handler, getAuditInsert } = createHandler({
-    deleteError: new Error("violates foreign key constraint"),
+    deleteError: new Error("auth unavailable"),
   });
 
   const response = await handler(deleteRequest(targetId));
 
-  assertEquals(response.status, 409);
+  assertEquals(response.status, 500);
+  assertEquals(await response.json(), { error: "Unable to delete this account. Please try again." });
   assertEquals(getAuditInsert(), null);
 });
 
-Deno.test("removes an applicant's recruitment records and files before deleting the account", async () => {
+Deno.test("removes the account's records and files before deleting the account", async () => {
   const { handler, getDeleteUserCalls, getRemovedObjects, getRpcCalls } = createHandler({
     storage: {
       "applicant-documents": ["applicants/a/b/cv.pdf"],
+      "private-documents": ["leave/a/medical.pdf"],
       "applicant-profile-documents": [],
     },
   });
@@ -205,7 +207,10 @@ Deno.test("removes an applicant's recruitment records and files before deleting 
   const response = await handler(deleteRequest(targetId));
 
   assertEquals(response.status, 204);
-  assertEquals(getRpcCalls(), ["assert_managed_user_deletable", "remove_applicant_account_data"]);
-  assertEquals(getRemovedObjects(), [{ bucket: "applicant-documents", paths: ["applicants/a/b/cv.pdf"] }]);
+  assertEquals(getRpcCalls(), ["assert_managed_user_deletable", "remove_managed_account_data"]);
+  assertEquals(getRemovedObjects(), [
+    { bucket: "applicant-documents", paths: ["applicants/a/b/cv.pdf"] },
+    { bucket: "private-documents", paths: ["leave/a/medical.pdf"] },
+  ]);
   assertEquals(getDeleteUserCalls(), 1);
 });
