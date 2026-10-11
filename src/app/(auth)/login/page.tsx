@@ -22,7 +22,7 @@ function isRecruitmentPath(path: string) {
 
 /** The login a visitor without "?as=" belongs on: applicants come from recruitment pages or sign-up confirmation. */
 function defaultMode(nextPath: string, message: string | undefined): LoginMode {
-  return isRecruitmentPath(nextPath) || message === "email_confirmed" ? "applicant" : "employee";
+  return isRecruitmentPath(nextPath) || message === "email_confirmed" || message === "email_confirmed_or_used" ? "applicant" : "employee";
 }
 
 function switchHref(mode: LoginMode, nextPath: string) {
@@ -76,7 +76,11 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     : error === "invitation_expired"
       ? "This confirmation or invitation link is invalid or has expired. Request a new link and try again."
       : undefined;
-  const notice = message === "email_confirmed" ? "Email confirmed. Please log in." : undefined;
+  const notice = message === "email_confirmed"
+    ? "Email confirmed. Please log in."
+    : message === "email_confirmed_or_used"
+      ? "Your email may already be confirmed. Try logging in."
+      : undefined;
   const registerHref = nextPath === "/" ? "/applicant/register" : `/applicant/register?next=${encodeURIComponent(nextPath)}`;
   const title = mode === "employee" ? "Employee login" : "Applicant login";
   const eyebrow = mode === "applicant" ? "PNP San Juan Recruitment" : "San Juan City Police HRIS";
