@@ -16,7 +16,14 @@ export type RoleNavigationIcon =
   | "Clock"
   | "Fingerprint"
   | "ChartColumn"
-  | "UserPen";
+  | "UserPen"
+  | "ChartPie"
+  | "Briefcase"
+  | "IdCard"
+  | "MapPinned"
+  | "CalendarCheck"
+  | "Award"
+  | "Megaphone";
 
 /** Live counts shown beside a nav item (src/hooks/use-workspace-counts.ts). */
 export type NavBadgeKey = "applicationsAwaitingReview" | "leaveForApproval" | "profileChangesPending";
@@ -67,17 +74,16 @@ export const ROLE_CONFIG: Record<AppRole, RoleConfig> = {
     landingDescription:
       "Coordinate recruitment, personnel records, and HR operations.",
     navigation: [
-      { href: "/hr", label: "Dashboard", icon: "LayoutDashboard" },
-      { href: "/hr/jobs", label: "Job postings", icon: "BriefcaseBusiness", group: "Recruitment" },
-      { href: "/hr/applications", label: "Applications", icon: "FileText", group: "Recruitment", badge: "applicationsAwaitingReview" },
-      { href: "/hr/employees", label: "Employees", icon: "ContactRound", group: "Personnel" },
-      { href: "/hr/deployments", label: "Deployments", icon: "MapPin", group: "Personnel" },
-      { href: "/hr/leave-requests", label: "Leave", icon: "CalendarDays", group: "Personnel", badge: "leaveForApproval" },
-      { href: "/hr/promotions", label: "Promotions", icon: "TrendingUp", group: "Personnel" },
-      { href: "/hr/attendance", label: "Attendance", icon: "Clock", group: "Attendance" },
-      { href: "/hr/attendance/kiosk", label: "Kiosk", icon: "Fingerprint", group: "Attendance" },
-      { href: "/reports", label: "Reports", icon: "ChartColumn", group: "Insights" },
-      { href: "/hr/public-site", label: "Announcements", icon: "ScrollText", group: "Public site" },
+      { href: "/hr", label: "Dashboard", icon: "ChartPie" },
+      { href: "/hr/jobs", label: "Plantilla Openings", icon: "Briefcase", group: "Recruitment" },
+      { href: "/hr/applications", label: "Applicant Roster", icon: "IdCard", group: "Recruitment", badge: "applicationsAwaitingReview" },
+      { href: "/hr/employees", label: "Active Personnel", icon: "Users", group: "Personnel 201" },
+      { href: "/hr/deployments", label: "Duty Deployments", icon: "MapPinned", group: "Personnel 201" },
+      { href: "/hr/leave-requests", label: "Leave Applications", icon: "CalendarCheck", group: "Personnel 201", badge: "leaveForApproval" },
+      { href: "/hr/promotions", label: "Promotion Records", icon: "Award", group: "Personnel 201" },
+      { href: "/hr/attendance", label: "Daily Attendance Logs", icon: "Clock", group: "Attendance & DTR" },
+      { href: "/reports", label: "HR Audit & Reports", icon: "FileText", group: "Reports" },
+      { href: "/hr/public-site", label: "Announcements", icon: "Megaphone", group: "Public Site" },
     ],
   },
   applicant: {

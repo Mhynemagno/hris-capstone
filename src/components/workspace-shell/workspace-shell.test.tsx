@@ -27,17 +27,16 @@ describe("WorkspaceShell", () => {
     expect(document.documentElement).not.toHaveClass("workspace");
   });
 
-  it("groups HR navigation, marks the most specific link current and shows badges beside links", () => {
-    usePathname.mockReturnValue("/hr/attendance/kiosk");
-    render(<WorkspaceShell config={ROLE_CONFIG.hr_personnel} email="hr@example.com"><p>Kiosk</p></WorkspaceShell>);
+  it("groups navigation, marks the most specific link current and shows badges beside links", () => {
+    usePathname.mockReturnValue("/admin/profile-change-requests");
+    render(<WorkspaceShell config={ROLE_CONFIG.system_administrator} email="admin@example.com"><p>Approvals</p></WorkspaceShell>);
     const navigation = screen.getByRole("navigation", { name: "Main navigation" });
-    for (const heading of ["Recruitment", "Personnel", "Attendance", "Insights", "Public site"]) {
+    for (const heading of ["People", "Organization", "System"]) {
       expect(within(navigation).getByText(heading, { selector: "div" })).toBeInTheDocument();
     }
-    expect(within(navigation).getByRole("link", { name: "Kiosk" })).toHaveAttribute("aria-current", "page");
-    expect(within(navigation).getByRole("link", { name: "Attendance" })).not.toHaveAttribute("aria-current");
-    expect(within(navigation).getByRole("link", { name: "Applications" })).toBeInTheDocument();
-    expect(within(navigation).getByText("badge:applicationsAwaitingReview")).toBeInTheDocument();
+    expect(within(navigation).getByRole("link", { name: "Approvals" })).toHaveAttribute("aria-current", "page");
+    expect(within(navigation).getByRole("link", { name: "Accounts" })).not.toHaveAttribute("aria-current");
+    expect(within(navigation).getByText("badge:profileChangesPending")).toBeInTheDocument();
   });
 
   it("keeps landmarks, the skip link, the brand line and the account menu", () => {
@@ -68,10 +67,10 @@ describe("WorkspaceShell", () => {
   });
 
   it("extends the breadcrumb with the page's trail and links the section", () => {
-    usePathname.mockReturnValue("/hr/applications/123e4567-e89b-42d3-a456-426614174000");
-    render(<WorkspaceShell config={ROLE_CONFIG.hr_personnel} email="hr@example.com"><DetailPage /></WorkspaceShell>);
+    usePathname.mockReturnValue("/admin/users/123e4567-e89b-42d3-a456-426614174000");
+    render(<WorkspaceShell config={ROLE_CONFIG.system_administrator} email="admin@example.com"><DetailPage /></WorkspaceShell>);
     const breadcrumb = screen.getByRole("navigation", { name: "Breadcrumb" });
-    expect(within(breadcrumb).getByRole("link", { name: "Applications" })).toHaveAttribute("href", "/hr/applications");
+    expect(within(breadcrumb).getByRole("link", { name: "Accounts" })).toHaveAttribute("href", "/admin/users");
     expect(within(breadcrumb).getByText("Aplica Candidate")).toHaveAttribute("aria-current", "page");
   });
 });

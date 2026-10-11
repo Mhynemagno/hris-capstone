@@ -34,19 +34,18 @@ describe("role configuration", () => {
     ]);
   });
 
-  it("returns HR navigation with short labels that match page titles", () => {
+  it("returns the Capstone UI HR navigation (dashboard.html) without the Kiosk", () => {
     expect(getRoleConfig("hr_personnel").navigation.map(({ href, label, group, badge }) => ({ href, label, group, badge }))).toEqual([
       { href: "/hr", label: "Dashboard", group: undefined, badge: undefined },
-      { href: "/hr/jobs", label: "Job postings", group: "Recruitment", badge: undefined },
-      { href: "/hr/applications", label: "Applications", group: "Recruitment", badge: "applicationsAwaitingReview" },
-      { href: "/hr/employees", label: "Employees", group: "Personnel", badge: undefined },
-      { href: "/hr/deployments", label: "Deployments", group: "Personnel", badge: undefined },
-      { href: "/hr/leave-requests", label: "Leave", group: "Personnel", badge: "leaveForApproval" },
-      { href: "/hr/promotions", label: "Promotions", group: "Personnel", badge: undefined },
-      { href: "/hr/attendance", label: "Attendance", group: "Attendance", badge: undefined },
-      { href: "/hr/attendance/kiosk", label: "Kiosk", group: "Attendance", badge: undefined },
-      { href: "/reports", label: "Reports", group: "Insights", badge: undefined },
-      { href: "/hr/public-site", label: "Announcements", group: "Public site", badge: undefined },
+      { href: "/hr/jobs", label: "Plantilla Openings", group: "Recruitment", badge: undefined },
+      { href: "/hr/applications", label: "Applicant Roster", group: "Recruitment", badge: "applicationsAwaitingReview" },
+      { href: "/hr/employees", label: "Active Personnel", group: "Personnel 201", badge: undefined },
+      { href: "/hr/deployments", label: "Duty Deployments", group: "Personnel 201", badge: undefined },
+      { href: "/hr/leave-requests", label: "Leave Applications", group: "Personnel 201", badge: "leaveForApproval" },
+      { href: "/hr/promotions", label: "Promotion Records", group: "Personnel 201", badge: undefined },
+      { href: "/hr/attendance", label: "Daily Attendance Logs", group: "Attendance & DTR", badge: undefined },
+      { href: "/reports", label: "HR Audit & Reports", group: "Reports", badge: undefined },
+      { href: "/hr/public-site", label: "Announcements", group: "Public Site", badge: undefined },
     ]);
   });
 

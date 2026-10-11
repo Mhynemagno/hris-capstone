@@ -103,4 +103,9 @@ describe("NotificationDrawer", () => {
     await userEvent.click(screen.getByRole("button", { name: "Delete Welcome" }));
     expect(mocks.notify).toHaveBeenCalledWith({ title: "Notification not deleted", description: "Network down", tone: "error" });
   });
+
+  it("has a light bell for the staff shell's white top bar", () => {
+    render(<NotificationDrawer tone="light" />);
+    expect(screen.getByRole("button", { name: "Notifications, 1 unread" })).toHaveClass("text-slate-500");
+  });
 });
