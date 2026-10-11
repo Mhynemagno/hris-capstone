@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-// Guards the redesign's hard constraint: the Applicant side and public pages look exactly as before.
+// Guards the redesign's hard constraint: approved pages (applicant, public, Admin & HR Login, HR) look exactly as approved.
 // Computed styles are data-independent, so they are snapshotted for pages whose content changes
 // between runs; static pages are also screenshotted.
 
@@ -42,6 +42,15 @@ async function styleSignature(page: Page, probes: readonly string[] = PROBES) {
   }, { probes: [...probes], properties: [...PROPERTIES] });
 }
 
+async function signInHr(page: Page) {
+  await page.goto("/login?as=admin&next=/hr");
+  await page.getByLabel("Access Level").selectOption("hr");
+  await page.getByLabel("Email Address").fill("demo.hr@example.test");
+  await page.getByRole("textbox", { name: "Password" }).fill(demoPassword);
+  await page.getByRole("button", { name: "Login" }).click();
+  await expect(page).toHaveURL(/\/hr$/, { timeout: 30_000 });
+}
+
 async function signInApplicant(page: Page) {
   await page.goto("/login?as=applicant&next=/applicant");
   await page.getByLabel("Email Address").fill("demo.applicant@example.test");
@@ -50,10 +59,10 @@ async function signInApplicant(page: Page) {
   await expect(page).toHaveURL(/\/applicant$/, { timeout: 30_000 });
 }
 
-test.describe("applicant and public pages keep their current look", () => {
+test.describe("applicant, admin login and HR pages keep their approved look", () => {
   test.use({ viewport: { width: 1366, height: 900 } });
 
-  for (const path of ["/login", "/login?as=applicant", "/applicant/register"]) {
+  for (const path of ["/login", "/login?as=applicant", "/login?as=admin", "/applicant/register"]) {
     test(`static page ${path}`, async ({ page }) => {
       await page.goto(path);
       await page.waitForLoadState("networkidle");
@@ -76,6 +85,16 @@ test.describe("applicant and public pages keep their current look", () => {
   test("signed-in applicant pages", async ({ page }) => {
     await signInApplicant(page);
     for (const path of ["/applicant", "/applicant/profile", "/applicant/documents", "/applicant/applications"]) {
+      await page.goto(path);
+      await page.waitForLoadState("networkidle");
+      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+      expect(JSON.stringify(await styleSignature(page), null, 2)).toMatchSnapshot(`${path.replaceAll("/", "_")}.styles.json`);
+    }
+  });
+
+  test("signed-in HR pages", async ({ page }) => {
+    await signInHr(page);
+    for (const path of ["/hr", "/hr/jobs", "/hr/applications", "/hr/deployments", "/hr/leave-requests", "/hr/promotions", "/hr/attendance", "/reports", "/hr/public-site"]) {
       await page.goto(path);
       await page.waitForLoadState("networkidle");
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
