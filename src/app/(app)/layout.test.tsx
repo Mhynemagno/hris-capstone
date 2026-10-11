@@ -28,6 +28,13 @@ describe("protected layout shells", () => {
     expect(mocks.getStaffDisplayName).toHaveBeenCalledWith("u1", "hr@example.test");
   });
 
+  it("gives employees the Capstone UI staff shell with their header name", async () => {
+    mocks.getCurrentRole.mockResolvedValue("employee");
+    render(await ProtectedLayout({ children: <p>Employee page</p> }));
+    expect(screen.getByText("Employee page").closest("[data-shell]")).toHaveAttribute("data-shell", "staff");
+    expect(mocks.getStaffDisplayName).toHaveBeenCalledWith("u1", "hr@example.test");
+  });
+
   it("keeps the workspace shell for other staff roles until their redesign", async () => {
     mocks.getCurrentRole.mockResolvedValue("system_administrator");
     render(await ProtectedLayout({ children: <p>Admin page</p> }));
