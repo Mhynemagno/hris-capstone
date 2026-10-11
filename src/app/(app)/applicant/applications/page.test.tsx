@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({ redirect: vi.fn(() => { throw new Error("NEXT_REDIRECT"); }) }));
 vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
-vi.mock("@/components/recruitment/applicant-application-status", () => ({ ApplicantApplicationStatus: () => null }));
+vi.mock("@/components/recruitment/applicant-status-card", () => ({ ApplicantStatusCard: () => null }));
 
 import ApplicantApplicationsPage from "./page";
 
