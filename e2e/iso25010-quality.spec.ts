@@ -24,7 +24,7 @@ async function signIn(page: Page, account: { email: string; home: string }) {
 }
 
 test.describe("Security: confidentiality, integrity, and authenticity", () => {
-  const protectedRoutes = ["/hr/employees", "/hr/applications", "/hr/deployments", "/hr/promotions", "/hr/attendance", "/employee/leave", "/employee/attendance/scan", "/reports", "/admin/users", "/notifications"];
+  const protectedRoutes = ["/hr/employees", "/hr/applications", "/hr/deployments", "/hr/promotions", "/hr/attendance", "/employee/leave", "/employee/attendance", "/reports", "/admin/users", "/notifications"];
 
   test("every protected page requires signing in", async ({ page }) => {
     for (const route of protectedRoutes) {
@@ -37,7 +37,7 @@ test.describe("Security: confidentiality, integrity, and authenticity", () => {
     ["employee", ["/hr/employees", "/hr/attendance/kiosk", "/hr/attendance/face-enrollment", "/reports", "/admin/users"]],
     ["management", ["/hr/employees", "/hr/leave-requests", "/employee/leave", "/admin/audit-logs"]],
     ["applicant", ["/employee", "/hr/applications", "/reports"]],
-    ["hr", ["/admin/users", "/admin/audit-logs", "/employee/attendance/scan"]],
+    ["hr", ["/admin/users", "/admin/audit-logs", "/employee/attendance"]],
   ];
   for (const [role, routes] of denied) {
     test(`${role} cannot open other roles' workspaces`, async ({ page }) => {
