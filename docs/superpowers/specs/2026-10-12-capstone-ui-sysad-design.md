@@ -1,7 +1,7 @@
 # Capstone UI: System Administrator Redesign (PR 4 of 4)
 
-**Date:** 2026-10-12  
-**Branch:** `codex/capstone-ui-sysad` from `origin/main` at `59d70cdd`  
+**Date:** 2026-10-12
+**Branch:** `codex/capstone-ui-sysad`, rebased directly on `origin/main` at `5daaf3d`
 **Sources:** `docs/design/capstone-ui/sysad.html`; `C:\Users\ASUS\Downloads\Final Changes (1).pdf`, page 49; prior Applicant, HR, and Employee Capstone design specifications.
 
 ## Intent
