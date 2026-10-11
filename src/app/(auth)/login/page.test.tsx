@@ -75,7 +75,7 @@ describe("LoginPage", () => {
     expect(screen.getByText("Authorized management portal for HR Personnel Officers and System Administrators.")).toBeInTheDocument();
     expect(screen.getByLabelText("Access Level")).toHaveValue("hr");
     expect(screen.getByRole("option", { name: "System Administrator" })).toBeInTheDocument();
-    expect(screen.getByLabelText("Email Address")).toHaveAttribute("type", "email");
+    expect(screen.getByLabelText("Email Address or Badge Number")).toHaveAttribute("type", "text");
     expect(screen.getByText("System Management & Administration")).toBeInTheDocument();
     expect(screen.getByText("Management Portal")).toBeInTheDocument();
     expect(screen.queryByText(/Current Hiring Pool for/)).not.toBeInTheDocument();

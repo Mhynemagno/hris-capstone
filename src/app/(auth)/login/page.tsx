@@ -92,7 +92,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   }
 
   if (mode === "admin") {
-    // Capstone UI sample.html: HR and System Administrators sign in by email with an Access Level.
+    // Capstone UI sample.html: HR and System Administrators sign in by email or badge number with an Access Level.
     return (
       <ApplicantAuthFrame footerNote={null} hero={<AdminAuthHero />} mobilePortalLabel="Admin Portal" portalDotClassName="bg-amber-400" portalPill="Management Portal">
         <div className="mb-6">

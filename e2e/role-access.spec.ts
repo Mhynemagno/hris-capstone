@@ -60,3 +60,15 @@ test("an HR account cannot sign in as System Administrator at the Admin & HR Log
   await page.goto("/hr");
   await expect(page).toHaveURL(/\/login\?/);
 });
+
+test("HR and System Administrators can sign in at the Admin & HR Login with their badge number", async ({ page }) => {
+  for (const [level, badge, home] of [["hr", "0-00002", "/hr"], ["sysad", "0-00004", "/admin"]] as const) {
+    await page.goto("/login?as=admin");
+    await page.getByLabel("Access Level").selectOption(level);
+    await page.getByLabel("Email Address or Badge Number").fill(badge);
+    await page.getByRole("textbox", { name: "Password" }).fill(demoPassword);
+    await page.getByRole("button", { name: "Login" }).click();
+    await expect(page).toHaveURL(new RegExp(`${home}$`), { timeout: 30_000 });
+    await page.context().clearCookies();
+  }
+});

@@ -64,6 +64,8 @@ describe("LoginForm", () => {
     const { container } = render(<LoginForm accessLevel="sysad" mode="admin" nextPath="/admin" />);
     expect(screen.getByLabelText("Access Level")).toHaveValue("sysad");
     expect(container.querySelector('input[name="as"]')).toHaveValue("admin");
-    expect(screen.getByLabelText("Email Address")).toHaveAttribute("placeholder", "juan.delacruz@gmail.com");
+    const identifier = screen.getByLabelText("Email Address or Badge Number");
+    expect(identifier).toHaveAttribute("type", "text");
+    expect(identifier).toHaveAttribute("placeholder", "juan.delacruz@gmail.com or 0-12345");
   });
 });

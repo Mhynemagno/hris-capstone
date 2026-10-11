@@ -40,11 +40,9 @@ export async function POST(request: NextRequest) {
     return loginRedirect(request, nextPath, "invalid_credentials", mode);
   }
 
-  // Applicants and HR / SysAd type their email; a badge or applicant number is looked up server-side.
+  // An email signs in directly; a badge number (employees, HR / SysAd) or applicant number is looked up server-side.
   const identifier = result.data.identifier;
-  let email = mode === "admin"
-    ? (identifier as string)
-    : typeof identifier === "object"
+  let email = typeof identifier === "object"
       ? (identifier.kind === "email" ? identifier.value : null)
       : (mode ? null : (z.email().safeParse(identifier).success ? identifier : null));
   if (!email) {
@@ -53,7 +51,7 @@ export async function POST(request: NextRequest) {
       const { url } = getPublicSupabaseConfig();
       const admin = createClient(url, serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } });
       const lookup = typeof identifier === "object" ? identifier.value : identifier;
-      const { data } = await admin.rpc("resolve_login_identifier", { target_mode: mode ?? "employee", target_identifier: lookup });
+      const { data } = await admin.rpc("resolve_login_identifier", { target_mode: mode === "applicant" ? "applicant" : "employee", target_identifier: lookup });
       email = typeof data === "string" ? data : null;
     }
     if (!email) return loginRedirect(request, nextPath, "invalid_credentials", mode);
