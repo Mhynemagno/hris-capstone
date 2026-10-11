@@ -16,15 +16,23 @@ export const internalLoginSchema = z.object({ identifier: z.string().trim().min(
 
 export type LoginMode = "applicant" | "employee";
 
-const applicantNumberLoginSchema = z.string().trim().transform((value) => value.replace(/[^0-9]/g, "")).refine((value) => /^\d{6,}$/.test(value), "Enter your Applicant Number.");
+/** Applicants sign in with their email; an applicant number (issued once HR accepts them) still works. */
+const applicantLoginIdentifierSchema = z.string().trim().transform((value, context) => {
+  if (z.email().safeParse(value).success) return { kind: "email" as const, value: value.toLowerCase() };
+  const digits = value.replace(/[^0-9]/g, "");
+  if (/^\d{6,}$/.test(digits)) return { kind: "applicant_number" as const, value: digits };
+  context.addIssue({ code: "custom", message: "Enter your email address." });
+  return z.NEVER;
+});
 const badgeNumberLoginSchema = z.string().trim().transform((value) => value.toUpperCase()).pipe(z.string().min(1, "Enter your Badge Number.").max(32, "Enter a valid Badge Number."));
 
-/** Validates the public identifier only; its email lookup remains server-only. */
+/** Validates the public identifier only; any badge or applicant-number lookup remains server-only. */
+export function loginIdentifierSchema(mode: "applicant"): z.ZodObject<{ identifier: typeof applicantLoginIdentifierSchema; password: typeof passwordSchema }>;
+export function loginIdentifierSchema(mode: "employee"): z.ZodObject<{ identifier: typeof badgeNumberLoginSchema; password: typeof passwordSchema }>;
 export function loginIdentifierSchema(mode: LoginMode) {
-  return z.object({
-    identifier: mode === "applicant" ? applicantNumberLoginSchema : badgeNumberLoginSchema,
-    password: passwordSchema,
-  });
+  return mode === "applicant"
+    ? z.object({ identifier: applicantLoginIdentifierSchema, password: passwordSchema })
+    : z.object({ identifier: badgeNumberLoginSchema, password: passwordSchema });
 }
 
 /** Name qualifiers offered at registration; "None" is stored as no qualifier. */

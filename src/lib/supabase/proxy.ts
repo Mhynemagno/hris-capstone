@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
 import { getPublicSupabaseConfig } from "./env";
+import { applyRememberMe, readSessionOnly } from "./remember-me";
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -12,8 +13,9 @@ export async function updateSession(request: NextRequest) {
       setAll(cookiesToSet) {
         cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
         response = NextResponse.next({ request });
+        const sessionOnly = readSessionOnly(request.cookies);
         cookiesToSet.forEach(({ name, value, options }) =>
-          response.cookies.set(name, value, options),
+          response.cookies.set(name, value, applyRememberMe(options, sessionOnly)),
         );
       },
     },

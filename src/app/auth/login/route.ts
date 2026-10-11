@@ -1,9 +1,11 @@
+import { cookies } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
 import { getSafeNextPath } from "@/lib/auth/safe-redirect";
 import { getPublicSupabaseConfig } from "@/lib/supabase/env";
+import { SESSION_ONLY_COOKIE } from "@/lib/supabase/remember-me";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { internalLoginSchema, loginIdentifierSchema } from "@/schemas/auth";
 
@@ -23,27 +25,39 @@ export async function POST(request: NextRequest) {
   );
   const asValue = formData.get("as");
   const mode = asValue === "employee" || asValue === "applicant" ? asValue : undefined;
-  const result = mode
-    ? loginIdentifierSchema(mode).safeParse({ identifier: formData.get("identifier"), password: formData.get("password") })
-    : internalLoginSchema.safeParse({ identifier: formData.get("identifier") ?? formData.get("email"), password: formData.get("password") });
+  const credentials = { identifier: formData.get("identifier"), password: formData.get("password") };
+  const result = mode === "applicant"
+    ? loginIdentifierSchema("applicant").safeParse(credentials)
+    : mode === "employee"
+      ? loginIdentifierSchema("employee").safeParse(credentials)
+      : internalLoginSchema.safeParse({ identifier: formData.get("identifier") ?? formData.get("email"), password: formData.get("password") });
 
   if (!result.success) {
     return loginRedirect(request, nextPath, "invalid_credentials", mode);
   }
 
-  let email = mode ? null : (z.email().safeParse(result.data.identifier).success ? result.data.identifier : null);
-  if (mode || !email) {
+  // Applicants type their email; a badge or applicant number is looked up server-side.
+  const identifier = result.data.identifier;
+  let email = typeof identifier === "object"
+    ? (identifier.kind === "email" ? identifier.value : null)
+    : (mode ? null : (z.email().safeParse(identifier).success ? identifier : null));
+  if (!email) {
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (serviceRoleKey) {
       const { url } = getPublicSupabaseConfig();
       const admin = createClient(url, serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } });
-      const identifier = result.data.identifier;
-      const { data } = await admin.rpc("resolve_login_identifier", { target_mode: mode ?? "employee", target_identifier: identifier });
+      const lookup = typeof identifier === "object" ? identifier.value : identifier;
+      const { data } = await admin.rpc("resolve_login_identifier", { target_mode: mode ?? "employee", target_identifier: lookup });
       email = typeof data === "string" ? data : null;
     }
     if (!email) return loginRedirect(request, nextPath, "invalid_credentials", mode);
   }
-  if (!email) return loginRedirect(request, nextPath, "invalid_credentials", mode);
+
+  // Record "Remember me" before Supabase writes its session cookies, so they are written as session
+  // cookies when it is unticked. Employees have no such box: their sessions stay persistent.
+  const cookieStore = await cookies();
+  if (mode === "applicant" && formData.get("remember") !== "on") cookieStore.set(SESSION_ONLY_COOKIE, "1", { path: "/", sameSite: "lax" });
+  else cookieStore.delete(SESSION_ONLY_COOKIE);
 
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase.auth.signInWithPassword({ email, password: result.data.password });

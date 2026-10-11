@@ -10,6 +10,9 @@ const { createServerSupabaseClient, signInWithPassword } = vi.hoisted(() => ({
 
 vi.mock("@/lib/supabase/server", () => ({ createServerSupabaseClient }));
 
+const cookieStore = vi.hoisted(() => ({ get: vi.fn(), set: vi.fn(), delete: vi.fn(), getAll: vi.fn(() => []) }));
+vi.mock("next/headers", () => ({ cookies: async () => cookieStore }));
+
 function loginRequest(fields: Record<string, string>) {
   return new NextRequest("http://localhost/auth/login", {
     method: "POST",
@@ -87,5 +90,45 @@ describe("password login route", () => {
 
     expect(signOut).toHaveBeenCalled();
     expect(response.headers.get("location")).toBe("http://localhost/login?next=%2Fapplicant&error=account_disabled");
+  });
+
+  describe("applicant email login", () => {
+    function activeAccountClient() {
+      const maybeSingle = vi.fn().mockResolvedValue({ data: { is_active: true }, error: null });
+      createServerSupabaseClient.mockResolvedValue({
+        auth: { signInWithPassword },
+        from: vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ maybeSingle }) }) }),
+      });
+    }
+
+    beforeEach(() => {
+      cookieStore.set.mockReset();
+      cookieStore.delete.mockReset();
+      activeAccountClient();
+    });
+
+    it("signs an applicant in with their email address and remembers the device", async () => {
+      signInWithPassword.mockResolvedValue({ data: { user: { id: "u1" } }, error: null });
+      const response = await POST(loginRequest({ as: "applicant", identifier: "Juan.Delacruz@Email.com ", password: "secret1", remember: "on", next: "/applicant" }));
+      expect(signInWithPassword).toHaveBeenCalledWith({ email: "juan.delacruz@email.com", password: "secret1" });
+      expect(response.headers.get("location")).toContain("/auth/continue");
+      expect(cookieStore.delete).toHaveBeenCalledWith("hris-session-only");
+    });
+
+    it("marks the session as browser-only before signing in when Remember me is unticked", async () => {
+      signInWithPassword.mockImplementation(async () => {
+        // The preference must already be in place when Supabase writes its session cookies.
+        expect(cookieStore.set).toHaveBeenCalledWith("hris-session-only", "1", expect.objectContaining({ path: "/" }));
+        return { data: { user: { id: "u1" } }, error: null };
+      });
+      await POST(loginRequest({ as: "applicant", identifier: "juan@email.com", password: "secret1" }));
+      expect(signInWithPassword).toHaveBeenCalled();
+    });
+
+    it("rejects an applicant identifier that is neither an email nor an applicant number", async () => {
+      const response = await POST(loginRequest({ as: "applicant", identifier: "juan", password: "secret1" }));
+      expect(response.headers.get("location")).toContain("error=invalid_credentials");
+      expect(signInWithPassword).not.toHaveBeenCalled();
+    });
   });
 });

@@ -4,6 +4,7 @@ import {
   applicantRegistrationSchema,
   forgotPasswordSchema,
   inviteInternalUserSchema,
+  loginIdentifierSchema,
   loginSchema,
   resetPasswordSchema,
 } from "./auth";
@@ -103,5 +104,23 @@ describe("authentication schemas", () => {
         password: "secret1",
       }).success,
     ).toBe(false);
+  });
+});
+
+describe("applicant login identifier", () => {
+  it("accepts an email address, lower-cased", () => {
+    const result = loginIdentifierSchema("applicant").parse({ identifier: " Juan@Email.com ", password: "secret1" });
+    expect(result.identifier).toEqual({ kind: "email", value: "juan@email.com" });
+  });
+
+  it("still accepts an applicant number from an old bookmark or habit", () => {
+    const result = loginIdentifierSchema("applicant").parse({ identifier: "2-02601", password: "secret1" });
+    expect(result.identifier).toEqual({ kind: "applicant_number", value: "202601" });
+  });
+
+  it("asks for an email address otherwise", () => {
+    const result = loginIdentifierSchema("applicant").safeParse({ identifier: "juan", password: "secret1" });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.message).toBe("Enter your email address.");
   });
 });
