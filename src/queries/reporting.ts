@@ -1,5 +1,5 @@
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
-import { dashboardSummarySchema, reportResponseSchema, reportingFilters as parseReportingFilters, type ReportFilters } from "@/schemas/reporting";
+import { dashboardSummarySchema, hrDashboardOverviewSchema, reportResponseSchema, reportingFilters as parseReportingFilters, type ReportFilters } from "@/schemas/reporting";
 
 function throwIfError(error: { message: string } | null) {
   if (error) throw new Error(error.message);
@@ -43,4 +43,10 @@ export async function getManagementReport(input: unknown) {
   const { data, error } = await createBrowserSupabaseClient().rpc("get_management_report", reportArgs(filters));
   throwIfError(error);
   return reportResponseSchema.parse(data);
+}
+
+export async function getHrDashboardOverview() {
+  const { data, error } = await createBrowserSupabaseClient().rpc("get_hr_dashboard_overview");
+  throwIfError(error);
+  return hrDashboardOverviewSchema.parse(data);
 }
