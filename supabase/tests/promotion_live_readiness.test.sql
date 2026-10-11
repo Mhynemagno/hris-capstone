@@ -20,12 +20,14 @@ update public.user_roles set role = case user_id
 end where user_id in ('00000000-0000-4000-8000-000000001601'::uuid, '00000000-0000-4000-8000-000000001602'::uuid, '00000000-0000-4000-8000-000000001603'::uuid);
 
 insert into public.ranks (id, name, code, sort_order, is_active) overriding system value
-values (9911, 'Live Readiness Rank', 'LRR', 9911, true);
+values
+  (9910, 'Live Readiness Base Rank', 'LRB', 9910, true),
+  (9911, 'Live Readiness Rank', 'LRR', 9911, true);
 
 insert into public.employees (id, profile_id, employee_number, first_name, last_name, personal_email, rank_id, employment_started_on)
 values
-  ('00000000-0000-4000-8000-000000001611', '00000000-0000-4000-8000-000000001602', 'LIVE-001', 'Ready', 'Soon', 'live-promo-employee@example.test', 9911, '2020-01-01'),
-  ('00000000-0000-4000-8000-000000001612', '00000000-0000-4000-8000-000000001603', 'LIVE-002', 'Never', 'Reviewed', 'live-promo-other@example.test', 9911, '2020-01-01');
+  ('00000000-0000-4000-8000-000000001611', '00000000-0000-4000-8000-000000001602', 'LIVE-001', 'Ready', 'Soon', 'live-promo-employee@example.test', 9910, '2020-01-01'),
+  ('00000000-0000-4000-8000-000000001612', '00000000-0000-4000-8000-000000001603', 'LIVE-002', 'Never', 'Reviewed', 'live-promo-other@example.test', 9910, '2020-01-01');
 
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000001601';
@@ -95,7 +97,11 @@ select extensions.is(
 );
 
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000001603';
-select extensions.ok(public.get_my_promotion_readiness() is null, 'An employee without a review gets nothing');
+select extensions.is(
+  public.get_my_promotion_readiness() ->> 'targetRankName',
+  'Live Readiness Rank',
+  'An employee sees the next-rank criterion even without a past HR review'
+);
 
 select * from extensions.finish();
 
