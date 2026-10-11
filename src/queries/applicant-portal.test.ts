@@ -12,7 +12,7 @@ vi.mock("@/lib/supabase/client", () => ({
   }),
 }));
 
-import { listHrRegisteredApplicants, removeMyApplicantProfileDocument, saveMyApplicantEducation } from "./applicant-portal";
+import { listHrRegisteredApplicants, listMyApplicationHistory, removeMyApplicantProfileDocument, saveMyApplicantEducation } from "./applicant-portal";
 
 function tableMock(existing: { id: string; level: string }[]) {
   const writes: { op: string; payload?: unknown; id?: unknown }[] = [];
@@ -89,5 +89,19 @@ describe("listHrRegisteredApplicants", () => {
     mocks.rpc.mockResolvedValue({ data: [{ user_id: "u1", application_count: "0", latest_application_status: null }], error: null });
     await expect(listHrRegisteredApplicants()).resolves.toEqual([{ user_id: "u1", application_count: 0, latest_application_status: null }]);
     expect(mocks.rpc).toHaveBeenCalledWith("list_hr_registered_applicants");
+  });
+});
+
+describe("listMyApplicationHistory", () => {
+  beforeEach(() => vi.resetAllMocks());
+
+  it("reads the application's status history oldest first", async () => {
+    const order = vi.fn().mockResolvedValue({ data: [{ id: "h1" }], error: null });
+    const eq = vi.fn(() => ({ order }));
+    mocks.from.mockReturnValue({ select: vi.fn(() => ({ eq })) });
+    await expect(listMyApplicationHistory("223e4567-e89b-42d3-a456-426614174000")).resolves.toEqual([{ id: "h1" }]);
+    expect(mocks.from).toHaveBeenCalledWith("application_status_history");
+    expect(eq).toHaveBeenCalledWith("application_id", "223e4567-e89b-42d3-a456-426614174000");
+    expect(order).toHaveBeenCalledWith("created_at");
   });
 });

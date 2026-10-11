@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { queryKeys } from "@/lib/query-keys";
-import { getMyAccountEmail, listHrRegisteredApplicants, listMyApplicantEducation, removeMyApplicantProfileDocument, saveMyApplicantEducation } from "@/queries/applicant-portal";
+import { getMyAccountEmail, listHrRegisteredApplicants, listMyApplicantEducation, listMyApplicationHistory, removeMyApplicantProfileDocument, saveMyApplicantEducation } from "@/queries/applicant-portal";
 import { listMyApplications } from "@/queries/recruitment";
 import type { ApplicantEducationInput } from "@/schemas/applicant-portal";
 
@@ -40,4 +40,14 @@ const statusFilters = { page: 1, pageSize: 50 };
 /** The applicant's applications, refreshed periodically so HR status changes show without a reload. */
 export function useMyApplicationStatuses() {
   return useQuery({ queryKey: queryKeys.recruitment.myApplications(statusFilters), queryFn: () => listMyApplications(statusFilters), refetchInterval: 30_000, refetchOnWindowFocus: true });
+}
+
+/** The latest application's history: completion dates on the dashboard and HR remarks on the status page. */
+export function useMyApplicationHistory(applicationId: string | undefined) {
+  return useQuery({
+    queryKey: ["recruitment", "my-application-history", applicationId],
+    queryFn: () => listMyApplicationHistory(applicationId!),
+    enabled: Boolean(applicationId),
+    refetchInterval: 30_000,
+  });
 }
