@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confirm Your Email Address</title>
+</head>
+<body style="font-family: Arial, Helvetica, sans-serif; background-color: #f1f5f9; margin: 0; padding: 20px 10px; color: #334155;">
+
+  <div style="max-width: 580px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0;">
+    <!-- Header with Branding -->
+    <div style="background-color: #0b192c; padding: 24px; text-align: center; border-bottom: 4px solid #b91c1c;">
+      <img src="{{ .SiteURL }}/san-juan-police-logo.png" alt="San Juan City Police Station" width="64" height="64" style="display: block; margin: 0 auto;">
+      <div style="color: #ffffff; font-size: 16px; font-weight: bold; letter-spacing: 0.5px; margin-top: 10px; text-transform: uppercase;">San Juan City Police Station</div>
+      <div style="color: #94a3b8; font-size: 11px; margin-top: 2px; text-transform: uppercase;">Online Recruitment &amp; Applicant Portal</div>
+    </div>
+
+    <!-- Body Content -->
+    <div style="padding: 32px 28px;">
+      <div style="font-size: 18px; font-weight: bold; color: #0f172a; margin-bottom: 12px;">Confirm Your Email Address</div>
+
+      <p style="font-size: 14px; line-height: 1.6; color: #475569; margin: 0 0 20px;">
+        Thank you for registering with the <strong>PNP San Juan City Recruitment Portal</strong>. To complete your account activation and access your recruitment status, please verify your email address.
+      </p>
+
+      <!-- Registration Details (the applicant number is issued later, once HR accepts the application) -->
+      <div style="background-color: #f8fafc; border-left: 4px solid #1e3a8a; padding: 16px; border-radius: 0 8px 8px 0; margin-bottom: 24px;">
+        <div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: bold;">Your Registration Details</div>
+        <div style="font-size: 12px; color: #64748b; margin-top: 4px;">Registered Email: <strong style="color: #1e3a8a;">{{ .Email }}</strong></div>
+      </div>
+
+      <!-- Call to Action Button -->
+      <div style="text-align: center; margin: 28px 0;">
+        <a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=email&flow=signup" style="background-color: #1e3a8a; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: bold; padding: 14px 32px; border-radius: 8px; display: inline-block; box-shadow: 0 2px 6px rgba(30, 58, 138, 0.3);">Confirm Email &amp; Activate Account</a>
+      </div>
+
+      <p style="font-size: 12px; line-height: 1.6; color: #64748b; margin: 0 0 20px;">
+        If the button above does not work, copy and paste this link into your browser:<br>
+        <a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=email&flow=signup" style="color: #1e3a8a; word-break: break-all;">{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&amp;type=email&amp;flow=signup</a>
+      </p>
+
+      <p style="font-size: 12px; line-height: 1.6; color: #94a3b8; margin: 0;">
+        <em>Note: If you did not create an account on the PNP San Juan Recruitment Portal, please ignore this email.</em>
+      </p>
+    </div>
+
+    <!-- Footer -->
+    <div style="background-color: #f8fafc; padding: 20px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0;">
+      San Juan City Police Station<br>
+      Need help? See <a href="{{ .SiteURL }}/#contact" style="color: #1e3a8a; text-decoration: none;">Contact us</a> on the recruitment portal.<br><br>
+      &copy; San Juan City Police Station Recruitment Office. All rights reserved.
+    </div>
+  </div>
+
+</body>
+</html>
