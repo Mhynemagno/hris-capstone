@@ -1,10 +1,11 @@
-import { ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { ApplicantAuthFrame } from "@/components/auth/applicant-auth-frame";
 import { LoginForm } from "@/components/auth/login-form";
 import { getSafeNextPath } from "@/lib/auth/safe-redirect";
+import { getRecruitmentNotice } from "@/lib/recruitment/recruitment-notice";
 
 /**
  * Photo shown beside the form on larger screens, e.g. "/login-photo.jpg" in public/.
@@ -82,8 +83,36 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       ? "Your email may already be confirmed. Try logging in."
       : undefined;
   const registerHref = nextPath === "/" ? "/applicant/register" : `/applicant/register?next=${encodeURIComponent(nextPath)}`;
-  const title = mode === "employee" ? "Employee login" : "Applicant login";
-  const eyebrow = mode === "applicant" ? "PNP San Juan Recruitment" : "San Juan City Police HRIS";
+
+  if (mode === "applicant") {
+    // Capstone UI loginapp.html, with the live Recruitment Notice.
+    const recruitmentNotice = await getRecruitmentNotice();
+    return (
+      <ApplicantAuthFrame notice={recruitmentNotice}>
+        <div className="mb-6">
+          <span className="mb-3 inline-block rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[11px] font-bold tracking-wider text-blue-900 uppercase">
+            Applicant Portal
+          </span>
+          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Login as Applicant</h1>
+          <p className="mt-1.5 text-xs leading-relaxed text-slate-500">
+            Enter your registered email address below to access your application status and updates.
+          </p>
+        </div>
+        <LoginForm error={errorMessage} mode="applicant" nextPath={nextPath} notice={notice} />
+        <div className="mt-6 text-center text-xs text-slate-500">
+          Don&apos;t have an applicant account?{" "}
+          <Link className="font-bold text-blue-800 hover:text-blue-900 hover:underline" href={registerHref}>Sign up</Link>
+        </div>
+        <p className="mt-2 text-center text-[11px] text-slate-400">
+          Station personnel?{" "}
+          <Link className="font-semibold text-slate-500 hover:text-slate-700 hover:underline" href={switchHref("employee", nextPath)}>Login as Employee</Link>
+        </p>
+      </ApplicantAuthFrame>
+    );
+  }
+
+  const title = "Employee login";
+  const eyebrow = "San Juan City Police HRIS";
 
   return (
     <main className="flex flex-1 items-center justify-center bg-muted px-4 py-8 text-foreground sm:px-6 lg:p-10">
@@ -97,20 +126,10 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             <p className="mt-6 text-sm font-semibold tracking-[0.18em] text-primary uppercase lg:mt-0">{eyebrow}</p>
             <h1 className="mt-2 text-3xl font-bold tracking-tight">{title}</h1>
             <div className="mt-8"><LoginForm error={errorMessage} mode={mode} nextPath={nextPath} notice={notice} /></div>
-            {mode === "employee" ? (
-              <p className="mt-6 text-center text-sm text-muted-foreground">
-                Accounts are created by your administrator.{" "}
-                <Link className="font-semibold text-primary underline-offset-4 hover:underline" href={switchHref("applicant", nextPath)}>Login as Applicant</Link>
-              </p>
-            ) : (
-              <>
-                <p className="mt-6 text-center text-sm text-muted-foreground">Don&apos;t have an account?{" "}<Link className="inline-flex items-center gap-1 font-semibold text-primary underline-offset-4 hover:underline" href={registerHref}>Sign up<ArrowRight aria-hidden="true" className="size-4" /></Link></p>
-                <p className="mt-2 text-center text-sm text-muted-foreground">
-                  Station personnel?{" "}
-                  <Link className="font-semibold text-primary underline-offset-4 hover:underline" href={switchHref("employee", nextPath)}>Login as Employee</Link>
-                </p>
-              </>
-            )}
+            <p className="mt-6 text-center text-sm text-muted-foreground">
+              Accounts are created by your administrator.{" "}
+              <Link className="font-semibold text-primary underline-offset-4 hover:underline" href={switchHref("applicant", nextPath)}>Login as Applicant</Link>
+            </p>
           </div>
         </div>
         <BrandPanel />
