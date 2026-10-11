@@ -19,6 +19,7 @@ describe("StaffAttendance (attendance.html)", () => {
   it("shows the toolbar links and the kiosk launcher, without a Kiosk page link", () => {
     render(<StaffAttendance />);
     expect(screen.getByRole("heading", { level: 1, name: "Attendance Logs" })).toBeInTheDocument();
+    expect(screen.getByRole("searchbox", { name: "Search attendance logs" })).toHaveAttribute("placeholder", "Search this page's name or external ID...");
     expect(screen.getByRole("link", { name: /Import Attendance/ })).toHaveAttribute("href", "/hr/attendance/import");
     expect(screen.getByRole("link", { name: /Face Registration/ })).toHaveAttribute("href", "/hr/attendance/face-enrollment");
     expect(screen.getByRole("link", { name: /Unmatched IDs/ })).toHaveAttribute("href", "/hr/attendance/unmatched");

@@ -54,6 +54,7 @@ describe("StaffLeave (leave.html)", () => {
 
   it("lists the queue with Review for pending rows and View for others", async () => {
     render(<StaffLeave />);
+    expect(screen.getByRole("searchbox", { name: "Search leave requests" })).toHaveAttribute("placeholder", "Search this page's employee or badge no...");
     const [, pendingRow, approvedRow] = screen.getAllByRole("row");
     expect(within(pendingRow!).getByText("For Approval")).toBeInTheDocument();
     expect(within(approvedRow!).queryByRole("button", { name: /^Review/ })).not.toBeInTheDocument();

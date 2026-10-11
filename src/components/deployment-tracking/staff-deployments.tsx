@@ -89,7 +89,7 @@ export function StaffDeployments() {
         <div className="border-b border-slate-100 bg-slate-50/50 p-4">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-12">
             <div className="relative lg:col-span-5">
-              <input aria-label="Search deployments" className="w-full rounded-xl border border-slate-200 bg-white py-2 pr-4 pl-9 text-xs font-medium transition-all focus:ring-2 focus:ring-blue-600 focus:outline-none" onChange={(event) => setQuery(event.target.value)} placeholder="Search employee name or badge number..." type="search" value={query} />
+              <input aria-label="Search deployments" className="w-full rounded-xl border border-slate-200 bg-white py-2 pr-4 pl-9 text-xs font-medium transition-all focus:ring-2 focus:ring-blue-600 focus:outline-none" onChange={(event) => setQuery(event.target.value)} placeholder="Search this page's employee name or badge number..." type="search" value={query} />
               <Search aria-hidden="true" className="absolute top-1/2 left-3.5 size-3 -translate-y-1/2 text-slate-500" />
             </div>
             <div className="lg:col-span-4">

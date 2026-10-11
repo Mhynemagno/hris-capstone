@@ -30,6 +30,7 @@ describe("StaffDeployments (dep.html)", () => {
   it("lists deployments with the mockup columns", () => {
     render(<StaffDeployments />);
     expect(screen.getByRole("heading", { level: 1, name: "DEPLOYMENTS" })).toBeInTheDocument();
+    expect(screen.getByRole("searchbox", { name: "Search deployments" })).toHaveAttribute("placeholder", "Search this page's employee name or badge number...");
     const row = screen.getAllByText("Danilo Fernandez Aguilar Jr")[0]!.closest("tr")!;
     expect(within(row).getByText("Badge: 0-11152")).toBeInTheDocument();
     expect(within(row).getByText("October 13, 2026 – October 13, 2026")).toBeInTheDocument();

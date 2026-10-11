@@ -90,7 +90,7 @@ export function StaffLeave() {
           </div>
           <div className="flex w-full flex-col items-center gap-3 sm:flex-row md:w-auto">
             <div className="relative w-full sm:w-64">
-              <input aria-label="Search leave requests" className="w-full rounded-xl border border-slate-200 bg-white py-2 pr-4 pl-9 text-xs font-medium transition-all focus:ring-2 focus:ring-blue-600 focus:outline-none" onChange={(event) => setQuery(event.target.value)} placeholder="Search employee or badge no..." type="search" value={query} />
+              <input aria-label="Search leave requests" className="w-full rounded-xl border border-slate-200 bg-white py-2 pr-4 pl-9 text-xs font-medium transition-all focus:ring-2 focus:ring-blue-600 focus:outline-none" onChange={(event) => setQuery(event.target.value)} placeholder="Search this page's employee or badge no..." type="search" value={query} />
               <Search aria-hidden="true" className="absolute top-1/2 left-3.5 size-3 -translate-y-1/2 text-slate-500" />
             </div>
             <select aria-label="Leave status" className="w-full cursor-pointer appearance-none rounded-xl border border-slate-200 bg-white py-2 pr-8 pl-3 text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-blue-600 focus:outline-none sm:w-44" onChange={(event) => { setStatus(event.target.value as LeaveRequestStatus | ""); setPage(1); }} value={status}>
