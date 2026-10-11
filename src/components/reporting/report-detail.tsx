@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { EmptyTableState } from "@/components/ui/empty-table-state";
@@ -125,10 +125,19 @@ export function reportDateRangeError(reportKey: ReportKey, draft: DraftFilters) 
     : "End date must be on or after the start date.";
 }
 
-export function ReportDetail({ role, reportKey }: { role: "hr_personnel" | "management"; reportKey: ReportKey }) {
-  const [draft, setDraft] = useState<DraftFilters>(emptyDraft);
+export function ReportDetail({ role, reportKey, initialFilters, autoAction = null }: {
+  role: "hr_personnel" | "management";
+  reportKey: ReportKey;
+  /** Filters chosen in the Generate Report modal (Capstone UI reports.html). */
+  initialFilters?: Partial<Pick<DraftFilters, "startsOn" | "endsOn" | "departmentId">>;
+  /** Print or download once the report has loaded, as the modal's export format asked. */
+  autoAction?: "print" | "csv" | null;
+}) {
+  const initialDraft: DraftFilters = { ...emptyDraft, ...initialFilters };
+  const [draft, setDraft] = useState<DraftFilters>(() => (reportDateRangeError(reportKey, initialDraft) ? emptyDraft : initialDraft));
   // Only valid filters are applied: useReport parses them during render and the RPC rejects start > end.
-  const [applied, setApplied] = useState(() => buildFilters(reportKey, emptyDraft));
+  const [applied, setApplied] = useState(() => buildFilters(reportKey, reportDateRangeError(reportKey, initialDraft) ? emptyDraft : initialDraft));
+  const autoDone = useRef(false);
   if (applied.reportKey !== reportKey) {
     // Status values differ per report; reset filters when navigating to another report.
     setDraft(emptyDraft);
@@ -162,12 +171,24 @@ export function ReportDetail({ role, reportKey }: { role: "hr_personnel" | "mana
     URL.revokeObjectURL(href);
   };
 
+  useEffect(() => {
+    if (!autoAction || autoDone.current || !query.data) return;
+    autoDone.current = true;
+    if (autoAction === "print") window.print();
+    else download();
+  });
+
   const departmentName = departments.data?.find((department) => String(department.id) === String(applied.departmentId ?? ""))?.name;
   const statusName = statusFilter.options.find((option) => option.value === applied.status)?.label;
   const groups = Array.from(new Set(statusFilter.options.map((option) => option.group).filter(Boolean))) as string[];
 
   return (
     <section className="space-y-6">
+      <div className="hidden text-center print:block" data-testid="report-letterhead">
+        <p className="text-xs font-extrabold tracking-widest uppercase">Republic of the Philippines • PNP</p>
+        <p className="text-base font-black uppercase">SAN JUAN CITY POLICE STATION</p>
+        <p className="text-sm font-bold">Human Resource and Doctrine Development Section</p>
+      </div>
       <PageHeader
         action={
           <div className="flex flex-wrap gap-2 print:hidden">

@@ -96,4 +96,13 @@ describe("ReportDetail filters", () => {
     expect(lastCall.endsOn === undefined || lastCall.endsOn >= (lastCall.startsOn ?? "")).toBe(true);
     expect(screen.getByText(/No records match these filters/)).toBeVisible();
   });
+
+  it("opens with the Generate filters and prints once the report has loaded", () => {
+    const print = vi.spyOn(window, "print").mockImplementation(() => undefined);
+    render(<ReportDetail autoAction="print" initialFilters={{ startsOn: "2026-10-01", endsOn: "2026-10-11", departmentId: "1" }} reportKey="deployments" role="hr_personnel" />);
+    expect(mocks.useReport).toHaveBeenLastCalledWith(expect.objectContaining({ startsOn: "2026-10-01", endsOn: "2026-10-11", departmentId: 1 }), "hr_personnel");
+    expect(print).toHaveBeenCalledTimes(1);
+    expect(screen.getByText("SAN JUAN CITY POLICE STATION")).toBeInTheDocument();
+    print.mockRestore();
+  });
 });

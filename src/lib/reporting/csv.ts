@@ -1,6 +1,6 @@
 import type { ReportResponse } from "@/schemas/reporting";
 
-function escapeCsvCell(value: unknown) {
+export function escapeCsvCell(value: unknown) {
   const raw = value == null ? "" : String(value);
   const safe = /^[=+\-@]/.test(raw) ? `'${raw}` : raw;
   return /[",\r\n]/.test(safe) ? `"${safe.replaceAll('"', '""')}"` : safe;
