@@ -16,7 +16,7 @@ The redesign gives personnel a coherent self-service portal for their personnel 
 - Do not use stock photographs of real people. Existing real employee images are shown only if the live personnel record has one; otherwise use initials/avatar treatment.
 - `/login?as=employee` remains the badge-number login, redesigned from `emplogin.html`, titled **Employee / HR**.
 - `/login?as=admin` remains the separate email-and-Access-Level Admin & HR Login.
-- HR and SysAd accounts may sign in with a badge number where their active personnel record resolves that badge; after authentication they still land in their normal role home.
+- Active employee, HR Personnel, management, and System Administrator accounts may sign in with a badge number where their active personnel record resolves that badge (management keeps the badge login it had before this PR); after authentication they still land in their normal role home.
 - PDF page 44 removes the standalone employee scan page. Scanning stays available from the Attendance screen.
 - The untracked `playwright.local.config.ts` remains local and unchanged: no webServer, one worker, localhost base URL.
 - No migration is pushed to live Supabase. The final PR includes explicit manual production-migration steps.
@@ -44,7 +44,7 @@ The old **Scan** sidebar item is removed. The account dropdown passes `profileHr
 
 The employee login receives the `emplogin.html` Capstone form treatment: station logo and employee-portal identity, a small Employee Portal chip, heading **Employee / HR**, badge-number and password fields, password visibility control, password recovery, and existing safe redirect behavior. It does not become an email/Access-Level form.
 
-The server keeps `/login?as=admin` unchanged for explicit HR/SysAd email login. For the badge path, `resolve_login_identifier` accepts the active badge for employee, HR Personnel, or System Administrator staff accounts. The authentication route continues to derive the eventual landing route from the signed-in role; a badge does not confer a role. Invalid, disabled, or unmatched accounts retain the current generic and disabled-account errors.
+The server keeps `/login?as=admin` unchanged for explicit HR/SysAd email login. For the badge path, `resolve_login_identifier` accepts the active badge for employee, HR Personnel, management, or System Administrator staff accounts (management is preserved from pre-PR behavior). The authentication route continues to derive the eventual landing route from the signed-in role; a badge does not confer a role. Invalid, disabled, or unmatched accounts retain the current generic and disabled-account errors.
 
 ## 4. Employee Screens
 
