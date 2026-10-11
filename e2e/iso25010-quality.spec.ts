@@ -1,5 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
-import { createClient } from "@supabase/supabase-js";
+import { execFileSync } from "node:child_process";
 import { expect, test, type Page } from "@playwright/test";
 import { openLoginAndSignIn } from "./demo-accounts";
 
@@ -19,44 +19,53 @@ const accounts = {
   admin: { email: "demo.admin@example.test", home: "/admin" },
 } as const;
 
-/** Service-role client for local test arrangement (playwright.config.ts refuses non-local URLs). */
-function serviceClient() {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped test arrangement client
-  return createClient<any>(process.env.HRIS_E2E_SUPABASE_URL!, process.env.HRIS_E2E_SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false, autoRefreshToken: false } });
+/**
+ * Runs SQL as the table owner inside the local Supabase database container. The Data API's
+ * service_role has no explicit table grants in this schema, so arrangement cannot go through it.
+ */
+function localSql(script: string) {
+  return execFileSync("docker", ["exec", "-i", "supabase_db_hris-capstone", "psql", "-U", "postgres", "-d", "postgres", "-v", "ON_ERROR_STOP=1", "-qtA"], { input: script, encoding: "utf8" }).trim();
 }
+
+const corporal = "(select id from public.ranks where code = 'PCPL')";
+const demoEmployee = "(select id from public.employees where employee_number = '0-00001')";
+const corporalCriterion = `(select id from public.promotion_criteria where target_rank_id = ${corporal})`;
 
 /**
  * Makes the demo employee ready to file a promotion docket (Patrolman, long service, an active
  * Police Corporal criterion with no mandatory records) and returns a function that restores every row it touched.
  */
-async function arrangeReadyEmployee(db: ReturnType<typeof serviceClient>) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped test arrangement rows
-  const check = (result: { data: any; error: { message: string } | null }, what: string) => {
-    if (result.error || result.data === null) throw new Error(`${what}: ${result.error?.message ?? "not found"}`);
-    return result.data;
-  };
-  const employee = check(await db.from("employees").select("id, rank_id, employment_started_on").eq("employee_number", "0-00001").maybeSingle(), "demo employee");
-  const ranks = check(await db.from("ranks").select("id, code").in("code", ["PAT", "PCPL"]), "ranks");
-  const patrolman = ranks.find((rank: { id: number; code: string }) => rank.code === "PAT")!.id;
-  const corporal = ranks.find((rank: { id: number; code: string }) => rank.code === "PCPL")!.id;
-  const existing = (await db.from("promotion_criteria").select("id, is_active, minimum_years_of_service, minimum_performance_rating").eq("target_rank_id", corporal).maybeSingle()).data;
-  let criterionId = existing?.id as string | undefined;
-  if (!criterionId) criterionId = check(await db.from("promotion_criteria").insert({ target_rank_id: corporal, minimum_years_of_service: 1, is_active: true }).select("id").single(), "criterion").id;
-  else check(await db.from("promotion_criteria").update({ is_active: true, minimum_years_of_service: 1, minimum_performance_rating: null }).eq("id", criterionId).select("id").single(), "criterion update");
-  const mandatory = (await db.from("promotion_criteria_requirements").select("id").eq("criterion_id", criterionId).eq("is_mandatory", true)).data ?? [];
-  if (mandatory.length) check(await db.from("promotion_criteria_requirements").update({ is_mandatory: false }).in("id", mandatory.map((row) => row.id)).select("id"), "requirements");
-  const priorDockets = (await db.from("employee_promotion_dockets").select("*").eq("employee_id", employee.id).eq("criterion_id", criterionId)).data ?? [];
-  if (priorDockets.length) await db.from("employee_promotion_dockets").delete().eq("employee_id", employee.id).eq("criterion_id", criterionId);
-  check(await db.from("employees").update({ rank_id: patrolman, employment_started_on: "2015-01-01" }).eq("id", employee.id).select("id").single(), "employee update");
+function arrangeReadyEmployee() {
+  const saved = JSON.parse(localSql(`select json_build_object(
+    'employee', (select json_build_object('rankId', rank_id, 'startedOn', employment_started_on) from public.employees where id = ${demoEmployee}),
+    'criterion', (select json_build_object('isActive', is_active, 'years', minimum_years_of_service, 'rating', minimum_performance_rating) from public.promotion_criteria where id = ${corporalCriterion}),
+    'mandatory', (select coalesce(json_agg(id), '[]') from public.promotion_criteria_requirements where criterion_id = ${corporalCriterion} and is_mandatory),
+    'dockets', (select coalesce(json_agg(d), '[]') from public.employee_promotion_dockets d where employee_id = ${demoEmployee} and criterion_id = ${corporalCriterion}));`));
+  if (!saved.employee) throw new Error("The demo employee 0-00001 is missing from the seed data.");
 
+  localSql(`begin;
+    insert into public.promotion_criteria (target_rank_id, minimum_years_of_service, is_active)
+      select ${corporal}, 1, true where not exists (select 1 from public.promotion_criteria where target_rank_id = ${corporal});
+    update public.promotion_criteria set is_active = true, minimum_years_of_service = 1, minimum_performance_rating = null where id = ${corporalCriterion};
+    update public.promotion_criteria_requirements set is_mandatory = false where criterion_id = ${corporalCriterion};
+    delete from public.employee_promotion_dockets where employee_id = ${demoEmployee} and criterion_id = ${corporalCriterion};
+    update public.employees set rank_id = (select id from public.ranks where code = 'PAT'), employment_started_on = '2015-01-01' where id = ${demoEmployee};
+    commit;`);
+
+  const literal = (value: unknown) => (value === null || value === undefined ? "null" : `'${String(value).replaceAll("'", "''")}'`);
   return {
-    async restore() {
-      await db.from("employee_promotion_dockets").delete().eq("employee_id", employee.id).eq("criterion_id", criterionId);
-      if (priorDockets.length) await db.from("employee_promotion_dockets").insert(priorDockets);
-      await db.from("employees").update({ rank_id: employee.rank_id, employment_started_on: employee.employment_started_on }).eq("id", employee.id);
-      if (mandatory.length) await db.from("promotion_criteria_requirements").update({ is_mandatory: true }).in("id", mandatory.map((row) => row.id));
-      if (!existing) await db.from("promotion_criteria").delete().eq("id", criterionId);
-      else await db.from("promotion_criteria").update({ is_active: existing.is_active, minimum_years_of_service: existing.minimum_years_of_service, minimum_performance_rating: existing.minimum_performance_rating }).eq("id", criterionId);
+    restore() {
+      const criterion = saved.criterion
+        ? `update public.promotion_criteria set is_active = ${saved.criterion.isActive}, minimum_years_of_service = ${literal(saved.criterion.years)}, minimum_performance_rating = ${literal(saved.criterion.rating)} where id = ${corporalCriterion};`
+        : `delete from public.promotion_criteria where id = ${corporalCriterion};`;
+      const mandatory = saved.mandatory.length ? `update public.promotion_criteria_requirements set is_mandatory = true where id in (${saved.mandatory.map(literal).join(", ")});` : "";
+      localSql(`begin;
+        delete from public.employee_promotion_dockets where employee_id = ${demoEmployee} and criterion_id = ${corporalCriterion};
+        insert into public.employee_promotion_dockets select * from jsonb_populate_recordset(null::public.employee_promotion_dockets, ${literal(JSON.stringify(saved.dockets))}::jsonb);
+        update public.employees set rank_id = ${literal(saved.employee.rankId)}, employment_started_on = ${literal(saved.employee.startedOn)} where id = ${demoEmployee};
+        ${mandatory}
+        ${criterion}
+        commit;`);
     },
   };
 }
@@ -153,8 +162,7 @@ test.describe("Interaction capability (usability): accessibility", () => {
     });
   }
   test("the employee promotion docket dialog has no serious or critical accessibility violations", async ({ page }) => {
-    const db = serviceClient();
-    const arranged = await arrangeReadyEmployee(db);
+    const arranged = arrangeReadyEmployee();
     try {
       await signIn(page, accounts.employee);
       await page.goto("/employee/promotion-eligibility");
@@ -168,7 +176,7 @@ test.describe("Interaction capability (usability): accessibility", () => {
       const blocking = results.violations.filter((violation) => violation.impact === "serious" || violation.impact === "critical");
       expect(blocking.map((violation) => `${violation.id}: ${violation.help} (${violation.nodes.length} element(s))`), "promotion docket dialog").toEqual([]);
     } finally {
-      await arranged.restore();
+      arranged.restore();
     }
   });
 });
