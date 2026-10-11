@@ -58,10 +58,9 @@ HR, Employee and SysAd screens look exactly as before.
 - **Migration (registration):** drop the BEFORE INSERT trigger `applicants_assign_applicant_number` from `applicants`, so registration no longer assigns a number. Keep `private.next_applicant_number(year)` and `private.applicant_number_counters`.
 - **Migration (sign-up email):** drop the AFTER INSERT trigger `applicants_notify_applicant_number` and `private.notify_applicant_number` from `20261010110001_applicant_number_email.sql`, so no number email goes out at sign-up. In `private.enqueue_notification_email`, replace the `applicant_registered` → `applicant_welcome` mapping with `applicant_number_assigned` → `applicant_welcome`. The existing outbox template is reused for the acceptance email.
 - **New AFTER UPDATE trigger on `applications`:**
-  - **Fires when:**
-    - `status` changes from `'Application Submission'` to any later stage (not `'Not Selected'`), **or**
-    - the stage result for Application Submission becomes `passed` or `verified`,
-    - **and** the applicant has no `applicant_number` yet.
+  - **Fires when:** `status` changes from `'Application Submission'` to any later stage (not `'Not Selected'`), **and** the applicant has no `applicant_number` yet.
+    - That is HR marking Application Submission **Passed**, which moves the application to the Physical Agility Test.
+    - Marking it **Verified** (documents checked) does not issue a number.
   - **Assigns:** `next_applicant_number(extract(year from now() at time zone 'Asia/Manila'))`.
   - **Notification:** inserts type `applicant_number_assigned`, title "Your applicant number", body "Your application was accepted. Your applicant number is {formatted}.", link `/applicant`. The existing Brevo outbox maps this type to an email.
   - **Formatting:** uses `public.format_applicant_number`. The old `lpad(…, 6, '0')` truncation bug must not be reproduced: 2026100 formats as "2-026100", not "2-02610".
@@ -74,7 +73,7 @@ HR, Employee and SysAd screens look exactly as before.
 - **Migration:** `applications.stage_scheduled_at timestamptz null` and `applications.stage_venue text null` (≤ 200 chars, trimmed).
 - **HR result RPC:** the RPC that sets a stage result (`20261010100002_recruitment_stage_results.sql`) takes optional `target_scheduled_at` and `target_venue`. It stores them when the result is `scheduled` and clears both whenever `status` changes.
 - **HR UI:** the existing stage-result form shows Date & time and Venue inputs when **Scheduled** is chosen. No other HR UI change.
-- **Applicant notification:** for `scheduled`, appends " on {September 23, 2026, 6:00 AM} at {venue}" when the fields are set. Dates use `src/lib/format-date.ts` (words).
+- **Applicant notification:** for `scheduled`, appends " on {September 23, 2026, 6:00 AM} at {venue}" when the fields are set. Dates use `src/lib/format-date.ts` (words). Every `application_status_updated` notification now links to `/applicant/applications`, the single status page.
 - **Remarks:** the applicant-visible remarks for the current stage are status-history rows where `previous_status = next_status = current status` with a note. This is the existing remark mechanism.
 
 ### 1.4 Notification delete
@@ -228,7 +227,9 @@ Each card has:
 - Logo, "SAN JUAN CITY POLICE STATION", "EASTERN POLICE DISTRICT • NCRPO", and a pulsing "APPLICANT PORTAL" pill.
 - "SERVICE • HONOR • JUSTICE" badge, "To Serve and Protect." and the welcome copy.
 - **Recruitment Notice:** "Current Hiring Pool for **{newest published open posting title}** is now open for verified candidates.", or "There is no active recruitment at the moment. Please check back for new openings." Data comes from `listPublishedJobs`, fetched on the server.
-- Footer: "© {year} San Juan City Police Station", **Privacy Policy** (opens the existing privacy notice dialog) and **Help Desk** (links to the public landing page's contact or footer section; an anchor id is added if missing).
+- Footer: "© {year} San Juan City Police Station", **Privacy Policy** and **Help Desk**.
+  - Privacy Policy opens a read-only dialog built from the same sections as `ApplyPrivacyNotice`. The sections move to a shared module.
+  - Help Desk links to `/#contact`, the landing page's Contact us section.
 
 *Behaviour:*
 - Below `lg`, the card goes full width: the form first, then a shortened hero; the mockup's mobile logo header shows.
