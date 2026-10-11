@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { notifySuccess } from "@/components/ui/toaster";
 import { useHireApplication, useRecordStageResult } from "@/hooks/use-recruitment";
+import { manilaLocalToIso } from "@/lib/format-date";
 import { formatApplicantNumber } from "@/lib/recruitment/applicant-number";
 import { needsStageDocument, RESULT_LABELS, type RecordableResult } from "@/lib/recruitment/stage-results";
 import { hiringDecisionSchema, type ApplicationStatus } from "@/schemas/recruitment";
@@ -30,11 +31,13 @@ export function StageResultDialog({ applicationId, onOpenChange, open, result, s
   const record = useRecordStageResult();
   const [note, setNote] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [scheduledAt, setScheduledAt] = useState("");
+  const [venue, setVenue] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [wasOpen, setWasOpen] = useState(open);
   if (open !== wasOpen) {
     setWasOpen(open);
-    if (open) { setNote(""); setFile(null); setError(null); }
+    if (open) { setNote(""); setFile(null); setScheduledAt(""); setVenue(""); setError(null); }
   }
   const label = RESULT_LABELS[result];
   const documentRequired = needsStageDocument(status, result);
@@ -48,7 +51,15 @@ export function StageResultDialog({ applicationId, onOpenChange, open, result, s
       return;
     }
     try {
-      await record.mutateAsync({ applicationId, result, note: note.trim() || undefined, file });
+      await record.mutateAsync({
+        applicationId,
+        result,
+        note: note.trim() || undefined,
+        file,
+        // The applicant sees when and where a Scheduled stage takes place.
+        scheduledAt: result === "scheduled" ? manilaLocalToIso(scheduledAt) : null,
+        venue: result === "scheduled" ? venue.trim() || undefined : undefined,
+      });
       notifySuccess(`${status}: ${label} · applicant notified`);
       onOpenChange(false);
     } catch (cause) {
@@ -76,6 +87,16 @@ export function StageResultDialog({ applicationId, onOpenChange, open, result, s
             >
               <Input accept="application/pdf,image/png,image/jpeg,image/webp" id="stage-document" onChange={(event) => setFile(event.target.files?.[0] ?? null)} type="file" />
             </FormField>
+          ) : null}
+          {result === "scheduled" ? (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FormField description="Philippine time. Optional." htmlFor="stage-scheduled-at" label="Date and time">
+                <Input id="stage-scheduled-at" onChange={(event) => setScheduledAt(event.target.value)} type="datetime-local" value={scheduledAt} />
+              </FormField>
+              <FormField description="Optional." htmlFor="stage-venue" label="Venue">
+                <Input id="stage-venue" maxLength={200} onChange={(event) => setVenue(event.target.value)} value={venue} />
+              </FormField>
+            </div>
           ) : null}
           <FormField description="Included in the applicant's notification." htmlFor="stage-note" label="Note to applicant">
             <Textarea id="stage-note" maxLength={2000} onChange={(event) => setNote(event.target.value)} rows={3} value={note} />

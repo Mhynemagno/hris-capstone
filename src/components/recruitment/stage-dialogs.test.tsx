@@ -24,9 +24,25 @@ describe("stage dialogs", () => {
     expect(within(dialog).queryByLabelText(/^Supporting document/)).not.toBeInTheDocument();
     await userEvent.type(within(dialog).getByLabelText("Note to applicant"), "Monday 8 AM");
     await userEvent.click(within(dialog).getByRole("button", { name: "Mark as Scheduled" }));
-    expect(mocks.record).toHaveBeenCalledWith({ applicationId: id, result: "scheduled", note: "Monday 8 AM", file: null });
+    expect(mocks.record).toHaveBeenCalledWith({ applicationId: id, result: "scheduled", note: "Monday 8 AM", file: null, scheduledAt: null, venue: undefined });
     expect(mocks.notify).toHaveBeenCalledWith("Drug Test: Scheduled · applicant notified");
     expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it("records the date, time and venue when scheduling", async () => {
+    mocks.record.mockResolvedValue(undefined);
+    render(<StageResultDialog applicationId={id} onOpenChange={() => undefined} open result="scheduled" status="Physical Agility Test" />);
+    const dialog = screen.getByRole("dialog", { name: "Mark Physical Agility Test as Scheduled" });
+    await userEvent.type(within(dialog).getByLabelText(/^Date and time/), "2026-10-18T06:00");
+    await userEvent.type(within(dialog).getByLabelText(/^Venue/), "Grandstand Sports Complex");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Mark as Scheduled" }));
+    expect(mocks.record).toHaveBeenCalledWith(expect.objectContaining({ scheduledAt: "2026-10-17T22:00:00.000Z", venue: "Grandstand Sports Complex" }));
+  });
+
+  it("offers no schedule fields for other results", () => {
+    render(<StageResultDialog applicationId={id} onOpenChange={() => undefined} open result="passed" status="Drug Test" />);
+    expect(screen.queryByLabelText(/^Date and time/)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/^Venue/)).not.toBeInTheDocument();
   });
 
   it("requires a supporting document before passing a test stage", async () => {
