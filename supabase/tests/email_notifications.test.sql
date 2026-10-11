@@ -3,12 +3,13 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(32);
+select extensions.plan(36);
 
 select extensions.has_table('private', 'notification_email_outbox', 'Private notification email outbox exists');
 select extensions.has_function('public', 'claim_notification_email_jobs', array['integer'], 'Service worker claim RPC exists');
 select extensions.has_function('public', 'complete_notification_email_job', array['uuid', 'text'], 'Service worker completion RPC exists');
 select extensions.has_function('public', 'fail_notification_email_job', array['uuid', 'text', 'text', 'boolean'], 'Service worker failure RPC exists');
+select extensions.has_function('public', 'notification_email_context', array['uuid'], 'Service worker email context RPC exists');
 
 insert into auth.users (id, aud, role, email, created_at, updated_at)
 values
@@ -73,8 +74,29 @@ select extensions.throws_ok(
   '42501', null,
   'Browser callers cannot claim email jobs'
 );
+select extensions.throws_ok(
+  $$select public.notification_email_context(gen_random_uuid())$$,
+  '42501', null,
+  'Browser callers cannot read email recipient details'
+);
+
+set local role postgres;
+insert into public.applicants (profile_id, first_name, last_name)
+values ('a0000000-0000-0000-0000-000000000002', 'Aldrick', 'Santos')
+on conflict (profile_id) do update set first_name = excluded.first_name;
+select set_config('test.applicant_email_job', (select id::text from private.notification_email_outbox where notification_id = 'b0000000-0000-0000-0000-000000000001'), true);
 
 set local role service_role;
+select extensions.is(
+  public.notification_email_context(current_setting('test.applicant_email_job')::uuid) ->> 'applicant_first_name',
+  'Aldrick',
+  'The email context names the applicant for the applicant email design'
+);
+select extensions.is(
+  public.notification_email_context(gen_random_uuid()),
+  null,
+  'An unknown email job has no context'
+);
 select extensions.is(
   (select count(*) from public.claim_notification_email_jobs(10)),
   6::bigint,

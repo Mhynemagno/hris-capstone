@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>San Juan City Police Station - HRIS Portal</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- FontAwesome Icons -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  
+  <!-- Leaflet CSS for Vicinity Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            pnp: {
+              navy: '#0B1A30',
+              blue: '#152C4F',
+              accent: '#1E3A8A'
+            },
+            sanjuan: {
+              red: '#CE1126',
+              lightred: '#EF4444',
+              gold: '#F59E0B'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    .glass-nav {
+      background: rgba(11, 26, 48, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    #vicinity-map {
+      height: 100%;
+      min-height: 400px;
+      border-radius: 1rem;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 font-sans text-slate-100 antialiased selection:bg-sanjuan-red selection:text-white">
+
+  <!-- Top Bar (San Juan Red Accent Bar) -->
+  <div class="bg-sanjuan-red text-white text-xs py-2 px-4 shadow-md">
+    <div class="max-w-7xl mx-auto flex justify-between items-center font-medium">
+      <div class="flex items-center space-x-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span>Republic of the Philippines • San Juan City Police Station</span>
+      </div>
+      <div class="hidden sm:flex items-center space-x-6">
+        <span><i class="fa-solid fa-phone mr-1"></i> Emergency Hotline: <strong class="text-amber-200">911</strong></span>
+        <span><i class="fa-solid fa-shield-halved mr-1"></i> PNP HRIS Official Gateway</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header Navigation -->
+  <header class="sticky top-0 z-50 glass-nav transition-all">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+      
+      <!-- Logo & Branding -->
+      <div class="flex items-center space-x-3">
+        <div class="w-11 h-11 bg-sanjuan-red text-white rounded-xl flex items-center justify-center font-black text-xl shadow-lg border border-white/20">
+          <i class="fa-solid fa-shield-cat"></i>
+        </div>
+        <div>
+          <h1 class="font-extrabold text-lg text-white tracking-wide uppercase leading-tight">San Juan City Police</h1>
+          <p class="text-xs text-sanjuan-red font-bold tracking-widest uppercase">Human Resource Information System</p>
+        </div>
+      </div>
+
+      <!-- Nav Links -->
+      <nav class="hidden md:flex items-center space-x-8 text-sm font-semibold text-slate-300">
+        <a href="#hero" class="hover:text-sanjuan-red transition-colors">Home</a>
+        <a href="#hub" class="hover:text-sanjuan-red transition-colors">Portal Hub</a>
+        <a href="#vicinity" class="hover:text-sanjuan-red transition-colors">Vicinity Map</a>
+      </nav>
+
+      <!-- Portal Login CTA Button -->
+      <div>
+        <button onclick="openLoginModal()" class="bg-sanjuan-red hover:bg-red-700 text-white font-bold text-xs uppercase px-5 py-3 rounded-xl transition-all shadow-lg hover:shadow-red-900/50 flex items-center space-x-2 border border-red-500/30">
+          <i class="fa-solid fa-lock"></i>
+          <span>Portal Login</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Modern Hero Section -->
+  <section id="hero" class="relative py-20 lg:py-24 overflow-hidden bg-gradient-to-b from-pnp-navy via-pnp-blue to-slate-900">
+    <div class="absolute inset-0 bg-[radial-gradient(#CE1126_1px,transparent_1px)] [background-size:24px_24px] opacity-10"></div>
+    
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+      
+      <span class="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-sanjuan-red/20 text-red-400 border border-sanjuan-red/30 mb-6 backdrop-blur-sm">
+        <i class="fa-solid fa-certificate text-sanjuan-gold mr-2"></i> Official HR Management System
+      </span>
+
+      <h2 class="text-4xl sm:text-6xl font-black text-white tracking-tight leading-tight mb-6 uppercase">
+        Serve San Juan with <span class="text-sanjuan-red drop-shadow-lg">Purpose & Honor</span>
+      </h2>
+
+      <p class="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto mb-10 leading-relaxed font-normal">
+        Centralized digital portal for San Juan City Police Station personnel services, recruitment applications, and official advisories.
+      </p>
+
+
+    </div>
+  </section>
+
+  <!-- Expanded Interactive Portal Hub (4 TABS) -->
+  <section id="hub" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 -mt-10 relative z-20">
+    <div class="bg-white rounded-3xl shadow-2xl text-slate-800 overflow-hidden border border-slate-200">
+      
+      <!-- Tab Header Bar -->
+      <div class="bg-slate-100 p-3 sm:p-4 border-b border-slate-200 flex flex-wrap gap-2 justify-center sm:justify-start">
+        
+        <!-- 1. About PNP -->
+        <button id="tab-btn-about" onclick="switchTab('about')" class="tab-btn px-6 py-3.5 rounded-2xl font-black text-xs uppercase tracking-wider transition-all bg-sanjuan-red text-white shadow-md flex items-center space-x-2">
+          <i class="fa-solid fa-building-shield"></i>
+          <span>About PNP</span>
+        </button>
+
+        <!-- 2. Advisories & News -->
+        <button id="tab-btn-news" onclick="switchTab('news')" class="tab-btn px-6 py-3.5 rounded-2xl font-black text-xs uppercase tracking-wider transition-all text-slate-600 hover:bg-slate-200 flex items-center space-x-2">
+          <i class="fa-solid fa-newspaper"></i>
+          <span>Advisories & News</span>
+        </button>
+
+        <!-- 3. Applicant FAQ -->
+        <button id="tab-btn-faq" onclick="switchTab('faq')" class="tab-btn px-6 py-3.5 rounded-2xl font-black text-xs uppercase tracking-wider transition-all text-slate-600 hover:bg-slate-200 flex items-center space-x-2">
+          <i class="fa-solid fa-circle-question"></i>
+          <span>Frequently Asked Questions (FAQ)</span>
+        </button>
+
+        <!-- 4. Recruitment Openings -->
+        <button id="tab-btn-recruitment" onclick="switchTab('recruitment')" class="tab-btn px-6 py-3.5 rounded-2xl font-black text-xs uppercase tracking-wider transition-all text-slate-600 hover:bg-slate-200 flex items-center space-x-2">
+          <i class="fa-solid fa-briefcase"></i>
+          <span>Recruitment Openings</span>
+        </button>
+
+      </div>
+
+      <!-- Tab Content Area -->
+      <div class="p-6 sm:p-12 min-h-[500px]">
+        
+        <!-- TAB 1: ABOUT PNP -->
+        <div id="tab-content-about" class="tab-content space-y-8">
+          
+          <!-- Top Grid: Station Overview, Vision & Mission -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Left Banner (Dark PNP Navy) -->
+            <div class="lg:col-span-1 bg-pnp-navy text-white p-8 rounded-3xl flex flex-col justify-between border border-slate-800 shadow-xl relative overflow-hidden">
+              <div class="absolute -right-6 -bottom-6 text-white/5 text-9xl font-black pointer-events-none">
+                <i class="fa-solid fa-shield"></i>
+              </div>
+
+              <div>
+                <span class="text-xs font-bold text-sanjuan-red uppercase tracking-widest block mb-2">Philippine National Police</span>
+                <h3 class="text-3xl font-black uppercase mb-4 leading-tight">San Juan City Station</h3>
+                <p class="text-xs text-slate-300 leading-relaxed mb-6 font-normal">
+                  The primary mission of the San Juan City Police Station is to maintain peace and order throughout the City of San Juan. To promote anti-criminality awareness and keep the public safe, the station actively connects with citizens through social media and its online information system.
+                </p>
+              </div>
+            </div>
+
+            <!-- Right Cards: Vision & Mission -->
+            <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+              
+              <!-- Vision Card -->
+              <div class="p-8 border border-slate-200 rounded-3xl bg-slate-50/60 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+                <div>
+                  <div class="w-12 h-12 rounded-2xl bg-sanjuan-red/10 text-sanjuan-red flex items-center justify-center text-xl font-bold mb-5">
+                    <i class="fa-solid fa-eye"></i>
+                  </div>
+                  <h4 class="font-black text-base text-slate-900 uppercase mb-3 tracking-wide">Vision</h4>
+                  <p class="text-xs text-slate-600 leading-relaxed font-normal">
+                    Imploring the aid of the Almighty, by 2030, we shall be a highly capable, effective, and credible police service working in partnership with a responsive community towards the attainment of a safer place to live, work, and do business.
+                  </p>
+                </div>
+                <div class="pt-6 mt-6 border-t border-slate-200/60">
+                  <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">PNP Roadmap 2030</span>
+                </div>
+              </div>
+
+              <!-- Mission Card -->
+              <div class="p-8 border border-slate-200 rounded-3xl bg-slate-50/60 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+                <div>
+                  <div class="w-12 h-12 rounded-2xl bg-pnp-navy/10 text-pnp-navy flex items-center justify-center text-xl font-bold mb-5">
+                    <i class="fa-solid fa-bullseye"></i>
+                  </div>
+                  <h4 class="font-black text-base text-slate-900 uppercase mb-3 tracking-wide">Mission</h4>
+                  <p class="text-xs text-slate-600 leading-relaxed font-normal">
+                    Enforce the law, prevent and control crimes, maintain peace and order, and ensure public safety and internal security with the active support of the community.
+                  </p>
+                </div>
+                <div class="pt-6 mt-6 border-t border-slate-200/60">
+                  <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Public Service Mandate</span>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+          <!-- ABOUT PNP ACCORDION SECTION -->
+          <div class="bg-slate-50 border border-slate-200 rounded-3xl p-8 space-y-4">
+            <div class="flex items-center justify-between mb-2">
+              <h4 class="font-extrabold text-slate-900 text-sm uppercase tracking-wider flex items-center">
+                <i class="fa-solid fa-landmark-flag text-sanjuan-red mr-2"></i> About PNP
+              </h4>
+              <span class="text-[10px] font-bold text-slate-400 uppercase">Click Arrow to Expand</span>
+            </div>
+
+              </div>
+            </div>
+
+            <!-- Item 2: PNP Core Values (Mula sa larawan) -->
+            <div class="border border-slate-200 bg-white rounded-2xl overflow-hidden shadow-sm">
+              <button onclick="toggleHistory(2)" class="w-full text-left p-5 font-extrabold text-xs uppercase tracking-wider text-slate-800 flex justify-between items-center hover:bg-slate-50 transition-colors">
+                <span class="flex items-center">
+                  <span class="w-7 h-7 rounded-lg bg-sanjuan-red/10 text-sanjuan-red flex items-center justify-center mr-3 text-xs font-black">
+                    <i class="fa-solid fa-heart"></i>
+                  </span>
+                  <span>PNP Core Values</span>
+                </span>
+                <i id="history-icon-2" class="fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-200"></i>
+              </button>
+              <div id="history-ans-2" class="hidden p-5 text-xs text-slate-600 border-t border-slate-100 bg-slate-50/50 leading-relaxed space-y-3">
+                <p class="font-bold text-slate-800 italic">Police Service is a noble profession which demands from its members specialized knowledge and skills, as well as standards of ethics and morality.</p>
+                
+                <div class="space-y-3 pt-2">
+                  <div class="p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
+                    <h5 class="font-bold text-slate-900 text-xs uppercase tracking-wide mb-1"><span class="text-sanjuan-red">1. Maka-Diyos</span> (God Fearing)</h5>
+                    <p class="text-slate-600 leading-relaxed">All PNP Personnel must believe in God, who is the Creator of all men and everything on the planet. Seek His guidance in the performance of sworn duties and honor Him at all times.</p>
+                  </div>
+
+                  <div class="p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
+                    <h5 class="font-bold text-slate-900 text-xs uppercase tracking-wide mb-1"><span class="text-sanjuan-red">2. Maka-Bayan</span> (Nationalistic)</h5>
+                    <p class="text-slate-600 leading-relaxed">All PNP Personnel must respect and uphold the Constitution, the laws of the land and the applicable rules and regulations. Recognize the legitimacy and authority of the leadership and obey legal orders of the superior officers.</p>
+                  </div>
+
+                  <div class="p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
+                    <h5 class="font-bold text-slate-900 text-xs uppercase tracking-wide mb-1"><span class="text-sanjuan-red">3. Maka-Tao</span> (Humane)</h5>
+                    <p class="text-slate-600 leading-relaxed">Committing to the service of my fellowmen over and above the personal interest.</p>
+                  </div>
+
+                  <div class="p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
+                    <h5 class="font-bold text-slate-900 text-xs uppercase tracking-wide mb-1"><span class="text-sanjuan-red">4. Maka-Kalikasan</span> (Environment-friendly)</h5>
+                    <p class="text-slate-600 leading-relaxed">Inhibiting from extravagance and ostentatious display of material things. Respect for private and public properties and prevent others from destroying them. And finally, shall help protect the environment and conserve nature to maintain ecological balance.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Item 3: Regional Offices -->
+            <div class="border border-slate-200 bg-white rounded-2xl overflow-hidden shadow-sm">
+              <button onclick="toggleHistory(3)" class="w-full text-left p-5 font-extrabold text-xs uppercase tracking-wider text-slate-800 flex justify-between items-center hover:bg-slate-50 transition-colors">
+                <span class="flex items-center">
+                  <span class="w-7 h-7 rounded-lg bg-sanjuan-red/10 text-sanjuan-red flex items-center justify-center mr-3 text-xs font-black">
+                    <i class="fa-solid fa-map-location-dot"></i>
+                  </span>
+                  <span>PNP Regional Offices</span>
+                </span>
+                <i id="history-icon-3" class="fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-200"></i>
+              </button>
+              <div id="history-ans-3" class="hidden p-5 text-xs text-slate-600 border-t border-slate-100 bg-slate-50/50 leading-relaxed">
+                <ul class="grid grid-cols-1 md:grid-cols-2 gap-2.5 text-slate-700">
+                  <li class="flex items-start">
+                    <i class="fa-solid fa-circle-dot text-sanjuan-red text-[8px] mt-1.5 mr-2 shrink-0"></i>
+                    <span><strong>NCRPO</strong> – National Capital Region Police Office</span>
+                  </li>
+
+                  <li class="flex items-start">
+                    <i class="fa-solid fa-circle-dot text-sanjuan-red text-[8px] mt-1.5 mr-2 shrink-0"></i>
+                    <span><strong>PRO COR</strong> – Police Regional Office Cordillera</span>
+                  </li>
+
+                  <li class="flex items-start">
+                    <i class="fa-solid fa-circle-dot text-sanjuan-red text-[8px] mt-1.5 mr-2 shrink-0"></i>
+                    <span><strong>PRO 1</strong> – Region I - Ilocos Region</span>
+                  </li>
+
+                  <li class="flex items-start">
+                    <i class="fa-solid fa-circle-dot text-sanjuan-red text-[8px] mt-1.5 mr-2 shrink-0"></i>
+                    <span><strong>PRO 2</strong> – Region II - Cagayan Valley</span>
+                  </li>
+
+                  <li class="flex items-start">
+                    <i class="fa-solid fa-circle-dot text-sanjuan-red text-[8px] mt-1.5 mr-2 shrink-0"></i>
+                    <span><strong>PRO 3</strong> – Region III - Central Luzon</span>
+                  </li>
+
+                  <li class="flex items-start">
+                    <i class="fa-solid fa-circle-dot text-sanjuan-red text-[8px] mt-1.5 mr-2 shrink-0"></i>
+                    <span><strong>PRO 4A</strong> – Region IV-A - Calabarzon</span>
+                  </li>
+
+                  <li class="flex items-start">
+                    <i class="fa-solid fa-circle-dot text-sanjuan-red text-[8px] mt-1.5 mr-2 shrink-0"></i>
+                    <span><strong>PRO 4B</strong> – Region IV-B - Mimaropa</span>
+                  </li>
+
+                  <li class="flex items-start">
+                    <i class="fa-solid fa-circle-dot text-sanjuan-red text-[8px] mt-1.5 mr-2 shrink-0"></i>
+                    <span><strong>PRO 5</strong> – Region V - Bicol Region</span>
+                  </li>
+
+                  <li class="flex items-start">
+                    <i class="fa-solid fa-circle-dot text-sanjuan-red text-[8px] mt-1.5 mr-2 shrink-0"></i>
+                    <span><strong>PRO 6</strong> – Region VI - Western Visayas</span>
+                  </li>
+
+                  <li class="flex items-start">
+                    <i class="fa-solid fa-circle-dot text-sanjuan-red text-[8px] mt-1.5 mr-2 shrink-0"></i>
+                    <span><strong>PRO NIR</strong> – Negros Island Region</span>
+                  </li>
+
+                  <li class="flex items-start">
+                    <i class="fa-solid fa-circle-dot text-sanjuan-red text-[8px] mt-1.5 mr-2 shrink-0"></i>
+                    <span><strong>PRO 7</strong> – Region VII - Central Visayas</span>
+                  </li>
+
+                  <li class="flex items-start">
+                    <i class="fa-solid fa-circle-dot text-sanjuan-red text-[8px] mt-1.5 mr-2 shrink-0"></i>
+                    <span><strong>PRO 8</strong> – Region VIII - Eastern Visayas</span>
+                  </li>
+
+                  <li class="flex items-start">
+                    <i class="fa-solid fa-circle-dot text-sanjuan-red text-[8px] mt-1.5 mr-2 shrink-0"></i>
+                    <span><strong>PRO 9</strong> – Region IX - Zamboanga Peninsula</span>
+                  </li>
+
+                  <li class="flex items-start">
+                    <i class="fa-solid fa-circle-dot text-sanjuan-red text-[8px] mt-1.5 mr-2 shrink-0"></i>
+                    <span><strong>PRO 10</strong> – Region X - Northern Mindanao</span>
+                  </li>
+
+                  <li class="flex items-start">
+                    <i class="fa-solid fa-circle-dot text-sanjuan-red text-[8px] mt-1.5 mr-2 shrink-0"></i>
+                    <span><strong>PRO 11</strong> – Region XI - Davao Region</span>
+                  </li>
+
+                  <li class="flex items-start">
+                    <i class="fa-solid fa-circle-dot text-sanjuan-red text-[8px] mt-1.5 mr-2 shrink-0"></i>
+                    <span><strong>PRO 12</strong> – Region XII - Soccsksargen</span>
+                  </li>
+
+                  <li class="flex items-start">
+                    <i class="fa-solid fa-circle-dot text-sanjuan-red text-[8px] mt-1.5 mr-2 shrink-0"></i>
+                    <span><strong>PRO 13</strong> – Region XIII - Caraga</span>
+                  </li>
+
+                  <li class="flex items-start">
+                    <i class="fa-solid fa-circle-dot text-sanjuan-red text-[8px] mt-1.5 mr-2 shrink-0"></i>
+                    <span><strong>PRO BAR</strong> – Bangsamoro Autonomous Region in Muslim Mindanao</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Item 4: District Offices (NCRPO) -->
+            <div class="border border-slate-200 bg-white rounded-2xl overflow-hidden shadow-sm">
+              <button onclick="toggleHistory(4)" class="w-full text-left p-5 font-extrabold text-xs uppercase tracking-wider text-slate-800 flex justify-between items-center hover:bg-slate-50 transition-colors">
+                <span class="flex items-center">
+                  <span class="w-7 h-7 rounded-lg bg-pnp-navy/10 text-pnp-navy flex items-center justify-center mr-3 text-xs font-black">
+                    <i class="fa-solid fa-building-shield"></i>
+                  </span>
+                  <span>NCRPO District Offices</span>
+                </span>
+                <i id="history-icon-4" class="fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-200"></i>
+              </button>
+              <div id="history-ans-4" class="hidden p-5 text-xs text-slate-600 border-t border-slate-100 bg-slate-50/50 leading-relaxed">
+                <ul class="grid grid-cols-1 md:grid-cols-2 gap-2.5 text-slate-700">
+                  <li class="flex items-start">
+                    <i class="fa-solid fa-circle-dot text-sanjuan-red text-[8px] mt-1.5 mr-2 shrink-0"></i>
+                    <span><strong>EPD</strong> – Eastern Police District (Mandaluyong, Marikina, Pasig, San Juan)</span>
+                  </li>
+
+                  <li class="flex items-start">
+                    <i class="fa-solid fa-circle-dot text-sanjuan-red text-[8px] mt-1.5 mr-2 shrink-0"></i>
+                    <span><strong>MPD</strong> – Manila Police District (City of Manila)</span>
+                  </li>
+
+                  <li class="flex items-start">
+                    <i class="fa-solid fa-circle-dot text-sanjuan-red text-[8px] mt-1.5 mr-2 shrink-0"></i>
+                    <span><strong>NPD</strong> – Northern Police District (Caloocan, Malabon, Navotas, Valenzuela)</span>
+                  </li>
+
+                  <li class="flex items-start">
+                    <i class="fa-solid fa-circle-dot text-sanjuan-red text-[8px] mt-1.5 mr-2 shrink-0"></i>
+                    <span><strong>QCPD</strong> – Quezon City Police District (Quezon City)</span>
+                  </li>
+
+                  <li class="flex items-start">
+                    <i class="fa-solid fa-circle-dot text-sanjuan-red text-[8px] mt-1.5 mr-2 shrink-0"></i>
+                    <span><strong>SPD</strong> – Southern Police District (Las Piñas, Makati, Muntinlupa, Parañaque, Pateros, Pasay, Taguig)</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Item 5: PNP Rank Structure -->
+            <div class="border border-slate-200 bg-white rounded-2xl overflow-hidden shadow-sm">
+              <button onclick="toggleHistory(5)" class="w-full text-left p-5 font-extrabold text-xs uppercase tracking-wider text-slate-800 flex justify-between items-center hover:bg-slate-50 transition-colors">
+                <span class="flex items-center">
+                  <span class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center mr-3 text-xs font-black">
+                    <i class="fa-solid fa-ranking-star"></i>
+                  </span>
+                  <span>PNP Rank Structure</span>
+                </span>
+                <i id="history-icon-5" class="fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-200"></i>
+              </button>
+              <div id="history-ans-5" class="hidden p-5 text-xs text-slate-600 border-t border-slate-100 bg-slate-50/50 leading-relaxed space-y-4">
+                
+                <!-- Commissioned Officers -->
+                <div>
+                  <p class="font-black text-slate-900 uppercase text-[11px] mb-2 tracking-wider">Commissioned Officers</p>
+                  <ul class="grid grid-cols-1 md:grid-cols-2 gap-2 text-slate-700">
+                    <li class="flex items-start">
+                      <i class="fa-solid fa-circle-dot text-sanjuan-red text-[8px] mt-1.5 mr-2 shrink-0"></i>
+                      <span><strong>PGEN</strong> – Police General</span>
+                    </li>
+                    <li class="flex items-start">
+                      <i class="fa-solid fa-circle-dot text-sanjuan-red text-[8px] mt-1.5 mr-2 shrink-0"></i>
+                      <span><strong>PLTGEN</strong> – Police Lieutenant General</span>
+                    </li>
+                    <li class="flex items-start">
+                      <i class="fa-solid fa-circle-dot text-sanjuan-red text-[8px] mt-1.5 mr-2 shrink-0"></i>
+                      <span><strong>PMGEN</strong> – Police Major General</span>
+                    </li>
+                    <li class="flex items-start">
+                      <i class="fa-solid fa-circle-dot text-sanjuan-red text-[8px] mt-1.5 mr-2 shrink-0"></i>
+                      <span><strong>PBGEN</strong> – Police Brigadier General</span>
+                    </li>
+                    <li class="flex items-start">
+                      <i class="fa-solid fa-circle-dot text-sanjuan-red text-[8px] mt-1.5 mr-2 shrink-0"></i>
+                      <span><strong>PCOL</strong> – Police Colonel</span>
+                    </li>
+                    <li class="flex items-start">
+                      <i class="fa-solid fa-circle-dot text-sanjuan-red text-[8px] mt-1.5 mr-2 shrink-0"></i>
+                      <span><strong>PLTCOL</strong> – Police Lieutenant Colonel</span>
+                    </li>
+                    <li class="flex items-start">
+                      <i class="fa-solid fa-circle-dot text-sanjuan-red text-[8px] mt-1.5 mr-2 shrink-0"></i>
+                      <span><strong>PMAJ</strong> – Police Major</span>
+                    </li>
+                    <li class="flex items-start">
+                      <i class="fa-solid fa-circle-dot text-sanjuan-red text-[8px] mt-1.5 mr-2 shrink-0"></i>
+                      <span><strong>PCPT</strong> – Police Captain</span>
+                    </li>
+                    <li class="flex items-start">
+                      <i class="fa-solid fa-circle-dot text-sanjuan-red text-[8px] mt-1.5 mr-2 shrink-0"></i>
+                      <span><strong>PLT</strong> – Police Lieutenant</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <!-- Non-Commissioned Officers -->
+                <div class="pt-2 border-t border-slate-200/80">
+                  <p class="font-black text-slate-900 uppercase text-[11px] mb-2 tracking-wider">Non-Commissioned Officers</p>
+                  <ul class="grid grid-cols-1 md:grid-cols-2 gap-2 text-slate-700">
+                    <li class="flex items-start">
+                      <i class="fa-solid fa-circle-dot text-sanjuan-red text-[8px] mt-1.5 mr-2 shrink-0"></i>
+                      <span><strong>PEMS</strong> – Police Executive Master Sergeant</span>
+                    </li>
+                    <li class="flex items-start">
+                      <i class="fa-solid fa-circle-dot text-sanjuan-red text-[8px] mt-1.5 mr-2 shrink-0"></i>
+                      <span><strong>PCMS</strong> – Police Chief Master Sergeant</span>
+                    </li>
+                    <li class="flex items-start">
+                      <i class="fa-solid fa-circle-dot text-sanjuan-red text-[8px] mt-1.5 mr-2 shrink-0"></i>
+                      <span><strong>PSMS</strong> – Police Senior Master Sergeant</span>
+                    </li>
+                    <li class="flex items-start">
+                      <i class="fa-solid fa-circle-dot text-sanjuan-red text-[8px] mt-1.5 mr-2 shrink-0"></i>
+                      <span><strong>PMSg</strong> – Police Master Sergeant</span>
+                    </li>
+                    <li class="flex items-start">
+                      <i class="fa-solid fa-circle-dot text-sanjuan-red text-[8px] mt-1.5 mr-2 shrink-0"></i>
+                      <span><strong>PSSg</strong> – Police Staff Sergeant</span>
+                    </li>
+                    <li class="flex items-start">
+                      <i class="fa-solid fa-circle-dot text-sanjuan-red text-[8px] mt-1.5 mr-2 shrink-0"></i>
+                      <span><strong>PCpl</strong> – Police Corporal</span>
+                    </li>
+                    <li class="flex items-start">
+                      <i class="fa-solid fa-circle-dot text-sanjuan-red text-[8px] mt-1.5 mr-2 shrink-0"></i>
+                      <span><strong>Pat</strong> – Patrolman / Patrolwoman</span>
+                    </li>
+                  </ul>
+                </div>
+
+              </div>
+            </div>
+
+        </div>
+
+        <!-- TAB 2: ADVISORIES & NEWS -->
+        <div id="tab-content-news" class="tab-content hidden">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="border border-slate-200 rounded-2xl p-6 hover:shadow-md transition-all bg-white">
+              <span class="text-[10px] font-bold px-2.5 py-1 bg-amber-100 text-amber-800 rounded-full uppercase mb-3 inline-block">Advisory</span>
+              <p class="text-[10px] text-slate-400 font-semibold mb-1">October 9, 2026</p>
+              <h4 class="font-bold text-sm text-slate-900 mb-2 uppercase">INFORMATION AWARENESS CAMPAIGN</h4>
+              <p class="text-xs text-slate-600 leading-relaxed">Nationwide campaign against illegal activities and community safety information drive.</p>
+            </div>
+
+            <div class="border border-slate-200 rounded-2xl p-6 hover:shadow-md transition-all bg-white">
+              <span class="text-[10px] font-bold px-2.5 py-1 bg-slate-100 text-slate-800 rounded-full uppercase mb-3 inline-block">Station News</span>
+              <p class="text-[10px] text-slate-400 font-semibold mb-1">October 9, 2026</p>
+              <h4 class="font-bold text-sm text-slate-900 mb-2 uppercase">MONTHLY RANK INSPECTION</h4>
+              <p class="text-xs text-slate-600 leading-relaxed">San Juan City Police Station conducts monthly rank inspection to strengthen discipline.</p>
+            </div>
+
+            <div class="border border-slate-200 rounded-2xl p-6 hover:shadow-md transition-all bg-white">
+              <span class="text-[10px] font-bold px-2.5 py-1 bg-sanjuan-red/10 text-sanjuan-red rounded-full uppercase mb-3 inline-block">Community</span>
+              <p class="text-[10px] text-slate-400 font-semibold mb-1">October 9, 2026</p>
+              <h4 class="font-bold text-sm text-slate-900 mb-2 uppercase">OPLAN BISITA ESKWELA (BES)</h4>
+              <p class="text-xs text-slate-600 leading-relaxed">Police presence and safety awareness campaign across San Juan City schools.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: APPLICANT FAQ (ACCORDION) -->
+        <div id="tab-content-faq" class="tab-content hidden space-y-4 max-w-4xl mx-auto">
+          
+          <div class="border border-slate-200 rounded-2xl bg-white overflow-hidden shadow-sm">
+            <button onclick="toggleFaq(1)" class="w-full text-left p-5 font-bold text-sm text-slate-900 flex justify-between items-center hover:bg-slate-50 transition-colors">
+              <span>Who can apply for recruitment in San Juan City Police Station?</span>
+              <i id="faq-icon-1" class="fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-200"></i>
+            </button>
+            <div id="faq-ans-1" class="hidden p-5 text-xs text-slate-600 border-t border-slate-100 bg-slate-50/50 leading-relaxed">
+              Filipino citizens with good moral character, physically and mentally fit, possessing Civil Service or PNP Board eligibility.
+            </div>
+          </div>
+
+          <div class="border border-slate-200 rounded-2xl bg-white overflow-hidden shadow-sm">
+            <button onclick="toggleFaq(2)" class="w-full text-left p-5 font-bold text-sm text-slate-900 flex justify-between items-center hover:bg-slate-50 transition-colors">
+              <span>What documents are required for application submission?</span>
+              <i id="faq-icon-2" class="fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-200"></i>
+            </button>
+            <div id="faq-ans-2" class="hidden p-5 text-xs text-slate-600 border-t border-slate-100 bg-slate-50/50 leading-relaxed">
+              PSA Birth Certificate, Transcript of Records (TOR), Eligibility Certificate, Clearances (NBI/Police), and Personal Data Sheet (PDS).
+            </div>
+          </div>
+
+          <div class="border border-slate-200 rounded-2xl bg-white overflow-hidden shadow-sm">
+            <button onclick="toggleFaq(3)" class="w-full text-left p-5 font-bold text-sm text-slate-900 flex justify-between items-center hover:bg-slate-50 transition-colors">
+              <span>How can I track my recruitment application status?</span>
+              <i id="faq-icon-3" class="fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-200"></i>
+            </button>
+            <div id="faq-ans-3" class="hidden p-5 text-xs text-slate-600 border-t border-slate-100 bg-slate-50/50 leading-relaxed">
+              You can enter your generated Reference ID inside the "Recruitment Openings" tab tracker box or log in through the Applicant Portal.
+            </div>
+          </div>
+
+        </div>
+
+        <!-- TAB 4: RECRUITMENT OPENINGS -->
+        <div id="tab-content-recruitment" class="tab-content hidden">
+          <div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-red-50 p-6 rounded-2xl border border-red-100">
+            <div>
+              <h3 class="font-extrabold text-slate-900 text-xl uppercase">Active Recruitment Drives</h3>
+              <p class="text-xs text-slate-600">Apply online for uniform and non-uniform positions at San Juan City Police Station.</p>
+            </div>
+            
+            <div class="flex items-center space-x-2 w-full md:w-auto">
+              <input type="text" placeholder="Reference No..." class="px-4 py-2.5 text-xs font-semibold border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-sanjuan-red w-full md:w-52">
+              <button class="bg-pnp-navy hover:bg-slate-800 text-white text-xs font-bold uppercase px-4 py-3 rounded-xl transition-colors whitespace-nowrap">
+                Track Status
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="border border-slate-200 rounded-2xl p-6 hover:border-sanjuan-red transition-all shadow-sm hover:shadow-md bg-white flex flex-col justify-between">
+              <div>
+                <div class="flex justify-between items-center mb-3">
+                  <span class="text-[10px] font-black uppercase px-3 py-1 bg-sanjuan-red/10 text-sanjuan-red rounded-full">Uniformed Regular</span>
+                  <span class="text-xs text-slate-400 font-semibold"><i class="fa-regular fa-clock mr-1"></i> CY 2026</span>
+                </div>
+                <h4 class="font-extrabold text-slate-900 text-lg mb-2 uppercase">SAN JUAN CITY RECRUITMENT - CY 2026</h4>
+                <p class="text-xs text-slate-600 mb-4 leading-relaxed">Open for qualified police officer candidates. Prepare your civil service eligibility and submitted documents.</p>
+              </div>
+              <div class="pt-4 border-t border-slate-100 flex items-center justify-between">
+                <span class="text-xs text-sanjuan-red font-bold">Deadline: Oct 14, 2026</span>
+                <button onclick="openLoginModal()" class="text-xs font-extrabold text-sanjuan-red hover:underline flex items-center space-x-1">
+                  <span>Apply Now</span>
+                  <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="border border-slate-200 rounded-2xl p-6 hover:border-sanjuan-red transition-all shadow-sm hover:shadow-md bg-white flex flex-col justify-between">
+              <div>
+                <div class="flex justify-between items-center mb-3">
+                  <span class="text-[10px] font-black uppercase px-3 py-1 bg-pnp-navy/10 text-pnp-navy rounded-full">Non-Uniformed Staff</span>
+                  <span class="text-xs text-slate-400 font-semibold"><i class="fa-regular fa-clock mr-1"></i> Full-Time</span>
+                </div>
+                <h4 class="font-extrabold text-slate-900 text-lg mb-2 uppercase">ADMINISTRATIVE AIDE VI (RECORDS)</h4>
+                <p class="text-xs text-slate-600 mb-4 leading-relaxed">Encoding and maintenance of station personnel files, leave logs, and official records management.</p>
+              </div>
+              <div class="pt-4 border-t border-slate-100 flex items-center justify-between">
+                <span class="text-xs text-sanjuan-red font-bold">Deadline: Nov 01, 2026</span>
+                <button onclick="openLoginModal()" class="text-xs font-extrabold text-sanjuan-red hover:underline flex items-center space-x-1">
+                  <span>Apply Now</span>
+                  <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Vicinity Map Section -->
+  <section id="vicinity" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="text-center mb-10">
+      <span class="text-sanjuan-red font-bold text-xs uppercase tracking-widest">Station Location</span>
+      <h3 class="text-3xl font-black text-white uppercase tracking-tight mt-1">Vicinity Map & Contact Details</h3>
+      <p class="text-xs text-slate-400 mt-2">Find San Juan City Police Station headquarters and official location map.</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+      <div class="lg:col-span-2 bg-slate-800 rounded-2xl p-2 border border-slate-700 shadow-2xl min-h-[400px]">
+        <div id="vicinity-map"></div>
+      </div>
+
+      <div class="bg-slate-800/90 rounded-2xl p-6 border border-slate-700 shadow-xl flex flex-col justify-between">
+        <div>
+          <div class="flex items-center space-x-3 mb-6">
+            <div class="w-10 h-10 rounded-xl bg-sanjuan-red text-white flex items-center justify-center font-bold">
+              <i class="fa-solid fa-location-dot"></i>
+            </div>
+            <div>
+              <h4 class="font-extrabold text-white text-base">San Juan City Police Station</h4>
+              <p class="text-xs text-slate-400">Eastern Police District (EPD)</p>
+            </div>
+          </div>
+
+          <div class="space-y-4 text-xs text-slate-300">
+            <div class="p-3.5 rounded-xl bg-slate-900/60 border border-slate-700">
+              <span class="text-slate-400 block font-semibold mb-1 uppercase text-[10px]">Station Address</span>
+              <p class="font-bold text-white leading-normal">Santolan Road cor. Col. Bonny Serrano Avenue, San Juan City, Metro Manila</p>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-slate-900/60 border border-slate-700">
+              <span class="text-slate-400 block font-semibold mb-1 uppercase text-[10px]">Hotline Numbers</span>
+              <p class="font-bold text-amber-400 text-sm">0917-773-7885 / (02) 8724-2515</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-6">
+          <a href="https://maps.google.com/?q=San+Juan+City+Police+Station" target="_blank" class="w-full bg-sanjuan-red hover:bg-red-700 text-white font-bold text-xs uppercase py-3.5 rounded-xl block text-center shadow-lg transition-all">
+            Get Directions on Google Maps <i class="fa-solid fa-arrow-up-right-from-square ml-1"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Login Modal Selection -->
+  <div id="login-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 text-slate-800 shadow-2xl relative border border-slate-100">
+      <button onclick="closeLoginModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+
+      <div class="text-center mb-6">
+        <div class="w-12 h-12 bg-sanjuan-red text-white rounded-2xl flex items-center justify-center mx-auto mb-3 font-bold text-xl shadow-lg">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <h3 class="font-black text-xl text-slate-900 uppercase">Select User Role</h3>
+        <p class="text-xs text-slate-500 mt-1">Please select your designated role to proceed to the login page.</p>
+      </div>
+
+      <div class="space-y-3">
+        <button class="w-full text-left p-4 rounded-2xl border border-slate-200 hover:border-sanjuan-red hover:bg-red-50/50 transition-all group flex items-center space-x-4">
+          <div class="w-10 h-10 rounded-xl bg-pnp-navy text-white flex items-center justify-center shrink-0 group-hover:bg-sanjuan-red transition-colors">
+            <i class="fa-solid fa-user-shield"></i>
+          </div>
+          <div>
+            <h4 class="font-bold text-slate-900 text-xs uppercase">HR / Employee Portal</h4>
+            <p class="text-[11px] text-slate-500">For HR Admin and San Juan Personnel</p>
+          </div>
+        </button>
+
+        <button class="w-full text-left p-4 rounded-2xl border border-slate-200 hover:border-sanjuan-red hover:bg-red-50/50 transition-all group flex items-center space-x-4">
+          <div class="w-10 h-10 rounded-xl bg-sanjuan-red text-white flex items-center justify-center shrink-0">
+            <i class="fa-solid fa-id-card"></i>
+          </div>
+          <div>
+            <h4 class="font-bold text-slate-900 text-xs uppercase">Applicant Portal</h4>
+            <p class="text-[11px] text-slate-500">For SJCPS Applicants</p>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-slate-950 text-slate-500 text-xs py-8 px-4 border-t border-slate-900">
+    <div class="max-w-7xl mx-auto text-center space-y-2">
+      <p>San Juan City Police Station • Human Resource Information System</p>
+      <p class="text-slate-600">Protected under the Data Privacy Act of 2012 (Republic Act No. 10173).</p>
+    </div>
+  </footer>
+
+  <!-- Leaflet JS for Map -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Interactive Scripts -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const sanJuanLat = 14.6019;
+      const sanJuanLng = 121.0355;
+
+      const map = L.map('vicinity-map').setView([sanJuanLat, sanJuanLng], 16);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+
+      const customIcon = L.divIcon({
+        className: 'custom-map-pin',
+        html: `<div style="background-color: #CE1126; color: white; width: 36px; height: 36px; rounded: 50%; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.5); font-size: 16px;"><i class="fa-solid fa-shield-halved"></i></div>`,
+        iconSize: [36, 36],
+        iconAnchor: [18, 18]
+      });
+
+      L.marker([sanJuanLat, sanJuanLng], { icon: customIcon }).addTo(map)
+        .bindPopup("<b>San Juan City Police Station</b><br>Santolan Rd, San Juan, Metro Manila")
+        .openPopup();
+    });
+
+    // Tab Switcher Script
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(el => {
+        el.classList.remove('bg-sanjuan-red', 'text-white', 'shadow-md');
+        el.classList.add('text-slate-600', 'hover:bg-slate-200');
+      });
+
+      const activeContent = document.getElementById('tab-content-' + tabId);
+      if (activeContent) {
+        activeContent.classList.remove('hidden');
+      }
+
+      const activeBtn = document.getElementById('tab-btn-' + tabId);
+      if (activeBtn) {
+        activeBtn.classList.add('bg-sanjuan-red', 'text-white', 'shadow-md');
+        activeBtn.classList.remove('text-slate-600', 'hover:bg-slate-200');
+      }
+    }
+
+    // FAQ Accordion Toggle Function
+    function toggleFaq(id) {
+      const ans = document.getElementById('faq-ans-' + id);
+      const icon = document.getElementById('faq-icon-' + id);
+      if (ans) ans.classList.toggle('hidden');
+      if (icon) icon.classList.toggle('rotate-180');
+    }
+
+    // History Accordion Toggle Function
+    function toggleHistory(id) {
+      const ans = document.getElementById('history-ans-' + id);
+      const icon = document.getElementById('history-icon-' + id);
+      if (ans) ans.classList.toggle('hidden');
+      if (icon) icon.classList.toggle('rotate-180');
+    }
+
+    // Modal Control Scripts
+    function openLoginModal() {
+      document.getElementById('login-modal').classList.remove('hidden');
+    }
+
+    function closeLoginModal() {
+      document.getElementById('login-modal').classList.add('hidden');
+    }
+  </script>
+
+</body>
+</html>
