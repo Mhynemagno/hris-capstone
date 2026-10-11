@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import { DeploymentStatusBadge } from "./deployment-status-badge";
@@ -31,9 +32,9 @@ describe("deployment tracking presentation", () => {
     expect(screen.getByText("Public Assembly · Rally")).toBeVisible();
   });
 
-  it("lets the employee submit a report / proof of attendance for each deployment", () => {
+  it("lets the employee submit a report / proof of attendance for each deployment", async () => {
     render(<EmployeeDeploymentList />);
-    expect(screen.getByText("Report / proof of attendance")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Report / Proof of Attendance" }));
     expect(screen.getByRole("button", { name: "Submit report" })).toBeInTheDocument();
   });
 });
