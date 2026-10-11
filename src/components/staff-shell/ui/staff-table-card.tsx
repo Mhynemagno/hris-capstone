@@ -46,7 +46,8 @@ export function StaffTableCard({ title, subtitle, count, toolbar, children, page
 export const staffTable = {
   table: "w-full min-w-[760px] text-left text-xs",
   thead: "bg-slate-50 text-[11px] font-bold tracking-wider text-slate-500 uppercase",
-  th: "px-4 py-3.5 first:pl-6 last:pr-6",
+  // Typography sits on each cell: the workspace table reset (globals.css) targets th directly.
+  th: "px-4 py-3.5 text-[11px] font-bold tracking-wider text-slate-500 uppercase first:pl-6 last:pr-6",
   tbody: "divide-y divide-slate-100 font-medium text-slate-700",
   tr: "transition-colors hover:bg-slate-50/80",
   td: "px-4 py-4 first:pl-6 last:pr-6",

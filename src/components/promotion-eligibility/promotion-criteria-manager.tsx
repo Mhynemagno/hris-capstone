@@ -110,6 +110,8 @@ function CriterionForm({ rankOptions, takenRankIds }: { rankOptions: { value: st
         <StaffLabel htmlFor="target-rank" required>Target Rank</StaffLabel>
         <Combobox
           aria-label="Target Rank"
+          className="rounded-xl border-slate-200 bg-slate-50"
+          inputClassName="text-xs font-medium text-slate-900 placeholder:text-slate-400"
           emptyMessage="No rank without criteria matches that search."
           id="target-rank"
           onValueChange={setRankId}
