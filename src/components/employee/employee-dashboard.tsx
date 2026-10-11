@@ -14,7 +14,7 @@ import { useDepartmentOptions, useRankOptions } from "@/hooks/use-administration
 import { useMyAttendanceLogs } from "@/hooks/use-attendance-integration";
 import { useMyDeployments } from "@/hooks/use-deployment-tracking";
 import { useLeaveTypes, useMyLeaveBalances } from "@/hooks/use-leave-management";
-import { useEmployeeForCurrentUser } from "@/hooks/use-personnel-records";
+import { useEmployeeForCurrentUser, useEmployeeProfilePhotoUrl } from "@/hooks/use-personnel-records";
 import { useMyPromotionEligibility } from "@/hooks/use-promotion-eligibility";
 import { usePublishedAnnouncements } from "@/hooks/use-public-site";
 import { formatDate, formatDateRange } from "@/lib/format-date";
@@ -72,6 +72,7 @@ export function EmployeeDashboard() {
   const balances = useMyLeaveBalances(Number(today.slice(0, 4)));
   const leaveTypes = useLeaveTypes({ pageSize: 100 });
   const attendance = useMyAttendanceLogs({ startsOn: today, endsOn: today, pageSize: 1 });
+  const photo = useEmployeeProfilePhotoUrl(employee.data?.profile_image_path ?? null);
   const promotion = useMyPromotionEligibility();
   const announcements = usePublishedAnnouncements(3);
 
@@ -89,6 +90,7 @@ export function EmployeeDashboard() {
 
   const name = [record.first_name, record.middle_name, record.last_name].filter(Boolean).join(" ");
   const rank = record.rank_id ? ranks.data?.find((row) => row.id === record.rank_id) : undefined;
+  const rankText = !record.rank_id ? "Rank not provided" : ranks.error ? "Rank unavailable" : rank ? rankLabel(rank) : ranks.isLoading ? "Loading rank…" : "Rank not provided";
   const department = record.department_id ? departments.data?.find((row) => row.id === record.department_id) : undefined;
   const active = record.employment_status === "active";
   const assignment = currentAssignment(deployments.data?.rows ?? []);
@@ -107,7 +109,7 @@ export function EmployeeDashboard() {
     ["Badge Number", record.employee_number, "font-mono text-amber-300"],
     ["Years of Service", serviceLength(record.employment_started_on, record.employment_ended_on) ?? "Not recorded", "text-white"],
     ["Station Sector", record.unit_station || "Not assigned", "text-white"],
-    ["Promotion Status", readiness ? `${readiness.targetRankCode} ${readiness.readiness.isReady ? "Eligible" : "In progress"}` : "No active criterion", readiness?.readiness.isReady ? "text-emerald-400" : "text-white"],
+    ["Promotion Status", promotion.isLoading ? "Loading…" : promotion.error ? "Unavailable" : readiness ? `${readiness.targetRankCode} ${readiness.docket ? "Submitted" : readiness.readiness.isReady ? "Eligible" : "In progress"}` : "No active criterion", readiness?.readiness.isReady ? "text-emerald-400" : "text-white"],
   ];
 
   return (
@@ -116,14 +118,19 @@ export function EmployeeDashboard() {
 
       <section aria-label="Officer profile" className="relative overflow-hidden rounded-2xl border border-slate-800 bg-linear-to-r from-[#0B132B] via-slate-900 to-blue-950 p-6 text-white shadow-lg">
         <div className="flex items-center gap-5">
-          <span aria-hidden="true" className="flex size-16 shrink-0 items-center justify-center rounded-2xl border-2 border-amber-300/50 bg-linear-to-tr from-amber-400 to-amber-200 text-xl font-black text-slate-950 shadow-md" data-testid="profile-initials" data-tone={avatarTone(name)}>{initialsOf(`${record.first_name} ${record.last_name}`)}</span>
+          {photo.data ? (
+            // eslint-disable-next-line @next/next/no-img-element -- signed Supabase URL of the employee's own uploaded photo
+            <img alt="" className="size-16 shrink-0 rounded-2xl border-2 border-amber-300/50 object-cover shadow-md" src={photo.data} />
+          ) : (
+            <span aria-hidden="true" className="flex size-16 shrink-0 items-center justify-center rounded-2xl border-2 border-amber-300/50 bg-linear-to-tr from-amber-400 to-amber-200 text-xl font-black text-slate-950 shadow-md" data-testid="profile-initials" data-tone={avatarTone(name)}>{initialsOf(`${record.first_name} ${record.last_name}`)}</span>
+          )}
           <div className="min-w-0 space-y-1">
             <div className="flex flex-wrap items-center gap-2.5">
               <h2 className="text-2xl font-black tracking-tight text-white">{name}</h2>
-              <span className={cn("rounded-full border px-2.5 py-0.5 text-[10px] font-bold tracking-wider uppercase", active ? "border-emerald-400/40 bg-emerald-500/20 text-emerald-300" : "border-slate-400/40 bg-slate-500/20 text-slate-300")}>{active ? "Active" : "Retired"}</span>
+              <span className={cn("rounded-full border px-2.5 py-0.5 text-[10px] font-bold tracking-wider uppercase", active ? "border-emerald-400/40 bg-emerald-500/20 text-emerald-300" : "border-slate-400/40 bg-slate-500/20 text-slate-300")}>{record.employment_status.charAt(0).toUpperCase() + record.employment_status.slice(1)}</span>
             </div>
-            <p className="text-xs font-bold tracking-wide text-amber-400">{rank ? rankLabel(rank) : "Rank not provided"}</p>
-            <p className="flex items-center gap-1.5 text-[11px] text-slate-300"><Building2 aria-hidden="true" className="size-3.5 text-blue-400" />{[department?.name, "San Juan CPS"].filter(Boolean).join(" • ")}</p>
+            <p className="text-xs font-bold tracking-wide text-amber-400">{rankText}</p>
+            <p className="flex items-center gap-1.5 text-[11px] text-slate-300"><Building2 aria-hidden="true" className="size-3.5 text-blue-400" />{department?.name ?? (record.department_id ? (departments.error ? "Unit unavailable" : "Loading unit…") : "Unit not assigned")}</p>
           </div>
         </div>
         <dl className="mt-6 grid grid-cols-2 gap-3 border-t border-slate-800 pt-6 text-xs sm:grid-cols-4">
@@ -139,7 +146,7 @@ export function EmployeeDashboard() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         <div className="space-y-6 lg:col-span-8">
           <Card aside={pill ? <StatusPill tone={pill.tone}>{pill.label}</StatusPill> : null} icon={<span className="flex size-8 items-center justify-center rounded-lg border border-amber-200 bg-amber-50 text-amber-700"><MapPinned aria-hidden="true" className="size-4" /></span>} id="assignment-heading" subtitle="Active duty assignment details" title="Current Field Assignment">
-            {deployments.error ? <ErrorState message={deployments.error.message} /> : assignment ? (
+            {deployments.isLoading ? <LoadingState label="Loading your assignment…" /> : deployments.error ? <ErrorState message={deployments.error.message} /> : assignment ? (
               <div className="space-y-3 rounded-xl border border-slate-200/80 bg-slate-50 p-4">
                 <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
                   <div>
@@ -161,7 +168,7 @@ export function EmployeeDashboard() {
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Card aside={log ? <span className="rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">{log.capture_method === "face_recognition" ? "Face scan" : "Imported"}</span> : null} id="attendance-heading" title="Today's Attendance">
-              {attendance.error ? <ErrorState message={attendance.error.message} /> : log ? (
+              {attendance.isLoading ? <LoadingState label="Loading today's attendance…" /> : attendance.error ? <ErrorState message={attendance.error.message} /> : log ? (
                 <div className="flex items-center justify-between rounded-xl border border-emerald-200/80 bg-emerald-50/50 p-3">
                   <div><span className="block text-[10px] font-extrabold text-emerald-800 uppercase">Time In</span><span className="font-mono text-lg font-black text-emerald-950">{clock(log.time_in)}</span></div>
                   <div className="text-right"><span className="block text-[10px] font-extrabold text-slate-500 uppercase">Time Out</span><span className="font-mono text-lg font-black text-slate-800">{clock(log.time_out)}</span></div>
@@ -176,7 +183,7 @@ export function EmployeeDashboard() {
             </Card>
 
             <Card aside={readiness ? <span className="font-mono text-[10px] font-bold text-blue-700">{percent}% requirements met</span> : null} id="promotion-heading" title="Promotion Board Status">
-              {promotion.error ? <ErrorState message={promotion.error.message} /> : readiness ? (
+              {promotion.isLoading ? <LoadingState label="Loading promotion status…" /> : promotion.error ? <ErrorState message={promotion.error.message} /> : readiness ? (
                 <div className="space-y-2">
                   <div className="flex justify-between text-[11px] font-bold">
                     <span className="text-slate-700">Target rank: {readiness.targetRankCode}</span>
@@ -195,7 +202,7 @@ export function EmployeeDashboard() {
 
         <div className="space-y-6 lg:col-span-4">
           <Card aside={<Link className={linkClass} href="/employee/leave?request=1">File Leave</Link>} icon={<CalendarCheck aria-hidden="true" className="size-4 text-blue-700" />} id="leave-heading" title="Leave Entitlements">
-            {balances.error ? <ErrorState message={balances.error.message} /> : entitlements.length ? (
+            {balances.isLoading || leaveTypes.isLoading ? <LoadingState label="Loading leave entitlements…" /> : balances.error || leaveTypes.error ? <ErrorState message={(balances.error ?? leaveTypes.error)!.message} /> : entitlements.length ? (
               <ul className="space-y-2.5">
                 {entitlements.map(({ balance, type }) => {
                   const style = leaveTypeStyle(type.name);
@@ -215,7 +222,7 @@ export function EmployeeDashboard() {
           </Card>
 
           <Card id="announcements-heading" title="Station Announcements">
-            {announcements.error ? <ErrorState message={announcements.error.message} /> : (announcements.data ?? []).length ? (
+            {announcements.isLoading ? <LoadingState label="Loading announcements…" /> : announcements.error ? <ErrorState message={announcements.error.message} /> : (announcements.data ?? []).length ? (
               <ul className="space-y-3 text-xs">
                 {(announcements.data ?? []).map((item) => (
                   <li className={cn("space-y-1 rounded-xl border p-3", CATEGORY_TONE[item.category] ?? "border-slate-200/80 bg-slate-50 text-slate-600")} key={item.id}>
