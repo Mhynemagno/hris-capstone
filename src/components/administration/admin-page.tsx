@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
 
-import { PageHeader } from "@/components/ui/page-header";
+import { PageTitle } from "@/components/staff-shell/ui/page-title";
 import { StatusPanel } from "@/components/ui/status-panel";
 
 export function AdminPage({ title, description, children }: { title: string; description?: string; children?: ReactNode }) {
-  return <section className="space-y-8"><PageHeader description={description} title={title} />{children}</section>;
+  return <section className="space-y-6"><PageTitle subtitle={description ?? ""} title={title} />{children}</section>;
 }
 
 export function AdminEmptyState({ title, description }: { title: string; description: string }) {

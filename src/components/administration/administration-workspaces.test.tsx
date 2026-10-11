@@ -60,17 +60,17 @@ describe("administration shared controls", () => {
     const onPageChange = vi.fn();
     render(<PaginatedTableControls page={2} pageSize={10} totalCount={45} onPageChange={onPageChange} />);
 
-    await user.click(screen.getByRole("button", { name: /next page/i }));
+    await user.click(screen.getByRole("button", { name: "Next" }));
 
     expect(onPageChange).toHaveBeenCalledWith(3);
-    expect(screen.getByText("11–20 of 45 records")).toBeInTheDocument();
+    expect(screen.getByText("Showing 11–20 of 45 records")).toBeInTheDocument();
   });
 
   it("disables unavailable page changes", () => {
     render(<PaginatedTableControls page={1} pageSize={20} totalCount={10} onPageChange={() => undefined} />);
 
-    expect(screen.getByRole("button", { name: /previous page/i })).toBeDisabled();
-    expect(screen.getByRole("button", { name: /next page/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Previous" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Next" })).toBeDisabled();
   });
 
   it("provides an accessible form panel", () => {
@@ -99,6 +99,7 @@ describe("administration shared controls", () => {
 
     expect(screen.getByText(/no accounts match/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /invite account/i })).toHaveClass("w-full", "sm:w-auto");
+    expect(screen.queryByRole("navigation", { name: /pagination/i })).not.toBeInTheDocument();
   });
 
   it("links a linked user account to its employee profile", () => {
@@ -214,6 +215,20 @@ describe("administration shared controls", () => {
 
     expect(screen.getByRole("searchbox", { name: "Search accounts" })).toBeInTheDocument();
     expect(screen.getByText("Loading accounts…")).toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: /pagination/i })).not.toBeInTheDocument();
+  });
+
+  it("keeps query failure distinct from an empty account list", () => {
+    hooks.useManagedUsers.mockReturnValue({ data: undefined, error: new Error("Accounts unavailable"), isLoading: false, refetch: vi.fn() });
+    hooks.useInviteInternalUser.mockReturnValue({ isPending: false, mutateAsync: vi.fn() });
+    hooks.useUpdateManagedUser.mockReturnValue({ isPending: false, mutateAsync: vi.fn() });
+
+    render(<UsersWorkspace />);
+
+    expect(screen.getByText("Accounts unavailable")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
+    expect(screen.queryByText(/no accounts match/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: /pagination/i })).not.toBeInTheDocument();
   });
 
   it("offers Edit and Delete for accounts, with sign-in blocked from the edit form", async () => {

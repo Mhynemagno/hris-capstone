@@ -341,7 +341,7 @@ function ManagedAccountsWorkspace({ invite }: { invite: boolean }) {
       <ListBody loadingLabel="Loading accounts…" result={result}>
         <ManagedUsersTable onDelete={setDeleting} onEdit={setSelected} rows={result.data?.rows ?? []} showProfiles={invite} />
       </ListBody>
-      <PaginatedTableControls onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={10} totalCount={result.data?.count ?? 0} />
+      {result.data?.count ? <PaginatedTableControls onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={10} totalCount={result.data.count} /> : null}
       {invite ? (
         <AdministrationFormPanel description="Invite an internal account without exposing administrative credentials." onOpenChange={setInviteOpen} open={inviteOpen} title="Invite account">
           <InvitationForm
@@ -458,7 +458,7 @@ export function DepartmentsWorkspace() {
           )) : <tr><EmptyTableState colSpan={3} message="No units / sections match these filters." /></tr>}
         </DataTable>
       </ListBody>
-      <PaginatedTableControls onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={10} totalCount={result.data?.count ?? 0} />
+      {result.data?.count ? <PaginatedTableControls onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={10} totalCount={result.data.count} /> : null}
       <AdministrationFormPanel description="Create a unit / section for personnel and job openings." onOpenChange={setCreating} open={creating} title="Add unit / section">
         <DepartmentForm onSaved={async (input) => { await save.mutateAsync({ input: { ...input, isActive: true } }); setCreating(false); setNotice(`${input.name} was added.`); }} pending={save.isPending} />
       </AdministrationFormPanel>
@@ -548,7 +548,7 @@ export function UnitStationsWorkspace() {
           )) : <tr><EmptyTableState colSpan={3} message={searchTerm || status ? "No units match these filters." : "No units yet. Add the station's precincts and units so they can be assigned."} /></tr>}
         </DataTable>
       </ListBody>
-      <PaginatedTableControls onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={10} totalCount={result.data?.count ?? 0} />
+      {result.data?.count ? <PaginatedTableControls onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={10} totalCount={result.data.count} /> : null}
       <AdministrationFormPanel description="Create a unit / station for personnel records." onOpenChange={setCreating} open={creating} title="Add unit / station">
         <UnitStationForm onSaved={async (input) => { await save.mutateAsync({ input: { ...input, isActive: true } }); setCreating(false); setNotice(`${input.name} was added.`); }} pending={save.isPending} />
       </AdministrationFormPanel>
@@ -651,7 +651,7 @@ export function RanksWorkspace() {
           )) : <tr><EmptyTableState colSpan={5} message="No ranks match these filters." /></tr>}
         </DataTable>
       </ListBody>
-      <PaginatedTableControls onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={10} totalCount={result.data?.count ?? 0} />
+      {result.data?.count ? <PaginatedTableControls onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={10} totalCount={result.data.count} /> : null}
       <AdministrationFormPanel description="Add a police rank. It becomes available in every unit / section." onOpenChange={setCreating} open={creating} title="Add rank">
         <RankForm onSaved={async (input) => { await save.mutateAsync({ input: { ...input, isActive: true }, rankId: undefined }); setCreating(false); setNotice(`${input.name} was added.`); }} pending={save.isPending} />
       </AdministrationFormPanel>
@@ -810,7 +810,7 @@ export function AuditLogsWorkspace() {
           )) : <tr><EmptyTableState colSpan={5} message={filtered ? "No audit entries match these filters." : "No audit entries have been recorded yet."} /></tr>}
         </DataTable>
       </ListBody>
-      <PaginatedTableControls onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={10} totalCount={result.data?.count ?? 0} />
+      {result.data?.count ? <PaginatedTableControls onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={10} totalCount={result.data.count} /> : null}
       {selected ? (
         <AdministrationFormPanel description="Audit entries are a permanent record and cannot be changed." onOpenChange={(open) => { if (!open) setSelected(null); }} open title="Audit record details">
           <div className="space-y-4">
