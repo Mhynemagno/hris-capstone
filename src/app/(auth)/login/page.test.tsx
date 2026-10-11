@@ -20,9 +20,12 @@ describe("LoginPage", () => {
     await expect(renderLogin({ message: "email_confirmed" })).rejects.toThrow("REDIRECT /login?as=applicant&message=email_confirmed");
   });
 
-  it("hides sign-up on the employee login, since administrators create employee accounts", async () => {
+  it("uses the Capstone employee portal treatment while keeping badge-number sign-in", async () => {
     await renderLogin({ as: "employee" });
-    expect(screen.getByRole("heading", { level: 1, name: "Employee login" })).toBeVisible();
+    expect(screen.getAllByText("Employee Portal").length).toBeGreaterThan(0);
+    expect(screen.getByRole("heading", { level: 1, name: "Employee / HR" })).toBeVisible();
+    expect(screen.getByText(/Enter your badge number to access your official personnel records/)).toBeVisible();
+    expect(screen.getByRole("heading", { level: 2, name: "To Serve and Protect." })).toBeVisible();
     expect(screen.queryByRole("link", { name: "Sign up" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Login as Applicant" })).toHaveAttribute("href", "/login?as=applicant");
     expect(document.querySelector('input[name="as"]')).toHaveValue("employee");
