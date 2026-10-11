@@ -187,27 +187,67 @@ export async function listPersonnelEntries(kind: PersonnelKind, employeeId: stri
 const personnelDocumentBucket = "personnel-documents";
 const documentExtensions: Record<string, string> = { "application/pdf": "pdf", "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" };
 
-/** Saves a personnel entry. An eligibility's supporting document is uploaded first and removed again if the save fails. */
+export type DocumentKind = "qualification" | "certification";
+const documentFolders: Record<DocumentKind, string> = { qualification: "qualifications", certification: "certifications" };
+const documentTables: Record<DocumentKind, "qualifications" | "certifications"> = { qualification: "qualifications", certification: "certifications" };
+const DOCUMENT_ERROR = "Use a PDF, JPEG, PNG or WEBP file up to 10 MB.";
+
+/** The upload dialog's and the bucket's rule: PDF, PNG, JPEG or WebP, up to 10 MB. Returns an error message or null. */
+export function validatePersonnelDocument(file: File) {
+  return documentExtensions[file.type] && file.size >= 1 && file.size <= 10 * 1024 * 1024 ? null : DOCUMENT_ERROR;
+}
+
+async function uploadPersonnelDocument(kind: DocumentKind, employeeId: string, file: File) {
+  const problem = validatePersonnelDocument(file);
+  if (problem) throw new Error(problem);
+  const path = `${documentFolders[kind]}/${employeeId}/${crypto.randomUUID()}.${documentExtensions[file.type]}`;
+  const { error } = await createBrowserSupabaseClient().storage.from(personnelDocumentBucket).upload(path, file, { contentType: file.type, upsert: false });
+  throwIfError(error);
+  return { document_path: path, document_name: file.name.slice(0, 255), document_mime_type: file.type, document_size_bytes: file.size };
+}
+
+/** Best effort: a leftover object is harmless, a failed save is not. Also used after an entry is deleted. */
+export async function removePersonnelDocumentObject(path: string) {
+  await createBrowserSupabaseClient().storage.from(personnelDocumentBucket).remove([path]).catch(() => undefined);
+}
+
+/** Saves a personnel entry. An Eligibility or Certification / Training document is uploaded first and removed again if the save fails. */
 export async function savePersonnelEntry(kind: PersonnelKind, input: ServiceHistoryInput | QualificationInput | CertificationInput | TrainingRecordInput, id?: string, document?: File | null) {
   const config = childConfig[kind] as unknown as ChildConfig;
   const values = config.payload(config.schema.parse(input) as never);
   const client = createBrowserSupabaseClient();
   let uploadedPath: string | null = null;
-  if (document && kind === "qualification") {
-    const extension = documentExtensions[document.type];
-    if (!extension || document.size < 1 || document.size > 10 * 1024 * 1024) throw new Error("Use a PDF, PNG, JPEG, or WebP file up to 10 MB.");
-    uploadedPath = `qualifications/${values.employee_id as string}/${crypto.randomUUID()}.${extension}`;
-    const { error: uploadError } = await client.storage.from(personnelDocumentBucket).upload(uploadedPath, document, { contentType: document.type, upsert: false });
-    throwIfError(uploadError);
-    Object.assign(values, { document_path: uploadedPath, document_name: document.name.slice(0, 255), document_mime_type: document.type, document_size_bytes: document.size });
+  if (document && (kind === "qualification" || kind === "certification")) {
+    const fields = await uploadPersonnelDocument(kind, values.employee_id as string, document);
+    uploadedPath = fields.document_path;
+    Object.assign(values, fields);
   }
   const result = id ? await client.from(config.table).update(values).eq("id", id).select("*").single() : await client.from(config.table).insert(values).select("*").single();
-  if (result.error && uploadedPath) await client.storage.from(personnelDocumentBucket).remove([uploadedPath]).catch(() => undefined);
+  if (result.error && uploadedPath) await removePersonnelDocumentObject(uploadedPath);
   throwIfError(result.error);
   return result.data as PersonnelEntry;
 }
 
-/** A short-lived link to an eligibility's supporting document (HR, or the employee for their own record). */
+/** Uploads a new document for an entry, then removes the old one. A failed save keeps the old document. */
+export async function replacePersonnelDocument(kind: DocumentKind, entry: { id: string; employee_id: string; document_path?: string | null }, file: File) {
+  const fields = await uploadPersonnelDocument(kind, entry.employee_id, file);
+  const result = await createBrowserSupabaseClient().from(documentTables[kind]).update(fields).eq("id", entry.id).select("*").single();
+  if (result.error) {
+    await removePersonnelDocumentObject(fields.document_path);
+    throwIfError(result.error);
+  }
+  if (entry.document_path) await removePersonnelDocumentObject(entry.document_path);
+  return result.data as PersonnelEntry;
+}
+
+/** Clears an entry's document, then removes the stored file. */
+export async function removePersonnelDocument(kind: DocumentKind, entry: { id: string; document_path: string }) {
+  const { error } = await createBrowserSupabaseClient().from(documentTables[kind]).update({ document_path: null, document_name: null, document_mime_type: null, document_size_bytes: null }).eq("id", entry.id);
+  throwIfError(error);
+  await removePersonnelDocumentObject(entry.document_path);
+}
+
+/** A short-lived link to an Eligibility or Certification / Training document (HR, or the employee for their own record). */
 export async function getPersonnelDocumentUrl(objectPath: string) {
   const { data, error } = await createBrowserSupabaseClient().storage.from(personnelDocumentBucket).createSignedUrl(objectPath, 60);
   throwIfError(error);

@@ -15,6 +15,9 @@ import {
   listPersonnelEntries,
   saveEmployee,
   savePersonnelEntry,
+  removePersonnelDocument,
+  replacePersonnelDocument,
+  type DocumentKind,
   replaceMyEmployeeProfilePhoto,
   removeMyEmployeeProfilePhoto,
   type PersonnelKind,
@@ -98,6 +101,31 @@ export function useSavePersonnelEntry(kind: PersonnelKind, employeeId: string) {
       // Eligibility and certification / training records decide promotion readiness.
       void queryClient.invalidateQueries({ queryKey: ["promotion-eligibility"] });
     },
+  });
+}
+
+function useInvalidatePersonnelDocuments(kind: DocumentKind, employeeId: string) {
+  const queryClient = useQueryClient();
+  return () => {
+    void queryClient.invalidateQueries({ queryKey: personnelEntriesKey(kind, employeeId) });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.personnelRecords.detail(employeeId) });
+  };
+}
+
+/** Uploads or replaces the document on an Eligibility or Certification / Training entry. */
+export function useReplacePersonnelDocument(kind: DocumentKind, employeeId: string) {
+  const invalidate = useInvalidatePersonnelDocuments(kind, employeeId);
+  return useMutation({
+    mutationFn: ({ entry, file }: { entry: { id: string; employee_id: string; document_path: string | null }; file: File }) => replacePersonnelDocument(kind, entry, file),
+    onSuccess: invalidate,
+  });
+}
+
+export function useRemovePersonnelDocument(kind: DocumentKind, employeeId: string) {
+  const invalidate = useInvalidatePersonnelDocuments(kind, employeeId);
+  return useMutation({
+    mutationFn: (entry: { id: string; document_path: string }) => removePersonnelDocument(kind, entry),
+    onSuccess: invalidate,
   });
 }
 

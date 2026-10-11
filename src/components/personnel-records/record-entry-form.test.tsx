@@ -144,7 +144,10 @@ describe("RecordEntryForm", () => {
     expect(onSaved).not.toHaveBeenCalled();
 
     const file = new File(["%PDF"], "prc.pdf", { type: "application/pdf" });
-    await user.upload(screen.getByLabelText(/^Supporting document/), file);
+    await user.click(screen.getByRole("button", { name: "Choose document" }));
+    await user.upload(await screen.findByLabelText("Browse File"), file);
+    await user.click(screen.getByRole("button", { name: "Save document" }));
+    expect(screen.getByText("prc.pdf")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Add eligibility" }));
     await waitFor(() => expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({
       name: "Licensed Criminologist (RA 6506)",
@@ -200,5 +203,20 @@ describe("RecordEntryForm", () => {
     expect(screen.getByText(/Current document: csc\.pdf/)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Save eligibility" }));
     await waitFor(() => expect(onSaved).toHaveBeenCalledWith(expect.anything(), "00000000-0000-4000-8000-000000000031", null));
+  });
+
+  it("lets HR attach an optional document to a certification / training (PDF p. 23)", async () => {
+    const user = userEvent.setup();
+    const onSaved = vi.fn();
+    render(<RecordEntryForm employeeId={employeeId} kind="certification" onSaved={onSaved} />);
+    expect(screen.getByText("Supporting document")).toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText(/^certification \/ training/i), "Public Safety Basic Recruit Course (PSBRC)");
+    await user.type(screen.getByLabelText(/date/i), "2016-03-14");
+    const file = new File(["%PDF"], "psbrc.pdf", { type: "application/pdf" });
+    await user.click(screen.getByRole("button", { name: "Choose document" }));
+    await user.upload(await screen.findByLabelText("Browse File"), file);
+    await user.click(screen.getByRole("button", { name: "Save document" }));
+    await user.click(screen.getByRole("button", { name: "Add certification / training" }));
+    await waitFor(() => expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({ name: "Public Safety Basic Recruit Course (PSBRC)" }), undefined, file));
   });
 });

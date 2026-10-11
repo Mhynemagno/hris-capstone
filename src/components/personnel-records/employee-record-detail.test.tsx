@@ -31,6 +31,8 @@ vi.mock("@/hooks/use-personnel-records", () => ({
   useReplaceMyEmployeeProfilePhoto: () => ({ isPending: false, mutateAsync: vi.fn() }),
   usePersonnelEntries: mocks.useEntries,
   useSavePersonnelEntry: () => ({ isPending: false, mutateAsync: mocks.saveEntry }),
+  useReplacePersonnelDocument: () => ({ isPending: false, mutateAsync: vi.fn() }),
+  useRemovePersonnelDocument: () => ({ isPending: false, mutateAsync: vi.fn() }),
   useUnitStations: () => ({ data: [{ id: 1, name: "San Juan Police Station", is_active: true }], error: null }),
 }));
 vi.mock("@/hooks/use-administration", () => ({
@@ -39,7 +41,7 @@ vi.mock("@/hooks/use-administration", () => ({
 }));
 vi.mock("./employee-editor", () => ({ EmployeeEditor: () => <div>Employee editor</div> }));
 
-vi.mock("@/queries/personnel-records", () => ({ getPersonnelDocumentUrl: mocks.documentUrl }));
+vi.mock("@/queries/personnel-records", () => ({ getPersonnelDocumentUrl: mocks.documentUrl, validatePersonnelDocument: () => null }));
 
 import { EmployeeRecordDetail } from "./employee-record-detail";
 
@@ -217,7 +219,8 @@ describe("EmployeeRecordDetail", () => {
       isLoading: false,
     }));
     render(<EmployeeRecordDetail employeeId={employeeId} />);
-    await user.click(screen.getByRole("button", { name: "View document csc.pdf" }));
+    await user.click(screen.getByRole("button", { name: "Open csc.pdf" }));
+    expect(screen.queryByRole("button", { name: "Replace" })).not.toBeInTheDocument();
     expect(mocks.documentUrl).toHaveBeenCalledWith("qualifications/x/csc.pdf");
     open.mockRestore();
   });
