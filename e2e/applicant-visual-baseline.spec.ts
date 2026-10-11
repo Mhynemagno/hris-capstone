@@ -18,9 +18,9 @@ const PROBES = [
   "header",
 ] as const;
 
-// Job cards are intentionally absent when no openings are published. Keep the
-// /jobs baseline focused on the page's stable structure, not mutable content.
-const JOBS_PROBES = PROBES.filter((selector) => selector !== "main a");
+// Content links are intentionally absent when the corresponding data is empty.
+// Keep those baselines focused on stable page structure, not mutable rows/cards.
+const CONTENT_AGNOSTIC_PROBES = PROBES.filter((selector) => selector !== "main a");
 
 const PROPERTIES = [
   "font-family", "font-size", "font-weight", "line-height", "color", "background-color",
@@ -77,7 +77,7 @@ test.describe("applicant, admin login and HR pages keep their approved look", ()
     test(`public page ${path}`, async ({ page }) => {
       await page.goto(path);
       await page.waitForLoadState("networkidle");
-      const probes = path === "/jobs" ? JOBS_PROBES : PROBES;
+      const probes = path === "/jobs" ? CONTENT_AGNOSTIC_PROBES : PROBES;
       expect(JSON.stringify(await styleSignature(page, probes), null, 2)).toMatchSnapshot(`${path === "/" ? "_home" : path.replaceAll("/", "_")}.styles.json`);
     });
   }
@@ -98,7 +98,8 @@ test.describe("applicant, admin login and HR pages keep their approved look", ()
       await page.goto(path);
       await page.waitForLoadState("networkidle");
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-      expect(JSON.stringify(await styleSignature(page), null, 2)).toMatchSnapshot(`${path.replaceAll("/", "_")}.styles.json`);
+      const probes = path === "/hr/applications" || path === "/hr/deployments" ? CONTENT_AGNOSTIC_PROBES : PROBES;
+      expect(JSON.stringify(await styleSignature(page, probes), null, 2)).toMatchSnapshot(`${path.replaceAll("/", "_")}.styles.json`);
     }
   });
 });

@@ -414,10 +414,8 @@ test.describe("Objective 4: promotion eligibility tracker", () => {
     await expect(page).toHaveURL(new RegExp(`/hr/promotions\\?review=${employee.id}$`));
     const review = page.getByRole("dialog", { name: "Promotion Eligibility Evaluation" });
     const criterionSelect = review.locator("#review-criterion");
-    if (await criterionSelect.count()) {
-      const option = review.locator("#review-criterion option", { hasText: "PCPL" }).first();
-      await criterionSelect.selectOption(await option.getAttribute("value") as string);
-    }
+    await expect(criterionSelect).toBeVisible({ timeout: 15_000 });
+    await criterionSelect.selectOption({ label: "PCPL — Police Corporal" });
     // The rubric: 12+ years of service (45) + one specialized training (10) = 55, graded 3.00 Poor.
     await review.getByRole("button", { name: "Performance evaluation" }).click();
     const rubric = review.getByRole("region", { name: "Performance evaluation" });
@@ -431,7 +429,9 @@ test.describe("Objective 4: promotion eligibility tracker", () => {
 
     await review.getByLabel(/^Recommendation/).selectOption("recommended");
     await review.locator("#review-remarks").fill(`Meets service, rating, and training requirements ${runId}`);
-    await review.getByRole("button", { name: "Submit Endorsement" }).click();
+    const submitEndorsement = review.getByRole("button", { name: "Submit Endorsement" });
+    await expect(submitEndorsement).toBeEnabled();
+    await submitEndorsement.click();
     await expect(page.getByText("Board endorsement submitted")).toBeVisible();
 
     await page.goto("/hr/promotions");

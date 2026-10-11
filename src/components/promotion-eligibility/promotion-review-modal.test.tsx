@@ -60,13 +60,15 @@ describe("PromotionReviewModal (promotions.html Open Review)", () => {
     expect(screen.queryByRole("button", { name: "Submit Endorsement" })).not.toBeInTheDocument();
   });
 
-  it("requires HR to choose a target rank when readiness has no rank", () => {
+  it("requires HR to choose a target rank when readiness has no rank", async () => {
     mocks.readiness = { isLoading: false, error: null, data: [] };
     render(<PromotionReviewModal employeeId={EMPLOYEE_ID} onClose={vi.fn()} />);
     const target = screen.getByLabelText("Target Rank");
     expect(target).toBeRequired();
     expect(target).toHaveValue("");
     expect(screen.getByRole("button", { name: "Submit Endorsement" })).toBeDisabled();
+    await userEvent.selectOptions(target, "11111111-1111-4111-8111-111111111111");
+    expect(screen.getByRole("button", { name: "Submit Endorsement" })).toBeEnabled();
   });
 
   it("blocks submission while readiness is loading", () => {

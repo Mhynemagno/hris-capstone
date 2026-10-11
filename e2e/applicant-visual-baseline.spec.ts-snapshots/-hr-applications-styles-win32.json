@@ -25,19 +25,6 @@
     "padding-left": "0px",
     "box-shadow": "none"
   },
-  "main a": {
-    "font-family": "Inter, \"Inter Fallback\", ui-sans-serif, system-ui, sans-serif",
-    "font-size": "12px",
-    "font-weight": "500",
-    "line-height": "16px",
-    "color": "lab(48.088 -2.036 -16.581)",
-    "background-color": "rgba(0, 0, 0, 0)",
-    "border-top-color": "rgb(228, 231, 236)",
-    "border-top-left-radius": "8px",
-    "min-height": "auto",
-    "padding-left": "8px",
-    "box-shadow": "none"
-  },
   "button": {
     "font-family": "Inter, \"Inter Fallback\", ui-sans-serif, system-ui, sans-serif",
     "font-size": "16px",
