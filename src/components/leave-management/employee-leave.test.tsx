@@ -83,6 +83,9 @@ describe("EmployeeLeaveList", () => {
     const cells = within(screen.getAllByRole("row")[1]).getAllByRole("cell");
     expect(cells.map((cell) => cell.getAttribute("data-label"))).toEqual(labels);
     expect(cells[0].closest("tr")).toHaveClass("max-md:block");
+    // Reason / HR feedback holds several paragraphs: stacked and left-aligned on phones, not a side-by-side row.
+    expect(cells[3]).toHaveClass("max-md:flex-col", "max-md:text-left");
+    expect(cells[3]).not.toHaveClass("max-md:justify-between", "max-md:text-right");
   });
 
   it("loads ten leave requests at a time and lets the employee change pages", async () => {
@@ -215,7 +218,7 @@ describe("EmployeeLeavePortal", () => {
     await user.selectOptions(within(dialog).getByRole("combobox", { name: /Leave type/ }), "11111111-1111-4111-8111-111111111111");
     await user.type(within(dialog).getByLabelText(/Start date/), isoDate(1));
     await user.type(within(dialog).getByLabelText(/End date/), isoDate(2));
-    await user.click(within(dialog).getByRole("button", { name: "Submit request" }));
+    await user.click(within(dialog).getByRole("button", { name: "Submit Application" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     expect(screen.getByRole("status")).toHaveTextContent("Leave request submitted.");
   });
@@ -241,7 +244,7 @@ describe("EmployeeLeaveRequestForm", () => {
     expect(screen.getByText(/^1 day of 2 left for \d{4}\.$/)).toBeVisible();
     await user.type(screen.getByLabelText(/Start date/), isoDate(1));
     await user.type(screen.getByLabelText(/End date/), isoDate(2));
-    await user.click(screen.getByRole("button", { name: "Submit request" }));
+    await user.click(screen.getByRole("button", { name: "Submit Application" }));
 
     expect(await screen.findByText(/You have 1 day of this leave left for \d{4}\. Shorten the request to fit\./)).toBeVisible();
     expect(mocks.submit).not.toHaveBeenCalled();
@@ -256,7 +259,7 @@ describe("EmployeeLeaveRequestForm", () => {
     expect(screen.getByText(/0 days of 7 left for \d{4}\. Days beyond this are allowed but deducted from your retirement benefits\./)).toBeVisible();
     await user.type(screen.getByLabelText(/Start date/), isoDate(1));
     await user.type(screen.getByLabelText(/End date/), isoDate(2));
-    await user.click(screen.getByRole("button", { name: "Submit request" }));
+    await user.click(screen.getByRole("button", { name: "Submit Application" }));
 
     expect(mocks.submit).toHaveBeenCalled();
   });
@@ -265,7 +268,7 @@ describe("EmployeeLeaveRequestForm", () => {
     render(<EmployeeLeaveRequestForm />);
     const select = screen.getByRole("combobox", { name: /Leave type/ });
     const options = within(select).getAllByRole("option").map((option) => option.textContent);
-    expect(options).toEqual(["Choose a type", "Annual leave", "Sick leave"]);
+    expect(options).toEqual(["Select category...", "Annual leave", "Sick leave"]);
     expect(screen.queryByLabelText(/Supporting evidence/)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/Reason/)).not.toBeInTheDocument();
     expect(screen.queryByText("Must be on or after the start date.")).not.toBeInTheDocument();
@@ -280,7 +283,7 @@ describe("EmployeeLeaveRequestForm", () => {
     await user.type(screen.getByLabelText(/Start date/), start);
     expect(screen.getByLabelText(/End date/)).toHaveAttribute("min", start);
     await user.type(screen.getByLabelText(/End date/), end);
-    await user.click(screen.getByRole("button", { name: "Submit request" }));
+    await user.click(screen.getByRole("button", { name: "Submit Application" }));
 
     expect(await screen.findByText("End date must be on or after the start date.")).toBeVisible();
     expect(screen.getByLabelText(/End date/)).toHaveAttribute("aria-invalid", "true");
@@ -295,7 +298,7 @@ describe("EmployeeLeaveRequestForm", () => {
     await user.type(screen.getByLabelText(/Start date/), isoDate(1));
     await user.type(screen.getByLabelText(/End date/), isoDate(2));
     expect(screen.getByLabelText("Notes")).not.toBeRequired();
-    await user.click(screen.getByRole("button", { name: "Submit request" }));
+    await user.click(screen.getByRole("button", { name: "Submit Application" }));
 
     expect(await screen.findByRole("status")).toHaveTextContent("Leave request submitted.");
     expect(mocks.submit).toHaveBeenCalledWith({ draft: expect.objectContaining({ leaveTypeId: "11111111-1111-4111-8111-111111111111", reason: "" }), files: [] });
@@ -338,13 +341,13 @@ describe("EmployeeLeaveRequestForm", () => {
     await user.selectOptions(screen.getByRole("combobox", { name: /Leave type/ }), "33333333-3333-4333-8333-333333333333");
     await user.type(screen.getByLabelText(/Start date/), isoDate(1));
     await user.type(screen.getByLabelText(/End date/), isoDate(2));
-    await user.click(screen.getByRole("button", { name: "Submit request" }));
+    await user.click(screen.getByRole("button", { name: "Submit Application" }));
     expect(await screen.findByText("Attach a supporting document, such as a medical certificate.")).toBeVisible();
     expect(mocks.submit).not.toHaveBeenCalled();
 
     const file = new File(["%PDF"], "medical.pdf", { type: "application/pdf" });
     await user.upload(screen.getByLabelText(/^Supporting document/), file);
-    await user.click(screen.getByRole("button", { name: "Submit request" }));
+    await user.click(screen.getByRole("button", { name: "Submit Application" }));
     expect(mocks.submit).toHaveBeenCalledWith(expect.objectContaining({ files: [file] }));
   });
 });

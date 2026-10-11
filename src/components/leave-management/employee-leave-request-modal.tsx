@@ -10,7 +10,7 @@ import { EmployeeLeaveRequestForm } from "./employee-leave";
 export function EmployeeLeaveRequestModal({ open, onOpenChange, onSubmitted }: { open: boolean; onOpenChange: (open: boolean) => void; onSubmitted?: (message: string) => void }) {
   const close = () => onOpenChange(false);
   return (
-    <StaffModal icon={<FileSignature aria-hidden="true" className="size-3.5" />} iconClassName="bg-blue-100 text-blue-700" onClose={close} open={open} subtitle="San Juan CPS Personnel HR Department" title="File Leave Application">
+    <StaffModal dark icon={<FileSignature aria-hidden="true" className="size-3.5" />} iconClassName="bg-blue-700 text-amber-300" onClose={close} open={open} subtitle="San Juan CPS Personnel HR Department" title="File Leave Application">
       <EmployeeLeaveRequestForm onCancel={close} onSubmitted={(message) => { onSubmitted?.(message); close(); }} />
     </StaffModal>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { Info } from "lucide-react";
+import { Info, TriangleAlert } from "lucide-react";
 import Link from "next/link";
 import { Fragment, useState, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
 
@@ -69,7 +69,10 @@ const EMPTY_HISTORY: Record<HistoryTab, string> = {
 };
 const PAGE_SIZE = 10;
 /** Below md each table row becomes a card: the cell label comes from data-label. */
-const cardCell = "max-md:flex max-md:items-start max-md:justify-between max-md:gap-3 max-md:px-1 max-md:py-1.5 max-md:text-right max-md:before:shrink-0 max-md:before:text-left max-md:before:text-[10px] max-md:before:font-bold max-md:before:tracking-wider max-md:before:text-slate-500 max-md:before:uppercase max-md:before:content-[attr(data-label)]";
+const cardLabel = "max-md:before:shrink-0 max-md:before:text-left max-md:before:text-[10px] max-md:before:font-bold max-md:before:tracking-wider max-md:before:text-slate-500 max-md:before:uppercase max-md:before:content-[attr(data-label)]";
+const cardCell = `max-md:flex max-md:items-start max-md:justify-between max-md:gap-3 max-md:px-1 max-md:py-1.5 max-md:text-right ${cardLabel}`;
+/** Multi-line cells (reason and HR feedback): the label sits above a left-aligned column of paragraphs. */
+const cardStack = `max-md:flex max-md:flex-col max-md:gap-1 max-md:px-1 max-md:py-1.5 max-md:text-left ${cardLabel}`;
 const HEADINGS = ["Leave Category", "Inclusive Dates", "Duration", "Reason / HR Feedback", "Approval Status", "Actions"];
 
 /** Leave Application History: tabs, a table with word-form dates, HR feedback, status pills and the cancel flow. */
@@ -164,7 +167,7 @@ export function EmployeeLeaveList() {
                         </td>
                         <td className={cn(staffTable.td, cardCell, "text-slate-600")} data-label="Inclusive Dates">{leaveDateRange(request.starts_on, request.ends_on, formatDate)}</td>
                         <td className={cn(staffTable.td, cardCell, "tabular-nums")} data-label="Duration">{dayCount(leaveDays(request.starts_on, request.ends_on))}</td>
-                        <td className={cn(staffTable.td, cardCell, "max-w-xs space-y-1 max-md:max-w-none")} data-label="Reason / HR Feedback">
+                        <td className={cn(staffTable.td, cardStack, "max-w-xs space-y-1 max-md:max-w-none")} data-label="Reason / HR Feedback">
                           {request.reason ? <p className="whitespace-pre-line text-slate-600">{request.reason}</p> : null}
                           {request.decision_note ? <p className="font-semibold text-slate-800">Notes from HR: {request.decision_note}</p> : null}
                           {request.excess_days > 0 ? <p className="text-amber-700">{dayCount(request.excess_days)} beyond the yearly limit, deducted from your retirement benefits.</p> : null}
@@ -277,7 +280,7 @@ function Field({ children, description, error, htmlFor, label, required }: { chi
   const describedBy = [description ? `${htmlFor}-description` : null, error ? `${htmlFor}-error` : null].filter(Boolean).join(" ") || undefined;
   return (
     <div>
-      <StaffLabel htmlFor={htmlFor} required={required}>{label}</StaffLabel>
+      <StaffLabel className="font-bold" htmlFor={htmlFor} required={required}>{label}</StaffLabel>
       {children({ "aria-describedby": describedBy, ...(error ? { "aria-invalid": true as const } : {}) })}
       {description ? <p className="mt-1 text-[11px] text-slate-500" id={`${htmlFor}-description`}>{description}</p> : null}
       {error ? <p className="mt-1 text-[11px] font-semibold text-rose-700" id={`${htmlFor}-error`} role="alert">{error}</p> : null}
@@ -357,8 +360,8 @@ export function EmployeeLeaveRequestForm({ onCancel, onSubmitted }: { onCancel?:
       <Field description={activeTypes.length ? balanceHint(balance, year) : "No leave types are available right now. Contact HR."} error={fieldErrors.leaveTypeId} htmlFor="leave-type" label="Leave type" required>
         {(aria) => (
           <StaffSelect {...aria} id="leave-type" name="leaveTypeId" onChange={(event) => setLeaveTypeId(event.target.value)} required value={leaveTypeId}>
-            <option value="">Choose a type</option>
-            {activeTypes.map((type) => <option key={type.id} value={type.id}>{type.name}</option>)}
+            <option value="">Select category...</option>
+            {activeTypes.map((type) => <option key={type.id} value={type.id}>{type.name}{typeof type.days_per_year === "number" ? ` (${type.days_per_year} Days/Yr)` : ""}</option>)}
           </StaffSelect>
         )}
       </Field>
@@ -400,8 +403,12 @@ export function EmployeeLeaveRequestForm({ onCancel, onSubmitted }: { onCancel?:
         </Field>
       ) : null}
       <Field error={fieldErrors.reason} htmlFor="leave-notes" label="Notes">
-        {(aria) => <StaffTextarea {...aria} id="leave-notes" maxLength={2000} name="reason" onChange={(event) => setNotes(event.target.value)} rows={3} value={notes} />}
+        {(aria) => <StaffTextarea {...aria} className="resize-none" id="leave-notes" maxLength={2000} name="reason" placeholder="Provide reason for leave application..." onChange={(event) => setNotes(event.target.value)} rows={3} value={notes} />}
       </Field>
+      <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-[11px] text-amber-800">
+        <TriangleAlert aria-hidden="true" className="mt-0.5 size-3.5 shrink-0 text-amber-600" />
+        <span>Applications require Station Commander / HR endorsement before deployment schedule adjustment.</span>
+      </div>
       {error ? <ErrorState message={error} /> : null}
       {success ? (
         <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-800" role="status">
@@ -409,9 +416,9 @@ export function EmployeeLeaveRequestForm({ onCancel, onSubmitted }: { onCancel?:
           <Link className="font-bold underline" href="/employee/leave">View leave history</Link>
         </p>
       ) : null}
-      <div className="flex flex-wrap justify-end gap-2 pt-1">
+      <div className="flex flex-wrap items-center justify-end gap-3 border-t border-slate-100 pt-4">
         {onCancel ? <button className={staffButton.secondary} disabled={submit.isPending} onClick={onCancel} type="button">Cancel</button> : null}
-        <button className={staffButton.primary} disabled={submit.isPending || !activeTypes.length} type="submit">{submit.isPending ? "Submitting…" : "Submit request"}</button>
+        <button className={staffButton.primary} disabled={submit.isPending || !activeTypes.length} type="submit">{submit.isPending ? "Submitting…" : "Submit Application"}</button>
       </div>
     </form>
   );

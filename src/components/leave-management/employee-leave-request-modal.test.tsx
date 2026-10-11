@@ -9,7 +9,7 @@ vi.mock("@/hooks/use-leave-management", () => ({
     isLoading: false,
     error: null,
     data: [
-      { id: "11111111-1111-4111-8111-111111111111", name: "Annual leave", requires_attachment: false, is_active: true, eligible_gender: null },
+      { id: "11111111-1111-4111-8111-111111111111", name: "Annual leave", days_per_year: 15, requires_attachment: false, is_active: true, eligible_gender: null },
       { id: "33333333-3333-4333-8333-333333333333", name: "Sick leave", requires_attachment: true, is_active: true, eligible_gender: null },
     ],
   }),
@@ -49,7 +49,18 @@ describe("EmployeeLeaveRequestModal", () => {
     for (const field of [screen.getByRole("combobox", { name: /Leave type/ }), screen.getByLabelText(/Start date/), screen.getByLabelText(/Notes/)]) {
       expect(field).toHaveClass("rounded-xl", "bg-slate-50", "border-slate-200");
     }
-    expect(screen.getByRole("button", { name: "Submit request" })).toHaveClass("bg-blue-700");
+    expect(screen.getByRole("button", { name: "Submit Application" })).toHaveClass("bg-blue-700");
+  });
+
+  it("follows the mockup: dark header, endorsement notice, placeholder and category prompt", () => {
+    render(<EmployeeLeaveRequestModal onOpenChange={vi.fn()} open />);
+    expect(screen.getByRole("heading", { name: "File Leave Application" }).closest("div.p-5")).toHaveClass("bg-[#0B132B]");
+    expect(screen.getByText("San Juan CPS Personnel HR Department")).toBeVisible();
+    expect(screen.getByRole("option", { name: "Select category..." })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Annual leave (15 Days/Yr)" })).toBeInTheDocument();
+    expect(screen.getByLabelText(/Notes/)).toHaveAttribute("placeholder", "Provide reason for leave application...");
+    expect(screen.getByLabelText(/Notes/)).toHaveAttribute("rows", "3");
+    expect(screen.getByText(/Station Commander \/ HR endorsement/)).toBeVisible();
   });
 
   it("asks to close from Cancel and the close button", async () => {
@@ -68,7 +79,7 @@ describe("EmployeeLeaveRequestModal", () => {
     await user.selectOptions(screen.getByRole("combobox", { name: /Leave type/ }), "33333333-3333-4333-8333-333333333333");
     await user.type(screen.getByLabelText(/Start date/), isoDate(1));
     await user.type(screen.getByLabelText(/End date/), isoDate(2));
-    await user.click(screen.getByRole("button", { name: "Submit request" }));
+    await user.click(screen.getByRole("button", { name: "Submit Application" }));
     expect(await screen.findByText("Attach a supporting document, such as a medical certificate.")).toBeVisible();
     expect(mocks.submit).not.toHaveBeenCalled();
   });
@@ -81,7 +92,7 @@ describe("EmployeeLeaveRequestModal", () => {
     await user.selectOptions(screen.getByRole("combobox", { name: /Leave type/ }), "11111111-1111-4111-8111-111111111111");
     await user.type(screen.getByLabelText(/Start date/), isoDate(1));
     await user.type(screen.getByLabelText(/End date/), isoDate(2));
-    await user.click(screen.getByRole("button", { name: "Submit request" }));
+    await user.click(screen.getByRole("button", { name: "Submit Application" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Server said no");
     expect(onOpenChange).not.toHaveBeenCalled();
   });
@@ -95,7 +106,7 @@ describe("EmployeeLeaveRequestModal", () => {
     await user.selectOptions(screen.getByRole("combobox", { name: /Leave type/ }), "11111111-1111-4111-8111-111111111111");
     await user.type(screen.getByLabelText(/Start date/), isoDate(1));
     await user.type(screen.getByLabelText(/End date/), isoDate(2));
-    await user.click(screen.getByRole("button", { name: "Submit request" }));
+    await user.click(screen.getByRole("button", { name: "Submit Application" }));
     await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
     expect(onSubmitted).toHaveBeenCalledWith(expect.stringContaining("Leave request submitted."));
   });
