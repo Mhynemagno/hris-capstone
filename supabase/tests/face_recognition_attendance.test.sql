@@ -55,6 +55,7 @@ insert into face_fixture values
   ('alpha_lookalike', array_fill(0.13::real, array[128])),
   ('alpha_margin', array_fill(0.156::real, array[128])),
   ('bravo', array_fill(-0.1::real, array[128])),
+  ('delta', array_fill(-0.5::real, array[128])),
   ('charlie', array_fill(0.15::real, array[64]) || array_fill(0.05::real, array[64])),
   ('between_alpha_charlie', array_fill(0.125::real, array[64]) || array_fill(0.075::real, array[64])),
   ('stranger', array_fill(0.0::real, array[128])),
@@ -76,12 +77,12 @@ set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000a01';
 select extensions.is(public.enroll_employee_face('00000000-0000-4000-8000-000000000b01', (select descriptor from face_fixture where key = 'alpha'), 5, true) ->> 'status', 'enrolled', 'HR enrolls a consenting employee');
 select extensions.throws_ok($$ select public.enroll_employee_face('00000000-0000-4000-8000-000000000b02', (select descriptor from face_fixture where key = 'bravo'), 5, false) $$, '22023', null, 'Enrollment requires confirmed consent');
 select extensions.throws_ok($$ select public.enroll_employee_face('00000000-0000-4000-8000-000000000b02', (select descriptor from face_fixture where key = 'short'), 5, true) $$, '22023', null, 'A malformed descriptor is rejected');
-select extensions.throws_ok($$ select public.enroll_employee_face('00000000-0000-4000-8000-000000000b04', (select descriptor from face_fixture where key = 'bravo'), 5, true) $$, 'P0001', null, 'An employee without a linked account cannot be registered');
+select extensions.is(public.enroll_employee_face('00000000-0000-4000-8000-000000000b04', (select descriptor from face_fixture where key = 'delta'), 5, true) ->> 'status', 'enrolled', 'An active employee without a linked account can be registered');
 select extensions.throws_ok($$ select public.enroll_employee_face('00000000-0000-4000-8000-000000000b02', (select descriptor from face_fixture where key = 'alpha_lookalike'), 5, true) $$, '23505', null, 'A face matching another employee cannot be enrolled');
 select extensions.is(public.enroll_employee_face('00000000-0000-4000-8000-000000000b02', (select descriptor from face_fixture where key = 'bravo'), 5, true) ->> 'status', 'enrolled', 'A distinct face enrolls');
 select extensions.is(public.enroll_employee_face('00000000-0000-4000-8000-000000000b03', (select descriptor from face_fixture where key = 'charlie'), 5, true) ->> 'status', 'enrolled', 'A third distinct face enrolls');
 select extensions.is(public.enroll_employee_face('00000000-0000-4000-8000-000000000b01', (select descriptor from face_fixture where key = 'alpha_retake'), 5, true) ->> 'status', 're_registered', 'Re-registration replaces the enrollment');
-select extensions.is((select count(*) from public.list_face_enrollments()), 3::bigint, 'Re-registration keeps one enrollment per employee');
+select extensions.is((select count(*) from public.list_face_enrollments()), 4::bigint, 'Re-registration keeps one enrollment per employee');
 select extensions.throws_ok(
   $$ select public.enroll_employee_face('00000000-0000-4000-8000-000000000b02', (select descriptor from face_fixture where key = 'alpha_margin'), 5, true) $$,
   '23505',
@@ -90,7 +91,7 @@ select extensions.throws_ok(
 );
 
 set local role postgres;
-select extensions.is((select count(*) from public.audit_logs where entity_type = 'employee_face_enrollments' and action in ('enrolled', 're_registered')), 4::bigint, 'Every enrollment is audited');
+select extensions.is((select count(*) from public.audit_logs where entity_type = 'employee_face_enrollments' and action in ('enrolled', 're_registered')), 5::bigint, 'Every enrollment is audited');
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000a01';
 
