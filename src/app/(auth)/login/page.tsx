@@ -87,7 +87,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <span className="mb-3 inline-block rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[11px] font-bold tracking-wider text-blue-900 uppercase">Employee Portal</span>
         <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Employee / HR</h1>
         <p className="mt-1.5 text-xs leading-relaxed text-slate-500">
-          Enter your badge number to access your official personnel records, track promotion history and eligibility, file daily attendance, and verify deployment schedules.
+          Enter your email address or badge number to access your official personnel records, track promotion history and eligibility, file daily attendance, and verify deployment schedules.
         </p>
       </div>
       <LoginForm error={errorMessage} mode={mode} nextPath={nextPath} notice={notice} />
