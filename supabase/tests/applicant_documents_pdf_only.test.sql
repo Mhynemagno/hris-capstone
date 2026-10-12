@@ -20,9 +20,9 @@ values
   ('applicant-profile-documents', 'applicant-profiles/00000000-0000-4000-8000-000000016001/44444444-4444-4444-8444-444444444444.pdf', '00000000-0000-4000-8000-000000016001');
 
 select extensions.is(
-  (select convalidated from pg_constraint where conname = 'applicant_profile_documents_non_photo_is_pdf'),
-  false,
-  'The PDF-only constraint does not re-check documents uploaded before the rule'
+  (select count(*) from pg_constraint where connamespace = 'public'::regnamespace and not convalidated),
+  0::bigint,
+  'No rule is left unvalidated: older rows never block unrelated updates such as clearing a deleted uploader'
 );
 
 set local role authenticated;

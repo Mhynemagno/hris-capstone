@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(14);
+select extensions.plan(15);
 
 -- Fixture: an administrator, an HR officer who decided a past leave request (the live failure:
 -- clearing "decided by" re-tested "start date must be today or later"), and an employee account
@@ -36,6 +36,14 @@ insert into public.leave_requests (id, employee_id, submitted_by_user_id, leave_
 values
   ('00000000-0000-4000-8000-000000009731', '00000000-0000-4000-8000-000000009712', '00000000-0000-4000-8000-000000009704', '00000000-0000-4000-8000-000000009721', 'Purge test leave', '2026-09-27', '2026-09-28', 'approved', '00000000-0000-4000-8000-000000009702', now()),
   ('00000000-0000-4000-8000-000000009732', '00000000-0000-4000-8000-000000009711', '00000000-0000-4000-8000-000000009703', '00000000-0000-4000-8000-000000009721', 'Purge test leave', '2026-09-27', '2026-09-28', 'approved', '00000000-0000-4000-8000-000000009702', now());
+set local session_replication_role = origin;
+
+-- A promotion criterion from before the 1-3 years rule (the second live failure).
+insert into public.ranks (name, code, sort_order) values ('Purge test rank', 'PTR', 9701);
+set local session_replication_role = replica;
+insert into public.promotion_criteria (id, target_rank_id, minimum_years_of_service, created_by_user_id, updated_by_user_id)
+select '00000000-0000-4000-8000-000000009751', id, 5, '00000000-0000-4000-8000-000000009702', '00000000-0000-4000-8000-000000009702'
+from public.ranks where code = 'PTR';
 set local session_replication_role = origin;
 
 insert into public.deployments (id, employee_id, location, assignment_role, starts_on, created_by_user_id, updated_by_user_id)
@@ -78,6 +86,10 @@ set local role postgres;
 select extensions.lives_ok(
   $$delete from auth.users where id = '00000000-0000-4000-8000-000000009702'$$,
   'The HR account that decided a past leave request can be deleted');
+select extensions.is(
+  (select minimum_years_of_service::text || '/' || coalesce(created_by_user_id::text, 'cleared') from public.promotion_criteria where id = '00000000-0000-4000-8000-000000009751'),
+  '5/cleared',
+  'An older promotion criterion outside the 1-3 years rule is kept, with "created by" cleared');
 select extensions.is(
   (select decided_by_user_id from public.leave_requests where id = '00000000-0000-4000-8000-000000009731'),
   null,
