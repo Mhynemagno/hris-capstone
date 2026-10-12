@@ -1,6 +1,6 @@
 # HRIS workflow guide
 
-Applicants sign in with their six-digit Applicant Number (separators may be entered if shown). Employees sign in with their Badge Number. These identifiers are not interchangeable. New applicants must confirm their email before signing in.
+Applicants sign in with either their email address or six-digit Applicant Number (separators may be entered if shown). Employees, HR, and System Administrators sign in through the Employee / HR portal with either their email address or Badge Number. Applicant and internal-staff identifiers are not interchangeable. New applicants must confirm their email before signing in.
 
 Applicants may optionally upload a private profile photo. If they do not, the system displays the standard silhouette avatar. Before submitting an application, applicants save all five private required documents—CV/Resume, PSA birth certificate, 2x2 picture, Eligibility, and Diploma—using the single **Save documents** action.
 

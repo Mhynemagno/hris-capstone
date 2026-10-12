@@ -1,6 +1,6 @@
 "use client";
 
-import { Badge, Eye, EyeOff, Lock, Mail } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -9,7 +9,7 @@ type LoginFormProps = {
   notice?: string;
   /**
    * Which login the visitor chose; kept so a failed attempt returns to the same page.
-   * Employees, HR and System Administrators sign in with their badge number, applicants with their email address.
+   * Employees, HR and System Administrators sign in with an email address or badge number; applicants use their email address.
    */
   mode: "employee" | "applicant";
   nextPath: string;
@@ -99,16 +99,16 @@ function CapstoneFields({ pending }: { pending: boolean }) {
   );
 }
 
-/** Employee badge sign-in styled from emplogin.html, retaining the native auth POST contract. */
+/** Employee, HR, and SysAd sign-in styled from emplogin.html, retaining the native auth POST contract. */
 function EmployeeFields({ pending }: { pending: boolean }) {
   const [passwordVisible, setPasswordVisible] = useState(false);
   return (
     <>
       <div>
-        <label className="mb-1.5 block text-xs font-semibold text-slate-700" htmlFor="login-identifier">Badge Number</label>
+        <label className="mb-1.5 block text-xs font-semibold text-slate-700" htmlFor="login-identifier">Email Address or Badge Number</label>
         <div className="relative">
-          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400"><Badge aria-hidden="true" className="size-4" /></div>
-          <input autoComplete="username" className={`${applicantInputClassName} pr-4 pl-10`} id="login-identifier" inputMode="text" name="identifier" placeholder="0-12345" required type="text" />
+          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400"><Mail aria-hidden="true" className="size-4" /></div>
+          <input autoComplete="username" className={`${applicantInputClassName} pr-4 pl-10`} id="login-identifier" inputMode="text" name="identifier" placeholder="juan.delacruz@gmail.com or 0-12345" required type="text" />
         </div>
       </div>
       <div>

@@ -25,8 +25,7 @@ const applicantLoginIdentifierSchema = z.string().trim().transform((value, conte
   return z.NEVER;
 });
 /**
- * The Employee / HR login: employees, HR and System Administrators type their badge number.
- * An email still works for an HR or SysAd account that has no personnel record (so no badge).
+ * Employees, HR, and System Administrators can enter either a badge number or email address.
  */
 const badgeNumberLoginSchema = z.string().trim().transform((value, context) => {
   if (z.email().safeParse(value).success) return { kind: "email" as const, value: value.toLowerCase() };

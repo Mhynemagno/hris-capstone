@@ -77,9 +77,9 @@ describe("LoginPage", () => {
     await expect(renderLogin({ next: "/admin" })).rejects.toThrow("REDIRECT /login?as=employee&next=%2Fadmin");
   });
 
-  it("signs employees, HR and SysAd in with a badge number and no Access Level", async () => {
+  it("offers employees, HR and SysAd email or badge sign-in without an Access Level", async () => {
     await renderLogin({ as: "employee", next: "/hr" });
-    expect(screen.getByLabelText("Badge Number")).toBeVisible();
+    expect(screen.getByLabelText("Email Address or Badge Number")).toBeVisible();
     expect(screen.queryByLabelText("Access Level")).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Admin & HR Login" })).not.toBeInTheDocument();
     expect(document.querySelector('input[name="next"]')).toHaveValue("/hr");
