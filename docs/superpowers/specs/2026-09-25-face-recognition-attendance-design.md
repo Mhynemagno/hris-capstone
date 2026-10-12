@@ -48,7 +48,7 @@ The `private` schema is not exposed through the Data API. RLS is on for all thre
 | RPC | Behaviour |
 | --- | --- |
 | `list_face_enrollments()` | Employee ID, sample count, and timestamps. Never the descriptor. |
-| `enroll_employee_face(employee, descriptor, sample_count, consent)` | Rejects missing consent, an invalid descriptor, a sample count outside 3–10, an unknown employee, or an employee without an active linked account. It share-locks the profile so a concurrent deactivation cannot miss the new row. It then takes an advisory lock and rejects a face within the match threshold of **another** employee's enrollment (which would make recognition ambiguous). Finally it upserts, so re-registration replaces the old descriptor only when the new one commits. Audited as `enrolled` or `re_registered`. |
+| `enroll_employee_face(employee, descriptor, sample_count, consent)` | Rejects missing consent, an invalid descriptor, a sample count outside 3–10, an unknown employee, or an employee with a deactivated linked account. Employees without a login account may enroll for HR-managed kiosk attendance. When a profile is linked, it share-locks that profile so a concurrent deactivation cannot miss the new row. It then takes an advisory lock and rejects a face within the match threshold of **another** employee's enrollment (which would make recognition ambiguous). Finally it upserts, so re-registration replaces the old descriptor only when the new one commits. Audited as `enrolled` or `re_registered`. |
 | `delete_employee_face_enrollment(employee)` | Hard delete. Audited as `deleted` with reason `hr_request`. |
 | `record_face_attendance(scan_id, descriptor)` | HR kiosk: identify among all registrations. See below. |
 | `record_my_face_attendance(scan_id, descriptor)` | Employee self-scan. Requires an active `employee` account linked to a personnel record. Compares only with that employee's registration against `match_threshold` (no ambiguity check is needed for 1:1), then applies the same attendance rules. It raises "Ask HR to register it" when there is no registration. |
@@ -74,8 +74,8 @@ Verified on the local database: 8 concurrent distinct scans plus 6 concurrent re
 
 ## Retention and deletion
 
-- Only employees with an active linked login can be registered, so every descriptor has an automatic end of life. HR can delete it at any time on request.
-- Deactivating the employee's linked account (`profiles.is_active` → false, the offboarding path) deletes the descriptor through a trigger, audited as reason `account_deactivated`. Deleting the employee record cascades.
+- Employees without a linked login can be registered for HR-managed kiosk attendance. HR must delete an unlinked employee's descriptor when it is no longer needed.
+- Deactivating a linked employee account (`profiles.is_active` → false, the offboarding path) deletes its descriptor through a trigger, audited as reason `account_deactivated`. Deleting any employee record cascades.
 - Re-registration overwrites; no history of old descriptors is kept.
 - Probe descriptors from scans are never stored; the browser discards the descriptor after the request. Enrollment samples live only in memory until the averaged descriptor is submitted.
 - The scan ledger and attendance logs are attendance records (not biometric) and follow the existing attendance retention.
@@ -100,7 +100,7 @@ INITIALIZING → READY → SEARCHING → VERIFYING → RECORDING → SUCCESS | E
 
 ## Testing
 
-- **pgTAP** (`supabase/tests/face_recognition_attendance.test.sql`, 43 assertions): no table privileges for `anon`/`authenticated`; HR-account deletion is not blocked; employee and administrator denied every RPC; consent, descriptor, and duplicate-face validation; re-registration keeps one row; audit rows; threshold acceptance and rejection; ambiguity rejection; no log for rejected scans; time-in/time-out and status; retry idempotency; already-recorded rules; the unique-index guard; an import on a face-scanned day is a duplicate; the distance is withheld; unlinked employees cannot enroll; employee self-read isolation; deactivation purge; deletion.
+- **pgTAP** (`supabase/tests/face_recognition_attendance.test.sql`, 59 assertions): no table privileges for `anon`/`authenticated`; HR-account deletion is not blocked; employee and administrator denied every RPC; consent, descriptor, and duplicate-face validation; re-registration keeps one row; audit rows; threshold acceptance and rejection; ambiguity rejection; no log for rejected scans; time-in/time-out and status; retry idempotency; already-recorded rules; the unique-index guard; an import on a face-scanned day is a duplicate; the distance is withheld; unlinked employees can enroll through the kiosk; employee self-read isolation; linked-account deactivation purge; deletion.
 - **Vitest:** geometry (framing, aggregation), the state machine, schemas, queries (no table reads, retryable errors), camera hook (constraints, cleanup on unmount/hidden page, late streams, the play race, error mapping), scanner hook with mocked detection (full flow, same-scan-ID retry, unknown face, several faces, denied camera, model failure, track end, unmount), enrollment capture, and components.
 - **Playwright** (`e2e/face-attendance.spec.ts`) with Chromium's fake camera: models load from the production bundle, the camera starts, detection reports "No face detected", consent is required, and the scanner closes. The fake feed contains no face, so a real match needs a consenting person at a real camera. Headless Edge ends fake camera tracks after about a second, so the spec skips there; run it with `--headed`.
 

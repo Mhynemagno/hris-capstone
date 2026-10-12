@@ -25,9 +25,8 @@ describe("LoginForm", () => {
 
   it("labels the fields, links to password recovery, and toggles the password inside its input", () => {
     render(<LoginForm mode="employee" nextPath="/" />);
-    expect(screen.getByLabelText("Badge Number")).toHaveAttribute("type", "text");
-    expect(screen.getByLabelText("Badge Number")).toHaveAttribute("placeholder", "0-12345");
-    expect(screen.queryByLabelText("Email or badge number")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Email Address or Badge Number")).toHaveAttribute("type", "text");
+    expect(screen.getByLabelText("Email Address or Badge Number")).toHaveAttribute("placeholder", "juan.delacruz@gmail.com or 0-12345");
     expect(document.querySelector('input[name="as"]')).toHaveValue("employee");
     const password = screen.getByLabelText("Password");
     expect(password).toHaveAttribute("type", "password");
@@ -64,6 +63,6 @@ describe("LoginForm", () => {
     const { container } = render(<LoginForm mode="employee" nextPath="/hr" />);
     expect(screen.queryByLabelText("Access Level")).not.toBeInTheDocument();
     expect(container.querySelector('input[name="as"]')).toHaveValue("employee");
-    expect(screen.getByLabelText("Badge Number")).toHaveAttribute("type", "text");
+    expect(screen.getByLabelText("Email Address or Badge Number")).toHaveAttribute("type", "text");
   });
 });

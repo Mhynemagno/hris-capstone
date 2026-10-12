@@ -114,6 +114,14 @@ describe("personnel-record queries", () => {
       await expect(saveEmployee({ ...baseInput, departmentId: 3, rankId: 7 })).rejects.toThrow("This email is already registered.");
     });
 
+    it("explains a duplicate badge number without exposing the database constraint", async () => {
+      const single = vi.fn().mockResolvedValue({ data: null, error: { code: "23505", message: 'duplicate key value violates unique constraint "employees_employee_number_key"' } });
+      const select = vi.fn(() => ({ single }));
+      from.mockReturnValue({ insert: vi.fn(() => ({ select })) });
+
+      await expect(saveEmployee({ ...baseInput, departmentId: 3, rankId: 7 })).rejects.toThrow("This badge number is already assigned to another employee.");
+    });
+
     it("saves GSIS and Pag-IBIG as digits and never touches the hidden SSS number", async () => {
       const table = mockTable();
       await saveEmployee({ ...baseInput, departmentId: 3, rankId: 7, gsisNumber: "12345678901", pagibigNumber: "1234-5678-9012", philhealthNumber: "12-345678901-2" }, employeeId);

@@ -64,7 +64,7 @@ on conflict (profile_id) do update set first_name = excluded.first_name, last_na
   emergency_contact_name = coalesce(public.employees.emergency_contact_name, excluded.emergency_contact_name),
   emergency_contact_phone = coalesce(public.employees.emergency_contact_phone, excluded.emergency_contact_phone);
 
--- Staff sign in with their badge number (there is no email login), so the demo administrator, HR and
+-- Staff may sign in with either their badge number or email address, so the demo administrator, HR and
 -- management accounts have personnel records too, as every staff account does in production.
 insert into public.employees (profile_id, employee_number, first_name, last_name, personal_email, employment_status, employment_started_on)
 values

@@ -158,6 +158,9 @@ export async function saveEmployee(input: EmployeeInput, employeeId?: string) {
   if (result.error?.code === "23505" && result.error.message.includes("employees_personal_email_unique_idx")) {
     throw new Error(DUPLICATE_EMAIL_MESSAGE);
   }
+  if (result.error?.code === "23505" && result.error.message.includes("employees_employee_number_key")) {
+    throw new Error("This badge number is already assigned to another employee.");
+  }
   throwIfError(result.error);
   return result.data as Employee;
 }
