@@ -9,7 +9,8 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(navigation.search),
 }));
 
-beforeEach(() => { navigation.replace.mockReset(); navigation.search = ""; });
+// List filters are written through the History API (no server round trip).
+beforeEach(() => { navigation.replace.mockReset(); navigation.search = ""; vi.spyOn(window.history, "replaceState").mockImplementation((_state, _unused, url) => navigation.replace(url, { scroll: false })); });
 
 const hooks = vi.hoisted(() => ({
   useDeleteManagedUser: vi.fn().mockReturnValue({ isPending: false, mutateAsync: vi.fn() }),
@@ -200,9 +201,9 @@ describe("administration shared controls", () => {
     expect(search).toHaveValue("Oper");
     expect(search).toHaveFocus();
     expect(screen.getByText("Operations")).toBeInTheDocument();
-    await waitFor(() => expect(hooks.useDepartments).toHaveBeenLastCalledWith(expect.objectContaining({ search: "Oper", page: 1 })));
-    // The query only follows the pause in typing, not every keystroke.
-    expect(hooks.useDepartments.mock.calls.some(([filters]) => filters.search === "Op")).toBe(false);
+    // The search reaches the URL (and so the query) once typing pauses, not on every keystroke.
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith("/admin/departments?search=Oper", { scroll: false }));
+    expect(navigation.replace).toHaveBeenCalledTimes(1);
   });
 
   it("writes administration filters to the URL and resets pagination", async () => {

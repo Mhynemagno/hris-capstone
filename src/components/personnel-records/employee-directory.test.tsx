@@ -55,6 +55,7 @@ describe("EmployeeDirectory", () => {
   beforeEach(() => {
     navigation.search = "";
     navigation.replace.mockReset();
+    vi.spyOn(window.history, "replaceState").mockImplementation((_state, _unused, url) => navigation.replace(url, { scroll: false }));
     mocks.useEmployeeDirectory.mockReset();
     mocks.useEmployeeDirectory.mockReturnValue({ data: { rows: [employee], count: 1 }, error: null, isLoading: false });
   });

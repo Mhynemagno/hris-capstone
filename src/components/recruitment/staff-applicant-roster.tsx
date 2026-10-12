@@ -1,6 +1,6 @@
 "use client";
 
-import { Contact, Eye, FileSignature, Search, SlidersHorizontal, SquarePen, Trash2 } from "lucide-react";
+import { Contact, Eye, FileSignature, SlidersHorizontal, SquarePen, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -16,6 +16,7 @@ import { StatusPill } from "@/components/staff-shell/ui/status-pill";
 import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { SearchInput } from "@/components/ui/search-input";
 import { useHrRegisteredApplicants } from "@/hooks/use-applicant-portal";
 import { useAllHrApplications, useAllHrJobs, useTransitionApplicationStatus } from "@/hooks/use-recruitment";
 import { formatDate } from "@/lib/format-date";
@@ -23,6 +24,7 @@ import { formatApplicantNumber } from "@/lib/recruitment/applicant-number";
 import { APPLICATION_SORT_ACCESSORS, buildApplicationRows, parseApplicationListParams, type ApplicationListRow } from "@/lib/recruitment/application-list";
 import { aiMatchLabel, applicationStatusPill } from "@/lib/staff/status-maps";
 import type { HrRegisteredApplicant } from "@/lib/types/database";
+import { matchesSearch } from "@/lib/search";
 import { cn } from "@/lib/utils";
 import { useListParams } from "@/lib/workspace/list-params";
 import { paginate, sortRows } from "@/lib/workspace/table";
@@ -73,7 +75,7 @@ export function StaffApplicantRoster() {
   const [reasonError, setReasonError] = useState(false);
 
   const registeredRows: ApplicationListRow[] = (registered.data ?? [])
-    .filter((applicant) => !params.q || [applicant.full_name, applicant.email, applicant.first_name, applicant.last_name].some((value) => (value ?? "").toLowerCase().includes(params.q.toLowerCase())))
+    .filter((applicant) => matchesSearch(params.q, [applicant.full_name, applicant.email, applicant.first_name, applicant.middle_name, applicant.last_name, formatApplicantNumber(applicant.applicant_number)]))
     .map((applicant) => ({ kind: "registered" as const, id: applicant.user_id, name: [applicant.last_name, applicant.first_name].filter(Boolean).join(", ") || applicant.full_name || applicant.email || "Applicant", applicantNumber: formatApplicantNumber(applicant.applicant_number), submittedAt: applicant.registered_at, applicant }));
   const rows = view === "applicants" ? registeredRows : buildApplicationRows(applications.data ?? [], registered.data ?? [], params);
   const page = paginate(sortRows(rows, params.sort, APPLICATION_SORT_ACCESSORS), params.page, PAGE_SIZE);
@@ -130,10 +132,7 @@ export function StaffApplicantRoster() {
       <section aria-label="Applicant roster" className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm">
         <div className="border-b border-slate-100 bg-slate-50/50 p-4">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-12">
-            <div className="relative lg:col-span-4">
-              <input aria-label="Search applicants" className="w-full rounded-xl border border-slate-200 bg-white py-2 pr-4 pl-9 text-xs font-medium transition-all focus:ring-2 focus:ring-blue-600 focus:outline-none" onChange={(event) => set({ q: event.target.value })} placeholder="Search name or applicant number..." type="search" value={params.q} />
-              <Search aria-hidden="true" className="absolute top-1/2 left-3.5 size-3 -translate-y-1/2 text-slate-500" />
-            </div>
+            <SearchInput className="sm:w-full lg:col-span-4" label="Search applicants" onChange={(q) => set({ q })} placeholder="Search name or applicant number..." value={params.q} variant="staff" />
             <div className="relative lg:col-span-3">
               <select aria-label="Recruitment Openings" className={filterClassName} disabled={view === "applicants"} onChange={(event) => set({ job: event.target.value })} value={params.job ? String(params.job) : ""}>
                 <option value="">Recruitment Openings</option>

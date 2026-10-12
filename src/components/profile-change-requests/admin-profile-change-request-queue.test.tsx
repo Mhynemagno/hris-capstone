@@ -11,7 +11,8 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(navigation.search),
 }));
 
-beforeEach(() => { navigation.replace.mockReset(); navigation.search = ""; });
+// List filters are written through the History API (no server round trip).
+beforeEach(() => { navigation.replace.mockReset(); navigation.search = ""; vi.spyOn(window.history, "replaceState").mockImplementation((_state, _unused, url) => navigation.replace(url, { scroll: false })); });
 
 import { AdminProfileChangeRequestQueue } from "./admin-profile-change-request-queue";
 

@@ -34,6 +34,9 @@ export const deploymentFiltersSchema = paginationSchema.extend({
   status: deploymentStatusSchema.optional(),
   deploymentType: z.enum(DEPLOYMENT_TYPES).optional(),
   employeeId: uuidSchema.optional(),
+  search: z.string().trim().max(200).transform((value) => value || undefined).optional(),
+  /** Only deployments of personnel who are still active (the HR dashboard leaves retired personnel out). */
+  activeEmployeesOnly: z.boolean().optional(),
   startsOn: isoDateSchema.optional(),
   endsOn: isoDateSchema.optional(),
 }).superRefine((value, context) => {

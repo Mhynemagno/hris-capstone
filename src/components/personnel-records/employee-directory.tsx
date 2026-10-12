@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Eye, Pencil, Plus, Search, SlidersHorizontal, Trash2, UserRound } from "lucide-react";
+import { Eye, Pencil, Plus, SlidersHorizontal, Trash2, UserRound } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { DeleteRecordDialog } from "@/components/deletion/delete-record-dialog";
@@ -9,9 +9,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
 import { FormField } from "@/components/ui/form-field";
-import { Input } from "@/components/ui/input";
 import { LoadingState } from "@/components/ui/loading-state";
 import { NativeSelect } from "@/components/ui/native-select";
+import { SearchInput } from "@/components/ui/search-input";
 import { useRankOptions } from "@/hooks/use-administration";
 import { useEmployeeDirectory, useEmployeeProfilePhotoUrl, useUnlinkedEmployeeAccounts } from "@/hooks/use-personnel-records";
 import type { Employee } from "@/lib/types/database";
@@ -64,7 +64,7 @@ export function EmployeeDirectory() {
   const page = Math.max(1, Number(params.page) || 1);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const { data, error, isLoading } = useEmployeeDirectory({
+  const { data, error, isFetching, isLoading } = useEmployeeDirectory({
     search,
     departmentId: departmentId ? Number(departmentId) : undefined,
     rankId: rankId ? Number(rankId) : undefined,
@@ -92,13 +92,7 @@ export function EmployeeDirectory() {
 
       <section aria-label="Employee list" className="overflow-hidden rounded-2xl border bg-card shadow-sm">
         <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-end sm:justify-between">
-          <div className="w-full sm:max-w-sm">
-            <label className="sr-only" htmlFor="employee-search">Search</label>
-            <div className="relative">
-              <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input className="pl-9" id="employee-search" onChange={(event) => set({ q: event.target.value })} placeholder="Search name or badge number" type="search" value={search} />
-            </div>
-          </div>
+          <SearchInput className="sm:w-auto sm:max-w-sm sm:flex-1" label="Search" onChange={(q) => set({ q })} placeholder="Search name or badge number" value={search} />
           <div className="flex flex-wrap gap-2">
             <Button aria-controls="employee-filters" aria-expanded={filtersOpen} className="min-h-11" onClick={() => setFiltersOpen((open) => !open)} type="button" variant="outline">
               <SlidersHorizontal aria-hidden="true" />
@@ -136,7 +130,7 @@ export function EmployeeDirectory() {
 
         <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm text-muted-foreground">
           <p aria-live="polite">
-            {isLoading ? "Searching…" : total > rows.length ? `Showing ${rows.length} of ${total} records` : total === 1 ? "1 record" : `${total} records`}
+            {isLoading || isFetching ? "Searching…" : total > rows.length ? `Showing ${rows.length} of ${total} records` : total === 1 ? "1 record" : `${total} records`}
           </p>
           <p aria-live="polite" className="font-medium text-emerald-700 dark:text-emerald-400" role="status">{notice ?? ""}</p>
         </div>

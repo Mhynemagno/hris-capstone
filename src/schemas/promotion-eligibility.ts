@@ -126,6 +126,7 @@ export const promotionEvaluationFiltersSchema = paginationSchema.extend({
 export const promotionReadinessFiltersSchema = paginationSchema.extend({
   pageSize: z.coerce.number().int().positive().transform((value) => Math.min(value, 100)).default(25),
   employeeId: uuidSchema.optional(),
+  search: z.string().trim().max(200).transform((value) => value || undefined).optional(),
 });
 
 export const employeePromotionEligibilitySchema = z.object({

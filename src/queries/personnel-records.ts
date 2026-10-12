@@ -1,5 +1,6 @@
 import type { Certification, Employee, Qualification, ServiceHistory, TrainingRecord, UnlinkedEmployeeAccount, UnitStation } from "@/lib/types/database";
 import { DUPLICATE_EMAIL_MESSAGE } from "@/lib/auth/duplicate-email";
+import { withSearch } from "@/lib/search";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import {
   certificationSchema,
@@ -34,7 +35,7 @@ export async function listEmployees(input: Partial<EmployeeDirectoryFilters> = {
     .order("first_name")
     .order("employee_number")
     .range(from, to);
-  if (filters.search) query = query.or(`employee_number.ilike.%${filters.search}%,first_name.ilike.%${filters.search}%,last_name.ilike.%${filters.search}%`);
+  query = withSearch(query, filters.search);
   if (filters.departmentId) query = query.eq("department_id", filters.departmentId);
   if (filters.rankId) query = query.eq("rank_id", filters.rankId);
   if (filters.employmentStatus) query = query.eq("employment_status", filters.employmentStatus);

@@ -24,7 +24,7 @@ describe("StaffPromotions (promotions.html)", () => {
   it("shows the banner and the candidates table", async () => {
     render(<StaffPromotions />);
     expect(screen.getByRole("heading", { level: 1, name: "Promotions Evaluation" })).toBeInTheDocument();
-    expect(screen.getByRole("searchbox", { name: "Search candidates" })).toHaveAttribute("placeholder", "Search this page's employee or rank...");
+    expect(screen.getByRole("searchbox", { name: "Search candidates" })).toHaveAttribute("placeholder", "Search employee, badge no. or rank...");
     expect(screen.getByText("Promotion Board Guidelines")).toBeInTheDocument();
     const row = screen.getByText("Tyson Peters").closest("tr")!;
     expect(within(row).getByText("PMSG — Police Master Sergeant")).toBeInTheDocument();

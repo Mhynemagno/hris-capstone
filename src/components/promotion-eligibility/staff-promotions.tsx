@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleCheck, FolderOpen, Info, ListChecks, Search, ThumbsUp, TriangleAlert } from "lucide-react";
+import { CircleCheck, FolderOpen, Info, ListChecks, ThumbsUp, TriangleAlert } from "lucide-react";
 import { useState } from "react";
 
 import { InitialsAvatar, avatarTone } from "@/components/staff-shell/ui/initials-avatar";
@@ -11,6 +11,7 @@ import { StaffPager, staffTable } from "@/components/staff-shell/ui/staff-table-
 import { StatusPill } from "@/components/staff-shell/ui/status-pill";
 import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
+import { SearchInput } from "@/components/ui/search-input";
 import { useRankOptions } from "@/hooks/use-administration";
 import { usePanelParam } from "@/hooks/use-panel-param";
 import { usePromotionReadinessPage } from "@/hooks/use-promotion-eligibility";
@@ -29,16 +30,16 @@ export function StaffPromotions() {
   const [criteria, setCriteria] = usePanelParam("criteria");
   const [review, setReview] = usePanelParam("review");
   const [page, setPage] = useState(1);
-  const [query, setQuery] = useState("");
-  const readiness = usePromotionReadinessPage({ page, pageSize: PAGE_SIZE });
+  const [search, setSearch] = useState("");
+  // Searched on the server across every page: each word must match the name, badge number or target rank.
+  const readiness = usePromotionReadinessPage({ page, pageSize: PAGE_SIZE, search: search || undefined });
   const ranks = useRankOptions();
 
   const rankTitle = (rankId: number) => {
     const rank = ranks.data?.find((row) => row.id === rankId);
     return rank ? rankLabel(rank) : `Rank #${rankId}`;
   };
-  const term = query.trim().toLowerCase();
-  const rows = (readiness.data?.rows ?? []).filter((row) => !term || row.employee_name.toLowerCase().includes(term) || rankTitle(row.target_rank_id).toLowerCase().includes(term));
+  const rows = readiness.data?.rows ?? [];
   const total = readiness.data?.count ?? 0;
 
   return (
@@ -67,10 +68,7 @@ export function StaffPromotions() {
             <h2 className="text-base font-bold text-slate-900">Candidates for Promotion</h2>
             <span className="rounded-md border border-blue-200 bg-blue-50 px-2 py-0.5 font-mono text-[10px] font-extrabold text-blue-700">{total} {total === 1 ? "Candidate" : "Candidates"}</span>
           </div>
-          <div className="relative w-full md:w-64">
-            <input aria-label="Search candidates" className="w-full rounded-xl border border-slate-200 bg-white py-2 pr-4 pl-9 text-xs font-medium transition-all focus:ring-2 focus:ring-blue-600 focus:outline-none" onChange={(event) => setQuery(event.target.value)} placeholder="Search this page's employee or rank..." type="search" value={query} />
-            <Search aria-hidden="true" className="absolute top-1/2 left-3.5 size-3 -translate-y-1/2 text-slate-500" />
-          </div>
+          <SearchInput className="sm:w-full md:w-64" label="Search candidates" onChange={(next) => { setSearch(next); setPage(1); }} placeholder="Search employee, badge no. or rank..." value={search} variant="staff" />
         </div>
         {readiness.isLoading ? <LoadingState label="Loading promotion reviews…" /> : readiness.error ? <ErrorState message={readiness.error.message} onRetry={() => void readiness.refetch()} /> : (
           <div className="overflow-x-auto">

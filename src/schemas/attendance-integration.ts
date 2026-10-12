@@ -11,6 +11,7 @@ export const attendanceFiltersSchema = paginationSchema.extend({
   statuses: z.array(attendanceStatusSchema).min(1).optional(),
   startsOn: isoDateSchema.optional(),
   endsOn: isoDateSchema.optional(),
+  search: z.string().trim().max(200).transform((value) => value || undefined).optional(),
 }).superRefine((value, context) => {
   if (value.startsOn && value.endsOn && value.endsOn < value.startsOn) {
     context.addIssue({ code: "custom", path: ["endsOn"], message: "End date must be on or after start date." });

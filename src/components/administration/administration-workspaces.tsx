@@ -17,6 +17,7 @@ import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { LoadingState } from "@/components/ui/loading-state";
 import { nativeSelectClassName } from "@/components/ui/native-select";
+import { SearchInput } from "@/components/ui/search-input";
 import { staffButton } from "@/components/staff-shell/ui/staff-buttons";
 import { StatusPill } from "@/components/staff-shell/ui/status-pill";
 import { staffTable } from "@/components/staff-shell/ui/staff-table-card";
@@ -39,6 +40,7 @@ import { formatDateTime } from "@/lib/format-date";
 import type { Department, ManagedUser, Rank, UnitStation } from "@/lib/types/database";
 import { APP_ROLES, type AppRole } from "@/lib/types/roles";
 import { cn } from "@/lib/utils";
+import { useSearchDraft } from "@/hooks/use-search-draft";
 import { useListParams } from "@/lib/workspace/list-params";
 import {
   departmentSchema,
@@ -124,30 +126,6 @@ function StatusSelect({ label, onChange, value }: { label: string; onChange: (va
   );
 }
 
-/**
- * Delays a fast-changing value (typed search text) so the list is queried once typing pauses,
- * not on every keystroke.
- */
-function useDebouncedValue<T>(value: T, delay = 300) {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const timer = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(timer);
-  }, [value, delay]);
-  return debounced;
-}
-
-/** Keep a responsive search field while the URL remains the durable list state. */
-function useUrlSearch(value: string) {
-  const [previousValue, setPreviousValue] = useState(value);
-  const [search, setSearch] = useState(value);
-  if (value !== previousValue) {
-    setPreviousValue(value);
-    setSearch(value);
-  }
-  return [search, setSearch] as const;
-}
-
 function urlPage(value: string) {
   return Math.max(1, Number(value) || 1);
 }
@@ -188,7 +166,7 @@ function UserFilters({ onRoleChange, onSearchChange, onStatusChange, role, searc
 }) {
   return (
     <div className="grid flex-1 gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
-      <Input aria-label="Search accounts" onChange={(event) => onSearchChange(event.target.value)} placeholder="Search name or email" type="search" value={search} />
+      <SearchInput className="sm:w-full" label="Search accounts" onChange={onSearchChange} placeholder="Search name or email" value={search} />
       <select aria-label="Filter users by role" className={cn(nativeSelectClassName, "sm:w-52")} onChange={(event) => onRoleChange(event.target.value as AppRole | "")} value={role}>
         <option value="">All roles</option>
         {APP_ROLES.map((item) => <option key={item} value={item}>{roleLabels[item]}</option>)}
@@ -312,7 +290,6 @@ function ManagedUsersTable({ onDelete, onEdit, rows, showProfiles }: {
 
 function ManagedAccountsWorkspace({ invite }: { invite: boolean }) {
   const { params, set } = useListParams(["search", "role", "status", "page"] as const);
-  const [search, setSearch] = useUrlSearch(params.search);
   const role = APP_ROLES.includes(params.role as AppRole) ? params.role as AppRole : "";
   const status: StatusFilter = params.status === "active" || params.status === "inactive" ? params.status : "";
   const page = urlPage(params.page);
@@ -320,7 +297,7 @@ function ManagedAccountsWorkspace({ invite }: { invite: boolean }) {
   const [deleting, setDeleting] = useState<ManagedUser | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
-  const searchTerm = useDebouncedValue(search.trim());
+  const searchTerm = params.search.trim();
   const filters = { page, pageSize: 10 as const, ...(searchTerm ? { search: searchTerm } : {}), ...(role ? { role } : {}), ...(status ? { status } : {}) };
   const result = useManagedUsers(filters);
   const inviteMutation = useInviteInternalUser();
@@ -331,10 +308,10 @@ function ManagedAccountsWorkspace({ invite }: { invite: boolean }) {
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <UserFilters
           onRoleChange={(value) => set({ role: value })}
-          onSearchChange={(value) => { setSearch(value); set({ search: value }); }}
+          onSearchChange={(value) => set({ search: value })}
           onStatusChange={(value) => set({ status: value })}
           role={role}
-          search={search}
+          search={params.search}
           status={status}
         />
         {invite ? <Button className="w-full sm:w-auto" onClick={() => setInviteOpen(true)} type="button">Invite account</Button> : null}
@@ -392,7 +369,7 @@ export function UsersWorkspace() {
 function ReferenceFilters({ label, onSearchChange, onStatusChange, search, status }: { label: string; onSearchChange: (value: string) => void; onStatusChange: (value: StatusFilter) => void; search: string; status: StatusFilter }) {
   return (
     <div className="grid flex-1 gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
-      <Input aria-label={`Search ${label}`} onChange={(event) => onSearchChange(event.target.value)} placeholder={`Search ${label}`} type="search" value={search} />
+      <SearchInput className="sm:w-full" label={`Search ${label}`} onChange={onSearchChange} value={search} />
       <StatusSelect label={`Filter ${label} by status`} onChange={onStatusChange} value={status} />
     </div>
   );
@@ -427,14 +404,13 @@ function DepartmentForm({ department, onSaved, pending }: { department?: Departm
 
 export function DepartmentsWorkspace() {
   const { params, set } = useListParams(["search", "status", "page"] as const);
-  const [search, setSearch] = useUrlSearch(params.search);
   const status: StatusFilter = params.status === "active" || params.status === "inactive" ? params.status : "";
   const page = urlPage(params.page);
   const [editing, setEditing] = useState<Department | null>(null);
   const [deleting, setDeleting] = useState<Department | null>(null);
   const [creating, setCreating] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
-  const searchTerm = useDebouncedValue(search.trim());
+  const searchTerm = params.search.trim();
   const result = useDepartments({ page, pageSize: 10, ...(searchTerm ? { search: searchTerm } : {}), ...(status ? { status } : {}) });
   const save = useSaveDepartment();
   const rows = result.data?.rows ?? [];
@@ -442,7 +418,7 @@ export function DepartmentsWorkspace() {
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <ReferenceFilters label="units / sections" onSearchChange={(value) => { setSearch(value); set({ search: value }); }} onStatusChange={(value) => set({ status: value })} search={search} status={status} />
+        <ReferenceFilters label="units / sections" onSearchChange={(value) => set({ search: value })} onStatusChange={(value) => set({ status: value })} search={params.search} status={status} />
         <Button className="w-full sm:w-auto" onClick={() => setCreating(true)} type="button">Add unit / section</Button>
       </div>
       <SuccessMessage message={notice} />
@@ -514,14 +490,13 @@ function UnitStationForm({ onSaved, pending, unitStation }: { onSaved: (input: U
 
 export function UnitStationsWorkspace() {
   const { params, set } = useListParams(["search", "status", "page"] as const);
-  const [search, setSearch] = useUrlSearch(params.search);
   const status: StatusFilter = params.status === "active" || params.status === "inactive" ? params.status : "";
   const page = urlPage(params.page);
   const [editing, setEditing] = useState<UnitStation | null>(null);
   const [deleting, setDeleting] = useState<UnitStation | null>(null);
   const [creating, setCreating] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
-  const searchTerm = useDebouncedValue(search.trim());
+  const searchTerm = params.search.trim();
   const result = useUnitStationCatalogue({ page, pageSize: 10, ...(searchTerm ? { search: searchTerm } : {}), ...(status ? { status } : {}) });
   const save = useSaveUnitStation();
   const rows = result.data?.rows ?? [];
@@ -529,7 +504,7 @@ export function UnitStationsWorkspace() {
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <ReferenceFilters label="units / stations" onSearchChange={(value) => { setSearch(value); set({ search: value }); }} onStatusChange={(value) => set({ status: value })} search={search} status={status} />
+        <ReferenceFilters label="units / stations" onSearchChange={(value) => set({ search: value })} onStatusChange={(value) => set({ status: value })} search={params.search} status={status} />
         <Button className="w-full sm:w-auto" onClick={() => setCreating(true)} type="button">Add unit / station</Button>
       </div>
       <p className="text-sm text-muted-foreground">
@@ -615,14 +590,13 @@ function RankForm({ onSaved, pending, rank }: { onSaved: (input: RankInput) => P
 
 export function RanksWorkspace() {
   const { params, set } = useListParams(["search", "status", "page"] as const);
-  const [search, setSearch] = useUrlSearch(params.search);
   const status: StatusFilter = params.status === "active" || params.status === "inactive" ? params.status : "";
   const page = urlPage(params.page);
   const [editing, setEditing] = useState<Rank | null>(null);
   const [deleting, setDeleting] = useState<Rank | null>(null);
   const [creating, setCreating] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
-  const searchTerm = useDebouncedValue(search.trim());
+  const searchTerm = params.search.trim();
   const result = useRanks({ page, pageSize: 10, ...(searchTerm ? { search: searchTerm } : {}), ...(status ? { status } : {}) });
   const save = useSaveRank();
   const rows = result.data?.rows ?? [];
@@ -630,7 +604,7 @@ export function RanksWorkspace() {
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <ReferenceFilters label="ranks" onSearchChange={(value) => { setSearch(value); set({ search: value }); }} onStatusChange={(value) => set({ status: value })} search={search} status={status} />
+        <ReferenceFilters label="ranks" onSearchChange={(value) => set({ search: value })} onStatusChange={(value) => set({ status: value })} search={params.search} status={status} />
         <Button className="w-full sm:w-auto" onClick={() => setCreating(true)} type="button">Add rank</Button>
       </div>
       <p className="text-sm text-muted-foreground">
@@ -768,25 +742,24 @@ const AUDIT_ENTITY_SUGGESTIONS = [
 
 export function AuditLogsWorkspace() {
   const { params, set, clear } = useListParams(["search", "entityType", "action", "page"] as const);
-  const [search, setSearch] = useUrlSearch(params.search);
-  const [entityType, setEntityType] = useUrlSearch(params.entityType);
+  const entityType = useSearchDraft(params.entityType, (value) => set({ entityType: value }));
   const action = AUDIT_ACTION_GROUP_KEYS.includes(params.action as AuditActionGroup) ? params.action as AuditActionGroup : "";
   const page = urlPage(params.page);
   const [selected, setSelected] = useState<AuditLogDisplay | null>(null);
-  const searchTerm = useDebouncedValue(search.trim());
-  const entityTerm = useDebouncedValue(entityType.trim());
+  const searchTerm = params.search.trim();
+  const entityTerm = params.entityType.trim();
   const result = useAuditLogs({ page, pageSize: 10, ...(searchTerm ? { search: searchTerm } : {}), ...(entityTerm ? { entityType: entityTerm } : {}), ...(action ? { action } : {}) });
-  const filtered = Boolean(search || entityType || action);
+  const filtered = Boolean(params.search || entityType.draft || action);
   const rows = result.data?.rows ?? [];
 
   return (
     <div className="space-y-5">
       <div className="grid gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
         <FormField htmlFor="audit-search" label="Search">
-          <Input id="audit-search" onChange={(event) => { setSearch(event.target.value); set({ search: event.target.value }); }} placeholder="Name, record, or ID" type="search" value={search} />
+          <SearchInput className="sm:w-full" id="audit-search" label="Search" onChange={(value) => set({ search: value })} placeholder="Name, record, or ID" value={params.search} />
         </FormField>
         <FormField htmlFor="audit-entity" label="Record type">
-          <Input id="audit-entity" list="audit-entity-options" onChange={(event) => { setEntityType(event.target.value); set({ entityType: event.target.value }); }} placeholder="Any" value={entityType} />
+          <Input id="audit-entity" list="audit-entity-options" onChange={(event) => entityType.change(event.target.value)} placeholder="Any" value={entityType.draft} />
         </FormField>
         <FormField htmlFor="audit-action" label="Action">
           <select className={nativeSelectClassName} id="audit-action" onChange={(event) => set({ action: event.target.value })} value={action}>
@@ -794,7 +767,7 @@ export function AuditLogsWorkspace() {
             {AUDIT_ACTION_GROUP_KEYS.map((key) => <option key={key} value={key}>{AUDIT_ACTION_GROUPS[key].label}</option>)}
           </select>
         </FormField>
-        <Button disabled={!filtered} onClick={() => { setSearch(""); setEntityType(""); clear(["search", "entityType", "action"]); }} type="button" variant="outline">Clear filters</Button>
+        <Button disabled={!filtered} onClick={() => clear(["search", "entityType", "action"])} type="button" variant="outline">Clear filters</Button>
         <datalist id="audit-entity-options">{AUDIT_ENTITY_SUGGESTIONS.map((value) => <option key={value} value={value} />)}</datalist>
       </div>
       <ListBody loadingLabel="Loading audit history…" result={result}>
