@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, MapPin, Plus, Search, SquarePen, Trash2 } from "lucide-react";
+import { Eye, MapPin, Plus, SquarePen, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ZodError } from "zod";
@@ -13,6 +13,7 @@ import { StaffPager, staffTable } from "@/components/staff-shell/ui/staff-table-
 import { StatusPill } from "@/components/staff-shell/ui/status-pill";
 import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
+import { SearchInput } from "@/components/ui/search-input";
 import { useEmployeeOptions, useHrDeployments, useUpdateDeployment } from "@/hooks/use-deployment-tracking";
 import { usePanelParam } from "@/hooks/use-panel-param";
 import { formatDate } from "@/lib/format-date";
@@ -37,18 +38,14 @@ export function StaffDeployments() {
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState<DeploymentStatus | "">("");
   const [type, setType] = useState<(typeof DEPLOYMENT_TYPES)[number] | "">("");
-  const [query, setQuery] = useState("");
-  const deployments = useHrDeployments({ page, pageSize: PAGE_SIZE, status: status || undefined, deploymentType: type || undefined });
+  const [search, setSearch] = useState("");
+  const deployments = useHrDeployments({ page, pageSize: PAGE_SIZE, status: status || undefined, deploymentType: type || undefined, search: search || undefined });
   const employees = useEmployeeOptions();
   const update = useUpdateDeployment();
   const employeeById = useMemo(() => new Map((employees.data ?? []).map((employee) => [employee.id, employee])), [employees.data]);
 
-  const term = query.trim().toLowerCase();
-  const rows = (deployments.data?.rows ?? []).filter((deployment) => {
-    if (!term) return true;
-    const employee = employeeById.get(deployment.employee_id);
-    return [employee?.fullName, employee?.employeeNumber, deployment.location].some((value) => (value ?? "").toLowerCase().includes(term));
-  });
+  // Searched on the server across every page: each word must match the name, badge number or location.
+  const rows = deployments.data?.rows ?? [];
 
   async function cancel(deployment: Deployment) {
     if (!window.confirm("Cancel or delete this deployment?")) return;
@@ -88,10 +85,7 @@ export function StaffDeployments() {
       <section aria-label="Deployments" className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm">
         <div className="border-b border-slate-100 bg-slate-50/50 p-4">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-12">
-            <div className="relative lg:col-span-5">
-              <input aria-label="Search deployments" className="w-full rounded-xl border border-slate-200 bg-white py-2 pr-4 pl-9 text-xs font-medium transition-all focus:ring-2 focus:ring-blue-600 focus:outline-none" onChange={(event) => setQuery(event.target.value)} placeholder="Search this page's employee name or badge number..." type="search" value={query} />
-              <Search aria-hidden="true" className="absolute top-1/2 left-3.5 size-3 -translate-y-1/2 text-slate-500" />
-            </div>
+            <SearchInput className="sm:w-full lg:col-span-5" label="Search deployments" onChange={(next) => { setSearch(next); setPage(1); }} placeholder="Search employee name, badge number or location..." value={search} variant="staff" />
             <div className="lg:col-span-4">
               <select aria-label="Deployment type" className={filterClassName} onChange={(event) => { setType(event.target.value as typeof type); setPage(1); }} value={type}>
                 <option value="">All Deployment Types</option>

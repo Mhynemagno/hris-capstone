@@ -1,13 +1,13 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { queryKeys } from "@/lib/query-keys";
 import { getAttendanceSettings, importAttendanceFile, listAttendanceEmployees, listAttendanceImports, listHrAttendanceLogs, listMyAttendanceLogs, listUnmatchedAttendanceEvents, resolveUnmatchedAttendanceEvent, saveAttendanceSettings, attendanceFilters } from "@/queries/attendance-integration";
 import type { AttendanceFilters } from "@/schemas/attendance-integration";
 
-export function useHrAttendanceLogs(input: Partial<AttendanceFilters> = {}) { const filters = attendanceFilters(input); return useQuery({ queryKey: queryKeys.attendanceIntegration.hrLogs(filters), queryFn: () => listHrAttendanceLogs(filters) }); }
-export function useMyAttendanceLogs(input: Partial<AttendanceFilters> = {}) { const filters = attendanceFilters(input); return useQuery({ queryKey: queryKeys.attendanceIntegration.mine(filters), queryFn: () => listMyAttendanceLogs(filters) }); }
+export function useHrAttendanceLogs(input: Partial<AttendanceFilters> = {}) { const filters = attendanceFilters(input); return useQuery({ queryKey: queryKeys.attendanceIntegration.hrLogs(filters), queryFn: () => listHrAttendanceLogs(filters), placeholderData: keepPreviousData }); }
+export function useMyAttendanceLogs(input: Partial<AttendanceFilters> = {}) { const filters = attendanceFilters(input); return useQuery({ queryKey: queryKeys.attendanceIntegration.mine(filters), queryFn: () => listMyAttendanceLogs(filters), placeholderData: keepPreviousData }); }
 export function useAttendanceImports(input: Partial<AttendanceFilters> = {}) { const filters = attendanceFilters(input); return useQuery({ queryKey: queryKeys.attendanceIntegration.imports(filters), queryFn: () => listAttendanceImports(filters) }); }
 export function useUnmatchedAttendanceEvents(input: Partial<AttendanceFilters> = {}) { const filters = attendanceFilters(input); return useQuery({ queryKey: queryKeys.attendanceIntegration.unmatched(filters), queryFn: () => listUnmatchedAttendanceEvents(filters) }); }
 export function useAttendanceSettings() { return useQuery({ queryKey: queryKeys.attendanceIntegration.settings(), queryFn: getAttendanceSettings }); }

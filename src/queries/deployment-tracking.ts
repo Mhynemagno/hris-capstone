@@ -1,3 +1,4 @@
+import { withSearch } from "@/lib/search";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { Deployment, DeploymentHistory, DeploymentReport, Employee, PaginatedResult } from "@/lib/types/database";
 import { uuidSchema } from "@/schemas/common";
@@ -13,14 +14,19 @@ export type DeploymentWithHistory = Deployment & { deployment_history: Deploymen
 
 export async function listHrDeployments(input: Partial<DeploymentFilters> = {}): Promise<PaginatedResult<Deployment, DeploymentFilters>> {
   const filters = deploymentFilters(input); const from = (filters.page - 1) * filters.pageSize;
-  let query = createBrowserSupabaseClient().from("deployments").select("*", { count: "exact" }).order("starts_on", { ascending: false }).range(from, from + filters.pageSize - 1);
+  const columns = filters.activeEmployeesOnly ? "*, active_employee:employees!inner(employment_status)" : "*";
+  let query = createBrowserSupabaseClient().from("deployments").select(columns, { count: "exact" }).order("starts_on", { ascending: false }).order("id").range(from, from + filters.pageSize - 1);
+  query = withSearch(query, filters.search);
+  if (filters.activeEmployeesOnly) query = query.eq("active_employee.employment_status", "active");
   if (filters.status) query = query.eq("status", filters.status);
   if (filters.deploymentType) query = query.eq("deployment_type", filters.deploymentType);
   if (filters.employeeId) query = query.eq("employee_id", filters.employeeId);
   if (filters.startsOn) query = query.or(`ends_on.is.null,ends_on.gte.${filters.startsOn}`);
   if (filters.endsOn) query = query.lte("starts_on", filters.endsOn);
   const { data, error, count } = await query; throwIfError(error);
-  return { rows: (data ?? []) as Deployment[], count: count ?? 0, filters };
+  // The employment-status embed only filters; it is not part of a deployment row.
+  const rows = ((data ?? []) as unknown as Array<Deployment & { active_employee?: unknown }>).map((row) => { const copy = { ...row }; delete copy.active_employee; return copy as Deployment; });
+  return { rows, count: count ?? 0, filters };
 }
 
 export async function listMyDeployments(input: Partial<DeploymentFilters> = {}): Promise<PaginatedResult<Deployment, DeploymentFilters>> {

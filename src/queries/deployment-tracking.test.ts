@@ -55,4 +55,19 @@ describe("deployment tracking queries", () => {
     await listHrDeployments({ deploymentType: "Special Event" });
     expect(eq).toHaveBeenCalledWith("deployment_type", "Special Event");
   });
+
+  it("searches every page on the server and can leave retired personnel out (HR dashboard)", async () => {
+    const calls: Array<[string, unknown[]]> = [];
+    const chain: Record<string, unknown> = {};
+    for (const method of ["select", "order", "range", "or", "lte", "eq", "ilike"]) chain[method] = vi.fn((...args: unknown[]) => { calls.push([method, args]); return chain; });
+    chain.then = (resolve: (value: unknown) => void) => resolve({ data: [{ id: "d1", active_employee: { employment_status: "active" } }], error: null, count: 1 });
+    from.mockReturnValue(chain);
+
+    const result = await listHrDeployments({ search: " Juan  Cruz ", activeEmployeesOnly: true });
+
+    expect(calls.filter(([method]) => method === "ilike").map(([, args]) => args)).toEqual([["search_text", "%juan%"], ["search_text", "%cruz%"]]);
+    expect(calls).toContainEqual(["select", ["*, active_employee:employees!inner(employment_status)", { count: "exact" }]]);
+    expect(calls).toContainEqual(["eq", ["active_employee.employment_status", "active"]]);
+    expect(result.rows).toEqual([{ id: "d1" }]);
+  });
 });

@@ -1,3 +1,4 @@
+import { withSearch } from "@/lib/search";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { AttendanceImport, AttendanceIntegrationSettings, AttendanceLog, AttendanceUnmatchedEvent, Employee, PaginatedResult } from "@/lib/types/database";
 import { attendanceFiltersSchema, attendanceImportFileSchema, attendanceMappingSchema, attendanceSettingsSchema, type AttendanceFilters } from "@/schemas/attendance-integration";
@@ -13,7 +14,8 @@ export type AttendanceLogWithEmployee = AttendanceLog & {
 
 export async function listHrAttendanceLogs(input: Partial<AttendanceFilters> = {}): Promise<PaginatedResult<AttendanceLogWithEmployee, AttendanceFilters>> {
   const filters = attendanceFilters(input); const from = (filters.page - 1) * filters.pageSize;
-  let query = createBrowserSupabaseClient().from("attendance_logs").select("*, employee:employees(id, employee_number, first_name, last_name, ranks(code), departments(name)), attendance_imports(source_filename)", { count: "exact" }).order("attendance_date", { ascending: false }).range(from, from + filters.pageSize - 1);
+  let query = createBrowserSupabaseClient().from("attendance_logs").select("*, employee:employees(id, employee_number, first_name, last_name, ranks(code), departments(name)), attendance_imports(source_filename)", { count: "exact" }).order("attendance_date", { ascending: false }).order("time_in", { ascending: false, nullsFirst: false }).order("id").range(from, from + filters.pageSize - 1);
+  query = withSearch(query, filters.search);
   if (filters.employeeId) query = query.eq("employee_id", filters.employeeId);
   if (filters.status) query = query.eq("status", filters.status);
   if (filters.statuses?.length === 1) query = query.eq("status", filters.statuses[0]);
@@ -26,7 +28,7 @@ export async function listHrAttendanceLogs(input: Partial<AttendanceFilters> = {
 
 export async function listMyAttendanceLogs(input: Partial<AttendanceFilters> = {}): Promise<PaginatedResult<AttendanceLog, AttendanceFilters>> {
   const filters = attendanceFilters(input); const from = (filters.page - 1) * filters.pageSize;
-  let query = createBrowserSupabaseClient().from("attendance_logs").select("*", { count: "exact" }).order("attendance_date", { ascending: false }).range(from, from + filters.pageSize - 1);
+  let query = createBrowserSupabaseClient().from("attendance_logs").select("*", { count: "exact" }).order("attendance_date", { ascending: false }).order("time_in", { ascending: false, nullsFirst: false }).order("id").range(from, from + filters.pageSize - 1);
   if (filters.status) query = query.eq("status", filters.status);
   if (filters.startsOn) query = query.gte("attendance_date", filters.startsOn);
   if (filters.endsOn) query = query.lte("attendance_date", filters.endsOn);

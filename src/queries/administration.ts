@@ -1,3 +1,4 @@
+import { searchPattern } from "@/lib/search";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { AUDIT_ACTION_GROUPS, presentAuditLog, type AuditLogDisplay, type AuditPresentationLookups } from "@/lib/administration/audit-presentation";
 import type {
@@ -62,14 +63,7 @@ async function invitationErrorMessage(error: unknown) {
     : "The invitation service could not be reached. Please try again.";
 }
 
-/**
- * Makes typed search text safe inside a PostgREST filter. Commas, parentheses, quotes, and
- * backslashes are filter syntax in `or=(...)` (a name like "Allen, Fernando" used to make the
- * request fail); `%` and `*` are wildcards. Each becomes `_`, which matches that one character.
- */
-export function searchPattern(value: string) {
-  return `%${value.replace(/[%*,()"\\]/g, "_")}%`;
-}
+export { searchPattern };
 
 function pageRange(page: number, pageSize: number) {
   const from = (page - 1) * pageSize;

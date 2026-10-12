@@ -1,17 +1,18 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
 /** List screen state in the URL so dashboard links, refresh and Back restore the same view. */
 export function useListParams<K extends string>(keys: readonly K[], { pageKey = "page" }: { pageKey?: string } = {}) {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const pathname = usePathname();
   const params = Object.fromEntries(keys.map((key) => [key, searchParams.get(key) ?? ""])) as Record<K, string>;
 
+  // The native History API updates useSearchParams without a server round trip. router.replace
+  // re-ran the route on the server for every filter change, which made typing in search lag.
   function write(next: URLSearchParams) {
     const query = next.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+    window.history.replaceState(null, "", query ? `${pathname}?${query}` : pathname);
   }
 
   function set(patch: Partial<Record<K, string>>, options: { keepPage?: boolean } = {}) {

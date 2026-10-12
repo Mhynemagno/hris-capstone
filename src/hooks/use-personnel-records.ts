@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { queryKeys } from "@/lib/query-keys";
 import {
@@ -25,7 +25,7 @@ import {
 import type { EmployeeDirectoryFilters, EmployeeInput, ServiceHistoryInput, QualificationInput, CertificationInput, TrainingRecordInput } from "@/schemas/personnel-records";
 
 export function useEmployeeDirectory(filters: Partial<EmployeeDirectoryFilters> = {}) {
-  return useQuery({ queryKey: queryKeys.personnelRecords.directory(filters), queryFn: () => listEmployees(filters) });
+  return useQuery({ queryKey: queryKeys.personnelRecords.directory(filters), queryFn: () => listEmployees(filters), placeholderData: keepPreviousData });
 }
 
 export function useUnlinkedEmployeeAccounts() {

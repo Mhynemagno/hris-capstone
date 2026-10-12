@@ -1,5 +1,6 @@
 import { formatApplicantNumber } from "@/lib/recruitment/applicant-number";
 import { ACTIVE_STAGES } from "@/lib/recruitment/application-stages";
+import { matchesSearch } from "@/lib/search";
 import type { HrRegisteredApplicant, HrShortlistApplication } from "@/lib/types/database";
 import { parseSort, type SortState } from "@/lib/workspace/table";
 import { applicationStatusSchema, type ApplicationStatus } from "@/schemas/recruitment";
@@ -61,8 +62,8 @@ function quickMatches(quick: QuickView, status: ApplicationStatus) {
 export function buildApplicationRows(applications: HrShortlistApplication[], registered: HrRegisteredApplicant[], params: ApplicationListParams): ApplicationListRow[] {
   // An explicit stage or job (e.g. a dashboard or job-posting link) overrides the quick view.
   const quick: QuickView = params.stage || params.job ? "all" : params.quick;
-  const term = params.q.toLowerCase();
-  const matchesTerm = (row: ApplicationListRow) => !term || row.name.toLowerCase().includes(term) || (row.applicantNumber ?? "").includes(term);
+  // Every typed word must appear in the name or applicant number, in any order ("juan cruz" finds "Cruz, Juan").
+  const matchesTerm = (row: ApplicationListRow) => matchesSearch(params.q, [row.name, row.applicantNumber]);
 
   const applicationRows: ApplicationListRow[] = quick === "not-yet-applied" ? [] : applications
     .filter((application) => quickMatches(quick, application.status) && (!params.stage || application.status === params.stage) && (!params.job || application.job_opening_id === params.job))

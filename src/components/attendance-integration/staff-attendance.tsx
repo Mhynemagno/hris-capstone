@@ -1,8 +1,7 @@
 "use client";
 
-import { Camera, Expand, Eye, FileUp, IdCard, Search, TriangleAlert } from "lucide-react";
+import { Camera, Expand, Eye, FileUp, IdCard, TriangleAlert } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
 
 import { InitialsAvatar, avatarTone } from "@/components/staff-shell/ui/initials-avatar";
 import { PageTitle } from "@/components/staff-shell/ui/page-title";
@@ -11,12 +10,14 @@ import { StaffPager, staffTable } from "@/components/staff-shell/ui/staff-table-
 import { StatusPill } from "@/components/staff-shell/ui/status-pill";
 import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
+import { SearchInput } from "@/components/ui/search-input";
 import { useHrAttendanceLogs } from "@/hooks/use-attendance-integration";
 import { usePanelParam } from "@/hooks/use-panel-param";
 import { formatDate } from "@/lib/format-date";
 import { ATTENDANCE_STATUS } from "@/lib/staff/status-maps";
 import type { AttendanceStatus } from "@/lib/types/database";
 import { cn } from "@/lib/utils";
+import { useListParams } from "@/lib/workspace/list-params";
 
 import { AttendanceKioskOverlay } from "./attendance-kiosk-overlay";
 import { AttendanceRecordModal } from "./attendance-record-modal";
@@ -30,15 +31,14 @@ const toolLink = "flex items-center gap-1.5 rounded-xl border border-slate-200 b
 export function StaffAttendance() {
   const [viewId, setView] = usePanelParam("view");
   const [kiosk, setKiosk] = usePanelParam("kiosk");
-  const [page, setPage] = useState(1);
-  const [status, setStatus] = useState<AttendanceStatus | "">("");
-  const [query, setQuery] = useState("");
-  const logs = useHrAttendanceLogs({ page, pageSize: PAGE_SIZE, status: status || undefined });
-
-  // Name / external ID search covers the current page; logs carry the employee through an embed.
-  const term = query.trim().toLowerCase();
-  const rows = (logs.data?.rows ?? []).filter((log) => !term || [log.external_employee_id, log.employee?.first_name, log.employee?.last_name].some((value) => (value ?? "").toLowerCase().includes(term)));
-  const viewed = viewId ? (logs.data?.rows ?? []).find((log) => log.id === viewId) ?? null : null;
+  // Search, status and page live in the URL, so reload, Back and shared links keep the same view.
+  const { params, set } = useListParams(["q", "status", "page"] as const);
+  const status = STATUSES.includes(params.status as AttendanceStatus) ? params.status as AttendanceStatus : "";
+  const page = Math.max(1, Number(params.page) || 1);
+  // The search runs on the server across every page: each word must match the name, badge number or external ID.
+  const logs = useHrAttendanceLogs({ page, pageSize: PAGE_SIZE, status: status || undefined, search: params.q || undefined });
+  const rows = logs.data?.rows ?? [];
+  const viewed = viewId ? rows.find((log) => log.id === viewId) ?? null : null;
   const total = logs.data?.count ?? 0;
 
   return (
@@ -63,11 +63,8 @@ export function StaffAttendance() {
             <span className="rounded-md border border-blue-200 bg-blue-50 px-2 py-0.5 font-mono text-[10px] font-extrabold text-blue-700">{total} Records</span>
           </div>
           <div className="flex w-full flex-col gap-3 sm:flex-row md:w-auto">
-            <div className="relative w-full sm:w-64">
-              <input aria-label="Search attendance logs" className="w-full rounded-xl border border-slate-200 bg-white py-2 pr-4 pl-9 text-xs font-medium transition-all focus:ring-2 focus:ring-blue-600 focus:outline-none" onChange={(event) => setQuery(event.target.value)} placeholder="Search this page's name or external ID..." type="search" value={query} />
-              <Search aria-hidden="true" className="absolute top-1/2 left-3.5 size-3 -translate-y-1/2 text-slate-500" />
-            </div>
-            <select aria-label="Attendance status" className="w-full cursor-pointer appearance-none rounded-xl border border-slate-200 bg-white py-2 pr-8 pl-3 text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-blue-600 focus:outline-none sm:w-40" onChange={(event) => { setStatus(event.target.value as AttendanceStatus | ""); setPage(1); }} value={status}>
+            <SearchInput label="Search attendance logs" onChange={(q) => set({ q })} placeholder="Search name, badge no. or external ID..." value={params.q} variant="staff" />
+            <select aria-label="Attendance status" className="w-full cursor-pointer appearance-none rounded-xl border border-slate-200 bg-white py-2 pr-8 pl-3 text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-blue-600 focus:outline-none sm:w-40" onChange={(event) => set({ status: event.target.value })} value={status}>
               <option value="">All Statuses</option>
               {STATUSES.map((value) => <option key={value} value={value}>{ATTENDANCE_STATUS[value].label}</option>)}
             </select>
@@ -116,12 +113,12 @@ export function StaffAttendance() {
                       </td>
                     </tr>
                   );
-                }) : <tr><td className="px-6 py-10 text-center text-xs text-slate-500" colSpan={8}>No attendance logs found.</td></tr>}
+                }) : <tr><td className="px-6 py-10 text-center text-xs text-slate-500" colSpan={8}>{params.q || status ? "No attendance logs match your search or filter." : "No attendance logs found."}</td></tr>}
               </tbody>
             </table>
           </div>
         )}
-        <StaffPager noun="attendance records" onPageChange={setPage} page={page} pageSize={PAGE_SIZE} total={total} />
+        <StaffPager noun="attendance records" onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={PAGE_SIZE} total={total} />
       </section>
 
       <AttendanceRecordModal log={viewed} missing={Boolean(viewId) && !viewed && !logs.isLoading} onClose={() => setView(null)} />

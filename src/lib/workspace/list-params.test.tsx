@@ -3,14 +3,18 @@ import { beforeEach, expect, it, vi } from "vitest";
 
 const nav = vi.hoisted(() => ({ replace: vi.fn(), search: "q=ana&page=3" }));
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ replace: nav.replace }),
   usePathname: () => "/hr/applications",
   useSearchParams: () => new URLSearchParams(nav.search),
 }));
 
 import { useListParams } from "./list-params";
 
-beforeEach(() => { nav.replace.mockReset(); nav.search = "q=ana&page=3"; });
+// Written through the History API (no server round trip); Next.js syncs useSearchParams from it.
+beforeEach(() => {
+  nav.replace.mockReset();
+  nav.search = "q=ana&page=3";
+  vi.spyOn(window.history, "replaceState").mockImplementation((_state, _unused, url) => nav.replace(url, { scroll: false }));
+});
 
 it("reads params with empty-string defaults", () => {
   const { result } = renderHook(() => useListParams(["q", "stage", "page"] as const));

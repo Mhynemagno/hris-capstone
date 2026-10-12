@@ -77,7 +77,7 @@ export function HrDashboardOverview() {
   const overview = useHrDashboardOverview();
   const readiness = usePromotionReadiness();
   const recentApplications = useRecentApplications();
-  const deployments = useHrDeployments({ page: 1, pageSize: 5 });
+  const deployments = useHrDeployments({ page: 1, pageSize: 5, activeEmployeesOnly: true });
   const employees = useEmployeeOptions();
 
   const attendance = overview.data?.attendanceToday;
