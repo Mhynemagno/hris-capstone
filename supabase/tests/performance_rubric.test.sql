@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(13);
+select extensions.plan(14);
 
 select extensions.has_column('public', 'certifications', 'category', 'Certifications record their rubric category');
 select extensions.has_function('public', 'record_performance_evaluation', array['uuid', 'date', 'date', 'text'], 'HR can record a rubric evaluation');
@@ -37,8 +37,8 @@ set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000002601';
 
 select extensions.is(
   public.get_performance_rubric('00000000-0000-4000-8000-000000002611', '2026-10-10') ->> 'totalPoints',
-  '95',
-  'Service (12 years = 45) + 3 mandatory capped at 30 + 2 valid specialized = 20 gives 95 (the expired course does not count)'
+  '100',
+  'Service (12 years = 50) + 3 mandatory capped at 30 + 2 valid specialized = 20 gives 100 (the expired course does not count)'
 );
 select extensions.lives_ok(
   $$select public.record_performance_evaluation('00000000-0000-4000-8000-000000002611', '2026-01-01', '2026-10-10', 'Annual review')$$,
@@ -47,7 +47,7 @@ select extensions.lives_ok(
 select extensions.is(
   (select array[total_points::text, grade_equivalent, descriptive_rating, rating::text, service_points::text, mandatory_points::text, specialized_points::text]
    from public.performance_ratings where employee_id = '00000000-0000-4000-8000-000000002611'),
-  array['95', '1.00', 'Outstanding', '5', '45', '30', '20'],
+  array['100', '1.00', 'Outstanding', '5', '50', '30', '20'],
   'The saved evaluation keeps the rubric breakdown and the matching 1-5 rating'
 );
 select extensions.throws_ok(
@@ -94,6 +94,22 @@ select extensions.is(
   (public.get_performance_rubric('00000000-0000-4000-8000-000000002612', current_date + 3650) ->> 'yearsOfService')::integer,
   (public.get_performance_rubric('00000000-0000-4000-8000-000000002612', current_date) ->> 'yearsOfService')::integer,
   'A future period end does not add years of service'
+);
+
+-- 15+ years earns 60 service points; with full course points the total is capped at 100.
+set local role postgres;
+insert into public.employees (id, employee_number, first_name, last_name, personal_email, employment_started_on)
+values ('00000000-0000-4000-8000-000000002613', 'RUB-003', 'Senior', 'Officer', 'rubric-senior@example.test', '2005-01-15');
+insert into public.certifications (employee_id, name, issued_on) values
+  ('00000000-0000-4000-8000-000000002613', 'Public Safety Basic Recruit Course (PSBRC)', '2005-06-01'),
+  ('00000000-0000-4000-8000-000000002613', 'Public Safety Junior Leadership Course (PSJLC)', '2010-06-01'),
+  ('00000000-0000-4000-8000-000000002613', 'Special Weapons and Tactics (SWAT) Course', '2012-06-01'),
+  ('00000000-0000-4000-8000-000000002613', 'Cybercrime Investigation Seminar', '2015-06-01');
+set local role authenticated;
+select extensions.is(
+  (select array[rubric ->> 'servicePoints', rubric ->> 'totalPoints'] from (select public.get_performance_rubric('00000000-0000-4000-8000-000000002613', current_date) as rubric) preview),
+  array['60', '100'],
+  '15 years and above earns 60 service points, and the total is capped at 100'
 );
 
 select * from extensions.finish();

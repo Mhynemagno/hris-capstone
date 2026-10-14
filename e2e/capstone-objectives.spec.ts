@@ -410,13 +410,14 @@ test.describe("Objective 4: promotion eligibility tracker", () => {
     }
 
     await page.goto(`/hr/employees/${employee.id}`);
-    await page.getByRole("link", { name: "Promotion review" }).click();
-    await expect(page).toHaveURL(new RegExp(`/hr/promotions\\?review=${employee.id}$`));
+    await page.getByRole("button", { name: "Promotion review" }).click();
+    // The review opens over the employee record, so closing it stays on the record.
+    await expect(page).toHaveURL(new RegExp(`/hr/employees/${employee.id}\\?.*review=1`));
     const review = page.getByRole("dialog", { name: "Promotion Eligibility Evaluation" });
     const criterionSelect = review.locator("#review-criterion");
     await expect(criterionSelect).toBeVisible({ timeout: 15_000 });
     await criterionSelect.selectOption({ label: "PCPL — Police Corporal" });
-    // The rubric: 12+ years of service (45) + one specialized training (10) = 55, graded 3.00 Poor.
+    // The rubric: 12+ years of service (50) + one specialized training (10) = 60, graded 2.50 Unsatisfactory.
     await review.getByRole("button", { name: "Performance evaluation" }).click();
     const rubric = review.getByRole("region", { name: "Performance evaluation" });
     await expect(rubric.getByRole("row", { name: /Specialized unit training/ })).toContainText("10 / 20");
@@ -425,7 +426,7 @@ test.describe("Objective 4: promotion eligibility tracker", () => {
     await review.locator("#rating-notes").fill(`Rated by the objective tests ${runId}`);
     await review.getByRole("button", { name: "Save evaluation" }).click();
     await expect(page.getByRole("status").filter({ hasText: "Performance evaluation saved." })).toBeVisible();
-    await expect(review.getByText(/55 \/ 100 · 3\.00 Poor/).first()).toBeVisible();
+    await expect(review.getByText(/60 \/ 100 · 2\.50 Unsatisfactory/).first()).toBeVisible();
 
     await review.getByLabel(/^Recommendation/).selectOption("recommended");
     await review.locator("#review-remarks").fill(`Meets service, rating, and training requirements ${runId}`);

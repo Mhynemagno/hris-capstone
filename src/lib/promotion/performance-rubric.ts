@@ -1,20 +1,24 @@
 /**
  * The client's performance rubric (round 5, 2026-10-10). Mirrors private.performance_rubric in
- * supabase/migrations/20261010100001_performance_rubric.sql, which is the authority when an evaluation is saved;
+ * supabase/migrations/20261014090001_years_of_service_points.sql, which is the authority when an evaluation is saved;
  * this copy previews the score on screen.
  */
 
 export type CourseCategory = "mandatory_course" | "specialized_training";
 
-/** Points for completed years of service, out of 50. */
+/** Points for completed years of service, out of 60 (client feedback, 2026-10-14). */
 export const SERVICE_POINT_BANDS = [
-  { label: "Less than 1 year", minimum: 0, points: 5 },
-  { label: "1–3 years", minimum: 1, points: 15 },
-  { label: "4–6 years", minimum: 4, points: 25 },
-  { label: "7–9 years", minimum: 7, points: 35 },
-  { label: "10–14 years", minimum: 10, points: 45 },
-  { label: "15 years and above", minimum: 15, points: 50 },
+  { label: "Less than 1 year", minimum: 0, points: 10 },
+  { label: "1–3 years", minimum: 1, points: 25 },
+  { label: "4–6 years", minimum: 4, points: 35 },
+  { label: "7–9 years", minimum: 7, points: 45 },
+  { label: "10–14 years", minimum: 10, points: 50 },
+  { label: "15 years and above", minimum: 15, points: 60 },
 ] as const;
+
+export const MAX_SERVICE_POINTS = 60;
+/** Service (60) + courses (50) can exceed the grading scale, so the total is capped at 100. */
+export const MAX_TOTAL_POINTS = 100;
 
 /** Points per distinct completed course and the cap for each category. */
 export const COURSE_POINTS = {
@@ -32,7 +36,7 @@ export const GRADE_SCALE = [
 ] as const;
 
 export function servicePoints(years: number) {
-  return [...SERVICE_POINT_BANDS].reverse().find((band) => years >= band.minimum)?.points ?? 5;
+  return [...SERVICE_POINT_BANDS].reverse().find((band) => years >= band.minimum)?.points ?? SERVICE_POINT_BANDS[0].points;
 }
 
 export function gradeForTotal(total: number) {
@@ -64,7 +68,7 @@ export function computePerformanceRubric({ employmentStartedOn, asOf, certificat
   const mandatoryPoints = Math.min(mandatoryCount * COURSE_POINTS.mandatory_course.perCourse, COURSE_POINTS.mandatory_course.cap);
   const specializedPoints = Math.min(specializedCount * COURSE_POINTS.specialized_training.perCourse, COURSE_POINTS.specialized_training.cap);
   const service = servicePoints(yearsOfService);
-  const totalPoints = service + mandatoryPoints + specializedPoints;
+  const totalPoints = Math.min(service + mandatoryPoints + specializedPoints, MAX_TOTAL_POINTS);
   const band = gradeForTotal(totalPoints);
   return {
     yearsOfService,

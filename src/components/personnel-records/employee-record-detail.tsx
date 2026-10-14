@@ -6,7 +6,8 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Activity, ArrowLeft, Award, BadgeCheck, BookOpenCheck, Building2, Cake, CheckCircle2, Clock, GraduationCap, History, MapPin, Pencil, ShieldCheck, TrendingUp, UserRound, X, type LucideIcon } from "lucide-react";
 
 import { DeleteRecordDialog } from "@/components/deletion/delete-record-dialog";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { PromotionReviewModal } from "@/components/promotion-eligibility/promotion-review-modal";
+import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useDepartmentOptions, useRankOptions } from "@/hooks/use-administration";
@@ -274,6 +275,8 @@ export function EmployeeRecordDetail({ employeeId }: { employeeId: string }) {
   // View mode is read-only; `?mode=edit` (the directory Edit link or "Edit details") unlocks every section.
   const editing = searchParams.get("mode") === "edit";
   const saved = searchParams.get("saved");
+  // The promotion review opens over this record, so closing it returns here rather than to Promotion.
+  const reviewing = searchParams.get("review") !== null;
   const savedMessage = saved === "created" || saved === "edited" ? savedMessages[saved] : null;
   const panelsRef = useRef<HTMLDivElement>(null);
   const rankTitles = useMemo(() => new Map((ranks.data ?? []).map((rank) => [rank.id, rankLabel(rank)])), [ranks.data]);
@@ -346,7 +349,7 @@ export function EmployeeRecordDetail({ employeeId }: { employeeId: string }) {
         {editing
           ? <Button onClick={stopEditing} size="sm" type="button" variant="outline">Done editing</Button>
           : <Button onClick={editDetails} size="sm" type="button"><Pencil aria-hidden />Edit details</Button>}
-        <Link className={buttonVariants({ size: "sm", variant: "outline" })} href={`/hr/promotions?review=${record.id}`}><TrendingUp aria-hidden />Promotion review</Link>
+        <Button onClick={() => updateParams((params) => params.set("review", "1"))} size="sm" type="button" variant="outline"><TrendingUp aria-hidden />Promotion review</Button>
       </>}
       meta={[
         { label: "Badge number", value: <span className="tabular-nums">{record.employee_number}</span>, icon: BadgeCheck },
@@ -377,5 +380,6 @@ export function EmployeeRecordDetail({ employeeId }: { employeeId: string }) {
         ))}
       </div>
     </div>
+    {reviewing ? <PromotionReviewModal employeeId={record.id} onClose={() => updateParams((params) => params.delete("review"))} /> : null}
   </div>;
 }

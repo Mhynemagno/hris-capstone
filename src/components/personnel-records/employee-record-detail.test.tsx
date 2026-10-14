@@ -110,13 +110,15 @@ describe("EmployeeRecordDetail", () => {
     expect(mocks.replace).toHaveBeenCalledWith("/hr/employees/00000000-0000-4000-8000-000000000010?tab=certifications", { scroll: false });
   });
 
-  it("shows a profile header, section counts, and a recent activity timeline in its own tab", () => {
+  it("shows a profile header, section counts, and a recent activity timeline in its own tab", async () => {
     mocks.search = "tab=activity";
     render(<EmployeeRecordDetail employeeId={employeeId} />);
 
     expect(screen.getByRole("heading", { level: 1, name: "Ada Dela Cruz" })).toBeInTheDocument();
     expect(within(screen.getByRole("region", { name: "Employee summary" })).getByText("PAT-001")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Promotion review" })).toHaveAttribute("href", `/hr/promotions?review=${employeeId}`);
+    await userEvent.setup().click(screen.getByRole("button", { name: "Promotion review" }));
+    // The review opens over this record, so closing it comes back here instead of to Promotion.
+    expect(mocks.replace).toHaveBeenCalledWith(`/hr/employees/${employeeId}?tab=activity&review=1`, { scroll: false });
     expect(screen.getByRole("tab", { name: /Certification \/ Training/ })).toHaveTextContent("Certification / Training1");
     const activity = screen.getByRole("region", { name: "Recent activity" });
     expect(activity).toHaveTextContent("Certification / Training");

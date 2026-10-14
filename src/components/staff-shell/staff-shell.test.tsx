@@ -17,8 +17,8 @@ describe("StaffShell (HR)", () => {
   it("shows the mockup sidebar with groups and the active item", () => {
     render(<StaffShell config={ROLE_CONFIG.hr_personnel} displayName="PMAJ M. C. Balneg" email="hr@example.test"><h1>Jobs</h1></StaffShell>);
     const nav = screen.getByRole("navigation", { name: "Main navigation" });
-    expect(within(nav).getByText("Personnel 201")).toBeInTheDocument();
-    expect(within(nav).getByRole("link", { name: "Plantilla Openings" })).toHaveAttribute("aria-current", "page");
+    expect(within(nav).getByText("Personnel")).toBeInTheDocument();
+    expect(within(nav).getByRole("link", { name: "Recruitment Openings" })).toHaveAttribute("aria-current", "page");
     expect(within(nav).queryByRole("link", { name: /kiosk/i })).not.toBeInTheDocument();
     expect(screen.getByText("San Juan City PS")).toBeInTheDocument();
   });
