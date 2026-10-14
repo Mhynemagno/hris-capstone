@@ -5,7 +5,7 @@ set local role postgres;
 set constraints all immediate;
 set local search_path = extensions, public;
 
-select extensions.plan(21);
+select extensions.plan(22);
 
 select extensions.has_schema('reporting', 'Private reporting schema exists');
 select extensions.has_function('public', 'get_hr_dashboard_summary', array['date', 'date'], 'HR dashboard RPC exists');
@@ -141,6 +141,12 @@ select extensions.is(
 
 grant select on leave_dashboard_dates to authenticated;
 
+-- Retired personnel are left out of every dashboard headcount.
+insert into public.employees (id, employee_number, first_name, last_name, personal_email, employment_started_on, employment_status, employment_ended_on)
+values ('00000000-0000-4000-8000-000000001551', 'DASH-RT-1', 'Retired', 'Officer', 'dash-retired@example.test', '1990-01-01', 'retired', '2026-01-01');
+create temporary table active_headcount as select count(*)::integer as total from public.employees where employment_status = 'active';
+grant select on active_headcount to authenticated;
+
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000001501';
 select extensions.ok(
@@ -150,6 +156,14 @@ select extensions.ok(
 select extensions.ok(
   (select public.get_hr_dashboard_summary(today - 30, today) -> 'breakdowns' -> 'leaveStatus' @> '[{"label": "upcoming"}]'::jsonb from leave_dashboard_dates),
   'HR dashboard returns the Upcoming leave bucket'
+);
+select extensions.is(
+  (select array[(summary -> 'metrics' ->> 'totalPersonnel')::integer,
+    (select sum((item ->> 'count')::integer)::integer from jsonb_array_elements(summary -> 'breakdowns' -> 'workforceByRank') item),
+    (select sum((item ->> 'count')::integer)::integer from jsonb_array_elements(summary -> 'breakdowns' -> 'workforceByDepartment') item)]
+   from (select public.get_hr_dashboard_summary(current_date - 29, current_date) as summary) dashboard),
+  (select array[total, total, total] from active_headcount),
+  'Total personnel, personnel by rank and personnel by unit count only active personnel'
 );
 select extensions.is(
   public.get_hr_report('deployments', '2026-08-01', '2026-08-31', null, null, 1, 25) ->> 'reportKey',

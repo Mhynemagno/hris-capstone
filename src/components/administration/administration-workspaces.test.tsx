@@ -21,6 +21,7 @@ const hooks = vi.hoisted(() => ({
   useManagedRoles: vi.fn(),
   useManagedUsers: vi.fn(),
   useOrganizationSettings: vi.fn(),
+  useRankOptions: vi.fn(),
   useRanks: vi.fn(),
   useSaveDepartment: vi.fn(),
   useSaveOrganizationSettings: vi.fn(),
@@ -37,6 +38,7 @@ vi.mock("@/hooks/use-administration", () => ({
   useManagedRoles: hooks.useManagedRoles,
   useManagedUsers: hooks.useManagedUsers,
   useOrganizationSettings: hooks.useOrganizationSettings,
+  useRankOptions: hooks.useRankOptions,
   useRanks: hooks.useRanks,
   useSaveDepartment: hooks.useSaveDepartment,
   useSaveOrganizationSettings: hooks.useSaveOrganizationSettings,
@@ -309,6 +311,7 @@ describe("administration shared controls", () => {
   });
 
   it("lists ranks by code and name with a delete action", () => {
+    hooks.useRankOptions.mockReturnValue({ data: undefined });
     hooks.useRanks.mockReturnValue({
       data: { rows: [{ id: 1, name: "Patrolman / Patrolwoman", code: "Pat", sort_order: 1, is_active: true, created_at: "", updated_at: "" }], count: 1 },
       error: null, isLoading: false, refetch: vi.fn(),
@@ -328,6 +331,7 @@ describe("administration shared controls", () => {
     const saveRank = vi.fn().mockResolvedValue(undefined);
     hooks.useRanks.mockReturnValue({ data: { rows: [], count: 0 }, error: null, isLoading: false, refetch: vi.fn() });
     hooks.useSaveRank.mockReturnValue({ isPending: false, mutateAsync: saveRank });
+    hooks.useRankOptions.mockReturnValue({ data: undefined });
 
     render(<RanksWorkspace />);
     await user.click(screen.getByRole("button", { name: "Add rank" }));
@@ -338,5 +342,17 @@ describe("administration shared controls", () => {
     await user.click(screen.getByRole("button", { name: /save rank/i }));
 
     expect(saveRank).toHaveBeenCalledWith({ input: { name: "Police Corporal", code: "PCpl", sortOrder: 2, isActive: true }, rankId: undefined });
+  });
+
+  it("starts a new rank at the next free order so it does not clash with an existing one", async () => {
+    const user = userEvent.setup();
+    hooks.useRanks.mockReturnValue({ data: { rows: [], count: 0 }, error: null, isLoading: false, refetch: vi.fn() });
+    hooks.useSaveRank.mockReturnValue({ isPending: false, mutateAsync: vi.fn() });
+    hooks.useRankOptions.mockReturnValue({ data: [{ sort_order: 1 }, { sort_order: 12 }] });
+
+    render(<RanksWorkspace />);
+    await user.click(screen.getByRole("button", { name: "Add rank" }));
+
+    expect(screen.getByLabelText(/^order/i)).toHaveValue(13);
   });
 });

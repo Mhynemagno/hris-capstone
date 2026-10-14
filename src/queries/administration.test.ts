@@ -25,7 +25,7 @@ import {
   updateManagedUser,
 } from "./administration";
 
-type Result = { data: unknown; error: { message: string } | null; count?: number | null };
+type Result = { data: unknown; error: { message: string; code?: string } | null; count?: number | null };
 
 function createChain(result: Result) {
   const chain = {
@@ -255,5 +255,17 @@ describe("administration queries", () => {
       support_email: "support@example.com",
       default_timezone: "Asia/Ulaanbaatar",
     });
+  });
+
+  it("explains a duplicate rank order in plain language and suggests the next free order", async () => {
+    const insert = createChain({ data: null, error: { code: "23505", message: 'duplicate key value violates unique constraint "ranks_sort_order_key"' } });
+    const options = { select: vi.fn(), order: vi.fn(), limit: vi.fn() };
+    options.select.mockReturnValue(options);
+    options.order.mockReturnValue(options);
+    options.limit.mockResolvedValue({ data: [{ id: 1, name: "Patrolman / Patrolwoman", code: "PAT", sort_order: 1 }, { id: 12, name: "Police General", code: "PGEN", sort_order: 12 }], error: null });
+    mocks.from.mockReturnValueOnce(insert).mockReturnValueOnce(options);
+
+    await expect(saveRank({ name: "Non-Uniformed Personnel", code: "NUP", sortOrder: 12, isActive: true }))
+      .rejects.toThrow("Order 12 is already used by Police General (PGEN). Choose a different order, for example 13.");
   });
 });

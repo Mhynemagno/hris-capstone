@@ -27,6 +27,7 @@ import {
   useInviteInternalUser,
   useManagedUsers,
   useOrganizationSettings,
+  useRankOptions,
   useRanks,
   useSaveDepartment,
   useSaveUnitStation,
@@ -549,13 +550,13 @@ export function UnitStationsWorkspace() {
 // Ranks (shared by every department)
 // ---------------------------------------------------------------------------
 
-function RankForm({ onSaved, pending, rank }: { onSaved: (input: RankInput) => Promise<void>; pending: boolean; rank?: Rank }) {
+function RankForm({ nextOrder, onSaved, pending, rank }: { nextOrder?: number; onSaved: (input: RankInput) => Promise<void>; pending: boolean; rank?: Rank }) {
   const form = useForm<z.input<typeof rankSchema>, unknown, RankInput>({
     resolver: zodResolver(rankSchema),
     defaultValues: {
       name: rank?.name ?? "",
       code: rank?.code ?? "",
-      sortOrder: rank?.sort_order ?? "",
+      sortOrder: rank?.sort_order ?? nextOrder ?? "",
       isActive: rank?.is_active ?? true,
     },
   });
@@ -576,10 +577,10 @@ function RankForm({ onSaved, pending, rank }: { onSaved: (input: RankInput) => P
       <FormField error={errors.name?.message} htmlFor="rank-name" label="Name" required>
         <Input id="rank-name" {...form.register("name")} />
       </FormField>
-      <FormField description="Short code shown with the rank, for example Pat." error={errors.code?.message} htmlFor="rank-code" label="Code" required>
+      <FormField description="Short code shown with the rank, for example PAT." error={errors.code?.message} htmlFor="rank-code" label="Code" required>
         <Input id="rank-code" {...form.register("code")} />
       </FormField>
-      <FormField description="Seniority order: 1 is the most junior rank." error={errors.sortOrder?.message} htmlFor="rank-order" label="Order" required>
+      <FormField description="Seniority order: 1 is the most junior rank. Each rank needs its own order." error={errors.sortOrder?.message} htmlFor="rank-order" label="Order" required>
         <Input id="rank-order" inputMode="numeric" type="number" {...form.register("sortOrder")} />
       </FormField>
       {error ? <ErrorState message={error} /> : null}
@@ -599,7 +600,10 @@ export function RanksWorkspace() {
   const searchTerm = params.search.trim();
   const result = useRanks({ page, pageSize: 10, ...(searchTerm ? { search: searchTerm } : {}), ...(status ? { status } : {}) });
   const save = useSaveRank();
+  const rankOptions = useRankOptions();
   const rows = result.data?.rows ?? [];
+  // A new rank starts after the most senior one, so its order is free.
+  const nextOrder = rankOptions.data ? Math.max(0, ...rankOptions.data.map((rank) => rank.sort_order)) + 1 : undefined;
 
   return (
     <div className="space-y-5">
@@ -629,7 +633,7 @@ export function RanksWorkspace() {
       </ListBody>
       {result.data?.count ? <PaginatedTableControls onPageChange={(next) => set({ page: String(next) })} page={page} pageSize={10} totalCount={result.data.count} /> : null}
       <AdministrationFormPanel description="Add a police rank. It becomes available in every unit / section." onOpenChange={setCreating} open={creating} title="Add rank">
-        <RankForm onSaved={async (input) => { await save.mutateAsync({ input: { ...input, isActive: true }, rankId: undefined }); setCreating(false); setNotice(`${input.name} was added.`); }} pending={save.isPending} />
+        <RankForm key={nextOrder ?? "loading"} nextOrder={nextOrder} onSaved={async (input) => { await save.mutateAsync({ input: { ...input, isActive: true }, rankId: undefined }); setCreating(false); setNotice(`${input.name} was added.`); }} pending={save.isPending} />
       </AdministrationFormPanel>
       {editing ? (
         <AdministrationFormPanel description="Changes are audited and historical references are preserved." onOpenChange={(open) => { if (!open) setEditing(null); }} open title="Edit rank">

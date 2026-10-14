@@ -37,12 +37,12 @@ describe("role configuration", () => {
   it("returns the Capstone UI HR navigation (dashboard.html) without the Kiosk", () => {
     expect(getRoleConfig("hr_personnel").navigation.map(({ href, label, group, badge }) => ({ href, label, group, badge }))).toEqual([
       { href: "/hr", label: "Dashboard", group: undefined, badge: undefined },
-      { href: "/hr/jobs", label: "Plantilla Openings", group: "Recruitment", badge: undefined },
+      { href: "/hr/jobs", label: "Recruitment Openings", group: "Recruitment", badge: undefined },
       { href: "/hr/applications", label: "Applicant Roster", group: "Recruitment", badge: "applicationsAwaitingReview" },
-      { href: "/hr/employees", label: "Active Personnel", group: "Personnel 201", badge: undefined },
-      { href: "/hr/deployments", label: "Duty Deployments", group: "Personnel 201", badge: undefined },
-      { href: "/hr/leave-requests", label: "Leave Applications", group: "Personnel 201", badge: "leaveForApproval" },
-      { href: "/hr/promotions", label: "Promotion Records", group: "Personnel 201", badge: undefined },
+      { href: "/hr/employees", label: "List of Personnels", group: "Personnel", badge: undefined },
+      { href: "/hr/deployments", label: "Deployments", group: "Personnel", badge: undefined },
+      { href: "/hr/leave-requests", label: "Leave", group: "Personnel", badge: "leaveForApproval" },
+      { href: "/hr/promotions", label: "Promotion", group: "Personnel", badge: undefined },
       { href: "/hr/attendance", label: "Daily Attendance Logs", group: "Attendance & DTR", badge: undefined },
       { href: "/reports", label: "HR Audit & Reports", group: "Reports", badge: undefined },
       { href: "/hr/public-site", label: "Announcements", group: "Public Site", badge: undefined },

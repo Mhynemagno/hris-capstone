@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useRecordPerformanceEvaluation } from "@/hooks/use-promotion-eligibility";
 import { formatDateRange } from "@/lib/format-date";
-import { COURSE_POINTS, computePerformanceRubric, GRADE_SCALE, SERVICE_POINT_BANDS } from "@/lib/promotion/performance-rubric";
+import { COURSE_POINTS, computePerformanceRubric, GRADE_SCALE, MAX_SERVICE_POINTS, MAX_TOTAL_POINTS, SERVICE_POINT_BANDS } from "@/lib/promotion/performance-rubric";
 import type { Certification, PerformanceRating } from "@/lib/types/database";
 import { performanceEvaluationSchema } from "@/schemas/promotion-eligibility";
 
@@ -64,7 +64,7 @@ export function PerformanceEvaluation({ employeeId, employmentStartedOn, certifi
   }
 
   const rows = [
-    { label: `Length of service (${score.yearsOfService} ${score.yearsOfService === 1 ? "year" : "years"})`, points: score.servicePoints, max: 50 },
+    { label: `Length of service (${score.yearsOfService} ${score.yearsOfService === 1 ? "year" : "years"})`, points: score.servicePoints, max: MAX_SERVICE_POINTS },
     { label: `Mandatory career courses (${score.mandatoryCount})`, points: score.mandatoryPoints, max: COURSE_POINTS.mandatory_course.cap },
     { label: `Specialized unit training (${score.specializedCount})`, points: score.specializedPoints, max: COURSE_POINTS.specialized_training.cap },
   ];
@@ -72,8 +72,9 @@ export function PerformanceEvaluation({ employeeId, employmentStartedOn, certifi
   return (
     <section aria-labelledby="performance-evaluation" className="space-y-4">
       <h2 className="text-lg font-bold" id="performance-evaluation">Performance evaluation</h2>
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-        <div className="rounded-xl border bg-card p-5">
+      {/* Boxes stack full width so the score, scale and points tables are not squeezed inside the review modal. */}
+      <div className="grid gap-4">
+        <div className="@container rounded-xl border bg-card p-5">
           <p className="text-sm text-muted-foreground">Score as of today, from the Date Entered Service and the Certification / Training records.</p>
           <table className="mt-3 w-full text-sm">
             <caption className="sr-only">Evaluation summary</caption>
@@ -86,26 +87,28 @@ export function PerformanceEvaluation({ employeeId, employmentStartedOn, certifi
               ))}
               <tr>
                 <th className="pt-3 text-left font-bold" scope="row">Total score</th>
-                <td className="pt-3 text-right text-xl font-bold text-primary tabular-nums">{score.totalPoints} / 100</td>
+                <td className="pt-3 text-right text-xl font-bold text-primary tabular-nums">{score.totalPoints} / {MAX_TOTAL_POINTS}</td>
               </tr>
             </tbody>
           </table>
-          <dl className="mt-4 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-lg bg-muted/60 p-3"><dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Grade equivalent</dt><dd className="mt-1 text-lg font-bold tabular-nums">{score.grade}</dd></div>
-            <div className="rounded-lg bg-muted/60 p-3"><dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Descriptive rating</dt><dd className="mt-1 text-lg font-bold">{score.rating}</dd></div>
-            <div className="rounded-lg bg-muted/60 p-3"><dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Remarks</dt><dd className={score.ratingValue >= 3 ? "mt-1 font-semibold text-emerald-700 dark:text-emerald-400" : "mt-1 font-semibold text-destructive"}>{score.remarks}</dd></div>
+          <dl className="mt-4 grid gap-3 @md:grid-cols-3">
+            <div className="rounded-lg bg-muted/60 p-4"><dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Grade equivalent</dt><dd className="mt-1 text-lg font-bold tabular-nums">{score.grade}</dd></div>
+            <div className="rounded-lg bg-muted/60 p-4"><dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Descriptive rating</dt><dd className="mt-1 text-lg font-bold">{score.rating}</dd></div>
+            <div className="rounded-lg bg-muted/60 p-4"><dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Remarks</dt><dd className={score.ratingValue >= 3 ? "mt-1 font-semibold text-emerald-700 dark:text-emerald-400" : "mt-1 font-semibold text-destructive"}>{score.remarks}</dd></div>
           </dl>
         </div>
-        <div className="space-y-4 rounded-xl border bg-card p-5 text-sm">
-          <table className="w-full">
-            <caption className="mb-2 text-left font-bold">Rating scale</caption>
-            <thead><tr className="text-left text-muted-foreground"><th className="pb-1 font-medium" scope="col">Total points</th><th className="pb-1 font-medium" scope="col">Grade</th><th className="pb-1 font-medium" scope="col">Rating</th></tr></thead>
-            <tbody>{GRADE_SCALE.map((band) => <tr className="border-t" key={band.grade}><td className="py-1.5 tabular-nums">{band.label}</td><td className="py-1.5 tabular-nums">{band.grade}</td><td className="py-1.5">{band.rating}</td></tr>)}</tbody>
-          </table>
-          <table className="w-full">
-            <caption className="mb-2 text-left font-bold">Years of service points</caption>
-            <tbody>{SERVICE_POINT_BANDS.map((band) => <tr className="border-t" key={band.label}><td className="py-1.5">{band.label}</td><td className="py-1.5 text-right tabular-nums">{band.points} pts</td></tr>)}</tbody>
-          </table>
+        <div className="@container space-y-4 rounded-xl border bg-card p-5 text-sm">
+          <div className="grid gap-6 @lg:grid-cols-2">
+            <table className="w-full">
+              <caption className="mb-2 text-left font-bold">Rating scale</caption>
+              <thead><tr className="text-left text-muted-foreground"><th className="pb-1 font-medium" scope="col">Total points</th><th className="pb-1 font-medium" scope="col">Grade</th><th className="pb-1 font-medium" scope="col">Rating</th></tr></thead>
+              <tbody>{GRADE_SCALE.map((band) => <tr className="border-t" key={band.grade}><td className="py-1.5 whitespace-nowrap tabular-nums">{band.label}</td><td className="py-1.5 tabular-nums">{band.grade}</td><td className="py-1.5">{band.rating}</td></tr>)}</tbody>
+            </table>
+            <table className="w-full">
+              <caption className="mb-2 text-left font-bold">Years of service points</caption>
+              <tbody>{SERVICE_POINT_BANDS.map((band) => <tr className="border-t" key={band.label}><td className="py-1.5">{band.label}</td><td className="py-1.5 text-right whitespace-nowrap tabular-nums">{band.points} pts</td></tr>)}</tbody>
+            </table>
+          </div>
           <p className="text-muted-foreground">{COURSE_POINTS.mandatory_course.label}: {COURSE_POINTS.mandatory_course.perCourse} pts each, up to {COURSE_POINTS.mandatory_course.cap}. {COURSE_POINTS.specialized_training.label}: {COURSE_POINTS.specialized_training.perCourse} pts each, up to {COURSE_POINTS.specialized_training.cap}.</p>
         </div>
       </div>

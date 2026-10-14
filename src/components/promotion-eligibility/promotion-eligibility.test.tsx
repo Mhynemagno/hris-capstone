@@ -64,12 +64,12 @@ describe("PromotionReviewModal rubric", () => {
     await setup();
     expect(screen.queryByRole("combobox", { name: /Overall rating/ })).not.toBeInTheDocument();
     const rubric = screen.getByRole("region", { name: "Performance evaluation" });
-    expect(within(rubric).getByRole("row", { name: /Length of service/ })).toHaveTextContent("50 / 50");
+    expect(within(rubric).getByRole("row", { name: /Length of service/ })).toHaveTextContent("60 / 60");
     expect(within(rubric).getByRole("row", { name: /Mandatory career courses/ })).toHaveTextContent("15 / 30");
     expect(within(rubric).getByRole("row", { name: /Specialized unit training/ })).toHaveTextContent("10 / 20");
-    expect(within(rubric).getByRole("row", { name: /Total score/ })).toHaveTextContent("75 / 100");
-    expect(rubric).toHaveTextContent("2.00");
-    expect(rubric).toHaveTextContent("Satisfactory");
+    expect(within(rubric).getByRole("row", { name: /Total score/ })).toHaveTextContent("85 / 100");
+    expect(rubric).toHaveTextContent("1.50");
+    expect(rubric).toHaveTextContent("Very Satisfactory");
     expect(screen.getByRole("table", { name: "Rating scale" })).toHaveTextContent("90 – 100");
   });
 

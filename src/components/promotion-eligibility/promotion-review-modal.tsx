@@ -90,7 +90,7 @@ export function PromotionReviewModal({ employeeId, onClose }: { employeeId: stri
       iconClassName="bg-blue-900 text-amber-400 shadow-sm"
       onClose={onClose}
       open
-      size="xl"
+      size="2xl"
       subtitle={targetRank ? `Review candidate criteria checklist for ${targetRank.code} rank` : "Review candidate criteria checklist"}
       title="Promotion Eligibility Evaluation"
     >

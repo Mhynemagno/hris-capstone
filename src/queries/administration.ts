@@ -241,6 +241,16 @@ export async function listRankOptions() {
   return (data ?? []) as Rank[];
 }
 
+/** Plain-language messages for the rank catalogue's unique name, code and order. */
+async function duplicateRankMessage(message: string, sortOrder: number) {
+  if (message.includes("ranks_code_key")) return "This code is already used by another rank.";
+  if (message.includes("ranks_name_key")) return "A rank with this name already exists.";
+  const ranks = await listRankOptions().catch(() => [] as Rank[]);
+  const holder = ranks.find((rank) => rank.sort_order === sortOrder);
+  const nextOrder = Math.max(0, ...ranks.map((rank) => rank.sort_order)) + 1;
+  return `Order ${sortOrder} is already used by ${holder ? `${holder.name} (${holder.code})` : "another rank"}. Choose a different order${ranks.length ? `, for example ${nextOrder}` : ""}.`;
+}
+
 export async function saveRank(input: RankInput, rankId?: number) {
   const values = rankSchema.parse(input);
   const payload = {
@@ -253,6 +263,7 @@ export async function saveRank(input: RankInput, rankId?: number) {
   const result = rankId
     ? await client.from("ranks").update(payload).eq("id", rankId).select("*").single()
     : await client.from("ranks").insert(payload).select("*").single();
+  if (result.error?.code === "23505") throw new Error(await duplicateRankMessage(result.error.message, values.sortOrder));
   throwIfError(result.error);
   return result.data as Rank;
 }

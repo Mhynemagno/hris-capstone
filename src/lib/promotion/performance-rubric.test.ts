@@ -4,7 +4,7 @@ import { computePerformanceRubric, gradeForTotal, servicePoints } from "./perfor
 
 describe("servicePoints", () => {
   it("follows the client's years-of-service rubric", () => {
-    expect([0, 1, 3, 4, 6, 7, 9, 10, 14, 15, 30].map(servicePoints)).toEqual([5, 15, 15, 25, 25, 35, 35, 45, 45, 50, 50]);
+    expect([0, 1, 3, 4, 6, 7, 9, 10, 14, 15, 30].map(servicePoints)).toEqual([10, 25, 25, 35, 35, 45, 45, 50, 50, 60, 60]);
   });
 });
 
@@ -31,7 +31,7 @@ describe("computePerformanceRubric", () => {
         { name: "Special Weapons and Tactics (SWAT) Course", category: "specialized_training", expires_on: null },
       ],
     });
-    expect(result).toMatchObject({ yearsOfService: 12, servicePoints: 45, mandatoryCount: 3, mandatoryPoints: 30, specializedCount: 1, specializedPoints: 10, totalPoints: 85, grade: "1.50", rating: "Very Satisfactory" });
+    expect(result).toMatchObject({ yearsOfService: 12, servicePoints: 50, mandatoryCount: 3, mandatoryPoints: 30, specializedCount: 1, specializedPoints: 10, totalPoints: 90, grade: "1.00", rating: "Outstanding" });
   });
 
   it("ignores expired courses and uncategorised records", () => {
@@ -43,7 +43,21 @@ describe("computePerformanceRubric", () => {
         { name: "Leadership and Management Course", category: null, expires_on: null },
       ],
     });
-    expect(result).toMatchObject({ yearsOfService: 0, servicePoints: 5, specializedCount: 0, totalPoints: 5, rating: "Poor" });
+    expect(result).toMatchObject({ yearsOfService: 0, servicePoints: 10, specializedCount: 0, totalPoints: 10, rating: "Poor" });
+  });
+
+  it("caps the total at 100 when service and course points exceed it", () => {
+    const result = computePerformanceRubric({
+      employmentStartedOn: "2005-01-15",
+      asOf: "2026-10-10",
+      certifications: [
+        { name: "Public Safety Basic Recruit Course (PSBRC)", category: "mandatory_course", expires_on: null },
+        { name: "Public Safety Junior Leadership Course (PSJLC)", category: "mandatory_course", expires_on: null },
+        { name: "Special Weapons and Tactics (SWAT) Course", category: "specialized_training", expires_on: null },
+        { name: "Cybercrime Investigation Seminar", category: "specialized_training", expires_on: null },
+      ],
+    });
+    expect(result).toMatchObject({ servicePoints: 60, mandatoryPoints: 30, specializedPoints: 20, totalPoints: 100 });
   });
 });
 
