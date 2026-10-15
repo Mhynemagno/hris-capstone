@@ -59,13 +59,14 @@ The dashboard changes are data-backed, not presentation-only:
 - Keep NUP beneath Patrolman/Patrolwoman in rank distributions.
 - Rename the deployment panel to "Recent Deployments".
 
-The recruitment-opening administration table will add a delete action using
-the existing deletion confirmation and authorization conventions. Employee
-entry/editing will use an ID number for NUP personnel instead of a badge
-number, constrain it to the requested eight-digit `yyyy-mm-dd` format, require
-Unit/Station, and add emergency-contact relationship choices: Spouse, Parent,
-Sibling, Child, and Relative. Restoring a deactivated rank must make it
-available in target-rank selection without deleting it.
+The recruitment-opening administration table already has a safe delete action
+for empty drafts; the release will preserve and test that action while retaining
+withdrawal for published openings and preventing destructive deletion of
+openings with applications. Employee entry/editing will use an ID number for
+NUP personnel instead of a badge number, constrain it to eight digits rendered
+as `YYYY-MM-DD`, require Unit/Station, and add emergency-contact relationship
+choices: Spouse, Parent, Sibling, Child, and Relative. Restoring a deactivated
+rank must make it available in target-rank selection without deleting it.
 
 ## Attendance and face recognition
 
