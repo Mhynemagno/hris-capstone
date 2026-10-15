@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(9);
+select extensions.plan(10);
 
 select extensions.has_function('public', 'get_hr_dashboard_overview', array[]::text[], 'HR has a dashboard overview RPC');
 
@@ -72,6 +72,29 @@ select extensions.is(
   public.get_hr_dashboard_overview() -> 'attendanceToday',
   '{"present": 1, "late": 1, "incomplete": 0, "absent": 2, "onLeave": 0}'::jsonb,
   'Today counts active personnel only; recorded absences and no-shows are both absent'
+);
+
+-- Two officers are still timed in (no time-out yet): one arrived on time, one late. Both are on duty.
+set local role postgres;
+insert into public.employees (id, employee_number, first_name, last_name, personal_email, employment_started_on, gender, employment_status)
+values
+  ('00000000-0000-4000-8000-000000003216', 'OVR-006', 'Fe', 'Early', 'ovr6@example.test', '2020-01-01', 'female', 'active'),
+  ('00000000-0000-4000-8000-000000003217', 'OVR-007', 'Gil', 'Tardy', 'ovr7@example.test', '2020-01-01', 'male', 'active');
+insert into public.attendance_logs (employee_id, integration_id, source_event_id, external_employee_id, attendance_date, time_in, time_out, status, capture_method)
+select log.employee_id, setting.id, log.source_event_id, log.external_id, (now() at time zone 'Asia/Manila')::date,
+  ((now() at time zone 'Asia/Manila')::date + setting.workday_start + log.offset_minutes * interval '1 minute') at time zone setting.timezone, null, 'incomplete', 'face_recognition'
+from public.attendance_integration_settings setting
+cross join (values
+  ('00000000-0000-4000-8000-000000003216'::uuid, 'ovr:6', 'OVR-006', 0),
+  ('00000000-0000-4000-8000-000000003217'::uuid, 'ovr:7', 'OVR-007', 120)
+) as log(employee_id, source_event_id, external_id, offset_minutes)
+where setting.adapter_key = 'face_recognition';
+set local role authenticated;
+
+select extensions.is(
+  public.get_hr_dashboard_overview() -> 'attendanceToday',
+  '{"present": 2, "late": 2, "incomplete": 2, "absent": 2, "onLeave": 0}'::jsonb,
+  'Officers still timed in count as present or late from their time-in, so late arrivals are on duty'
 );
 
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000003202';

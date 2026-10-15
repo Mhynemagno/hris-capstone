@@ -6,7 +6,7 @@ const percent = (part: number, whole: number) => (whole ? (part / whole) * 100 :
 const ROWS = [
   { key: "present", label: "Present", tint: "bg-emerald-50/60 border-emerald-100", dot: "bg-emerald-500", title: "text-emerald-900", value: "text-emerald-800", pct: "text-emerald-700" },
   { key: "absent", label: "Absent / Leave", tint: "bg-amber-50/60 border-amber-100", dot: "bg-amber-500", title: "text-amber-900", value: "text-amber-800", pct: "text-amber-700" },
-  { key: "partial", label: "Partial / Late", tint: "bg-rose-50/60 border-rose-100", dot: "bg-rose-500", title: "text-rose-900", value: "text-rose-800", pct: "text-rose-700" },
+  { key: "partial", label: "Late", tint: "bg-rose-50/60 border-rose-100", dot: "bg-rose-500", title: "text-rose-900", value: "text-rose-800", pct: "text-rose-700" },
 ] as const;
 
 /** Capstone UI dashboard.html "Daily Attendance Overview": a CSS doughnut and the three status rows. */
