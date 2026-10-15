@@ -50,6 +50,7 @@ const existingEmployee = {
   address: null,
   emergency_contact_name: null,
   emergency_contact_phone: null,
+  emergency_contact_relationship: null,
   sss_number: null,
   philhealth_number: null,
   gsis_number: null,
@@ -75,6 +76,8 @@ const completeEmployee = {
   address: "12 Mabini St., Quezon City",
   emergency_contact_name: "Jose Reyes",
   emergency_contact_phone: "+639181234567",
+  emergency_contact_relationship: "parent" as const,
+  unit_station: "Station 1",
 };
 
 const personalPhone = () => screen.getByLabelText(/^phone number/i, { selector: "#phone" });
@@ -83,6 +86,7 @@ const emergencyPhone = () => screen.getByLabelText(/^phone number/i, { selector:
 async function fillPersonalFields(user: UserEvent) {
   await user.selectOptions(screen.getByLabelText(/^rank/i), "7");
   await user.selectOptions(screen.getByLabelText(/^unit \/ section/i), "4");
+  await user.selectOptions(screen.getByLabelText(/unit.*station/i), "Station 1");
   await user.selectOptions(screen.getByLabelText(/^civil status/i), "single");
   await user.type(screen.getByLabelText(/^place of birth/i), "Quezon City");
   await user.type(screen.getByLabelText(/^date of birth/i), "1990-05-01");
@@ -92,6 +96,7 @@ async function fillPersonalFields(user: UserEvent) {
   await user.type(screen.getByLabelText(/^home address/i), "12 Mabini St.");
   await user.type(screen.getByLabelText(/^name/i, { selector: "#emergency-contact-name" }), "Jose Reyes");
   await user.type(emergencyPhone(), "+639181234567");
+  await user.selectOptions(screen.getByLabelText(/relationship/i), "parent");
 }
 
 describe("EmployeeForm", () => {

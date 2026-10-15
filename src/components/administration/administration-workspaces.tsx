@@ -583,6 +583,7 @@ function RankForm({ nextOrder, onSaved, pending, rank }: { nextOrder?: number; o
       <FormField description="Seniority order: 1 is the most junior rank. Each rank needs its own order." error={errors.sortOrder?.message} htmlFor="rank-order" label="Order" required>
         <Input id="rank-order" inputMode="numeric" type="number" {...form.register("sortOrder")} />
       </FormField>
+      <label className="flex items-center gap-2 text-sm font-medium"><input type="checkbox" {...form.register("isActive")} /> Active rank</label>
       {error ? <ErrorState message={error} /> : null}
       <Button className="w-full" disabled={pending} type="submit">{pending ? "Saving…" : "Save rank"}</Button>
     </form>
@@ -637,7 +638,7 @@ export function RanksWorkspace() {
       </AdministrationFormPanel>
       {editing ? (
         <AdministrationFormPanel description="Changes are audited and historical references are preserved." onOpenChange={(open) => { if (!open) setEditing(null); }} open title="Edit rank">
-          <RankForm key={editing.id} onSaved={async (input) => { await save.mutateAsync({ input: { ...input, isActive: editing.is_active }, rankId: editing.id }); setEditing(null); setNotice("Rank saved."); }} pending={save.isPending} rank={editing} />
+          <RankForm key={editing.id} onSaved={async (input) => { await save.mutateAsync({ input, rankId: editing.id }); setEditing(null); setNotice("Rank saved."); }} pending={save.isPending} rank={editing} />
         </AdministrationFormPanel>
       ) : null}
       <DeleteRecordDialog

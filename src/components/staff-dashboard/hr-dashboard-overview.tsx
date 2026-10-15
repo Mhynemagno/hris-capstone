@@ -134,8 +134,8 @@ export function HrDashboardOverview() {
                 <span className="rounded-full border border-amber-400/30 bg-amber-500/20 px-2.5 py-0.5 text-[10px] font-bold tracking-wider text-amber-300 uppercase">Promotion Notice</span>
                 <Award aria-hidden="true" className="size-5 text-amber-400" />
               </div>
-              <h3 className="text-sm font-bold text-white" id="promotion-notice-heading">Q{quarter} Promotion Endorsement</h3>
-              <p className="text-xs leading-relaxed text-slate-300">{readyCount} personnel meet the criteria for regular promotion evaluation.</p>
+              <h3 className="text-sm font-bold text-white" id="promotion-notice-heading">Qualified for Promotion</h3>
+              <p className="text-xs leading-relaxed text-slate-300">{readyCount} personnel are qualified for promotion review this quarter.</p>
               <Link className="block w-full rounded-xl bg-amber-500 py-2 text-center text-xs font-bold text-slate-950 transition-colors hover:bg-amber-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300" href="/hr/promotions">
                 Review Endorsements
               </Link>
