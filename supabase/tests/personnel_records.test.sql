@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(43);
+select extensions.plan(48);
 
 select extensions.has_table('public', 'employees', 'Employee records table exists');
 select extensions.has_table('public', 'service_history', 'Service history table exists');
@@ -14,6 +14,7 @@ select extensions.has_table('public', 'employee_record_history', 'Personnel hist
 select extensions.has_column('public', 'employees', 'profile_id', 'Employees can link to an account');
 select extensions.has_column('public', 'employees', 'rank_id', 'Employees record their police rank');
 select extensions.has_column('public', 'employees', 'unit_station', 'Employees record their unit or station');
+select extensions.has_column('public', 'employees', 'emergency_contact_relationship', 'Employees record an emergency contact relationship');
 select extensions.has_column('public', 'employees', 'profile_image_path', 'Employees can have an optional private profile photo');
 select extensions.has_function('public', 'update_my_employee_profile_image_path', array['text'], 'Employee profile photo path uses a protected RPC');
 select extensions.ok(
@@ -57,7 +58,9 @@ insert into public.departments (name)
 values ('Personnel fixture department');
 
 insert into public.ranks (name, code, sort_order)
-values ('Personnel fixture rank', 'PFR', 9101);
+values
+  ('Personnel fixture rank', 'PFR', 9101),
+  ('Non-uniformed personnel fixture rank', 'NUP', 9102);
 
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-0000-0000-000000000002';
@@ -102,6 +105,47 @@ select extensions.lives_ok(
       set phone = '+976-99000000'
     where id = '00000000-0000-0000-0000-000000000010'::uuid$$,
   'HR can update official employee fields'
+);
+
+select extensions.lives_ok(
+  $$update public.employees
+      set emergency_contact_relationship = 'parent'
+    where id = '00000000-0000-0000-0000-000000000010'::uuid$$,
+  'HR can update the emergency contact relationship'
+);
+
+select extensions.throws_ok(
+  $$insert into public.employees (
+      employee_number, first_name, last_name, personal_email, employment_status,
+      employment_started_on, emergency_contact_relationship
+    ) values (
+      'EMP-0100', 'Missing', 'Relationship', 'missing.relationship@example.com',
+      'active', '2024-01-01', null
+    )$$,
+  '23502', null, 'Employee records require an emergency contact relationship'
+);
+
+select extensions.throws_ok(
+  $$insert into public.employees (
+      employee_number, first_name, last_name, personal_email, employment_status,
+      employment_started_on, rank_id
+    ) select
+      'NUP-0001', 'Invalid', 'NUP', 'invalid.nup@example.com', 'active',
+      '2024-01-01', id
+    from public.ranks where code = 'NUP'$$,
+  '23514', 'Non-uniformed personnel ID number must contain 8 digits.',
+  'NUP records require an eight-digit ID number'
+);
+
+select extensions.lives_ok(
+  $$insert into public.employees (
+      employee_number, first_name, last_name, personal_email, employment_status,
+      employment_started_on, rank_id
+    ) select
+      '20261015', 'Valid', 'NUP', 'valid.nup@example.com', 'active',
+      '2024-01-01', id
+    from public.ranks where code = 'NUP'$$,
+  'NUP records accept an eight-digit ID number'
 );
 
 select extensions.throws_ok(

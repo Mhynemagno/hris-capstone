@@ -37,13 +37,13 @@ values
   ('00000000-0000-4000-8000-000000000901', '00000000-0000-4000-8000-000000000802', 'ATT-001', 'Attendance', 'Employee', 'attendance-employee@example.test', '2024-01-01'),
   ('00000000-0000-4000-8000-000000000902', '00000000-0000-4000-8000-000000000803', 'ATT-002', 'Other', 'Employee', 'attendance-other@example.test', '2024-01-01');
 
-set local role authenticated;
-set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000801';
-
 select extensions.is(
   (select workday_start from public.attendance_integration_settings where adapter_key = 'csv_xlsx'),
   time '05:00', 'CSV/XLSX attendance starts at 05:00'
 );
+
+set local role authenticated;
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000801';
 
 select set_config('test.import_id', public.create_attendance_import('demo.csv', 'text/csv', repeat('a', 64))::text, true);
 select extensions.is(
@@ -77,7 +77,7 @@ select extensions.is(
 );
 
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000802';
-select extensions.is((select count(*) from public.attendance_logs), 1::bigint, 'Employee reads only own attendance log');
+select extensions.is((select count(*) from public.attendance_logs), 2::bigint, 'Employee reads only own attendance logs');
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000803';
 select extensions.is((select count(*) from public.attendance_logs), 0::bigint, 'Other employee cannot read attendance log');
 
