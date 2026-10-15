@@ -81,8 +81,10 @@ describe("HrDashboardOverview (dashboard.html)", () => {
     expect(screen.getByRole("link", { name: /go to full attendance roster/i })).toHaveAttribute("href", "/hr/attendance");
     expect(screen.getByText("1 personnel meet the criteria for regular promotion evaluation.")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /review endorsements/i })).toHaveAttribute("href", "/hr/promotions");
+    expect(screen.getByRole("heading", { name: "Recruitment Openings" })).toBeInTheDocument();
     expect(screen.getByText("Juan Dela Cruz")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /view all applications/i })).toHaveAttribute("href", "/hr/applications");
+    expect(screen.getByRole("heading", { name: "Recent Deployments" })).toBeInTheDocument();
     expect(screen.getByText("Ramon Reyes")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /view full roster/i })).toHaveAttribute("href", "/hr/deployments");
   });

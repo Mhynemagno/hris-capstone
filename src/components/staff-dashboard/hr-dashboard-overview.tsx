@@ -145,7 +145,7 @@ export function HrDashboardOverview() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 pt-2 lg:grid-cols-2">
-        <ActivityCard href="/hr/applications" id="recent-applications-heading" linkLabel="View All Applications" subtitle="Latest applicant submissions & activity logs" title="Recent Applications">
+        <ActivityCard href="/hr/applications" id="recent-applications-heading" linkLabel="View All Applications" subtitle="Latest applicant submissions & activity logs" title="Recruitment Openings">
           {recentApplications.isLoading ? <LoadingState label="Loading applications…" /> : recentApplications.error ? <ErrorState message={recentApplications.error.message} /> : (recentApplications.data ?? []).length ? (recentApplications.data ?? []).map((application) => {
             const name = application.applicant_name ?? "Applicant";
             const pill = applicationStatusPill(application.status);
@@ -164,7 +164,7 @@ export function HrDashboardOverview() {
           }) : <p className="text-xs text-slate-500">No recent applications.</p>}
         </ActivityCard>
 
-        <ActivityCard href="/hr/deployments" id="recent-deployments-heading" linkLabel="View Full Roster" subtitle="Latest field assignments & tactical duty logs" title="Recent Duty Deployments">
+        <ActivityCard href="/hr/deployments" id="recent-deployments-heading" linkLabel="View Full Roster" subtitle="Latest field assignments & tactical duty logs" title="Recent Deployments">
           {deployments.isLoading ? <LoadingState label="Loading deployments…" /> : deployments.error ? <ErrorState message={deployments.error.message} /> : (deployments.data?.rows ?? []).length ? (deployments.data?.rows ?? []).map((deployment) => {
             const ongoing = deployment.status === "ongoing";
             const Icon = ongoing ? MapPinned : Shield;
