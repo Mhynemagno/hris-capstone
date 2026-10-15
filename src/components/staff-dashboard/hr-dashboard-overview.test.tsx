@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -57,6 +57,10 @@ describe("HrDashboardOverview (dashboard.html)", () => {
     expect(kpi("On Leave")).toHaveTextContent("1");
     expect(kpi("Incomplete")).toHaveTextContent("1");
     expect(kpi("Plantilla Vacancies")).toHaveTextContent("1");
+    // The doughnut splits on-duty personnel into on time and late.
+    const attendance = within(screen.getByRole("region", { name: "Daily Attendance Overview" }));
+    expect(attendance.getByText("Present").closest("li")).toHaveTextContent("25 (89.3%)");
+    expect(attendance.getByText("Late").closest("li")).toHaveTextContent("1 (3.6%)");
   });
 
   it("switches the personnel distribution between units, ranks and gender", async () => {

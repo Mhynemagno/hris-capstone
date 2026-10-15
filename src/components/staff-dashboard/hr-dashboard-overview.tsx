@@ -127,7 +127,7 @@ export function HrDashboardOverview() {
           )}
         </div>
         <div className="space-y-6 lg:col-span-4">
-          <AttendanceDoughnut absent={attendanceAbsent} partial={partial} present={onDuty} total={activeTotal} />
+          <AttendanceDoughnut absent={attendanceAbsent} partial={late} present={present} total={activeTotal} />
           {readyCount > 0 ? (
             <section aria-labelledby="promotion-notice-heading" className="space-y-3 rounded-2xl border border-slate-800 bg-gradient-to-br from-slate-900 to-blue-950 p-6 text-white shadow-md">
               <div className="flex items-center justify-between">
