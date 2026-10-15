@@ -30,22 +30,23 @@ describe("PublicCareersLanding", () => {
     }));
   });
 
-  it("follows landing.html: top bar, header, hero, the four-tab Portal Hub and the vicinity map", () => {
+  it("uses the revised public navigation, ceremony hero, and Contact Us destination", () => {
     render(<PublicCareersLanding />);
-    expect(screen.getByText("Republic of the Philippines • San Juan City Police Station")).toBeInTheDocument();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
-    expect(screen.getByRole("heading", { level: 1, name: /serve san juan with purpose & honor/i })).toBeVisible();
-    expect(within(screen.getByRole("navigation", { name: "Page sections" })).getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual(["#hero", "#hub", "#vicinity"]);
+    expect(screen.getByRole("heading", { level: 1, name: "The official page of San Juan City Police Station - To serve and protect" })).toBeVisible();
+    expect(screen.getByTestId("ceremony-hero-image")).toHaveAttribute("src", expect.stringContaining("sjcp-ceremony.webp"));
+    expect(within(screen.getByRole("navigation", { name: "Page sections" })).getAllByRole("link").map((link) => [link.textContent, link.getAttribute("href")])).toEqual([["Home", "#hero"], ["About", "#hub"], ["Contact Us", "#contact"]]);
     expect(screen.getAllByRole("tab").map((tab) => tab.textContent)).toEqual(["About PNP", "Advisories & News", "Frequently Asked Questions (FAQ)", "Recruitment Openings"]);
     expect(screen.getByRole("tab", { name: "About PNP" })).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByRole("heading", { name: "Vicinity Map & Contact Details" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Contact Us" })).toBeVisible();
+    expect(screen.getByText("Emergency Hotline 911")).toBeVisible();
     expect(screen.getByAltText("San Juan City Police Station logo")).toBeInTheDocument();
     expect(screen.getByText(/Data Privacy Act of 2012/)).toBeInTheDocument();
   });
 
-  it("opens the role picker from Portal Login and links each role to its login", async () => {
+  it("opens the role picker from LOGIN and links each role to its login", async () => {
     render(<PublicCareersLanding />);
-    fireEvent.click(screen.getByRole("button", { name: "Portal Login" }));
+    fireEvent.click(screen.getByRole("button", { name: "LOGIN" }));
     const dialog = await screen.findByRole("dialog", { name: "Select User Role" });
     expect(within(dialog).getByRole("link", { name: /HR \/ Employee Portal/ })).toHaveAttribute("href", "/login?as=employee");
     expect(within(dialog).getByRole("link", { name: /Applicant Portal/ })).toHaveAttribute("href", "/login?as=applicant");
@@ -86,13 +87,16 @@ describe("PublicCareersLanding", () => {
     expect(faq.querySelector("button")).toBeNull();
   });
 
-  it("lists published openings under Recruitment Openings and sends Track Status to the applicant login", () => {
+  it("lists recruitment openings with View details and sends Track Status to the applicant login", () => {
     render(<PublicCareersLanding />);
     const recruitment = openTab("Recruitment Openings");
+    expect(within(recruitment).getByRole("heading", { name: "Recruitment Openings" })).toBeVisible();
+    expect(within(recruitment).getByText("Apply online for San Juan City Police Station quota.")).toBeVisible();
     expect(within(recruitment).getByRole("heading", { name: "Patrol Officer" })).toBeVisible();
     expect(within(recruitment).getByText("Deadline: October 31, 2026")).toBeVisible();
-    expect(within(recruitment).getByRole("link", { name: "Apply now for Patrol Officer" })).toHaveAttribute("href", "/jobs/7");
-    expect(within(recruitment).getByRole("link", { name: /view all openings/i })).toHaveAttribute("href", "/jobs");
+    expect(within(recruitment).getByRole("link", { name: "View details for Patrol Officer" })).toHaveAttribute("href", "/jobs/7");
+    expect(within(recruitment).queryByRole("link", { name: /view all openings/i })).not.toBeInTheDocument();
+    expect(within(recruitment).queryByRole("textbox", { name: "Reference number" })).not.toBeInTheDocument();
     expect(within(recruitment).getByRole("link", { name: /create an applicant account/i })).toHaveAttribute("href", "/applicant/register");
     const form = within(recruitment).getByRole("button", { name: "Track Status" }).closest("form")!;
     expect(form).toHaveAttribute("action", "/login");
@@ -100,12 +104,13 @@ describe("PublicCareersLanding", () => {
     expect(new FormData(form).get("next")).toBe("/applicant/applications");
   });
 
-  it("shows the station address and hotline from landing.html beside a map that loads", () => {
+  it("shows the station address, emergency hotline, and map in Contact Us", () => {
     render(<PublicCareersLanding />);
-    const vicinity = screen.getByRole("region", { name: "Vicinity Map & Contact Details" });
-    expect(within(vicinity).getByText("Santolan Road cor. Col. Bonny Serrano Avenue, San Juan City, Metro Manila")).toBeVisible();
-    expect(within(vicinity).getByText("0917-773-7885 / (02) 8724-2515")).toBeVisible();
-    expect(within(vicinity).getByTitle("Map of San Juan City Police Station").getAttribute("src")).toMatch(/^https:\/\/maps\.google\.com\/maps\?q=.+output=embed$/);
-    expect(within(vicinity).getByRole("link", { name: /get directions on google maps/i })).toHaveAttribute("target", "_blank");
+    const contact = screen.getByRole("region", { name: "Contact Us" });
+    expect(within(contact).getByText("Santolan Road cor. Col. Bonny Serrano Avenue, San Juan City, Metro Manila")).toBeVisible();
+    expect(within(contact).getByText("0917-773-7885 / (02) 8724-2515")).toBeVisible();
+    expect(within(contact).getByText("Emergency Hotline 911")).toBeVisible();
+    expect(within(contact).getByTitle("Map of San Juan City Police Station").getAttribute("src")).toMatch(/^https:\/\/maps\.google\.com\/maps\?q=.+output=embed$/);
+    expect(within(contact).getByRole("link", { name: /get directions on google maps/i })).toHaveAttribute("target", "_blank");
   });
 });
