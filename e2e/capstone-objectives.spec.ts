@@ -64,7 +64,9 @@ async function createEmployee(page: Page, suffix: string, startedOn = "2015-06-0
   await page.getByLabel(/^Home address/).fill("1 Test St., San Juan City");
   await page.locator("#emergency-contact-name").fill("Test Contact");
   await page.locator("#emergency-contact-phone").fill("+639181234567");
+  await page.locator("#emergency-contact-relationship").selectOption("parent");
   await page.getByLabel(/^Unit \/ Section/).selectOption({ label: "Office of the Chief of Police" });
+  await page.locator("#unit-station").selectOption({ label: "San Juan Police Station" });
   await page.getByLabel(/^Date Entered Service/).fill(startedOn);
   await page.getByRole("button", { name: "Save employee" }).click();
   await expect(page).toHaveURL(/\/hr\/employees\/[0-9a-f-]{36}\?tab=official&saved=created$/, { timeout: 30_000 });
@@ -550,11 +552,11 @@ test.describe("Objective 7: analytics dashboard", () => {
     await page.goto("/hr");
     await expect(page.getByRole("heading", { name: "Dashboard Overview", exact: true })).toBeVisible({ timeout: 30_000 });
     const kpi = (label: string) => page.getByText(label, { exact: true }).locator("xpath=ancestor::article[1]");
-    for (const metric of ["Total Active 201", "Present On Duty", "Absent / Leave", "Partial / Late", "Plantilla Vacancies"]) {
+    for (const metric of ["Total Active 201", "On Duty", "Absent", "On Leave", "Incomplete", "Plantilla Vacancies"]) {
       await expect(kpi(metric)).toContainText(/\d+/);
     }
     expect(Number((await kpi("Total Active 201").locator("p").nth(1).innerText()).replace(/[^\d]/g, ""))).toBeGreaterThan(0);
-    for (const heading of ["Personnel Distribution by Unit", "Recruitment Pipeline Overview", "Daily Attendance Overview", "Recent Applications", "Recent Duty Deployments"]) {
+    for (const heading of ["Personnel Distribution by Unit", "Recruitment Pipeline Overview", "Daily Attendance Overview", "Recruitment Openings", "Recent Deployments"]) {
       await expect(page.getByRole("heading", { name: heading, exact: true })).toBeVisible();
     }
     await expect(page.getByText(`E2E Dashboard ${runId}`, { exact: false }).first()).toBeVisible();
