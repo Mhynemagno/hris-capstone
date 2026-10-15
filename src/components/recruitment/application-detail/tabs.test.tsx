@@ -29,18 +29,19 @@ describe("applicant detail tabs", () => {
   it("summarises the AI match, document checklist and latest remark on Overview", async () => {
     mocks.scores = [{ id: "s", status: "completed", score: 82, explanation: "Strong fit", failure_code: null }];
     const onShowDocuments = vi.fn();
-    render(<OverviewTab applicationId={id} coverNote="I am ready." history={history} onShowDocuments={onShowDocuments} profileDocuments={profileDocuments} />);
+    render(<OverviewTab applicationId={id} history={history} onShowDocuments={onShowDocuments} profileDocuments={profileDocuments} />);
     expect(screen.getByRole("region", { name: "AI match" })).toHaveTextContent("82/100");
     expect(screen.getByText("1 of 5 required documents uploaded")).toBeInTheDocument();
     expect(screen.getByText(/Missing: PSA Birth Certificate, 2×2 ID Picture, Eligibility Certificate, College Diploma & TOR/)).toBeInTheDocument();
     expect(screen.getByText("Application is under review.")).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Cover note" })).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "View documents" }));
     expect(onShowDocuments).toHaveBeenCalled();
   });
 
   it("offers a retry when analysis failed or timed out", async () => {
     mocks.scores = [{ id: "s", status: "failed", score: null, explanation: null, failure_code: "timed_out" }];
-    render(<OverviewTab applicationId={id} coverNote={null} history={[]} onShowDocuments={() => undefined} profileDocuments={[]} />);
+    render(<OverviewTab applicationId={id} history={[]} onShowDocuments={() => undefined} profileDocuments={[]} />);
     expect(screen.getByRole("region", { name: "AI match" })).toHaveTextContent("Analysis timed out");
     await userEvent.click(screen.getByRole("button", { name: "Retry analysis" }));
     expect(mocks.retry).toHaveBeenCalledWith(id);
@@ -48,7 +49,7 @@ describe("applicant detail tabs", () => {
 
   it("shows AI score loading errors instead of misreporting them as not analyzed", () => {
     mocks.scoreError = new Error("Scores unavailable");
-    render(<OverviewTab applicationId={id} coverNote={null} history={[]} onShowDocuments={() => undefined} profileDocuments={[]} />);
+    render(<OverviewTab applicationId={id} history={[]} onShowDocuments={() => undefined} profileDocuments={[]} />);
     expect(screen.getByRole("region", { name: "AI match" })).toHaveTextContent("Scores unavailable");
     expect(screen.queryByText(/Not analyzed/)).not.toBeInTheDocument();
   });

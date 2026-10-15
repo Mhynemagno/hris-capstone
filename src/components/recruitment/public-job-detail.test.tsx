@@ -70,7 +70,7 @@ describe("PublicJobDetail", () => {
     await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/applicant/apply/9"));
   });
 
-  it("lists the General Requirements, including older criteria", () => {
+  it("returns to the landing page and does not repeat the job requirements", () => {
     mocks.getUser.mockResolvedValue({ data: { user: null } });
     mocks.usePublishedJob.mockReturnValue({ data: { ...job, job_qualification_criteria: [
       { id: "c3", ordinal: 3, kind: "other", requirement: "Filipino Citizen", is_required: true },
@@ -80,13 +80,8 @@ describe("PublicJobDetail", () => {
     ] }, error: null, isLoading: false });
     render(<PublicJobDetail jobId={9} />);
 
-    const section = screen.getByRole("region", { name: "General Requirements" });
-    expect(section).toHaveTextContent("Requirement 1: EducationBaccalaureate Degree");
-    expect(section).toHaveTextContent("Requirement 2: EligibilityLicensed Criminologist");
-    expect(screen.getByRole("heading", { name: "Other requirements" })).toBeInTheDocument();
-    expect(screen.getByText("Filipino Citizen")).toBeInTheDocument();
-    expect(screen.getByText("Experience: At least 2 years of police service (preferred)")).toBeInTheDocument();
-    expect(screen.queryByText("Qualifications")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Back" })).toHaveAttribute("href", "/");
+    expect(screen.queryByRole("region", { name: "General Requirements" })).not.toBeInTheDocument();
   });
 
   it("omits the image when the posting has none", () => {
