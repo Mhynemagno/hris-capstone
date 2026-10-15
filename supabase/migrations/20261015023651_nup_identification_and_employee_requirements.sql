@@ -9,4 +9,3 @@ alter table public.employees
   add constraint employees_active_unit_station_required_check
   check (employment_status = 'retired' or nullif(btrim(unit_station), '') is not null) not valid;
 
-
