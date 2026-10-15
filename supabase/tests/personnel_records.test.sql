@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(48);
+select extensions.plan(50);
 
 select extensions.has_table('public', 'employees', 'Employee records table exists');
 select extensions.has_table('public', 'service_history', 'Service history table exists');
@@ -60,7 +60,8 @@ values ('Personnel fixture department');
 insert into public.ranks (name, code, sort_order)
 values
   ('Personnel fixture rank', 'PFR', 9101),
-  ('Non-uniformed personnel fixture rank', 'NUP', 9102);
+  ('Non-uniformed personnel fixture rank', 'NUP', 9102),
+  ('Rank changing to non-uniformed personnel', 'NUP-CANDIDATE', 9103);
 
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-0000-0000-000000000002';
@@ -147,6 +148,26 @@ select extensions.lives_ok(
     from public.ranks where code = 'NUP'$$,
   'NUP records accept an eight-digit ID number'
 );
+
+select extensions.lives_ok(
+  $$insert into public.employees (
+      employee_number, first_name, last_name, personal_email, employment_status,
+      employment_started_on, rank_id
+    ) select
+      '1-23456', 'Candidate', 'NUP', 'candidate.nup@example.com', 'active',
+      '2024-01-01', id
+    from public.ranks where code = 'NUP-CANDIDATE'$$,
+  'A non-NUP rank accepts a badge number'
+);
+
+set local role postgres;
+select extensions.throws_ok(
+  $$update public.ranks set code = 'NUP' where code = 'NUP-CANDIDATE'$$,
+  '23514', 'Non-uniformed personnel ID number must contain 8 digits.',
+  'A rank cannot become NUP while assigned employees have non-NUP badge numbers'
+);
+set local role authenticated;
+set local request.jwt.claim.sub = '00000000-0000-0000-0000-000000000002';
 
 select extensions.throws_ok(
   $$update public.employees
