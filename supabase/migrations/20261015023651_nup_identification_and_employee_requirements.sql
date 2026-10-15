@@ -6,6 +6,7 @@ alter table public.employees
   check (emergency_contact_relationship is null or emergency_contact_relationship in ('spouse', 'parent', 'child', 'sibling', 'other'));
 
 alter table public.employees
+  alter column unit_station set default 'San Juan Police Station',
   add constraint employees_active_unit_station_required_check
   check (employment_status = 'retired' or nullif(btrim(unit_station), '') is not null) not valid;
 

@@ -22,12 +22,12 @@ describe("Home", () => {
     redirect.mockClear();
   });
 
-  it("offers the Portal Login role picker for personnel and applicants, without a Careers button", async () => {
+  it("offers the LOGIN role picker for personnel and applicants, without a Careers button", async () => {
     getAuthenticatedUser.mockResolvedValue(null);
     render(await Home());
 
     expect(screen.getByRole("tab", { name: "Recruitment Openings" })).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "Portal Login" }));
+    fireEvent.click(screen.getByRole("button", { name: "LOGIN" }));
     const dialog = await screen.findByRole("dialog", { name: "Select User Role" });
     expect(within(dialog).getByRole("link", { name: /HR \/ Employee Portal/ })).toHaveAttribute("href", "/login?as=employee");
     expect(within(dialog).getByRole("link", { name: /Applicant Portal/ })).toHaveAttribute("href", "/login?as=applicant");
