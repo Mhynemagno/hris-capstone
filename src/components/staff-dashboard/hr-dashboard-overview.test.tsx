@@ -50,10 +50,12 @@ describe("HrDashboardOverview (dashboard.html)", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Dashboard Overview" })).toBeInTheDocument();
     const kpi = (label: string) => screen.getByText(label, { selector: "article p" }).closest("article")!;
     expect(kpi("Total Active 201")).toHaveTextContent("28");
-    expect(kpi("Present On Duty")).toHaveTextContent("25/ 28");
-    expect(kpi("Present On Duty")).toHaveTextContent("89.3% Operational Strength");
-    expect(kpi("Absent / Leave")).toHaveTextContent("1");
-    expect(kpi("Partial / Late")).toHaveTextContent("2");
+    expect(kpi("On Duty")).toHaveTextContent("26/ 28");
+    expect(kpi("On Duty")).toHaveTextContent("92.9% Operational Strength");
+    expect(kpi("On Duty")).toHaveTextContent("25 present · 1 late");
+    expect(kpi("Absent")).toHaveTextContent("0");
+    expect(kpi("On Leave")).toHaveTextContent("1");
+    expect(kpi("Incomplete")).toHaveTextContent("1");
     expect(kpi("Plantilla Vacancies")).toHaveTextContent("1");
   });
 

@@ -83,9 +83,13 @@ export function HrDashboardOverview() {
   const attendance = overview.data?.attendanceToday;
   const activeTotal = (overview.data?.personnelByGender ?? []).reduce((sum, item) => sum + item.count, 0);
   const present = attendance?.present ?? 0;
-  const absent = (attendance?.absent ?? 0) + (attendance?.onLeave ?? 0);
-  const partial = (attendance?.late ?? 0) + (attendance?.incomplete ?? 0);
-  const strength = activeTotal ? ((present / activeTotal) * 100).toFixed(1) : "0.0";
+  const late = attendance?.late ?? 0;
+  const onDuty = present + late;
+  const absent = attendance?.absent ?? 0;
+  const onLeave = attendance?.onLeave ?? 0;
+  const attendanceAbsent = absent + onLeave;
+  const partial = (attendance?.incomplete ?? 0);
+  const strength = activeTotal ? ((onDuty / activeTotal) * 100).toFixed(1) : "0.0";
   const readyCount = (readiness.data ?? []).filter((row) => row.readiness?.isReady).length;
   const quarter = Math.floor((Number(today.slice(5, 7)) - 1) / 3) + 1;
   const employeeNames = new Map((employees.data ?? []).map((employee) => [employee.id, employee.fullName]));
@@ -104,11 +108,12 @@ export function HrDashboardOverview() {
       />
 
       {overview.error ? <ErrorState message={overview.error.message} onRetry={() => void overview.refetch()} /> : null}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
         <Kpi caption={<><Check aria-hidden="true" className="inline size-3" /> Active personnel</>} captionClassName="text-emerald-700" icon={Users} label="Total Active 201" tone="blue" value={activeTotal} />
-        <Kpi caption={`${strength}% Operational Strength`} captionClassName="text-purple-700" icon={UserCheck} label="Present On Duty" tone="purple" value={<>{present}<span className="text-xs font-normal text-slate-500">/ {activeTotal}</span></>} />
-        <Kpi caption="Approved Leave Status" captionClassName="text-amber-700" icon={UserX} label="Absent / Leave" tone="amber" value={absent} />
-        <Kpi caption="Half-day / Late Check-in" captionClassName="text-rose-600" icon={UserRoundSearch} label="Partial / Late" tone="rose" value={partial} />
+        <Kpi caption={`${strength}% Operational Strength · ${present} present · ${late} late`} captionClassName="text-purple-700" icon={UserCheck} label="On Duty" tone="purple" value={<>{onDuty}<span className="text-xs font-normal text-slate-500">/ {activeTotal}</span></>} />
+        <Kpi caption="No attendance record" captionClassName="text-amber-700" icon={UserX} label="Absent" tone="amber" value={absent} />
+        <Kpi caption="Approved leave status" captionClassName="text-rose-600" icon={UserRoundSearch} label="On Leave" tone="rose" value={onLeave} />
+        <Kpi caption="Needs time-out" captionClassName="text-rose-600" icon={UserRoundSearch} label="Incomplete" tone="rose" value={partial} />
         <Kpi caption="Open for Recruitment" captionClassName="text-indigo-600" icon={Briefcase} label="Plantilla Vacancies" tone="indigo" value={summary.data?.metrics.openJobs ?? 0} />
       </div>
 
@@ -122,7 +127,7 @@ export function HrDashboardOverview() {
           )}
         </div>
         <div className="space-y-6 lg:col-span-4">
-          <AttendanceDoughnut absent={absent} partial={partial} present={present} total={activeTotal} />
+          <AttendanceDoughnut absent={attendanceAbsent} partial={partial} present={onDuty} total={activeTotal} />
           {readyCount > 0 ? (
             <section aria-labelledby="promotion-notice-heading" className="space-y-3 rounded-2xl border border-slate-800 bg-gradient-to-br from-slate-900 to-blue-950 p-6 text-white shadow-md">
               <div className="flex items-center justify-between">
