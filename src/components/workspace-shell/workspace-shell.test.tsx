@@ -55,8 +55,10 @@ describe("WorkspaceShell", () => {
   it("gives HR a station-branded command header", () => {
     render(<WorkspaceShell config={ROLE_CONFIG.hr_personnel} email="hr@example.com"><p>x</p></WorkspaceShell>);
     expect(document.querySelector(".station-command-shell")).toBeInTheDocument();
-    expect(screen.getByText("Station HR Dashboard")).toBeInTheDocument();
-    expect(screen.getByText("Human Resource & Personnel Management System")).toBeInTheDocument();
+    expect(screen.getAllByText("San Juan City Police Station").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Eastern Police District").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Station HR Dashboard")).not.toBeInTheDocument();
+    expect(screen.queryByText("Human Resource & Personnel Management System")).not.toBeInTheDocument();
     expect(screen.getByRole("navigation", { name: "Breadcrumb" })).toHaveAttribute("data-variant", "light");
   });
 

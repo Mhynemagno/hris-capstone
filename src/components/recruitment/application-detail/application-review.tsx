@@ -88,7 +88,7 @@ export function HrApplicationReview({ applicationId }: { applicationId: string }
             onValueChange={setTab}
             value={tab}
           >
-            <TabPanel value="overview"><OverviewTab applicationId={applicationId} coverNote={application.cover_note} history={history} onShowDocuments={() => setTab("documents")} profileDocuments={profileDocs} /></TabPanel>
+            <TabPanel value="overview"><OverviewTab applicationId={applicationId} history={history} onShowDocuments={() => setTab("documents")} profileDocuments={profileDocs} /></TabPanel>
             <TabPanel value="profile"><ProfileTab applicant={applicant} /></TabPanel>
             <TabPanel value="documents">{profileDocuments.error ? <ErrorState message={profileDocuments.error.message} onRetry={() => void profileDocuments.refetch()} /> : <DocumentsTab applicationDocuments={documents} profileDocuments={profileDocs} stageDocuments={stageDocuments.data ?? []} />}</TabPanel>
             <TabPanel value="activity"><ActivityTab applicationId={applicationId} history={history} /></TabPanel>

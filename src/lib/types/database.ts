@@ -141,6 +141,7 @@ export type Employee = {
   address: string | null;
   emergency_contact_name: string | null;
   emergency_contact_phone: string | null;
+  emergency_contact_relationship?: "spouse" | "parent" | "child" | "sibling" | "other" | null;
   /** Digits only (10); shown as 12-3456789-0. */
   sss_number: string | null;
   /** Digits only (12); shown as 12-345678901-2. */

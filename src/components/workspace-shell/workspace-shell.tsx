@@ -72,11 +72,7 @@ export function WorkspaceShell({ children, config, email }: WorkspaceShellProps)
     .toSorted((left, right) => right.href.length - left.href.length)[0];
   const section = active ?? (pathname === "/notifications" ? { href: "/notifications" as const, label: "Notifications" } : { href: config.homeHref, label: config.landingTitle });
   const isStationCommand = config.role === "hr_personnel" || config.role === "system_administrator";
-  const workspaceTitle = config.role === "hr_personnel"
-    ? "Station HR Dashboard"
-    : config.role === "system_administrator"
-      ? "Station Administration"
-      : config.landingTitle;
+  const workspaceTitle = isStationCommand ? "San Juan City Police Station" : config.landingTitle;
 
   // Overlays render in portals under <body>; scoping <html> gives them the workspace tokens too.
   useEffect(() => {
@@ -98,8 +94,8 @@ export function WorkspaceShell({ children, config, email }: WorkspaceShellProps)
               <Link className="flex items-center gap-3 rounded-md p-1 group-data-[collapsible=icon]:justify-center" href={config.homeHref}>
                 <Image alt="San Juan City Police Station logo" className={cn("shrink-0 object-contain", isStationCommand ? "size-10" : "size-8")} height={isStationCommand ? 40 : 32} priority src="/san-juan-police-logo.png" width={isStationCommand ? 40 : 32} />
                 <span className="min-w-0 leading-tight group-data-[collapsible=icon]:hidden">
-                  <span className={cn("block truncate font-semibold", isStationCommand ? "text-sm text-sidebar-foreground" : "text-base text-foreground")}>{isStationCommand ? "San Juan City PS" : "San Juan CPS"}</span>
-                  <span className={cn("block", isStationCommand ? "text-xs text-sidebar-foreground/65" : "text-sm text-muted-foreground")}>{isStationCommand ? "Police HR Portal" : "HRIS"}</span>
+                  <span className={cn("block truncate font-semibold", isStationCommand ? "text-sm text-sidebar-foreground" : "text-base text-foreground")}>{isStationCommand ? "San Juan City Police Station" : "San Juan CPS"}</span>
+                  <span className={cn("block", isStationCommand ? "text-xs text-sidebar-foreground/65" : "text-sm text-muted-foreground")}>{isStationCommand ? "Eastern Police District" : "HRIS"}</span>
                 </span>
               </Link>
             </SidebarHeader>
@@ -154,7 +150,7 @@ export function WorkspaceShell({ children, config, email }: WorkspaceShellProps)
                 <>
                   <div className="min-w-0 leading-tight">
                     <p className="truncate text-lg font-bold tracking-tight text-foreground">{workspaceTitle}</p>
-                    <p className="hidden truncate text-xs text-muted-foreground sm:block">Human Resource &amp; Personnel Management System</p>
+                    <p className="hidden truncate text-xs text-muted-foreground sm:block">Eastern Police District</p>
                   </div>
                   <div className="hidden min-w-0 border-l pl-3 lg:block"><WorkspaceBreadcrumbs section={section} variant="light" /></div>
                 </>

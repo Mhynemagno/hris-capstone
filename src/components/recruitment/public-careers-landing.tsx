@@ -4,7 +4,6 @@ import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { Tabs as TabsPrimitive } from "@base-ui/react/tabs";
 import {
   ArrowRight,
-  BadgeCheck,
   BriefcaseBusiness,
   Building2,
   ChevronDown,
@@ -20,7 +19,6 @@ import {
   MapPin,
   MapPinned,
   Newspaper,
-  Phone,
   Shield,
   ShieldHalf,
   Target,
@@ -308,14 +306,13 @@ function RecruitmentTab() {
     <div>
       <div className="mb-8 flex flex-col justify-between gap-4 rounded-2xl border border-red-100 bg-red-50 p-6 md:flex-row md:items-center">
         <div>
-          <h3 className="text-xl font-extrabold text-slate-900 uppercase">Active Recruitment Drives</h3>
-          <p className="text-xs text-slate-600">Apply online for uniform and non-uniform positions at San Juan City Police Station.</p>
+          <h3 className="text-xl font-extrabold text-slate-900 uppercase">Recruitment Openings</h3>
+          <p className="text-xs text-slate-600">Apply online for San Juan City Police Station quota.</p>
         </div>
         {/* Application status lives behind the applicant login, so tracking opens it there. */}
         <form action="/login" className="flex w-full items-center gap-2 md:w-auto" method="get">
           <input name="as" type="hidden" value="applicant" />
           <input name="next" type="hidden" value="/applicant/applications" />
-          <input aria-label="Reference number" className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-semibold text-slate-900 placeholder:text-slate-500 focus:ring-2 focus:ring-[#CE1126] focus:outline-none md:w-52" name="reference" placeholder="Reference No..." type="text" />
           <button className={`rounded-xl bg-[#0B1A30] px-4 py-3 text-xs font-bold whitespace-nowrap text-white uppercase transition-colors hover:bg-slate-800 ${focusRing}`} type="submit">
             Track Status
           </button>
@@ -345,8 +342,8 @@ function RecruitmentTab() {
                 </div>
                 <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
                   <span className="text-xs font-bold text-[#CE1126]">{job.closes_on ? `Deadline: ${formatDate(job.closes_on)}` : "Open until filled"}</span>
-                  <Link aria-label={`Apply now for ${job.title}`} className={`flex items-center gap-1 rounded text-xs font-extrabold text-[#CE1126] hover:underline ${focusRing}`} href={`/jobs/${job.id}`}>
-                    <span>Apply Now</span>
+                  <Link aria-label={`View details for ${job.title}`} className={`flex items-center gap-1 rounded text-xs font-extrabold text-[#CE1126] hover:underline ${focusRing}`} href={`/jobs/${job.id}`}>
+                    <span>View details</span>
                     <ArrowRight aria-hidden="true" className="size-2.5" />
                   </Link>
                 </div>
@@ -355,14 +352,11 @@ function RecruitmentTab() {
           ))}
         </ul>
       )}
-      <p className="mt-6 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600">
+      <p className="mt-6 text-xs text-slate-600">
         <span>
           New applicant?{" "}
           <Link className={`rounded font-bold text-[#CE1126] hover:underline ${focusRing}`} href="/applicant/register">Create an applicant account</Link>
         </span>
-        <Link className={`inline-flex items-center gap-1 rounded font-bold text-[#CE1126] hover:underline ${focusRing}`} href="/jobs">
-          View all openings <ArrowRight aria-hidden="true" className="size-3" />
-        </Link>
       </p>
     </div>
   );
@@ -377,7 +371,7 @@ function LoginModal() {
     <DialogPrimitive.Root>
       <DialogPrimitive.Trigger className={`flex shrink-0 items-center gap-2 rounded-xl border border-red-500/30 bg-[#CE1126] px-4 py-3 whitespace-nowrap sm:px-5 text-xs font-bold text-white uppercase shadow-lg transition-all hover:bg-red-700 hover:shadow-red-900/50 ${focusRing}`}>
         <Lock aria-hidden="true" className="size-3.5" />
-        <span>Portal Login</span>
+        <span>LOGIN</span>
       </DialogPrimitive.Trigger>
       <DialogPrimitive.Portal>
         <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md" />
@@ -414,46 +408,33 @@ function LoginModal() {
 export function PublicCareersLanding() {
   return (
     <div className="capstone-ui min-h-dvh scroll-smooth bg-slate-900 font-sans text-slate-100 antialiased selection:bg-[#CE1126] selection:text-white">
-      <div className="bg-[#CE1126] px-4 py-2 text-xs text-white shadow-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between font-medium">
-          <div className="flex items-center gap-2">
-            <span aria-hidden="true" className="size-2 rounded-full bg-emerald-400 motion-safe:animate-pulse" />
-            <span>Republic of the Philippines • San Juan City Police Station</span>
-          </div>
-          <div className="hidden items-center gap-6 sm:flex">
-            <span className="flex items-center"><Phone aria-hidden="true" className="mr-1 size-3" /> Emergency Hotline: <strong className="ml-1 text-amber-200">911</strong></span>
-            <span className="flex items-center"><ShieldHalf aria-hidden="true" className="mr-1 size-3" /> PNP HRIS Official Gateway</span>
-          </div>
-        </div>
-      </div>
+      <div aria-hidden="true" className="h-2 bg-[#CE1126]" />
 
       <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0B1A30]/85 backdrop-blur-md transition-all">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
           <Link className={`flex min-w-0 items-center gap-3 rounded-xl ${focusRing}`} href="/">
             <Image alt="San Juan City Police Station logo" className="size-11 shrink-0 object-contain drop-shadow-lg" height={44} priority src="/san-juan-police-logo.png" width={44} />
             <span className="min-w-0">
-              <span className="block text-sm leading-tight font-extrabold tracking-wide text-white uppercase sm:text-lg">San Juan City Police</span>
-              <span className="block text-xs font-bold tracking-widest text-[#EF4444] uppercase max-sm:hidden">Human Resource Information System</span>
+              <span className="block text-sm leading-tight font-extrabold tracking-wide text-white uppercase sm:text-lg">San Juan City Police Station</span>
+              <span className="block text-xs font-bold tracking-widest text-[#EF4444] uppercase max-sm:hidden">Human Resource Development Division</span>
             </span>
           </Link>
           <nav aria-label="Page sections" className="hidden items-center gap-8 text-sm font-semibold text-slate-300 md:flex">
             <a className={`rounded transition-colors hover:text-[#EF4444] ${focusRing}`} href="#hero">Home</a>
-            <a className={`rounded transition-colors hover:text-[#EF4444] ${focusRing}`} href="#hub">Portal Hub</a>
-            <a className={`rounded transition-colors hover:text-[#EF4444] ${focusRing}`} href="#vicinity">Vicinity Map</a>
+            <a className={`rounded transition-colors hover:text-[#EF4444] ${focusRing}`} href="#hub">About</a>
+            <a className={`rounded transition-colors hover:text-[#EF4444] ${focusRing}`} href="#contact">Contact Us</a>
           </nav>
           <LoginModal />
         </div>
       </header>
 
       <main>
-        <section aria-labelledby="hero-heading" className="relative overflow-hidden bg-gradient-to-b from-[#0B1A30] via-[#152C4F] to-slate-900 py-20 lg:py-24" id="hero">
-          <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(#CE1126_1px,transparent_1px)] [background-size:24px_24px] opacity-10" />
+        <section aria-labelledby="hero-heading" className="relative overflow-hidden bg-[#0B1A30] py-20 lg:py-24" id="hero">
+          <Image alt="" className="absolute inset-0 size-full object-cover opacity-35" data-testid="ceremony-hero-image" fill priority sizes="100vw" src="/sjcp-ceremony.webp" />
+          <div aria-hidden="true" className="absolute inset-0 bg-slate-950/65" />
           <div className="relative z-10 mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
-            <span className="mb-6 inline-flex items-center rounded-full border border-[#CE1126]/30 bg-[#CE1126]/20 px-4 py-1.5 text-xs font-bold tracking-wider text-red-400 uppercase backdrop-blur-sm">
-              <BadgeCheck aria-hidden="true" className="mr-2 size-3.5 text-[#F59E0B]" /> Official HR Management System
-            </span>
             <h1 className="mb-6 text-4xl leading-tight font-black tracking-tight text-white uppercase sm:text-6xl" id="hero-heading">
-              Serve San Juan with <span className="text-[#CE1126] drop-shadow-lg">Purpose &amp; Honor</span>
+              The official page of San Juan City Police Station - To serve and protect
             </h1>
             <p className="mx-auto mb-10 max-w-2xl text-base leading-relaxed font-normal text-slate-300 sm:text-lg">
               Centralized digital portal for San Juan City Police Station personnel services, recruitment applications, and official advisories.
@@ -461,7 +442,7 @@ export function PublicCareersLanding() {
           </div>
         </section>
 
-        <section aria-label="Portal Hub" className="relative z-20 mx-auto -mt-10 max-w-7xl scroll-mt-24 px-4 py-16 sm:px-6 lg:px-8" id="hub">
+        <section aria-label="About" className="relative z-20 mx-auto -mt-10 max-w-7xl scroll-mt-24 px-4 py-16 sm:px-6 lg:px-8" id="hub">
           <TabsPrimitive.Root className="overflow-hidden rounded-3xl border border-slate-200 bg-white text-slate-800 shadow-2xl" defaultValue="about">
             <TabsPrimitive.List aria-label="Portal Hub" className="flex flex-wrap justify-center gap-2 border-b border-slate-200 bg-slate-100 p-3 sm:justify-start sm:p-4">
               {tabs.map(({ icon: Icon, label, value }) => (
@@ -484,11 +465,9 @@ export function PublicCareersLanding() {
           </TabsPrimitive.Root>
         </section>
 
-        <section aria-labelledby="vicinity-heading" className="mx-auto max-w-7xl scroll-mt-24 px-4 py-12 sm:px-6 lg:px-8" id="vicinity">
+        <section aria-labelledby="contact-heading" className="mx-auto max-w-7xl scroll-mt-24 bg-gradient-to-br from-[#0B1A30] via-[#172554] to-[#7F1D1D] px-4 py-12 sm:px-6 lg:px-8" id="contact">
           <div className="mb-10 text-center">
-            <span className="text-xs font-bold tracking-widest text-[#EF4444] uppercase">Station Location</span>
-            <h2 className="mt-1 text-3xl font-black tracking-tight text-white uppercase" id="vicinity-heading">Vicinity Map &amp; Contact Details</h2>
-            <p className="mt-2 text-xs text-slate-400">Find San Juan City Police Station headquarters and official location map.</p>
+            <h2 className="text-3xl font-black tracking-tight text-white uppercase" id="contact-heading">Contact Us</h2>
           </div>
 
           <div className="grid grid-cols-1 items-stretch gap-8 lg:grid-cols-3">
@@ -523,6 +502,10 @@ export function PublicCareersLanding() {
                   <div className="rounded-xl border border-slate-700 bg-slate-900/60 p-3.5">
                     <span className="mb-1 block text-[10px] font-semibold text-slate-400 uppercase">Hotline Numbers</span>
                     <p className="text-sm font-bold text-amber-400">0917-773-7885 / (02) 8724-2515</p>
+                  </div>
+                  <div className="rounded-xl border border-slate-700 bg-slate-900/60 p-3.5">
+                    <span className="mb-1 block text-[10px] font-semibold text-slate-400 uppercase">Emergency Hotline</span>
+                    <p className="text-sm font-bold text-amber-400">Emergency Hotline 911</p>
                   </div>
                 </div>
               </div>

@@ -24,20 +24,21 @@ describe("LoginPage", () => {
     await renderLogin({ as: "employee" });
     expect(screen.getAllByText("Employee Portal").length).toBeGreaterThan(0);
     expect(screen.getByRole("heading", { level: 1, name: "Employee / HR" })).toBeVisible();
-    expect(screen.getByText(/Enter your email address or badge number to access your official personnel records/)).toBeVisible();
+    expect(screen.getByText("Access your PDS.")).toBeVisible();
     expect(screen.getByRole("heading", { level: 2, name: "To Serve and Protect." })).toBeVisible();
     expect(screen.queryByRole("link", { name: "Sign up" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Login as Applicant" })).toHaveAttribute("href", "/login?as=applicant");
     expect(document.querySelector('input[name="as"]')).toHaveValue("employee");
   });
 
-  it("offers sign-up on the applicant login", async () => {
+  it("directs applicants without an account to contact HR", async () => {
     await renderLogin({ as: "applicant" });
     expect(screen.getByRole("heading", { level: 1, name: "Login as Applicant" })).toBeVisible();
     expect(screen.getByText("Enter your registered email address below to access your application status and updates.")).toBeVisible();
     expect(screen.getByText(/Current Hiring Pool for/)).toHaveTextContent("Patrolman / Patrolwoman (Cycle 2026)");
     expect(screen.getByText("San Juan City PNP Online Recruitment & Applicant Portal System")).toBeVisible();
-    expect(screen.getByRole("link", { name: "Sign up" })).toHaveAttribute("href", "/applicant/register");
+    expect(screen.getByText("Don't have an account? Contact HR")).toBeVisible();
+    expect(screen.queryByRole("link", { name: "Sign up" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Login as Employee" })).toHaveAttribute("href", "/login?as=employee");
   });
 
@@ -49,7 +50,7 @@ describe("LoginPage", () => {
     const next = "/applicant/applications?jobId=5";
     await renderLogin({ as: "applicant", next });
     expect(screen.getAllByText("Applicant Portal").length).toBeGreaterThan(0);
-    expect(screen.getByRole("link", { name: "Sign up" })).toHaveAttribute("href", `/applicant/register?next=${encodeURIComponent(next)}`);
+    expect(screen.queryByRole("link", { name: "Sign up" })).not.toBeInTheDocument();
     expect(document.querySelector('input[name="next"]')).toHaveValue(next);
   });
 
@@ -80,7 +81,7 @@ describe("LoginPage", () => {
   it("offers employees, HR and SysAd email or badge sign-in without an Access Level", async () => {
     await renderLogin({ as: "employee", next: "/hr" });
     expect(screen.getByLabelText("Email Address or Badge Number")).toBeVisible();
-    expect(screen.getByText(/enter your email address or badge number/i)).toBeVisible();
+    expect(screen.getByText("Access your PDS.")).toBeVisible();
     expect(screen.queryByLabelText("Access Level")).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Admin & HR Login" })).not.toBeInTheDocument();
     expect(document.querySelector('input[name="next"]')).toHaveValue("/hr");

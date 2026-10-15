@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(15);
+select extensions.plan(18);
 
 select extensions.has_table('public', 'attendance_integration_settings', 'Attendance settings table exists');
 select extensions.has_table('public', 'attendance_identity_mappings', 'Attendance identity mappings table exists');
@@ -37,6 +37,11 @@ values
   ('00000000-0000-4000-8000-000000000901', '00000000-0000-4000-8000-000000000802', 'ATT-001', 'Attendance', 'Employee', 'attendance-employee@example.test', '2024-01-01'),
   ('00000000-0000-4000-8000-000000000902', '00000000-0000-4000-8000-000000000803', 'ATT-002', 'Other', 'Employee', 'attendance-other@example.test', '2024-01-01');
 
+select extensions.is(
+  (select workday_start from public.attendance_integration_settings where adapter_key = 'csv_xlsx'),
+  time '05:00', 'CSV/XLSX attendance starts at 05:00'
+);
+
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000801';
 
@@ -57,6 +62,14 @@ select set_config('test.log_id', public.resolve_attendance_unmatched_event(
 select extensions.is((select status from public.attendance_logs where id::text = current_setting('test.log_id')), 'late', 'Configured late status is calculated');
 select extensions.is(
   public.process_attendance_event(
+    current_setting('test.import_id')::uuid, 'DEV-001', 'EVT-002', '2026-08-25',
+    '2026-08-25 05:00:00+08'::timestamptz, '2026-08-25 17:00:00+08'::timestamptz,
+    'attendance', '{"adapterVersion":"csv-xlsx-v1","rowNumber":3}'::jsonb
+  ), 'inserted', 'A 05:00 time-in is accepted'
+);
+select extensions.is((select status from public.attendance_logs where source_event_id = 'EVT-002'), 'present', 'A 05:00 time-in is on time before late grace applies');
+select extensions.is(
+  public.process_attendance_event(
     current_setting('test.import_id')::uuid, 'DEV-001', 'EVT-001', '2026-08-24',
     '2026-08-24 08:16:00+08'::timestamptz, '2026-08-24 17:00:00+08'::timestamptz,
     'attendance', '{"adapterVersion":"csv-xlsx-v1","rowNumber":2}'::jsonb
@@ -64,7 +77,7 @@ select extensions.is(
 );
 
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000802';
-select extensions.is((select count(*) from public.attendance_logs), 1::bigint, 'Employee reads only own attendance log');
+select extensions.is((select count(*) from public.attendance_logs), 2::bigint, 'Employee reads only own attendance logs');
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000803';
 select extensions.is((select count(*) from public.attendance_logs), 0::bigint, 'Other employee cannot read attendance log');
 

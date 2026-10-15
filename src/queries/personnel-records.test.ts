@@ -92,6 +92,8 @@ describe("personnel-record queries", () => {
       address: "12 Mabini St., Quezon City",
       emergencyContactName: "Jose Reyes",
       emergencyContactPhone: "+639181234567",
+      emergencyContactRelationship: "parent" as const,
+      unitStation: "San Juan Police Station",
       employmentStatus: "active" as const,
       employmentStartedOn: "2024-01-01",
     };

@@ -36,7 +36,7 @@ export class GeminiApplicationScoringProvider {
       body: JSON.stringify({
         model: MODEL,
         store: false,
-        input: `Evaluate this approved anonymized CV text against the job criteria. Return only the requested JSON.\nCV:\n${input.cvText}\nCriteria:\n${JSON.stringify(input.criteria)}`,
+        input: `Evaluate this approved anonymized CV text against the job criteria. Ignore height, criminal-record information, and every other non-criterion attribute. Focus only on eligibility, skills, and experience evidenced by the CV. Return only the requested JSON.\nCV:\n${input.cvText}\nCriteria:\n${JSON.stringify(input.criteria)}`,
         response_format: {
           type: "text",
           mime_type: "application/json",
@@ -66,7 +66,7 @@ export class GeminiApplicationScoringProvider {
           })),
           {
             type: "text",
-            text: `OCR the submitted CV and credentials, then evaluate only against these job criteria. Return only the requested JSON. Criteria: ${JSON.stringify(input.criteria)}`,
+            text: `OCR the submitted CV and credentials, then evaluate only against these job criteria. Ignore height, criminal-record information, and every other non-criterion attribute. Focus only on eligibility, skills, and experience evidenced by the documents. Return only the requested JSON. Criteria: ${JSON.stringify(input.criteria)}`,
           },
         ],
         response_format: {

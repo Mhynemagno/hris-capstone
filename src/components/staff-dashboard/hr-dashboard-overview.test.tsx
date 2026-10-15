@@ -50,10 +50,12 @@ describe("HrDashboardOverview (dashboard.html)", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Dashboard Overview" })).toBeInTheDocument();
     const kpi = (label: string) => screen.getByText(label, { selector: "article p" }).closest("article")!;
     expect(kpi("Total Active 201")).toHaveTextContent("28");
-    expect(kpi("Present On Duty")).toHaveTextContent("25/ 28");
-    expect(kpi("Present On Duty")).toHaveTextContent("89.3% Operational Strength");
-    expect(kpi("Absent / Leave")).toHaveTextContent("1");
-    expect(kpi("Partial / Late")).toHaveTextContent("2");
+    expect(kpi("On Duty")).toHaveTextContent("26/ 28");
+    expect(kpi("On Duty")).toHaveTextContent("92.9% Operational Strength");
+    expect(kpi("On Duty")).toHaveTextContent("25 present · 1 late");
+    expect(kpi("Absent")).toHaveTextContent("0");
+    expect(kpi("On Leave")).toHaveTextContent("1");
+    expect(kpi("Incomplete")).toHaveTextContent("1");
     expect(kpi("Plantilla Vacancies")).toHaveTextContent("1");
   });
 
@@ -77,10 +79,13 @@ describe("HrDashboardOverview (dashboard.html)", () => {
     render(<HrDashboardOverview />);
     expect(screen.getByText("2 Total Applicants")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /go to full attendance roster/i })).toHaveAttribute("href", "/hr/attendance");
-    expect(screen.getByText("1 personnel meet the criteria for regular promotion evaluation.")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Qualified for Promotion" })).toBeInTheDocument();
+    expect(screen.getByText("1 personnel are qualified for promotion review this quarter.")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /review endorsements/i })).toHaveAttribute("href", "/hr/promotions");
+    expect(screen.getByRole("heading", { name: "Recruitment Openings" })).toBeInTheDocument();
     expect(screen.getByText("Juan Dela Cruz")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /view all applications/i })).toHaveAttribute("href", "/hr/applications");
+    expect(screen.getByRole("heading", { name: "Recent Deployments" })).toBeInTheDocument();
     expect(screen.getByText("Ramon Reyes")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /view full roster/i })).toHaveAttribute("href", "/hr/deployments");
   });

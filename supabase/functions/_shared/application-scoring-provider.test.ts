@@ -20,7 +20,10 @@ Deno.test("Gemini provider returns validated structured recommendation", async (
   assertEquals(body.includes("Candidate has five years"), true);
   assertEquals(body.includes("response_format"), true);
   assertEquals(body.includes("application_id"), false);
+  assertEquals(body.includes("Ignore height, criminal-record information"), true);
+  assertEquals(body.includes("eligibility, skills, and experience"), true);
   assertEquals(JSON.parse(body).store, false);
+  assertEquals(body.includes("Ignore height, criminal-record information"), true);
 });
 
 Deno.test("Gemini provider rejects malformed structured output", async () => {

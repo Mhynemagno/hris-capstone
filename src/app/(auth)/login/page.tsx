@@ -52,8 +52,6 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     : message === "email_confirmed_or_used"
       ? "Your email may already be confirmed. Try logging in."
       : undefined;
-  const registerHref = nextPath === "/" ? "/applicant/register" : `/applicant/register?next=${encodeURIComponent(nextPath)}`;
-
   if (mode === "applicant") {
     // Capstone UI loginapp.html, with the live Recruitment Notice.
     const recruitmentNotice = await getRecruitmentNotice();
@@ -69,10 +67,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           </p>
         </div>
         <LoginForm error={errorMessage} mode="applicant" nextPath={nextPath} notice={notice} />
-        <div className="mt-6 text-center text-xs text-slate-500">
-          Don&apos;t have an applicant account?{" "}
-          <Link className="font-bold text-blue-800 hover:text-blue-900 hover:underline" href={registerHref}>Sign up</Link>
-        </div>
+        <p className="mt-6 text-center text-xs text-slate-500">Don&apos;t have an account? Contact HR</p>
         <p className="mt-2 text-center text-[11px] text-slate-500">
           Station personnel?{" "}
           <Link className="font-semibold text-slate-500 hover:text-slate-700 hover:underline" href={switchHref("employee", nextPath)}>Login as Employee</Link>
@@ -87,7 +82,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <span className="mb-3 inline-block rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[11px] font-bold tracking-wider text-blue-900 uppercase">Employee Portal</span>
         <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Employee / HR</h1>
         <p className="mt-1.5 text-xs leading-relaxed text-slate-500">
-          Enter your email address or badge number to access your official personnel records, track promotion history and eligibility, file daily attendance, and verify deployment schedules.
+          Access your PDS.
         </p>
       </div>
       <LoginForm error={errorMessage} mode={mode} nextPath={nextPath} notice={notice} />

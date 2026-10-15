@@ -139,7 +139,7 @@ function employeePayload(input: EmployeeInput) {
     civil_status: input.civilStatus ?? null, religion: input.religion ?? null,
     unit_station: input.unitStation ?? null, personal_email: input.personalEmail,
     phone: input.phone ?? null, address: input.address ?? null, emergency_contact_name: input.emergencyContactName ?? null,
-    emergency_contact_phone: input.emergencyContactPhone ?? null,
+    emergency_contact_phone: input.emergencyContactPhone ?? null, emergency_contact_relationship: input.emergencyContactRelationship,
     philhealth_number: input.philhealthNumber ?? null, gsis_number: input.gsisNumber ?? null, pagibig_number: input.pagibigNumber ?? null,
     department_id: input.departmentId ?? null,
     rank_id: input.rankId ?? null, employment_status: input.employmentStatus,

@@ -9,12 +9,14 @@ import { FormField } from "@/components/ui/form-field";
 import { GovernmentIdInput } from "@/components/ui/government-id-input";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
+import { NupIdInput } from "@/components/ui/nup-id-input";
 import { PhoneInput } from "@/components/ui/phone-input";
+import { useRankOptions } from "@/hooks/use-administration";
 import { useUnitStations } from "@/hooks/use-personnel-records";
 import type { Employee, UnlinkedEmployeeAccount } from "@/lib/types/database";
 import { cn } from "@/lib/utils";
 import { BADGE_NUMBER_PATTERN } from "@/schemas/common";
-import { employeeSchema, RELIGIONS, type EmployeeInput } from "@/schemas/personnel-records";
+import { employeeSchema, EMERGENCY_CONTACT_RELATIONSHIPS, RELIGIONS, type EmployeeInput } from "@/schemas/personnel-records";
 
 import { DepartmentField, RankField } from "./department-rank-fields";
 
@@ -47,7 +49,10 @@ export function EmployeeForm({ employee, account, onSaved, pending = false }: Em
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [departmentId, setDepartmentId] = useState(employee?.department_id ? String(employee.department_id) : "");
   const [rankId, setRankId] = useState(employee?.rank_id ? String(employee.rank_id) : "");
+  const ranks = useRankOptions();
   const unitStations = useUnitStations();
+  const rankCode = ranks.data?.find((rank) => String(rank.id) === rankId)?.code ?? "";
+  const isNup = rankCode === "NUP";
   // Preserve the linked account: creating from an account binds it, editing keeps the existing link.
   const linkedProfileId = account?.profile_id ?? employee?.profile_id ?? null;
   // Identity and service-start fields are fixed once saved on an existing record. A field that was
@@ -73,6 +78,7 @@ export function EmployeeForm({ employee, account, onSaved, pending = false }: Em
       profileId: form.profileId || undefined,
       departmentId: form.departmentId || undefined,
       rankId: form.rankId || undefined,
+      rankCode: form.rankCode || undefined,
       employmentEndedOn: form.employmentEndedOn || undefined,
     });
     if (!parsed.success) {
@@ -100,8 +106,9 @@ export function EmployeeForm({ employee, account, onSaved, pending = false }: Em
 
       <FormSection title="I. Personal Details">
         <RankField error={e.rankId} idPrefix="employee" name="rankId" onChange={setRankId} required savedId={employee?.rank_id} value={rankId} />
-        <FormField description={locked.employeeNumber ? lockedNote : "6 digits, e.g. 1-23456."} error={e.employeeNumber} htmlFor="employee-number" label="Badge number" required>
-          <BadgeNumberInput className={cn("h-11 tabular-nums", locked.employeeNumber && lockedClassName)} defaultValue={employee?.employee_number} id="employee-number" name="employeeNumber" readOnly={locked.employeeNumber} required />
+        <input name="rankCode" type="hidden" value={rankCode} />
+        <FormField description={locked.employeeNumber ? lockedNote : isNup ? "8 digits displayed as YYYY-MM-DD." : "6 digits, e.g. 1-23456."} error={e.employeeNumber} htmlFor="employee-number" label={isNup ? "ID number" : "Badge number"} required>
+          {isNup ? <NupIdInput className={cn("h-11 tabular-nums", locked.employeeNumber && lockedClassName)} defaultValue={employee?.employee_number} id="employee-number" name="employeeNumber" readOnly={locked.employeeNumber} required /> : <BadgeNumberInput className={cn("h-11 tabular-nums", locked.employeeNumber && lockedClassName)} defaultValue={employee?.employee_number} id="employee-number" name="employeeNumber" readOnly={locked.employeeNumber} required />}
         </FormField>
         <FormField error={e.personalEmail} htmlFor="personal-email" label="Personal email" required>
           <Input className="h-11" defaultValue={employee?.personal_email ?? account?.email ?? ""} id="personal-email" name="personalEmail" type="email" autoComplete="email" required />
@@ -168,6 +175,12 @@ export function EmployeeForm({ employee, account, onSaved, pending = false }: Em
         <FormField error={e.emergencyContactPhone} htmlFor="emergency-contact-phone" label="Phone number" required>
           <PhoneInput autoComplete="off" defaultValue={employee?.emergency_contact_phone} id="emergency-contact-phone" name="emergencyContactPhone" required />
         </FormField>
+        <FormField error={e.emergencyContactRelationship} htmlFor="emergency-contact-relationship" label="Relationship" required>
+          <NativeSelect defaultValue={employee?.emergency_contact_relationship ?? ""} id="emergency-contact-relationship" name="emergencyContactRelationship" required>
+            <option value="">Select relationship</option>
+            {EMERGENCY_CONTACT_RELATIONSHIPS.map((relationship) => <option key={relationship} value={relationship}>{relationship[0]!.toUpperCase()}{relationship.slice(1)}</option>)}
+          </NativeSelect>
+        </FormField>
       </FormSection>
 
       <FormSection title="III. Employment">
@@ -177,8 +190,9 @@ export function EmployeeForm({ employee, account, onSaved, pending = false }: Em
           error={e.unitStation}
           htmlFor="unit-station"
           label="Unit / Station"
+          required
         >
-          <NativeSelect key={unitStations.data ? "catalogue" : "loading"} defaultValue={employee?.unit_station ?? ""} id="unit-station" name="unitStation">
+          <NativeSelect key={unitStations.data ? "catalogue" : "loading"} defaultValue={employee?.unit_station ?? ""} id="unit-station" name="unitStation" required>
             <option value="">Select a unit / station</option>
             {employee?.unit_station && !unitStations.data?.some((unit) => unit.name === employee.unit_station) ? <option value={employee.unit_station}>{employee.unit_station}</option> : null}
             {unitStations.data?.map((unit) => <option key={unit.id} value={unit.name}>{unit.name}</option>)}

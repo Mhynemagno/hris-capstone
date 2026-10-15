@@ -12,7 +12,7 @@ vi.mock("@/hooks/use-attendance-integration", () => ({
       id: "s1",
       adapter_key: "csv_xlsx",
       timezone: "Asia/Ulaanbaatar",
-      workday_start: "08:00:00",
+      workday_start: "05:00:00",
       late_grace_minutes: 15,
       template_version: "custom",
       is_enabled: true,
@@ -41,7 +41,8 @@ describe("AttendanceIntegrationSettings", () => {
     expect(screen.getByRole("button", { name: "Save settings" })).toHaveClass("bg-blue-700");
     await user.click(screen.getByRole("button", { name: "Save settings" }));
 
-    expect(mocks.save).toHaveBeenCalledWith({ workdayStart: "08:00", lateGraceMinutes: 15, templateVersion: "v1", isEnabled: true });
+    expect(screen.getByLabelText(/Workday start/)).toHaveValue("05:00");
+    expect(mocks.save).toHaveBeenCalledWith({ workdayStart: "05:00", lateGraceMinutes: 15, templateVersion: "v1", isEnabled: true });
     expect(await screen.findByRole("status")).toHaveTextContent("Attendance settings saved.");
   });
 

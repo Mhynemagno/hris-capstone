@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { employeeNumberSchema, isoDateSchema, uuidSchema } from "./common";
+import { BADGE_NUMBER_PATTERN, isoDateSchema, uuidSchema } from "./common";
 
 const optionalText = (max: number) =>
   z.string().trim().max(max).transform((value) => value || undefined).optional();
@@ -53,6 +53,7 @@ const employmentStatuses = ["active", "retired"] as const;
 const profilePhotoMimeTypes = ["image/png", "image/jpeg", "image/webp"] as const;
 const genders = ["female", "male"] as const;
 const civilStatuses = ["single", "married", "widowed", "separated", "divorced"] as const;
+export const EMERGENCY_CONTACT_RELATIONSHIPS = ["spouse", "parent", "child", "sibling", "other"] as const;
 
 /** Religion choices requested by the adviser (2026-10-10). Older free-text values stay valid and are shown as-is. */
 export const RELIGIONS = [
@@ -104,7 +105,8 @@ const hasValidDateRange = (startKey: string, endKey: string) => (value: Record<s
 export const employeeSchema = z
   .object({
     profileId: uuidSchema.optional(),
-    employeeNumber: employeeNumberSchema,
+    employeeNumber: z.string().trim().min(1, "Enter the badge number.").refine((value) => BADGE_NUMBER_PATTERN.test(value) || /^\d{4}-\d{2}-\d{2}$/.test(value) || /^\d{8}$/.test(value), "Badge number must be 6 digits in the format 0-00000."),
+    rankCode: z.string().trim().optional(),
     firstName: z.string().trim().min(1).max(80),
     middleName: optionalText(80),
     lastName: z.string().trim().min(1).max(80),
@@ -120,6 +122,7 @@ export const employeeSchema = z
     address: requiredText(500, "Enter the home address."),
     emergencyContactName: requiredText(160, "Enter the emergency contact."),
     emergencyContactPhone: requiredMobile("Enter the emergency contact phone."),
+    emergencyContactRelationship: z.enum(EMERGENCY_CONTACT_RELATIONSHIPS, { error: "Choose the emergency contact relationship." }).optional(),
     philhealthNumber: philhealthNumberSchema,
     gsisNumber: gsisNumberSchema,
     pagibigNumber: pagibigNumberSchema,
@@ -133,7 +136,21 @@ export const employeeSchema = z
   .refine(hasValidDateRange("employmentStartedOn", "employmentEndedOn"), {
     message: "Inclusive Dates (To) cannot be before the Date Entered Service.",
     path: ["employmentEndedOn"],
-  });
+  })
+  .superRefine((value, context) => {
+    if (!value.unitStation) context.addIssue({ code: "custom", message: "Choose a unit / station.", path: ["unitStation"] });
+    if (!value.emergencyContactRelationship) context.addIssue({ code: "custom", message: "Choose the emergency contact relationship.", path: ["emergencyContactRelationship"] });
+    if (value.rankCode === "NUP") {
+      if (!/^\d{8}$/.test(value.employeeNumber.replace(/\D/g, ""))) {
+        context.addIssue({ code: "custom", message: "ID number must contain 8 digits.", path: ["employeeNumber"] });
+      }
+      return;
+    }
+    if (!BADGE_NUMBER_PATTERN.test(value.employeeNumber)) {
+      context.addIssue({ code: "custom", message: "Badge number must be 6 digits in the format 0-00000.", path: ["employeeNumber"] });
+    }
+  })
+  .transform((value) => ({ ...value, employeeNumber: value.rankCode === "NUP" ? value.employeeNumber.replace(/\D/g, "") : value.employeeNumber }));
 
 export const serviceHistorySchema = z
   .object({

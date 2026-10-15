@@ -21,6 +21,8 @@ const requiredPersonal = {
   address: "12 Mabini St., Quezon City",
   emergencyContactName: "Jose Reyes",
   emergencyContactPhone: "+639181234567",
+  emergencyContactRelationship: "parent",
+  unitStation: "Station 1",
   departmentId: "4",
   rankId: "1",
 };
@@ -61,6 +63,14 @@ describe("personnel record schemas", () => {
     expect(employeeSchema.safeParse({ ...base, employmentStatus: "on_leave" }).success).toBe(false);
     expect(employeeSchema.safeParse({ ...base, employmentStatus: "separated" }).success).toBe(false);
     expect(employeeSchema.safeParse({ ...base, employmentStatus: "inactive" }).success).toBe(false);
+  });
+
+  it("uses an eight-digit ID number for NUP records", () => {
+    const base = { employeeNumber: "2026-10-15", rankCode: "NUP", firstName: "Ana", lastName: "Cruz", personalEmail: "ana@example.com", employmentStartedOn: "2024-01-01", ...requiredPersonal };
+    expect(employeeSchema.parse(base).employeeNumber).toBe("20261015");
+    const invalid = employeeSchema.safeParse({ ...base, employeeNumber: "2026-10-1" });
+    expect(invalid.success).toBe(false);
+    expect(invalid.error?.issues.some((issue) => issue.message === "ID number must contain 8 digits.")).toBe(true);
   });
 
   it("blocks saving when a required personal or contact field is empty", () => {

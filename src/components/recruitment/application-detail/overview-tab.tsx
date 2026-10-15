@@ -52,7 +52,7 @@ function AiMatchCard({ applicationId }: { applicationId: string }) {
   );
 }
 
-export function OverviewTab({ applicationId, coverNote, history, onShowDocuments, profileDocuments }: { applicationId: string; coverNote: string | null; history: ApplicationStatusHistory[]; profileDocuments: ProfileDocument[]; onShowDocuments: () => void }) {
+export function OverviewTab({ applicationId, history, onShowDocuments, profileDocuments }: { applicationId: string; history: ApplicationStatusHistory[]; profileDocuments: ProfileDocument[]; onShowDocuments: () => void }) {
   const uploaded = APPLICANT_PROFILE_DOCUMENT_KINDS.filter(({ kind }) => profileDocuments.some((document) => document.kind === kind));
   const missing = APPLICANT_PROFILE_DOCUMENT_KINDS.filter(({ kind }) => !profileDocuments.some((document) => document.kind === kind));
   const latestRemark = history.filter((entry) => entry.previous_status === entry.next_status && entry.note).at(-1);
@@ -63,9 +63,6 @@ export function OverviewTab({ applicationId, coverNote, history, onShowDocuments
         <p className="text-base">{uploaded.length} of {APPLICANT_PROFILE_DOCUMENT_KINDS.length} required documents uploaded</p>
         {missing.length ? <p className="mt-1 text-sm text-warning">Missing: {missing.map(({ label }) => label).join(", ")}</p> : null}
         <Button className="mt-3" onClick={onShowDocuments} size="sm" variant="outline">View documents</Button>
-      </Section>
-      <Section id="cover-note-heading" title="Cover note">
-        <p className="text-base whitespace-pre-wrap text-secondary-foreground">{coverNote || "No cover note."}</p>
       </Section>
       {latestRemark ? (
         <Section id="latest-remark-heading" title="Latest remark">
