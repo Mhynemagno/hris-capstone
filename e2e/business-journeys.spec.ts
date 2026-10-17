@@ -196,6 +196,11 @@ test.describe("personnel records and profile changes", () => {
     await signIn(page, "demo.employee@example.test", "/employee");
     await page.goto("/employee/profile/change-request");
     await page.getByLabel(/^Emergency contact name/).fill(contact);
+    await page.getByLabel("Supporting documents").setInputFiles({
+      name: "contact-change-proof.pdf",
+      mimeType: "application/pdf",
+      buffer: Buffer.from("%PDF-1.4 contact change evidence"),
+    });
     await page.getByRole("button", { name: "Submit request" }).click();
     await expect(page.getByRole("status").filter({ hasText: /submitted|sent/i })).toBeVisible();
     await signOut(page);

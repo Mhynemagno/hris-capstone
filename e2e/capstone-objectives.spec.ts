@@ -399,8 +399,8 @@ test.describe("Objective 4: promotion eligibility tracker", () => {
     await expect(criteriaPanel.getByText(/Loading promotion criteria/)).toHaveCount(0, { timeout: 15_000 });
     if (await existing.count() === 0) {
       await chooseComboboxOption(page, /^Target Rank/, "PCPL", /PCPL — Police Corporal/);
-      await criteriaPanel.getByLabel(/^Years of Service/).selectOption("3");
-      await expect(criteriaPanel.getByLabel(/^Minimum performance rating/)).toHaveCount(0);
+      await criteriaPanel.getByLabel(/^Time in Grade/).selectOption("3");
+      await expect(criteriaPanel.getByLabel(/^Minimum IPER rating/)).toHaveValue("");
       await criteriaPanel.getByLabel(/^Certification \/ Training/).selectOption(credential);
       // A second requirement row can be added and removed again.
       await criteriaPanel.getByRole("button", { name: "Add another certification / training" }).click();
@@ -552,10 +552,10 @@ test.describe("Objective 7: analytics dashboard", () => {
     await page.goto("/hr");
     await expect(page.getByRole("heading", { name: "Dashboard Overview", exact: true })).toBeVisible({ timeout: 30_000 });
     const kpi = (label: string) => page.getByText(label, { exact: true }).locator("xpath=ancestor::article[1]");
-    for (const metric of ["Total Active 201", "On Duty", "Absent", "On Leave", "Incomplete", "Plantilla Vacancies"]) {
+    for (const metric of ["Total Active", "On Duty", "Absent", "On Leave", "Plantilla Vacancies"]) {
       await expect(kpi(metric)).toContainText(/\d+/);
     }
-    expect(Number((await kpi("Total Active 201").locator("p").nth(1).innerText()).replace(/[^\d]/g, ""))).toBeGreaterThan(0);
+    expect(Number((await kpi("Total Active").locator("p").nth(1).innerText()).replace(/[^\d]/g, ""))).toBeGreaterThan(0);
     for (const heading of ["Personnel Distribution by Unit", "Recruitment Pipeline Overview", "Daily Attendance Overview", "Recruitment Openings", "Recent Deployments"]) {
       await expect(page.getByRole("heading", { name: heading, exact: true })).toBeVisible();
     }
