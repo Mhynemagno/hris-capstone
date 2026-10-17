@@ -67,7 +67,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           </p>
         </div>
         <LoginForm error={errorMessage} mode="applicant" nextPath={nextPath} notice={notice} />
-        <p className="mt-6 text-center text-xs text-slate-500">Don&apos;t have an account? Contact HR</p>
+        <p className="mt-6 text-center text-xs text-slate-500">Don&apos;t have an account? Contact HR.</p>
         <p className="mt-2 text-center text-[11px] text-slate-500">
           Station personnel?{" "}
           <Link className="font-semibold text-slate-500 hover:text-slate-700 hover:underline" href={switchHref("employee", nextPath)}>Login as Employee</Link>

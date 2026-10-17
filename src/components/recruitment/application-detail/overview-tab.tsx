@@ -40,13 +40,12 @@ function AiMatchCard({ applicationId }: { applicationId: string }) {
         {analyzing ? <p className="text-muted-foreground">Analyzing application…</p> : null}
         {score?.status === "failed" ? (
           <div className="space-y-3">
-            <p>{score.failure_code === "timed_out" ? "Analysis timed out. The analysis service did not finish in time." : "Analysis failed. You can retry when the service is available."}</p>
+            <p>{score.failure_code === "timed_out" ? "Analysis timed out." : "Analysis failed."}</p>
             <Button loading={retry.isPending} onClick={() => void retryAnalysis()} size="sm" variant="outline">Retry analysis</Button>
           </div>
         ) : null}
         {!score && !scores.error ? <p className="text-muted-foreground">Not analyzed. This may be an application submitted before automatic analysis was enabled.</p> : null}
         {error ? <ErrorState message={error} /> : null}
-        <p className="text-sm text-muted-foreground">HR makes the final decision. Recommendations never change an application&apos;s stage.</p>
       </div>
     </Section>
   );
