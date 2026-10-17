@@ -1,9 +1,9 @@
 import { formatDate } from "@/lib/format-date";
-import type { Applicant } from "@/lib/types/database";
+import type { Applicant, ApplicantEducation } from "@/lib/types/database";
 
 const titleCase = (value: string | null) => (value ? value.replaceAll("_", " ").replace(/^./, (letter) => letter.toUpperCase()) : null);
 
-export function ProfileTab({ applicant }: { applicant: Applicant | null }) {
+export function ProfileTab({ applicant, education = [] }: { applicant: Applicant | null; education?: ApplicantEducation[] }) {
   if (!applicant) return <p className="text-muted-foreground">The applicant profile is not available.</p>;
   const groups: { title: string; rows: [string, string | null][] }[] = [
     { title: "Personal", rows: [
@@ -13,6 +13,7 @@ export function ProfileTab({ applicant }: { applicant: Applicant | null }) {
     ] },
     { title: "Contact", rows: [["Mobile", applicant.phone]] },
     { title: "Address", rows: [["Home address", applicant.address]] },
+    { title: "Educational Background", rows: education.length ? education.map((row) => [titleCase(row.level) ?? "Education", [row.school_name, row.degree_course, row.location, row.year_graduated?.toString()].filter(Boolean).join(" · ")]) : [["Education", null]] },
   ];
   return (
     <div className="space-y-4">

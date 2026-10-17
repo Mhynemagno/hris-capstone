@@ -100,4 +100,10 @@ describe("applicant detail tabs", () => {
     expect(screen.getByText("April 12, 1998")).toBeInTheDocument();
     expect(screen.getAllByText("Not provided").length).toBeGreaterThan(0);
   });
+
+  it("shows the applicant's recorded educational background to HR", () => {
+    render(<ProfileTab applicant={{ id: "a", profile_id: "p", applicant_number: 1, preferred_job_opening_id: null, first_name: "Ana", middle_name: null, last_name: "Reyes", qualifier: null, place_of_birth: null, date_of_birth: null, gender: null, civil_status: null, religion: null, citizenship: null, profile_image_path: null, phone: null, address: null, created_at: "", updated_at: "" }} education={[{ id: "e", applicant_id: "a", level: "college", school_name: "San Juan College", degree_course: "Criminology", year_graduated: 2024, location: "San Juan", created_at: "", updated_at: "" }]} />);
+    expect(screen.getByRole("heading", { name: "Educational Background" })).toBeVisible();
+    expect(screen.getByText("San Juan College · Criminology · San Juan · 2024")).toBeVisible();
+  });
 });

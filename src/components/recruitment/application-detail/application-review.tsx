@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { TabPanel, Tabs, useUrlTab } from "@/components/ui/tabs";
 import { useBreadcrumbTrail } from "@/components/workspace-shell/breadcrumbs";
 import { PageContainer } from "@/components/workspace-shell/page-container";
-import { useHrRegisteredApplicants } from "@/hooks/use-applicant-portal";
+import { useApplicantEducationFor, useHrRegisteredApplicants } from "@/hooks/use-applicant-portal";
 import { useApplicantProfileDocumentsFor, useApplicantProfilePhotoUrl, useApplicationStageDocuments, useMyApplication } from "@/hooks/use-recruitment";
 import { formatApplicantNumber } from "@/lib/recruitment/applicant-number";
 import { endedAtStage } from "@/lib/recruitment/application-stages";
@@ -33,6 +33,7 @@ export function HrApplicationReview({ applicationId }: { applicationId: string }
   const stageDocuments = useApplicationStageDocuments(applicationId);
   const photo = useApplicantProfilePhotoUrl(applicant?.profile_image_path ?? null);
   const registered = useHrRegisteredApplicants();
+  const education = useApplicantEducationFor(application?.applicant_id);
   const [tab, setTab] = useUrlTab("tab", TABS, "overview");
   const name = applicant ? [applicant.first_name, applicant.middle_name, applicant.last_name, applicant.qualifier].filter(Boolean).join(" ") : application ? `Application ${application.id.slice(0, 8)}` : "";
   useBreadcrumbTrail(name ? [{ label: name }] : []);
@@ -89,7 +90,7 @@ export function HrApplicationReview({ applicationId }: { applicationId: string }
             value={tab}
           >
             <TabPanel value="overview"><OverviewTab applicationId={applicationId} history={history} onShowDocuments={() => setTab("documents")} profileDocuments={profileDocs} /></TabPanel>
-            <TabPanel value="profile"><ProfileTab applicant={applicant} /></TabPanel>
+            <TabPanel value="profile">{education.error ? <ErrorState message={education.error.message} onRetry={() => void education.refetch()} /> : <ProfileTab applicant={applicant} education={education.data ?? []} />}</TabPanel>
             <TabPanel value="documents">{profileDocuments.error ? <ErrorState message={profileDocuments.error.message} onRetry={() => void profileDocuments.refetch()} /> : <DocumentsTab applicationDocuments={documents} profileDocuments={profileDocs} stageDocuments={stageDocuments.data ?? []} />}</TabPanel>
             <TabPanel value="activity"><ActivityTab applicationId={applicationId} history={history} /></TabPanel>
           </Tabs>
