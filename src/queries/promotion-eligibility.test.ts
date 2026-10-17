@@ -18,15 +18,19 @@ describe("promotion eligibility queries", () => {
     });
   });
 
-  it("creates criteria with several training requirements and no rating minimum", async () => {
+  it("creates criteria with all configured evaluation groups", async () => {
     rpc.mockResolvedValue({ data: "c1", error: null });
     const requirements = ["PSJLC", "PSOAC"].map((name) => ({ recordKind: "training", requiredName: name, label: name, isMandatory: true }));
-    await expect(createPromotionCriterion({ targetRankId: 4, minimumYearsOfService: 3, minimumPerformanceRating: 4, requirements })).resolves.toBe("c1");
+    await expect(createPromotionCriterion({ targetRankId: 4, minimumYearsOfService: 3, minimumTimeInGradeYears: 2, minimumPerformanceRating: 4, iperReviewPeriodMonths: 12, pftMinimumScore: 75, pftValidityMonths: 12, requirements })).resolves.toBe("c1");
     expect(rpc).toHaveBeenCalledWith("create_promotion_criterion", {
       target_rank_id: 4,
       target_minimum_years: 3,
-      target_minimum_rating: null,
+      target_minimum_rating: 4,
       target_requirements: requirements,
+      target_time_in_grade_years: 2,
+      target_iper_period_months: 12,
+      target_pft_minimum_score: 75,
+      target_pft_validity_months: 12,
     });
   });
 

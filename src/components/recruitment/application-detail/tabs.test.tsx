@@ -42,7 +42,8 @@ describe("applicant detail tabs", () => {
   it("offers a retry when analysis failed or timed out", async () => {
     mocks.scores = [{ id: "s", status: "failed", score: null, explanation: null, failure_code: "timed_out" }];
     render(<OverviewTab applicationId={id} history={[]} onShowDocuments={() => undefined} profileDocuments={[]} />);
-    expect(screen.getByRole("region", { name: "AI match" })).toHaveTextContent("Analysis timed out");
+    expect(screen.getByRole("region", { name: "AI match" })).toHaveTextContent("Analysis timed out.");
+    expect(screen.queryByText(/did not finish in time|HR makes the final decision/)).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Retry analysis" }));
     expect(mocks.retry).toHaveBeenCalledWith(id);
   });
@@ -60,6 +61,12 @@ describe("applicant detail tabs", () => {
     expect(within(required).getByRole("button", { name: "View CV / Resume: resume.pdf" })).toBeInTheDocument();
     expect(within(required).getAllByText("Not uploaded")).toHaveLength(4);
     expect(within(screen.getByRole("region", { name: "Submitted with this application" })).getByRole("button", { name: "View BMI proof: bmi.pdf" })).toBeInTheDocument();
+  });
+
+  it("does not repeat a document that is already part of the applicant profile", () => {
+    render(<DocumentsTab applicationDocuments={[{ id: "a1", application_id: id, kind: "cv", object_path: "p/resume.pdf", file_name: "resume.pdf", mime_type: "application/pdf", size_bytes: 1, uploaded_by_user_id: null, created_at: "2026-10-03T00:00:00Z" }]} profileDocuments={profileDocuments} />);
+    expect(screen.getAllByRole("button", { name: "View CV / Resume: resume.pdf" })).toHaveLength(1);
+    expect(within(screen.getByRole("region", { name: "Submitted with this application" })).getByText("No documents were attached.")).toBeVisible();
   });
 
   it("lists HR's stage supporting documents with their stage and result", () => {
@@ -92,5 +99,11 @@ describe("applicant detail tabs", () => {
     expect(screen.getByRole("heading", { name: "Personal" })).toBeInTheDocument();
     expect(screen.getByText("April 12, 1998")).toBeInTheDocument();
     expect(screen.getAllByText("Not provided").length).toBeGreaterThan(0);
+  });
+
+  it("shows the applicant's recorded educational background to HR", () => {
+    render(<ProfileTab applicant={{ id: "a", profile_id: "p", applicant_number: 1, preferred_job_opening_id: null, first_name: "Ana", middle_name: null, last_name: "Reyes", qualifier: null, place_of_birth: null, date_of_birth: null, gender: null, civil_status: null, religion: null, citizenship: null, profile_image_path: null, phone: null, address: null, created_at: "", updated_at: "" }} education={[{ id: "e", applicant_id: "a", level: "college", school_name: "San Juan College", degree_course: "Criminology", year_graduated: 2024, location: "San Juan", created_at: "", updated_at: "" }]} />);
+    expect(screen.getByRole("heading", { name: "Educational Background" })).toBeVisible();
+    expect(screen.getByText("San Juan College · Criminology · San Juan · 2024")).toBeVisible();
   });
 });

@@ -34,6 +34,14 @@ values
   ('00000000-0000-4000-8000-000000000911', 'Patrolman', '2024-01-01'),
   ('00000000-0000-4000-8000-000000000912', 'Other Patrolman', '2024-01-01');
 
+create function public.profile_change_test_document(target_request_id uuid) returns jsonb language plpgsql as $$
+declare target_path text := 'profile-change-requests/' || auth.uid()::text || '/' || target_request_id::text || '/11111111-1111-4111-8111-111111111111.pdf';
+begin
+  insert into storage.objects (bucket_id, name, owner_id) values ('private-documents', target_path, auth.uid()::text);
+  return jsonb_build_array(jsonb_build_object('objectPath', target_path, 'fileName', 'proof.pdf', 'mimeType', 'application/pdf', 'sizeBytes', 100));
+end;
+$$;
+
 -- My Profile: an employee reads only their own eligibility, training and service history.
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000902';
@@ -43,7 +51,7 @@ select extensions.is((select array_agg(employment_title) from public.service_his
 
 -- A decision notification links to the specific request.
 select extensions.lives_ok(
-  $$select public.submit_profile_change_request('00000000-0000-4000-8000-000000000921'::uuid, null, '[{"kind":"contact","field":"phone","originalValue":null,"requestedValue":"+63 917 000 0000"}]'::jsonb, '[]'::jsonb)$$,
+  $$select public.submit_profile_change_request('00000000-0000-4000-8000-000000000921'::uuid, null, '[{"kind":"contact","field":"phone","originalValue":null,"requestedValue":"+63 917 000 0000"}]'::jsonb, public.profile_change_test_document('00000000-0000-4000-8000-000000000921'::uuid))$$,
   'Employee submits a profile change request'
 );
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000901';

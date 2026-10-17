@@ -1,3 +1,4 @@
+import userEvent from "@testing-library/user-event";
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -11,12 +12,14 @@ const state = vi.hoisted(() => ({
   loading: false,
   typesError: null as Error | null,
   ranksError: null as Error | null,
+  requestRecordAssistance: vi.fn(),
 }));
 const ok = (data: unknown) => ({ isLoading: state.loading, error: null, data: state.loading ? undefined : data });
 
 vi.mock("@/hooks/use-personnel-records", () => ({
   useEmployeeForCurrentUser: () => ({ isLoading: false, error: null, data: state.employee }),
   useEmployeeProfilePhotoUrl: () => ({ data: state.photo }),
+  useRequestEmployeeRecordAssistance: () => ({ isPending: false, mutateAsync: state.requestRecordAssistance }),
 }));
 vi.mock("@/hooks/use-administration", () => ({
   useRankOptions: () => state.ranksError ? { isLoading: false, error: state.ranksError, data: undefined } : ok([{ id: 1, code: "PAT", name: "Patrolman / Patrolwoman" }]),
@@ -25,7 +28,7 @@ vi.mock("@/hooks/use-administration", () => ({
 vi.mock("@/hooks/use-deployment-tracking", () => ({ useMyDeployments: () => ok({ rows: state.deployments, count: state.deployments.length }) }));
 vi.mock("@/hooks/use-leave-management", () => ({
   useMyLeaveBalances: () => ok([{ leave_type_id: "t1", days_per_year: 15, excess_deducted_from_retirement: false, used_days: 3 }]),
-  useLeaveTypes: () => state.typesError ? { isLoading: false, error: state.typesError, data: undefined } : ok({ rows: [{ id: "t1", name: "Sick Leave", days_per_year: 15 }], count: 1 }),
+  useLeaveTypes: () => state.typesError ? { isLoading: false, error: state.typesError, data: undefined } : ok({ rows: [{ id: "t1", name: "Sick Leave", days_per_year: 15, eligible_gender: null }], count: 1 }),
 }));
 vi.mock("@/hooks/use-attendance-integration", () => ({ useMyAttendanceLogs: () => ok({ rows: state.logs, count: state.logs.length }) }));
 vi.mock("@/hooks/use-promotion-eligibility", () => ({ useMyPromotionEligibility: () => ok(state.promotion) }));
@@ -46,6 +49,8 @@ describe("EmployeeDashboard (empdash.html)", () => {
     state.loading = false;
     state.typesError = null;
     state.ranksError = null;
+    state.requestRecordAssistance.mockReset();
+    state.requestRecordAssistance.mockResolvedValue(undefined);
   });
 
   it("shows loading states instead of false empty states while queries load", () => {
@@ -58,6 +63,15 @@ describe("EmployeeDashboard (empdash.html)", () => {
     expect(screen.queryByText(/No leave entitlements/)).not.toBeInTheDocument();
     expect(screen.queryByText("No announcements right now.")).not.toBeInTheDocument();
     expect(screen.getAllByText(/^Loading/).length).toBeGreaterThanOrEqual(5);
+  });
+
+  it("lets an unlinked employee notify HR to link the official record", async () => {
+    state.employee = null;
+    const user = userEvent.setup();
+    render(<EmployeeDashboard />);
+    await user.click(screen.getByRole("button", { name: "Contact HR" }));
+    expect(state.requestRecordAssistance).toHaveBeenCalledTimes(1);
+    expect(await screen.findByText("HR has been notified to help link your record.")).toBeVisible();
   });
 
   it("shows an error instead of an empty list when leave types fail, and flags rank failures", () => {
@@ -125,5 +139,6 @@ describe("EmployeeDashboard (empdash.html)", () => {
     expect(screen.getByText(/Target rank: PCpl/)).toBeVisible();
     expect(screen.getByText("Eligible")).toBeVisible();
     expect(screen.getByText("Kiosk Maintenance")).toBeVisible();
+    expect(screen.getByRole("link", { name: "View details for Kiosk Maintenance" })).toHaveAttribute("href", "/announcements/a1");
   });
 });

@@ -26,10 +26,10 @@ const recordKindLabels = { certification: "Certification / Training", qualificat
  */
 const REQUIREMENT_RECORD_KIND = "certification" as const;
 const MAX_REQUIREMENTS = 30;
-const SERVICE_YEAR_CHOICES = [1, 2, 3] as const;
+const TIME_IN_GRADE_CHOICES = Array.from({ length: 30 }, (_, index) => index + 1);
 
 type RequirementRow = { key: number; name: string };
-type FieldErrors = Partial<Record<"targetRankId" | "minimumYearsOfService" | "requirements" | "form", string>>;
+type FieldErrors = Partial<Record<"targetRankId" | "minimumTimeInGradeYears" | "minimumPerformanceRating" | "iperReviewPeriodMonths" | "pftMinimumScore" | "pftValidityMonths" | "requirements" | "form", string>>;
 
 function FieldError({ message }: { message?: string }) {
   return message ? <p className="text-[10px] font-bold text-rose-500" role="alert">{message}</p> : null;
@@ -72,8 +72,13 @@ function CriterionForm({ rankOptions, takenRankIds }: { rankOptions: { value: st
     const form = Object.fromEntries(new FormData(formElement));
     const parsed = promotionCriterionSchema.safeParse({
       targetRankId: rankId ?? "",
-      minimumYearsOfService: form.minimumYearsOfService,
-      requirements: rows.map((row) => ({ recordKind: REQUIREMENT_RECORD_KIND, requiredName: row.name, label: row.name, isMandatory: true })),
+      minimumYearsOfService: form.minimumTimeInGradeYears,
+      minimumTimeInGradeYears: form.minimumTimeInGradeYears,
+      minimumPerformanceRating: form.minimumPerformanceRating,
+      iperReviewPeriodMonths: form.iperReviewPeriodMonths,
+      pftMinimumScore: form.pftMinimumScore,
+      pftValidityMonths: form.pftValidityMonths,
+      requirements: rows.filter((row) => row.name).map((row) => ({ recordKind: REQUIREMENT_RECORD_KIND, requiredName: row.name, label: row.name, isMandatory: true })),
     });
     if (!parsed.success) {
       const next: FieldErrors = {};
@@ -123,16 +128,26 @@ function CriterionForm({ rankOptions, takenRankIds }: { rankOptions: { value: st
         <FieldError message={errors.targetRankId} />
       </div>
       <div className="space-y-1">
-        <StaffLabel htmlFor="minimum-years" required>Years of Service</StaffLabel>
-        <StaffSelect defaultValue="1" id="minimum-years" name="minimumYearsOfService" required>
-          {SERVICE_YEAR_CHOICES.map((years) => <option key={years} value={years}>{`${years} ${years === 1 ? "year" : "years"}`}</option>)}
+        <StaffLabel htmlFor="minimum-time-in-grade" required>Time in Grade</StaffLabel>
+        <StaffSelect defaultValue="1" id="minimum-time-in-grade" name="minimumTimeInGradeYears" required>
+          {TIME_IN_GRADE_CHOICES.map((years) => <option key={years} value={years}>{`${years} ${years === 1 ? "year" : "years"}`}</option>)}
         </StaffSelect>
-        <FieldError message={errors.minimumYearsOfService} />
+        <p className="text-[10px] font-normal text-slate-500">Minimum completed time at the employee&apos;s current rank.</p>
+        <FieldError message={errors.minimumTimeInGradeYears} />
       </div>
+      <fieldset className="grid gap-4 border-t border-slate-200 pt-3 sm:grid-cols-2">
+        <legend className="text-xs font-semibold text-slate-700">IPER Evaluation</legend>
+        <div className="space-y-1"><StaffLabel htmlFor="minimum-iper-rating">Minimum IPER rating</StaffLabel><StaffSelect defaultValue="" id="minimum-iper-rating" name="minimumPerformanceRating"><option value="">Not required</option>{[1, 2, 3, 4, 5].map((rating) => <option key={rating} value={rating}>{rating} / 5</option>)}</StaffSelect><FieldError message={errors.minimumPerformanceRating} /></div>
+        <div className="space-y-1"><StaffLabel htmlFor="iper-period">Review period</StaffLabel><StaffSelect defaultValue="" id="iper-period" name="iperReviewPeriodMonths"><option value="">Not required</option>{[6, 12, 24, 36].map((months) => <option key={months} value={months}>{months} months</option>)}</StaffSelect><FieldError message={errors.iperReviewPeriodMonths} /></div>
+      </fieldset>
+      <fieldset className="grid gap-4 border-t border-slate-200 pt-3 sm:grid-cols-2">
+        <legend className="text-xs font-semibold text-slate-700">Physical Fitness Test (PFT)</legend>
+        <div className="space-y-1"><StaffLabel htmlFor="pft-score">Minimum PFT score</StaffLabel><input className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs" id="pft-score" max="100" min="0" name="pftMinimumScore" step="0.01" type="number" /><FieldError message={errors.pftMinimumScore} /></div>
+        <div className="space-y-1"><StaffLabel htmlFor="pft-validity">Evidence validity</StaffLabel><StaffSelect defaultValue="" id="pft-validity" name="pftValidityMonths"><option value="">Not required</option>{[6, 12, 24].map((months) => <option key={months} value={months}>{months} months</option>)}</StaffSelect><FieldError message={errors.pftValidityMonths} /></div>
+      </fieldset>
       <fieldset aria-describedby={errors.requirements ? "requirements-error" : undefined} className="space-y-3 border-t border-slate-200 pt-3">
         <legend className="text-xs font-semibold text-slate-700">
-          Certification / Training Requirements
-          <span aria-hidden="true" className="ml-0.5 text-rose-500">*</span>
+          Required Courses
         </legend>
         {rows.map((row, index) => (
           <div className="flex items-end gap-2" key={row.key}>
@@ -142,7 +157,6 @@ function CriterionForm({ rankOptions, takenRankIds }: { rankOptions: { value: st
                 id={`requirement-${row.key}`}
                 name="requiredName"
                 onChange={(event) => updateRow(row.key, event.target.value)}
-                required
                 value={row.name}
               >
                 <option value="">Choose a certification / training</option>
@@ -220,7 +234,6 @@ export function PromotionCriteriaManager() {
                     <p className="flex flex-wrap items-center gap-2 text-sm font-bold text-slate-900">
                       {title}
                       <span className={cn("rounded px-1.5 text-[10px] font-bold", criterion.is_active ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600")}>{criterion.is_active ? "Active" : "Inactive"}</span>
-                      {criterion.minimum_years_of_service > 3 ? <span className="rounded bg-rose-50 px-1.5 text-[10px] font-bold text-rose-700">Update to 1–3 years</span> : null}
                     </p>
                     <div className="flex flex-wrap gap-1.5">
                       <button
@@ -236,8 +249,10 @@ export function PromotionCriteriaManager() {
                     </div>
                   </div>
                   <p className="text-[11px] font-normal text-slate-600">
-                    At least {criterion.minimum_years_of_service} {criterion.minimum_years_of_service === 1 ? "year" : "years"} of service
+                    Time in Grade: at least {criterion.minimum_time_in_grade_years ?? criterion.minimum_years_of_service} {(criterion.minimum_time_in_grade_years ?? criterion.minimum_years_of_service) === 1 ? "year" : "years"}
                   </p>
+                  {criterion.minimum_performance_rating ? <p className="text-[11px] font-normal text-slate-600">IPER: {criterion.minimum_performance_rating}/5 within {criterion.iper_review_period_months} months</p> : null}
+                  {criterion.pft_minimum_score !== null && criterion.pft_minimum_score !== undefined ? <p className="text-[11px] font-normal text-slate-600">PFT: {criterion.pft_minimum_score}+ score, valid {criterion.pft_validity_months} months</p> : null}
                   {requirements.length ? (
                     <ul className="list-disc space-y-0.5 pl-5 text-[11px] font-normal text-slate-600">
                       {requirements.toSorted((a, b) => a.ordinal - b.ordinal).map((requirement) => (

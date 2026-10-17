@@ -109,11 +109,11 @@ export const ROLE_CONFIG: Record<AppRole, RoleConfig> = {
       "Access your HR information, requests, and work-related updates.",
     navigation: [
       { href: "/employee", label: "Dashboard", icon: "LayoutDashboard" },
-      { href: "/employee/profile", label: "My Profile 201", icon: "ContactRound" },
-      { href: "/employee/leave", label: "My Leaves", icon: "CalendarDays" },
-      { href: "/employee/deployments", label: "My Deployments", icon: "MapPin" },
+      { href: "/employee/profile", label: "My Profile", icon: "ContactRound" },
+      { href: "/employee/leave", label: "Leave", icon: "CalendarDays" },
+      { href: "/employee/deployments", label: "Deployment", icon: "MapPin" },
       { href: "/employee/promotion-eligibility", label: "Promotion Status", icon: "TrendingUp" },
-      { href: "/employee/attendance", label: "My Attendance", icon: "Clock" },
+      { href: "/employee/attendance", label: "Attendance", icon: "Clock" },
     ],
   },
   management: {

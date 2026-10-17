@@ -2,19 +2,20 @@
 
 import { Building2, CalendarCheck, Camera, CircleCheck, CircleDashed, MapPin, MapPinned } from "lucide-react";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import { serviceLength } from "@/components/personnel-records/profile-layout";
 import { avatarTone, initialsOf } from "@/components/staff-shell/ui/initials-avatar";
 import { PageTitle } from "@/components/staff-shell/ui/page-title";
 import { StatusPill } from "@/components/staff-shell/ui/status-pill";
+import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useDepartmentOptions, useRankOptions } from "@/hooks/use-administration";
 import { useMyAttendanceLogs } from "@/hooks/use-attendance-integration";
 import { useMyDeployments } from "@/hooks/use-deployment-tracking";
 import { useLeaveTypes, useMyLeaveBalances } from "@/hooks/use-leave-management";
-import { useEmployeeForCurrentUser, useEmployeeProfilePhotoUrl } from "@/hooks/use-personnel-records";
+import { useEmployeeForCurrentUser, useEmployeeProfilePhotoUrl, useRequestEmployeeRecordAssistance } from "@/hooks/use-personnel-records";
 import { useMyPromotionEligibility } from "@/hooks/use-promotion-eligibility";
 import { usePublishedAnnouncements } from "@/hooks/use-public-site";
 import { formatDate, formatDateRange } from "@/lib/format-date";
@@ -75,6 +76,8 @@ export function EmployeeDashboard() {
   const photo = useEmployeeProfilePhotoUrl(employee.data?.profile_image_path ?? null);
   const promotion = useMyPromotionEligibility();
   const announcements = usePublishedAnnouncements(3);
+  const recordAssistance = useRequestEmployeeRecordAssistance();
+  const [recordAssistanceMessage, setRecordAssistanceMessage] = useState<string | null>(null);
 
   if (employee.isLoading) return <LoadingState label="Loading your dashboard…" />;
   if (employee.error) return <ErrorState message={employee.error.message} />;
@@ -83,7 +86,16 @@ export function EmployeeDashboard() {
     return (
       <div className="space-y-6">
         <PageTitle subtitle="Your live personnel overview." title="Personnel Dashboard" />
-        <p className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600">Your official personnel record has not been linked to this account yet. Contact HR for help.</p>
+        <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600">
+          <p>Your official personnel record has not been linked to this account yet. Contact HR for help.</p>
+          <Button disabled={recordAssistance.isPending} onClick={() => {
+            setRecordAssistanceMessage(null);
+            void recordAssistance.mutateAsync().then(() => setRecordAssistanceMessage("HR has been notified to help link your record.")).catch((cause: unknown) => setRecordAssistanceMessage(cause instanceof Error ? cause.message : "Unable to notify HR right now."));
+          }} type="button" variant="outline">
+            {recordAssistance.isPending ? "Contacting HR…" : "Contact HR"}
+          </Button>
+          {recordAssistanceMessage ? <p role="status">{recordAssistanceMessage}</p> : null}
+        </section>
       </div>
     );
   }
@@ -103,7 +115,7 @@ export function EmployeeDashboard() {
   const typeById = new Map((leaveTypes.data?.rows ?? []).map((type) => [type.id, type]));
   const entitlements = (balances.data ?? []).flatMap((balance) => {
     const type = typeById.get(balance.leave_type_id);
-    return type ? [{ balance, type }] : [];
+    return type && (!type.eligible_gender || type.eligible_gender === record.gender) ? [{ balance, type }] : [];
   }).slice(0, 4);
   const stats: [string, string, string][] = [
     ["Badge Number", record.employee_number, "font-mono text-amber-300"],
@@ -221,15 +233,18 @@ export function EmployeeDashboard() {
             ) : <p className="text-xs text-slate-500" role="status">No leave entitlements are available yet.</p>}
           </Card>
 
-          <Card id="announcements-heading" title="Station Announcements">
+          <Card id="announcements-heading" title="Announcements">
             {announcements.isLoading ? <LoadingState label="Loading announcements…" /> : announcements.error ? <ErrorState message={announcements.error.message} /> : (announcements.data ?? []).length ? (
               <ul className="space-y-3 text-xs">
                 {(announcements.data ?? []).map((item) => (
-                  <li className={cn("space-y-1 rounded-xl border p-3", CATEGORY_TONE[item.category] ?? "border-slate-200/80 bg-slate-50 text-slate-600")} key={item.id}>
+                  <li className={cn("rounded-xl border", CATEGORY_TONE[item.category] ?? "border-slate-200/80 bg-slate-50 text-slate-600")} key={item.id}>
+                    <Link aria-label={`View details for ${item.title}`} className="block space-y-1 rounded-xl p-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600" href={`/announcements/${item.id}`}>
                     <span className="rounded bg-white/70 px-1.5 py-0.5 text-[9px] font-extrabold uppercase">{announcementCategoryLabel(item.category)}</span>
                     <p className="font-bold text-slate-900">{item.title}</p>
                     <p className="text-[11px] text-slate-600">{item.summary}</p>
                     {item.published_at ? <p className="text-[10px] text-slate-500">{formatDate(item.published_at)}</p> : null}
+                    <span className="block text-[11px] font-bold text-blue-700">View details</span>
+                    </Link>
                   </li>
                 ))}
               </ul>

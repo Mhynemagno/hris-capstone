@@ -47,7 +47,8 @@ export function DocumentsTab({ applicationDocuments, profileDocuments, stageDocu
     const document = profileDocuments.find((item) => item.kind === kind);
     return { key: kind, label, fileName: document?.file_name ?? null, date: document?.updated_at ?? null, open: document ? () => getApplicantProfileDocumentUrl(document.object_path) : null };
   });
-  const submitted: Row[] = applicationDocuments.map((document) => ({
+  const profilePaths = new Set(profileDocuments.map((document) => document.object_path));
+  const submitted: Row[] = applicationDocuments.filter((document) => !profilePaths.has(document.object_path)).map((document) => ({
     key: document.id,
     label: documentKindLabels[document.kind],
     fileName: document.file_name,

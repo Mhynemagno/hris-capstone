@@ -14,12 +14,20 @@ describe("promotion eligibility schemas", () => {
     expect(promotionCriterionSchema.parse({
       targetRankId: "4",
       minimumYearsOfService: "3",
+      minimumTimeInGradeYears: "2",
       minimumPerformanceRating: "4",
+      iperReviewPeriodMonths: "12",
+      pftMinimumScore: "75",
+      pftValidityMonths: "12",
       requirements: [{ recordKind: "certification", requiredName: " First Aid ", label: " First-aid certification ", isMandatory: true }],
     })).toEqual({
       targetRankId: 4,
       minimumYearsOfService: 3,
+      minimumTimeInGradeYears: 2,
       minimumPerformanceRating: 4,
+      iperReviewPeriodMonths: 12,
+      pftMinimumScore: 75,
+      pftValidityMonths: 12,
       requirements: [{ recordKind: "certification", requiredName: "First Aid", label: "First-aid certification", isMandatory: true }],
     });
   });
@@ -29,18 +37,20 @@ describe("promotion eligibility schemas", () => {
     expect(promotionCriterionSchema.safeParse({ targetRankId: 4, minimumYearsOfService: -1, requirements: [{ recordKind: "deployment", requiredName: "x", label: "x", isMandatory: true }] }).success).toBe(false);
   });
 
-  it.each([0, 4, 100])("rejects %i years of service for a criterion", (minimumYearsOfService) => {
+  it.each([0, 31, 100])("rejects %i years of service for a criterion", (minimumYearsOfService) => {
     expect(promotionCriterionSchema.safeParse({ targetRankId: 4, minimumYearsOfService, requirements: [{ recordKind: "training", requiredName: "PSJLC", label: "PSJLC", isMandatory: true }] }).success).toBe(false);
   });
 
-  it("requires at least one requirement, without duplicates, and needs no rating minimum", () => {
+  it("allows optional courses, rejects duplicates, and keeps evaluation groups paired", () => {
     const training = (name: string) => ({ recordKind: "training", requiredName: name, label: name, isMandatory: true });
     const base = { targetRankId: 4, minimumYearsOfService: 3 };
-    expect(promotionCriterionSchema.safeParse({ ...base, requirements: [] }).error?.issues[0]?.message).toBe("Add at least one requirement.");
+    expect(promotionCriterionSchema.safeParse({ ...base, requirements: [] }).success).toBe(true);
     expect(promotionCriterionSchema.safeParse(base).success).toBe(false);
     expect(promotionCriterionSchema.safeParse({ ...base, requirements: [training("PSJLC"), training(" psjlc ")] }).error?.issues[0]?.message).toBe("Each requirement can only be added once.");
     expect(promotionCriterionSchema.safeParse({ ...base, requirements: [training("")] }).error?.issues[0]?.message).toBe("Choose a requirement.");
     expect(promotionCriterionSchema.parse({ ...base, requirements: [training("PSJLC"), training("PSOAC")] })).toMatchObject({ minimumPerformanceRating: null, requirements: [{ requiredName: "PSJLC" }, { requiredName: "PSOAC" }] });
+    expect(promotionCriterionSchema.safeParse({ ...base, minimumPerformanceRating: 4, requirements: [] }).success).toBe(false);
+    expect(promotionCriterionSchema.safeParse({ ...base, pftMinimumScore: 75, requirements: [] }).success).toBe(false);
   });
 
   it("bounds page size while normalizing directory filters", () => {

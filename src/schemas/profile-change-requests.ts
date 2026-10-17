@@ -24,6 +24,30 @@ export const profileChangeQualificationSnapshotSchema = z.object({
   notes: nullableText(2000),
 });
 
+export const profileChangeCertificationSnapshotSchema = z.object({
+  name: z.string().trim().min(2).max(160),
+  issuer: nullableText(160),
+  credentialId: nullableText(160),
+  issuedOn: isoDateSchema,
+  expiresOn: z.union([isoDateSchema, z.null()]),
+  notes: nullableText(2000),
+}).refine((value) => !value.expiresOn || value.expiresOn >= value.issuedOn, {
+  message: "Expiry date cannot be before the issue date.",
+  path: ["expiresOn"],
+});
+
+export const profileChangeTrainingSnapshotSchema = z.object({
+  courseName: z.string().trim().min(2).max(160),
+  provider: z.string().trim().min(2).max(160),
+  completedOn: isoDateSchema,
+  expiresOn: z.union([isoDateSchema, z.null()]),
+  hours: z.number().min(0).max(9999.99).nullable(),
+  notes: nullableText(2000),
+}).refine((value) => !value.expiresOn || value.expiresOn >= value.completedOn, {
+  message: "Expiry date cannot be before the completion date.",
+  path: ["expiresOn"],
+});
+
 export const profileChangeContactChangeSchema = z.object({
   kind: z.literal("contact"),
   field: z.enum(contactFields),
@@ -64,9 +88,23 @@ export const profileChangeQualificationChangeSchema = z.union([
   qualificationRemoveChangeSchema,
 ]);
 
+export const profileChangeCertificationChangeSchema = z.union([
+  z.object({ kind: z.literal("certification"), operation: z.literal("add"), originalValue: z.null(), requestedValue: profileChangeCertificationSnapshotSchema }),
+  z.object({ kind: z.literal("certification"), operation: z.literal("edit"), certificationId: uuidSchema, originalValue: profileChangeCertificationSnapshotSchema, requestedValue: profileChangeCertificationSnapshotSchema }),
+  z.object({ kind: z.literal("certification"), operation: z.literal("remove"), certificationId: uuidSchema, originalValue: profileChangeCertificationSnapshotSchema, requestedValue: z.null() }),
+]);
+
+export const profileChangeTrainingChangeSchema = z.union([
+  z.object({ kind: z.literal("training"), operation: z.literal("add"), originalValue: z.null(), requestedValue: profileChangeTrainingSnapshotSchema }),
+  z.object({ kind: z.literal("training"), operation: z.literal("edit"), trainingRecordId: uuidSchema, originalValue: profileChangeTrainingSnapshotSchema, requestedValue: profileChangeTrainingSnapshotSchema }),
+  z.object({ kind: z.literal("training"), operation: z.literal("remove"), trainingRecordId: uuidSchema, originalValue: profileChangeTrainingSnapshotSchema, requestedValue: z.null() }),
+]);
+
 export const profileChangeChangeSchema = z.union([
   profileChangeContactChangeSchema,
   profileChangeQualificationChangeSchema,
+  profileChangeCertificationChangeSchema,
+  profileChangeTrainingChangeSchema,
 ]);
 
 export const profileChangeDocumentSchema = z.object({
@@ -86,7 +124,7 @@ export const profileChangeDraftSchema = z.object({
 
 export const profileChangeSubmissionSchema = profileChangeDraftSchema.extend({
   requestId: uuidSchema,
-  documents: z.array(profileChangeDocumentSchema).max(10),
+  documents: z.array(profileChangeDocumentSchema).min(1, "Attach at least one supporting document.").max(10),
 });
 
 export const profileChangeDecisionSchema = z.object({

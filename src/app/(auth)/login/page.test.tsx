@@ -37,7 +37,7 @@ describe("LoginPage", () => {
     expect(screen.getByText("Enter your registered email address below to access your application status and updates.")).toBeVisible();
     expect(screen.getByText(/Current Hiring Pool for/)).toHaveTextContent("Patrolman / Patrolwoman (Cycle 2026)");
     expect(screen.getByText("San Juan City PNP Online Recruitment & Applicant Portal System")).toBeVisible();
-    expect(screen.getByText("Don't have an account? Contact HR")).toBeVisible();
+    expect(screen.getByText("Don't have an account? Contact HR.")).toBeVisible();
     expect(screen.queryByRole("link", { name: "Sign up" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Login as Employee" })).toHaveAttribute("href", "/login?as=employee");
   });

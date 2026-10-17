@@ -39,7 +39,7 @@ export type DeletionImpact = {
 const deleteRpc: Partial<Record<DeletableEntityType, { name: string; arg: string; numeric: boolean }>> = {
   leave_type: { name: "delete_leave_type", arg: "target_leave_type_id", numeric: false },
   promotion_criterion: { name: "delete_promotion_criterion", arg: "target_criterion_id", numeric: false },
-  job_opening: { name: "delete_draft_job_opening", arg: "target_job_id", numeric: true },
+  job_opening: { name: "delete_job_opening", arg: "target_job_id", numeric: true },
   notification: { name: "delete_notification", arg: "target_notification_id", numeric: false },
   employee: { name: "delete_employee", arg: "target_employee_id", numeric: false },
 };

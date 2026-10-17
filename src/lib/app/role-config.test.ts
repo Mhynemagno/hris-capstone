@@ -68,11 +68,11 @@ describe("role configuration", () => {
   it("uses the Capstone employee navigation without a standalone scan page", () => {
     expect(getRoleConfig("employee").navigation.map(({ href, label }) => ({ href, label }))).toEqual([
       { href: "/employee", label: "Dashboard" },
-      { href: "/employee/profile", label: "My Profile 201" },
-      { href: "/employee/leave", label: "My Leaves" },
-      { href: "/employee/deployments", label: "My Deployments" },
+      { href: "/employee/profile", label: "My Profile" },
+      { href: "/employee/leave", label: "Leave" },
+      { href: "/employee/deployments", label: "Deployment" },
       { href: "/employee/promotion-eligibility", label: "Promotion Status" },
-      { href: "/employee/attendance", label: "My Attendance" },
+      { href: "/employee/attendance", label: "Attendance" },
     ]);
   });
 

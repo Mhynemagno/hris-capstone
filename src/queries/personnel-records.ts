@@ -50,6 +50,12 @@ export async function listUnlinkedEmployeeAccounts() {
   return (data ?? []) as UnlinkedEmployeeAccount[];
 }
 
+/** Notifies active HR staff that this signed-in employee account needs its official record linked. */
+export async function requestEmployeeRecordAssistance() {
+  const { error } = await createBrowserSupabaseClient().rpc("request_employee_record_assistance");
+  throwIfError(error);
+}
+
 export async function listUnitStations() {
   const { data, error } = await createBrowserSupabaseClient().from("unit_stations").select("id, name, is_active").eq("is_active", true).order("name");
   throwIfError(error);

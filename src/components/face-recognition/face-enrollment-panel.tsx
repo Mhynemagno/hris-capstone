@@ -94,7 +94,9 @@ export function FaceEnrollmentPanel() {
 
         {selected ? (
           <p className="text-sm text-muted-foreground" role="status">
-            {existing ? `Registered ${formatDateTime(existing.updated_at)} from ${existing.sample_count} samples.` : "No face registered yet."}
+            {existing
+              ? `Registered ${formatDateTime(existing.updated_at)} from ${existing.sample_count} samples.`
+              : "No face registered yet. A scan can still be rejected if it is too similar to another employee's registration; the error will identify that registration for HR to review."}
           </p>
         ) : null}
 

@@ -86,8 +86,8 @@ select extensions.is((select count(*) from public.list_face_enrollments()), 4::b
 select extensions.throws_ok(
   $$ select public.enroll_employee_face('00000000-0000-4000-8000-000000000b02', (select descriptor from face_fixture where key = 'alpha_margin'), 5, true) $$,
   '23505',
-  'This face is already registered to another employee. Each employee can register only their own face.',
-  'A face the kiosk could not tell apart from another employee cannot be enrolled'
+  'This scan is too similar to the face registered to Face Alpha (FACE-001). This employee is not registered yet. Review or delete that face registration and then try again.',
+  'A similarity conflict identifies the enrolled employee to HR without claiming the selected employee is already registered'
 );
 
 set local role postgres;

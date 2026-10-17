@@ -149,6 +149,13 @@ describe("FaceEnrollmentPanel", () => {
     expect(capture.begin).toHaveBeenCalledWith({ employeeId: "emp-2", consentConfirmed: true });
   });
 
+  it("explains that an unregistered employee's scan can still conflict with another enrollment", async () => {
+    await selectBen();
+
+    expect(screen.getByRole("status")).toHaveTextContent("No face registered yet.");
+    expect(screen.getByRole("status")).toHaveTextContent(/too similar to another employee's registration/i);
+  });
+
   it("offers re-registration and deletion for an enrolled employee", async () => {
     enrollments.data = [{ employee_id: "emp-2", sample_count: 5, enrolled_at: "2026-09-20T00:00:00Z", updated_at: "2026-09-20T00:00:00Z" }];
     deleteEnrollment.mockResolvedValue(undefined);

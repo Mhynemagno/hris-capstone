@@ -31,7 +31,11 @@ beforeEach(() => {
       id: "c0",
       target_rank_id: 9,
       minimum_years_of_service: 5,
+      minimum_time_in_grade_years: 2,
       minimum_performance_rating: 3,
+      iper_review_period_months: 12,
+      pft_minimum_score: 75,
+      pft_validity_months: 12,
       is_active: true,
       promotion_criteria_requirements: [{ id: "r1", ordinal: 1, record_kind: "certification", required_name: first, label: first }],
     }],
@@ -44,35 +48,37 @@ async function chooseRank(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe("PromotionCriteriaManager", () => {
-  it("asks only for years of service and the required certification / training courses", () => {
+  it("collects the approved time, IPER, PFT, and course criteria", () => {
     render(<PromotionCriteriaManager />);
-    expect(screen.queryByLabelText(/performance rating/i)).not.toBeInTheDocument();
-    expect(screen.getByLabelText(/^Years of Service/)).toBeRequired();
-    expect(screen.queryByText("Minimum years of service")).not.toBeInTheDocument();
-    expect(screen.queryByText(/Required credential/i)).not.toBeInTheDocument();
-    expect(screen.getByRole("group", { name: /^Certification \/ Training Requirements/ })).toBeInTheDocument();
-    expect(screen.queryByLabelText(/^Record type/)).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/^Time in Grade/)).toBeRequired();
+    expect(screen.getByRole("group", { name: "IPER Evaluation" })).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "Physical Fitness Test (PFT)" })).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "Required Courses" })).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Minimum IPER rating/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Minimum PFT score/)).toBeInTheDocument();
     const requirement = screen.getByLabelText(/^Certification \/ Training/);
-    expect(requirement).toBeRequired();
+    expect(requirement).not.toBeRequired();
     expect(within(requirement).getAllByRole("option").map((option) => option.textContent)).toEqual(["Choose a certification / training", ...PNP_CERTIFICATIONS]);
     expect(screen.queryByRole("button", { name: /Remove requirement/ })).not.toBeInTheDocument();
     expect(within(requirement).getByRole("option", { name: "Public Safety Basic Recruit Course (PSBRC)" }).parentElement).toHaveAttribute("label", "Mandatory Course");
     expect(within(requirement).getByRole("option", { name: "Special Weapons and Tactics (SWAT) Course" }).parentElement).toHaveAttribute("label", "Specialized Training");
   });
 
-  it("summarizes existing criteria without a rating minimum", () => {
+  it("summarizes existing evaluation settings", () => {
     render(<PromotionCriteriaManager />);
-    expect(screen.getByText("At least 5 years of service")).toBeVisible();
-    expect(screen.queryByText(/rating/i)).not.toBeInTheDocument();
+    expect(screen.getByText("Time in Grade: at least 2 years")).toBeVisible();
+    expect(screen.getByText("IPER: 3/5 within 12 months")).toBeVisible();
+    expect(screen.getByText("PFT: 75+ score, valid 12 months")).toBeVisible();
     expect(screen.getByText(`Certification / Training: ${first}`)).toBeVisible();
   });
 
-  it("requires at least one requirement", async () => {
+  it("requires both pieces of an IPER setting", async () => {
     const user = userEvent.setup();
     render(<PromotionCriteriaManager />);
     await chooseRank(user);
+    await user.selectOptions(screen.getByLabelText(/^Minimum IPER rating/), "4");
     await user.click(screen.getByRole("button", { name: "Save Criteria" }));
-    expect(await screen.findByText("Choose a certification / training.")).toBeVisible();
+    expect(await screen.findByText("Set both the IPER rating and review period, or leave both blank.")).toBeVisible();
     expect(create).not.toHaveBeenCalled();
   });
 
@@ -96,7 +102,11 @@ describe("PromotionCriteriaManager", () => {
     await waitFor(() => expect(create).toHaveBeenCalledWith({
       targetRankId: 7,
       minimumYearsOfService: 1,
+      minimumTimeInGradeYears: 1,
       minimumPerformanceRating: null,
+      iperReviewPeriodMonths: null,
+      pftMinimumScore: null,
+      pftValidityMonths: null,
       requirements: [first, second].map((name) => ({ recordKind: "certification", requiredName: name, label: name, isMandatory: true })),
     }));
   });

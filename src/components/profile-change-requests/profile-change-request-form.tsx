@@ -10,8 +10,8 @@ import { nativeSelectClassName } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { useEmployeeForCurrentUser, usePersonnelEntries } from "@/hooks/use-personnel-records";
 import { useSubmitProfileChangeRequest } from "@/hooks/use-profile-change-requests";
-import { PNP_QUALIFICATIONS, withSavedValue } from "@/lib/pnp-catalogue";
-import type { Qualification } from "@/lib/types/database";
+import { PNP_CERTIFICATIONS, PNP_ISSUERS, PNP_QUALIFICATIONS, PNP_TRAININGS, PNP_TRAINING_PROVIDERS, withSavedValue } from "@/lib/pnp-catalogue";
+import type { Certification, Qualification, TrainingRecord } from "@/lib/types/database";
 import {
   profileChangeContactChangeSchema,
   profileChangeQualificationSnapshotSchema,
@@ -19,8 +19,14 @@ import {
 } from "@/schemas/profile-change-requests";
 
 type QualificationChange = Extract<ProfileChangeDraftInput["changes"][number], { kind: "qualification" }>;
+type CertificationChange = Extract<ProfileChangeDraftInput["changes"][number], { kind: "certification" }>;
+type TrainingChange = Extract<ProfileChangeDraftInput["changes"][number], { kind: "training" }>;
 type QualificationFields = { name: string; awardedOn: string; notes: string };
 const emptyQualification: QualificationFields = { name: "", awardedOn: "", notes: "" };
+type CertificationFields = { name: string; issuer: string; credentialId: string; issuedOn: string; expiresOn: string; notes: string };
+const emptyCertification: CertificationFields = { name: "", issuer: "", credentialId: "", issuedOn: "", expiresOn: "", notes: "" };
+type TrainingFields = { courseName: string; provider: string; completedOn: string; expiresOn: string; hours: string; notes: string };
+const emptyTraining: TrainingFields = { courseName: "", provider: "", completedOn: "", expiresOn: "", hours: "", notes: "" };
 
 function snapshot(qualification: Qualification): QualificationFields {
   return {
@@ -50,8 +56,28 @@ function qualificationDescription(change: QualificationChange) {
     ? `Remove: ${change.originalValue.name}`
     : `${change.operation === "add" ? "Add" : "Edit"}: ${change.requestedValue.name}`;
 }
+function certificationSnapshot(certification: Certification): CertificationFields {
+  return { name: certification.name, issuer: certification.issuer ?? "", credentialId: certification.credential_id ?? "", issuedOn: certification.issued_on, expiresOn: certification.expires_on ?? "", notes: certification.notes ?? "" };
+}
+function requestedCertificationValue(fields: CertificationFields) {
+  return { name: fields.name, issuer: fields.issuer || null, credentialId: fields.credentialId || null, issuedOn: fields.issuedOn, expiresOn: fields.expiresOn || null, notes: fields.notes || null };
+}
+function certificationDescription(change: CertificationChange) {
+  return change.operation === "remove" ? `Remove: ${change.originalValue.name}` : `${change.operation === "add" ? "Add" : "Edit"}: ${change.requestedValue.name}`;
+}
+function trainingSnapshot(training: TrainingRecord): TrainingFields {
+  return { courseName: training.course_name, provider: training.provider, completedOn: training.completed_on, expiresOn: training.expires_on ?? "", hours: training.hours?.toString() ?? "", notes: training.notes ?? "" };
+}
+function requestedTrainingValue(fields: TrainingFields) {
+  return { courseName: fields.courseName, provider: fields.provider, completedOn: fields.completedOn, expiresOn: fields.expiresOn || null, hours: fields.hours === "" ? null : Number(fields.hours), notes: fields.notes || null };
+}
+function trainingDescription(change: TrainingChange) {
+  return change.operation === "remove" ? `Remove: ${change.originalValue.courseName}` : `${change.operation === "add" ? "Add" : "Edit"}: ${change.requestedValue.courseName}`;
+}
 
 type QualificationErrors = Partial<Record<keyof QualificationFields | "qualificationId", string>>;
+type CertificationErrors = Partial<Record<keyof CertificationFields | "certificationId", string>>;
+type TrainingErrors = Partial<Record<keyof TrainingFields | "trainingRecordId", string>>;
 type ContactField = "personalEmail" | "phone" | "emergencyContactName" | "emergencyContactPhone";
 
 function qualificationFieldErrors(fields: QualificationFields): QualificationErrors {
@@ -70,19 +96,47 @@ function qualificationFieldErrors(fields: QualificationFields): QualificationErr
   }
   return errors;
 }
+function certificationFieldErrors(fields: CertificationFields): CertificationErrors {
+  const errors: CertificationErrors = {};
+  if (!fields.name) errors.name = "Select a certification.";
+  if (!fields.issuedOn) errors.issuedOn = "Enter the issue date.";
+  if (fields.expiresOn && fields.issuedOn && fields.expiresOn < fields.issuedOn) errors.expiresOn = "Expiry date cannot be before the issue date.";
+  return errors;
+}
+function trainingFieldErrors(fields: TrainingFields): TrainingErrors {
+  const errors: TrainingErrors = {};
+  if (!fields.courseName) errors.courseName = "Select a training course.";
+  if (!fields.provider) errors.provider = "Select the training provider.";
+  if (!fields.completedOn) errors.completedOn = "Enter the completion date.";
+  if (fields.expiresOn && fields.completedOn && fields.expiresOn < fields.completedOn) errors.expiresOn = "Expiry date cannot be before the completion date.";
+  if (fields.hours && (!Number.isFinite(Number(fields.hours)) || Number(fields.hours) < 0 || Number(fields.hours) > 9999.99)) errors.hours = "Enter hours between 0 and 9999.99.";
+  return errors;
+}
 
 export function ProfileChangeRequestForm() {
   const employee = useEmployeeForCurrentUser();
   const qualifications = usePersonnelEntries("qualification", employee.data?.id ?? "");
+  const certifications = usePersonnelEntries("certification", employee.data?.id ?? "");
+  const trainings = usePersonnelEntries("training", employee.data?.id ?? "");
   const submit = useSubmitProfileChangeRequest();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [contactErrors, setContactErrors] = useState<Partial<Record<ContactField, string>>>({});
   const [qualificationErrors, setQualificationErrors] = useState<QualificationErrors>({});
+  const [certificationErrors, setCertificationErrors] = useState<CertificationErrors>({});
+  const [trainingErrors, setTrainingErrors] = useState<TrainingErrors>({});
   const [qualificationChanges, setQualificationChanges] = useState<QualificationChange[]>([]);
+  const [certificationChanges, setCertificationChanges] = useState<CertificationChange[]>([]);
+  const [trainingChanges, setTrainingChanges] = useState<TrainingChange[]>([]);
   const [operation, setOperation] = useState<"add" | "edit" | "remove">("add");
   const [qualificationId, setQualificationId] = useState("");
   const [qualification, setQualification] = useState<QualificationFields>(emptyQualification);
+  const [certificationOperation, setCertificationOperation] = useState<"add" | "edit" | "remove">("add");
+  const [certificationId, setCertificationId] = useState("");
+  const [certification, setCertification] = useState<CertificationFields>(emptyCertification);
+  const [trainingOperation, setTrainingOperation] = useState<"add" | "edit" | "remove">("add");
+  const [trainingRecordId, setTrainingRecordId] = useState("");
+  const [training, setTraining] = useState<TrainingFields>(emptyTraining);
   if (employee.isLoading) {
     return (
       <p className="text-sm text-muted-foreground" role="status">
@@ -93,6 +147,8 @@ export function ProfileChangeRequestForm() {
   if (!employee.data) return <ErrorState message="Your official employee record is not available." />;
   const employeeData = employee.data;
   const qualificationRows = (qualifications.data ?? []) as Qualification[];
+  const certificationRows = (certifications.data ?? []) as Certification[];
+  const trainingRows = (trainings.data ?? []) as TrainingRecord[];
 
   function changeQualificationField(field: keyof QualificationFields, value: string) {
     setQualification((current) => ({ ...current, [field]: value }));
@@ -128,6 +184,66 @@ export function ProfileChangeRequestForm() {
     setQualification(emptyQualification);
     setError(null);
   }
+  function changeCertificationField(field: keyof CertificationFields, value: string) {
+    setCertification((current) => ({ ...current, [field]: value }));
+    setCertificationErrors((current) => ({ ...current, [field]: undefined }));
+  }
+  function selectCertification(id: string) {
+    setCertificationId(id);
+    setCertificationErrors((current) => ({ ...current, certificationId: undefined }));
+    const selected = certificationRows.find((item) => item.id === id);
+    if (selected && certificationOperation !== "add") setCertification(certificationSnapshot(selected));
+  }
+  function addCertificationChange() {
+    setSuccess(null);
+    const selected = certificationRows.find((item) => item.id === certificationId);
+    const errors: CertificationErrors = {};
+    if (certificationOperation !== "add" && !selected) errors.certificationId = "Choose an existing certification to edit or remove.";
+    if (certificationOperation !== "remove") Object.assign(errors, certificationFieldErrors(certification));
+    setCertificationErrors(errors);
+    if (Object.values(errors).some(Boolean)) return;
+    const requestedValue = requestedCertificationValue(certification);
+    const originalValue = selected ? requestedCertificationValue(certificationSnapshot(selected)) : null;
+    const change: CertificationChange = certificationOperation === "add"
+      ? { kind: "certification", operation: "add", originalValue: null, requestedValue }
+      : certificationOperation === "edit"
+        ? { kind: "certification", operation: "edit", certificationId: selected!.id, originalValue: originalValue!, requestedValue }
+        : { kind: "certification", operation: "remove", certificationId: selected!.id, originalValue: originalValue!, requestedValue: null };
+    setCertificationChanges((current) => change.operation === "add" ? [...current, change] : [...current.filter((item) => !("certificationId" in item && item.certificationId === change.certificationId)), change]);
+    setCertificationId("");
+    setCertification(emptyCertification);
+    setError(null);
+  }
+  function changeTrainingField(field: keyof TrainingFields, value: string) {
+    setTraining((current) => ({ ...current, [field]: value }));
+    setTrainingErrors((current) => ({ ...current, [field]: undefined }));
+  }
+  function selectTraining(id: string) {
+    setTrainingRecordId(id);
+    setTrainingErrors((current) => ({ ...current, trainingRecordId: undefined }));
+    const selected = trainingRows.find((item) => item.id === id);
+    if (selected && trainingOperation !== "add") setTraining(trainingSnapshot(selected));
+  }
+  function addTrainingChange() {
+    setSuccess(null);
+    const selected = trainingRows.find((item) => item.id === trainingRecordId);
+    const errors: TrainingErrors = {};
+    if (trainingOperation !== "add" && !selected) errors.trainingRecordId = "Choose an existing training record to edit or remove.";
+    if (trainingOperation !== "remove") Object.assign(errors, trainingFieldErrors(training));
+    setTrainingErrors(errors);
+    if (Object.values(errors).some(Boolean)) return;
+    const requestedValue = requestedTrainingValue(training);
+    const originalValue = selected ? requestedTrainingValue(trainingSnapshot(selected)) : null;
+    const change: TrainingChange = trainingOperation === "add"
+      ? { kind: "training", operation: "add", originalValue: null, requestedValue }
+      : trainingOperation === "edit"
+        ? { kind: "training", operation: "edit", trainingRecordId: selected!.id, originalValue: originalValue!, requestedValue }
+        : { kind: "training", operation: "remove", trainingRecordId: selected!.id, originalValue: originalValue!, requestedValue: null };
+    setTrainingChanges((current) => change.operation === "add" ? [...current, change] : [...current.filter((item) => !("trainingRecordId" in item && item.trainingRecordId === change.trainingRecordId)), change]);
+    setTrainingRecordId("");
+    setTraining(emptyTraining);
+    setError(null);
+  }
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
@@ -153,20 +269,31 @@ export function ProfileChangeRequestForm() {
     }
     setContactErrors(nextContactErrors);
     if (Object.keys(nextContactErrors).length) return;
-    const changes = [...contactChanges, ...qualificationChanges];
+    const changes = [...contactChanges, ...qualificationChanges, ...certificationChanges, ...trainingChanges];
     if (!changes.length) {
-      setError("Change at least one contact field or add an eligibility proposal.");
+      setError("Change at least one contact field or add an eligibility, certification, or training change.");
+      return;
+    }
+    const files = Array.from((formElement.elements.namedItem("documents") as HTMLInputElement | null)?.files ?? []);
+    if (!files.length) {
+      setError("Attach at least one supporting document.");
       return;
     }
     try {
       await submit.mutateAsync({
         draft: { requestId: crypto.randomUUID(), note: String(form.get("note") ?? ""), changes },
-        files: Array.from((formElement.elements.namedItem("documents") as HTMLInputElement | null)?.files ?? []),
+        files,
       });
       formElement.reset();
       setQualificationChanges([]);
+      setCertificationChanges([]);
+      setTrainingChanges([]);
       setQualification(emptyQualification);
       setQualificationId("");
+      setCertification(emptyCertification);
+      setCertificationId("");
+      setTraining(emptyTraining);
+      setTrainingRecordId("");
       setSuccess("Request submitted. An administrator will review it; your official profile stays unchanged until then.");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Unable to submit your request.");
@@ -200,7 +327,7 @@ export function ProfileChangeRequestForm() {
           Add, edit, or remove any number of eligibility entries. Each proposal is reviewed with the rest of this request.
         </p>
         <div className="grid gap-4 sm:grid-cols-2">
-          <FormField htmlFor="qualification-operation" label="Requested action">
+          <FormField htmlFor="qualification-operation" label="Eligibility action">
             <select
               className={nativeSelectClassName}
               id="qualification-operation"
@@ -250,7 +377,7 @@ export function ProfileChangeRequestForm() {
               <Input id="awarded-on" onChange={(event) => changeQualificationField("awardedOn", event.target.value)} type="date" value={qualification.awardedOn} />
             </FormField>
             <div className="sm:col-span-2">
-              <FormField error={qualificationErrors.notes} htmlFor="qualification-notes" label="Remarks">
+              <FormField error={qualificationErrors.notes} htmlFor="qualification-notes" label="Eligibility remarks">
                 <Textarea id="qualification-notes" maxLength={2000} onChange={(event) => changeQualificationField("notes", event.target.value)} value={qualification.notes} />
               </FormField>
             </div>
@@ -259,7 +386,7 @@ export function ProfileChangeRequestForm() {
           <p className="rounded-lg bg-muted px-3 py-2 text-sm">The selected eligibility will be removed only if the request is approved.</p>
         )}
         <Button onClick={addQualificationChange} type="button" variant="outline">
-          Add proposal to request
+          Add eligibility change
         </Button>
         {qualificationChanges.length ? (
           <ul aria-label="Eligibility proposals" className="space-y-2">
@@ -283,10 +410,52 @@ export function ProfileChangeRequestForm() {
           </ul>
         ) : null}
       </fieldset>
-      <FormField description="Optional. Up to 10 PDF, PNG, JPEG, or WEBP files, 10 MiB each." htmlFor="documents" label="Supporting documents">
-        <Input accept="application/pdf,image/png,image/jpeg,image/webp" id="documents" multiple name="documents" type="file" />
+      <fieldset className="space-y-4 rounded-xl border p-4">
+        <legend className="px-1 text-base font-semibold">Certification proposals</legend>
+        <p className="text-sm text-muted-foreground">Request a certification or course record to be added, corrected, or removed. HR reviews it before changing your official file.</p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <FormField htmlFor="certification-operation" label="Certification action">
+            <select className={nativeSelectClassName} id="certification-operation" onChange={(event) => { setCertificationOperation(event.target.value as "add" | "edit" | "remove"); setCertificationErrors({}); if (event.target.value === "add") { setCertificationId(""); setCertification(emptyCertification); } }} value={certificationOperation}>
+              <option value="add">Add certification</option><option value="edit">Edit certification</option><option value="remove">Remove certification</option>
+            </select>
+          </FormField>
+          {certificationOperation !== "add" ? <FormField description={certificationRows.length ? undefined : "You have no certifications on record yet."} error={certificationErrors.certificationId} htmlFor="certification-id" label="Existing certification" required>
+            <select className={nativeSelectClassName} id="certification-id" onChange={(event) => selectCertification(event.target.value)} value={certificationId}><option value="">Choose a certification</option>{certificationRows.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
+          </FormField> : null}
+        </div>
+        {certificationOperation !== "remove" ? <div className="grid gap-4 sm:grid-cols-2">
+          <FormField error={certificationErrors.name} htmlFor="certification-name" label="Certification / course" required><select className={nativeSelectClassName} id="certification-name" onChange={(event) => changeCertificationField("name", event.target.value)} value={certification.name}><option value="">Select a certification / course</option>{withSavedValue(PNP_CERTIFICATIONS, certification.name).map((choice) => <option key={choice} value={choice}>{choice}</option>)}</select></FormField>
+          <FormField error={certificationErrors.issuer} htmlFor="certification-issuer" label="Issuer"><select className={nativeSelectClassName} id="certification-issuer" onChange={(event) => changeCertificationField("issuer", event.target.value)} value={certification.issuer}><option value="">Not specified</option>{withSavedValue(PNP_ISSUERS, certification.issuer).map((choice) => <option key={choice} value={choice}>{choice}</option>)}</select></FormField>
+          <FormField error={certificationErrors.issuedOn} htmlFor="certification-issued-on" label="Issue date" required><Input id="certification-issued-on" onChange={(event) => changeCertificationField("issuedOn", event.target.value)} type="date" value={certification.issuedOn} /></FormField>
+          <FormField error={certificationErrors.expiresOn} htmlFor="certification-expires-on" label="Expiry date"><Input id="certification-expires-on" onChange={(event) => changeCertificationField("expiresOn", event.target.value)} type="date" value={certification.expiresOn} /></FormField>
+          <FormField error={certificationErrors.credentialId} htmlFor="certification-credential-id" label="Credential ID"><Input id="certification-credential-id" maxLength={160} onChange={(event) => changeCertificationField("credentialId", event.target.value)} value={certification.credentialId} /></FormField>
+          <FormField error={certificationErrors.notes} htmlFor="certification-notes" label="Certification remarks"><Textarea id="certification-notes" maxLength={2000} onChange={(event) => changeCertificationField("notes", event.target.value)} value={certification.notes} /></FormField>
+        </div> : <p className="rounded-lg bg-muted px-3 py-2 text-sm">The selected certification will be removed only if the request is approved.</p>}
+        <Button onClick={addCertificationChange} type="button" variant="outline">Add certification change</Button>
+        {certificationChanges.length ? <ul aria-label="Certification proposals" className="space-y-2">{certificationChanges.map((change, index) => <li className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-muted px-3 py-2 text-sm" key={`${change.operation}-${"certificationId" in change ? change.certificationId : index}`}><span>{certificationDescription(change)}</span><Button aria-label={`Remove certification proposal ${index + 1}`} onClick={() => setCertificationChanges((current) => current.filter((_, currentIndex) => currentIndex !== index))} size="sm" type="button" variant="outline">Remove</Button></li>)}</ul> : null}
+      </fieldset>
+      <fieldset className="space-y-4 rounded-xl border p-4">
+        <legend className="px-1 text-base font-semibold">Training proposals</legend>
+        <p className="text-sm text-muted-foreground">Request training records to be added, corrected, or removed. HR reviews every proposed change.</p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <FormField htmlFor="training-operation" label="Training action"><select className={nativeSelectClassName} id="training-operation" onChange={(event) => { setTrainingOperation(event.target.value as "add" | "edit" | "remove"); setTrainingErrors({}); if (event.target.value === "add") { setTrainingRecordId(""); setTraining(emptyTraining); } }} value={trainingOperation}><option value="add">Add training</option><option value="edit">Edit training</option><option value="remove">Remove training</option></select></FormField>
+          {trainingOperation !== "add" ? <FormField description={trainingRows.length ? undefined : "You have no training on record yet."} error={trainingErrors.trainingRecordId} htmlFor="training-record-id" label="Existing training" required><select className={nativeSelectClassName} id="training-record-id" onChange={(event) => selectTraining(event.target.value)} value={trainingRecordId}><option value="">Choose a training record</option>{trainingRows.map((item) => <option key={item.id} value={item.id}>{item.course_name}</option>)}</select></FormField> : null}
+        </div>
+        {trainingOperation !== "remove" ? <div className="grid gap-4 sm:grid-cols-2">
+          <FormField error={trainingErrors.courseName} htmlFor="training-course-name" label="Training course" required><select className={nativeSelectClassName} id="training-course-name" onChange={(event) => changeTrainingField("courseName", event.target.value)} value={training.courseName}><option value="">Select a training course</option>{withSavedValue(PNP_TRAININGS, training.courseName).map((choice) => <option key={choice} value={choice}>{choice}</option>)}</select></FormField>
+          <FormField error={trainingErrors.provider} htmlFor="training-provider" label="Training provider" required><select className={nativeSelectClassName} id="training-provider" onChange={(event) => changeTrainingField("provider", event.target.value)} value={training.provider}><option value="">Select the provider</option>{withSavedValue(PNP_TRAINING_PROVIDERS, training.provider).map((choice) => <option key={choice} value={choice}>{choice}</option>)}</select></FormField>
+          <FormField error={trainingErrors.completedOn} htmlFor="training-completed-on" label="Completion date" required><Input id="training-completed-on" onChange={(event) => changeTrainingField("completedOn", event.target.value)} type="date" value={training.completedOn} /></FormField>
+          <FormField error={trainingErrors.expiresOn} htmlFor="training-expires-on" label="Expiry date"><Input id="training-expires-on" onChange={(event) => changeTrainingField("expiresOn", event.target.value)} type="date" value={training.expiresOn} /></FormField>
+          <FormField error={trainingErrors.hours} htmlFor="training-hours" label="Hours"><Input id="training-hours" max="9999.99" min="0" onChange={(event) => changeTrainingField("hours", event.target.value)} step="0.01" type="number" value={training.hours} /></FormField>
+          <FormField error={trainingErrors.notes} htmlFor="training-notes" label="Training remarks"><Textarea id="training-notes" maxLength={2000} onChange={(event) => changeTrainingField("notes", event.target.value)} value={training.notes} /></FormField>
+        </div> : <p className="rounded-lg bg-muted px-3 py-2 text-sm">The selected training record will be removed only if the request is approved.</p>}
+        <Button onClick={addTrainingChange} type="button" variant="outline">Add training change</Button>
+        {trainingChanges.length ? <ul aria-label="Training proposals" className="space-y-2">{trainingChanges.map((change, index) => <li className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-muted px-3 py-2 text-sm" key={`${change.operation}-${"trainingRecordId" in change ? change.trainingRecordId : index}`}><span>{trainingDescription(change)}</span><Button aria-label={`Remove training proposal ${index + 1}`} onClick={() => setTrainingChanges((current) => current.filter((_, currentIndex) => currentIndex !== index))} size="sm" type="button" variant="outline">Remove</Button></li>)}</ul> : null}
+      </fieldset>
+      <FormField description="Required. Up to 10 PDF, PNG, JPEG, or WEBP files, 10 MiB each." htmlFor="documents" label="Supporting documents" required>
+        <Input accept="application/pdf,image/png,image/jpeg,image/webp" id="documents" multiple name="documents" required type="file" />
       </FormField>
-      <FormField htmlFor="request-note" label="Note for the reviewer">
+      <FormField htmlFor="request-note" label="Remarks">
         <Textarea id="request-note" maxLength={2000} name="note" />
       </FormField>
       {error ? <ErrorState message={error} /> : null}

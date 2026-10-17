@@ -16,8 +16,8 @@ export function applicationCount(job: HrJobLike) {
 }
 
 export function jobActions(job: HrJobLike) {
-  const canDelete = job.status === "draft" && applicationCount(job) === 0;
-  return { canDelete, canWithdraw: job.status !== "closed" && !canDelete };
+  const canDelete = (job.status === "draft" || job.status === "closed") && applicationCount(job) === 0;
+  return { canDelete, canWithdraw: job.status === "published" };
 }
 
 const DAY = 86_400_000;

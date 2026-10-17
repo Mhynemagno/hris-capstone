@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { queryKeys } from "@/lib/query-keys";
-import { getMyAccountEmail, listHrRegisteredApplicants, listMyApplicantEducation, listMyApplicationHistory, removeMyApplicantProfileDocument, saveMyApplicantEducation } from "@/queries/applicant-portal";
+import { getMyAccountEmail, listApplicantEducationFor, listHrRegisteredApplicants, listMyApplicantEducation, listMyApplicationHistory, removeMyApplicantProfileDocument, saveMyApplicantEducation } from "@/queries/applicant-portal";
 import { listMyApplications } from "@/queries/recruitment";
 import type { ApplicantEducationInput } from "@/schemas/applicant-portal";
 
@@ -13,6 +13,10 @@ export function useMyAccountEmail() {
 
 export function useMyApplicantEducation() {
   return useQuery({ queryKey: queryKeys.recruitment.myEducation(), queryFn: listMyApplicantEducation });
+}
+
+export function useApplicantEducationFor(applicantId: string | undefined) {
+  return useQuery({ queryKey: ["recruitment", "applicant-education", applicantId] as const, queryFn: () => listApplicantEducationFor(applicantId!), enabled: Boolean(applicantId) });
 }
 
 export function useSaveMyApplicantEducation() {

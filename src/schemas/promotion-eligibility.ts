@@ -5,6 +5,8 @@ import { isoDateSchema, paginationSchema, uuidSchema } from "./common";
 const optionalText = (maximum: number) => z.string().trim().max(maximum).transform((value) => value || null).optional().default(null);
 const positiveInteger = z.coerce.number().int().positive();
 const optionalRating = z.preprocess((value) => value === "" || value === undefined ? null : value, z.coerce.number().int().min(1).max(5).nullable());
+const optionalPositiveInteger = (maximum: number) => z.preprocess((value) => value === "" || value === undefined ? null : value, z.coerce.number().int().min(1).max(maximum).nullable()).default(null);
+const optionalScore = z.preprocess((value) => value === "" || value === undefined ? null : value, z.coerce.number().min(0).max(100).nullable()).default(null);
 
 export const promotionRecordKindSchema = z.enum(["qualification", "certification", "training"]);
 export const promotionRecommendationSchema = z.enum(["recommended", "not_recommended", "deferred"]);
@@ -18,6 +20,8 @@ export const promotionDocketSchema = z.object({
 const promotionReadinessResponseSchema = z.object({
   yearsOfService: z.number().int().min(0),
   minimumYearsOfService: z.number().int().min(0),
+  timeInGradeYears: z.number().int().min(0).optional(),
+  minimumTimeInGradeYears: z.number().int().min(1).nullable().optional(),
   isReady: z.boolean(),
   missingRequirements: z.array(z.string()),
   requirements: z.array(z.object({ label: z.string(), met: z.boolean() })),
@@ -48,16 +52,22 @@ export const promotionCriterionRequirementSchema = z.object({
 
 export const promotionCriterionSchema = z.object({
   targetRankId: positiveInteger,
-  minimumYearsOfService: z.coerce.number().int().min(1).max(3),
-  // Promotion is judged on years of service and trainings only; the rating minimum is kept for older criteria.
+  minimumYearsOfService: z.coerce.number().int().min(1).max(30),
   minimumPerformanceRating: optionalRating,
+  minimumTimeInGradeYears: optionalPositiveInteger(30),
+  iperReviewPeriodMonths: optionalPositiveInteger(60),
+  pftMinimumScore: optionalScore,
+  pftValidityMonths: optionalPositiveInteger(60),
   requirements: z.array(promotionCriterionRequirementSchema)
-    .min(1, "Add at least one requirement.")
+    .min(0)
     .max(30)
     .refine(
       (requirements) => new Set(requirements.map((requirement) => `${requirement.recordKind}:${requirement.requiredName.toLowerCase()}`)).size === requirements.length,
       "Each requirement can only be added once.",
     ),
+}).superRefine((value, context) => {
+  if ((value.minimumPerformanceRating === null) !== (value.iperReviewPeriodMonths === null)) context.addIssue({ code: "custom", path: ["iperReviewPeriodMonths"], message: "Set both the IPER rating and review period, or leave both blank." });
+  if ((value.pftMinimumScore === null) !== (value.pftValidityMonths === null)) context.addIssue({ code: "custom", path: ["pftValidityMonths"], message: "Set both the PFT score and validity period, or leave both blank." });
 });
 
 export const promotionCriterionUpdateSchema = promotionCriterionSchema.extend({

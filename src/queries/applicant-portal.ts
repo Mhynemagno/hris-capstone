@@ -20,6 +20,13 @@ export async function listMyApplicantEducation() {
   return (data ?? []) as ApplicantEducation[];
 }
 
+/** HR reads the applicant's submitted education while reviewing an application. */
+export async function listApplicantEducationFor(applicantId: string) {
+  const { data, error } = await createBrowserSupabaseClient().from("applicant_education").select("*").eq("applicant_id", applicantId).order("level");
+  throwIfError(error);
+  return (data ?? []) as ApplicantEducation[];
+}
+
 /** Saves one row per education level; a level left completely blank is removed. */
 export async function saveMyApplicantEducation(applicantId: string, input: ApplicantEducationInput) {
   const values = applicantEducationSchema.parse(input);

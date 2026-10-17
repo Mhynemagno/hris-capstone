@@ -20,6 +20,7 @@ import {
   type DocumentKind,
   replaceMyEmployeeProfilePhoto,
   removeMyEmployeeProfilePhoto,
+  requestEmployeeRecordAssistance,
   type PersonnelKind,
 } from "@/queries/personnel-records";
 import type { EmployeeDirectoryFilters, EmployeeInput, ServiceHistoryInput, QualificationInput, CertificationInput, TrainingRecordInput } from "@/schemas/personnel-records";
@@ -42,6 +43,10 @@ export function useEmployee(employeeId: string) {
 
 export function useEmployeeForCurrentUser() {
   return useQuery({ queryKey: ["personnel-records", "current-user"] as const, queryFn: getEmployeeForCurrentUser });
+}
+
+export function useRequestEmployeeRecordAssistance() {
+  return useMutation({ mutationFn: requestEmployeeRecordAssistance });
 }
 
 export function useEmployeeForProfile(profileId: string) {

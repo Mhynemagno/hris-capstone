@@ -13,7 +13,7 @@ vi.mock("./overview-tab", () => ({ OverviewTab: () => <p>overview content</p> })
 vi.mock("./profile-tab", () => ({ ProfileTab: () => <p>profile content</p> }));
 vi.mock("./documents-tab", () => ({ DocumentsTab: () => <p>documents content</p> }));
 vi.mock("./activity-tab", () => ({ ActivityTab: () => <p>activity content</p> }));
-vi.mock("@/hooks/use-applicant-portal", () => ({ useHrRegisteredApplicants: () => ({ data: [{ applicant_id: "a1", email: "ana@example.test" }] }) }));
+vi.mock("@/hooks/use-applicant-portal", () => ({ useHrRegisteredApplicants: () => ({ data: [{ applicant_id: "a1", email: "ana@example.test" }] }), useApplicantEducationFor: () => ({ data: [], error: null, refetch: vi.fn() }) }));
 vi.mock("@/hooks/use-recruitment", () => ({
   useMyApplication: () => (state.missing ? { isLoading: false, error: null, data: null } : {
     isLoading: false, error: null,
