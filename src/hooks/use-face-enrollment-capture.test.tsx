@@ -82,13 +82,13 @@ describe("useFaceEnrollmentCapture", () => {
     expect(track.stop).toHaveBeenCalled();
   });
 
-  it("surfaces a database rejection such as a face registered to someone else", async () => {
+  it("surfaces the HR-only conflicting employee identity from the database", async () => {
     faceApi.detectFacesWithDescriptors.mockResolvedValue([sample(0.1)]);
-    enroll.mockRejectedValue(new Error("This face is too similar to another registered employee."));
+    enroll.mockRejectedValue(new Error("This scan is too similar to the face registered to Ana One (PAT-001). This employee is not registered yet. Review or delete that face registration and then try again."));
     renderCapture();
 
     act(() => latest.begin({ employeeId, consentConfirmed: true }));
-    await waitFor(() => expect(latest.state).toEqual({ phase: "error", message: "This face is too similar to another registered employee." }), timeout);
+    await waitFor(() => expect(latest.state).toEqual({ phase: "error", message: "This scan is too similar to the face registered to Ana One (PAT-001). This employee is not registered yet. Review or delete that face registration and then try again." }), timeout);
   });
 
   it("stops the camera and discards samples when cancelled", async () => {
