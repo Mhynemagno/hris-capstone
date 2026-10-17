@@ -48,6 +48,27 @@ describe("EmployeePromotionEligibility", () => {
     expect(screen.getByText("Requirements pending")).toBeVisible();
   });
 
+  it("uses the server-calculated time-in-grade, IPER, and PFT checks without adding a duplicate service row", () => {
+    mocks.query.mockReturnValue({ isLoading: false, error: null, data: data({}, {
+      timeInGradeYears: 2,
+      minimumTimeInGradeYears: 3,
+      missingRequirements: ["Time in Grade (3 years)", "PFT score 75+ (valid 12 months)"],
+      requirements: [
+        { label: "Time in Grade (3 years)", met: false },
+        { label: "IPER rating 4+ within 12 months", met: true },
+        { label: "PFT score 75+ (valid 12 months)", met: false },
+        { label: "PSJLC", met: true },
+      ],
+    }) });
+    render(<EmployeePromotionEligibility />);
+    expect(screen.getByText((_, element) => element?.textContent === "(Req: 3 Yrs)")).toBeVisible();
+    expect(screen.getAllByText("2 Yrs")).toHaveLength(2);
+    expect(screen.getAllByText(/Time in Grade \(3 years\)/)).toHaveLength(2);
+    expect(screen.getByText(/IPER rating 4\+ within 12 months/)).toBeVisible();
+    expect(screen.getAllByText(/PFT score 75\+ \(valid 12 months\)/)).toHaveLength(2);
+    expect(screen.getByText("2 of 4 Criteria Verified")).toBeVisible();
+  });
+
   it("lets a ready employee open the docket modal, requires remarks, and submits through the mutation", async () => {
     const user = userEvent.setup();
     mocks.query.mockReturnValue({ isLoading: false, error: null, data: data({}, { isReady: true, missingRequirements: [], requirements: [{ label: "Basic Course", met: true }] }) });

@@ -35,11 +35,14 @@ export function EmployeePromotionEligibility() {
   }
 
   const { criterionId, targetRankName, targetRankCode, currentRankName, docket, readiness } = query.data;
-  const requirements = readiness.requirements;
-  const met = requirements.filter((row) => row.met).length;
-  const serviceMet = readiness.yearsOfService >= readiness.minimumYearsOfService;
-  const total = requirements.length + 1;
-  const verified = met + (serviceMet ? 1 : 0);
+  const timeInGradeYears = readiness.timeInGradeYears ?? readiness.yearsOfService;
+  const minimumTimeInGradeYears = readiness.minimumTimeInGradeYears ?? readiness.minimumYearsOfService;
+  const requirements = readiness.requirements.some((row) => row.label.startsWith("Time in Grade"))
+    ? readiness.requirements
+    : [{ label: `Time in Grade (${minimumTimeInGradeYears} years)`, met: timeInGradeYears >= minimumTimeInGradeYears }, ...readiness.requirements];
+  const verified = requirements.filter((row) => row.met).length;
+  const total = Math.max(requirements.length, 1);
+  const serviceMet = timeInGradeYears >= minimumTimeInGradeYears;
   const percent = Math.round((verified / total) * 100);
   const canSubmit = readiness.isReady && !docket;
   const submit = (
@@ -74,8 +77,8 @@ export function EmployeePromotionEligibility() {
           <div className="space-y-1 border-t border-slate-100 pt-4 md:border-t-0 md:border-l md:pt-0 md:pl-6">
             <p className={eyebrow}>Time-in-Grade / Service</p>
             <div className="flex items-baseline gap-2">
-              <span className="font-mono text-2xl font-black text-slate-900">{years(readiness.yearsOfService)}</span>
-              <span className={cn("text-xs font-semibold", serviceMet ? "text-emerald-700" : "text-rose-700")}>(Req: {years(readiness.minimumYearsOfService)})</span>
+              <span className="font-mono text-2xl font-black text-slate-900">{years(timeInGradeYears)}</span>
+              <span className={cn("text-xs font-semibold", serviceMet ? "text-emerald-700" : "text-rose-700")}>(Req: {years(minimumTimeInGradeYears)})</span>
             </div>
           </div>
           <div className="space-y-1 border-t border-slate-100 pt-4 md:border-t-0 md:border-l md:pt-0 md:pl-6">
@@ -110,9 +113,8 @@ export function EmployeePromotionEligibility() {
           <span className="flex items-center gap-1 text-[11px] font-medium text-slate-500"><ShieldCheck aria-hidden="true" className="size-3.5 text-blue-600" />Checked against your current records</span>
         </div>
         <ul className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <CriterionCard detail={`Minimum ${years(readiness.minimumYearsOfService)} required.`} met={serviceMet} recorded={years(readiness.yearsOfService)} recordedLabel="Recorded:" title="1. Length of Service" />
           {requirements.map((row, index) => (
-            <CriterionCard detail="Required record for this rank." key={row.label} met={row.met} recorded={row.met ? "On record" : "Not on record"} recordedLabel="Status:" title={`${index + 2}. ${row.label}`} />
+            <CriterionCard detail={row.label.startsWith("Time in Grade") ? `Minimum ${years(minimumTimeInGradeYears)} required.` : "Required record for this rank."} key={row.label} met={row.met} recorded={row.label.startsWith("Time in Grade") ? years(timeInGradeYears) : row.met ? "On record" : "Not on record"} recordedLabel={row.label.startsWith("Time in Grade") ? "Recorded:" : "Status:"} title={`${index + 1}. ${row.label}`} />
           ))}
         </ul>
       </section>
@@ -139,7 +141,7 @@ export function EmployeePromotionEligibility() {
                 <p className="text-xs font-bold text-slate-900">Every requirement is on record.</p>
                 <p className="mt-0.5 text-[11px] text-slate-500">
                   {!serviceMet
-                    ? `${years(readiness.minimumYearsOfService)} of service are needed before you can file.`
+                    ? `${years(minimumTimeInGradeYears)} in your current grade are needed before you can file.`
                     : docket
                       ? `Your docket was submitted on ${submittedOn}. HR will review it through the existing promotion evaluation.`
                       : "Your dossier is complete. You may submit your docket to the San Juan City Police Promotion Board."}

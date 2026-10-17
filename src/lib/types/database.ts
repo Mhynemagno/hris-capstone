@@ -508,6 +508,10 @@ export type PromotionCriterion = {
   target_rank_id: number;
   minimum_years_of_service: number;
   minimum_performance_rating: number | null;
+  minimum_time_in_grade_years?: number | null;
+  iper_review_period_months?: number | null;
+  pft_minimum_score?: number | null;
+  pft_validity_months?: number | null;
   is_active: boolean;
   created_by_user_id: string | null;
   updated_by_user_id: string | null;
@@ -545,6 +549,17 @@ export type PerformanceRating = {
   updated_by_user_id: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type PhysicalFitnessResult = {
+  id: string;
+  employee_id: string;
+  score: number;
+  assessed_on: string;
+  valid_until: string;
+  notes: string | null;
+  recorded_by_user_id: string;
+  created_at: string;
 };
 
 export type PromotionEvaluation = {
@@ -590,6 +605,8 @@ export type EmployeePromotionEligibilitySummary = {
 export type PromotionReadiness = {
   yearsOfService: number;
   minimumYearsOfService: number;
+  timeInGradeYears?: number;
+  minimumTimeInGradeYears?: number | null;
   isReady: boolean;
   missingRequirements: string[];
   requirements: { label: string; met: boolean }[];
