@@ -1,6 +1,6 @@
 "use client";
 
-import { Contact, Eye, FileSignature, SlidersHorizontal, SquarePen, Trash2 } from "lucide-react";
+import { CircleX, Contact, Eye, FileSignature, SlidersHorizontal, SquarePen } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -212,7 +212,7 @@ export function StaffApplicantRoster() {
                               <Link aria-label="View Profile" className={cn(staffIconButton, "hover:bg-blue-50 hover:text-blue-600")} href={`/hr/applications/${row.id}`} title="View Profile"><Eye aria-hidden="true" className="size-3.5" /></Link>
                               <Link aria-label="Edit Candidate" className={cn(staffIconButton, "hover:bg-amber-50 hover:text-amber-600")} href={`/hr/applications/${row.id}#stage-actions`} title="Edit Candidate"><SquarePen aria-hidden="true" className="size-3.5" /></Link>
                               {row.status !== "Hired" && row.status !== "Not Selected" ? (
-                                <button aria-label="Delete Candidate" className={cn(staffIconButton, "hover:bg-rose-50 hover:text-rose-600")} onClick={() => { setDisqualifying(row); setReason(""); setReasonError(false); }} title="Delete Candidate" type="button"><Trash2 aria-hidden="true" className="size-3.5" /></button>
+                                <button aria-label="Disqualify Applicant" className={cn(staffIconButton, "hover:bg-rose-50 hover:text-rose-600")} onClick={() => { setDisqualifying(row); setReason(""); setReasonError(false); }} title="Disqualify Applicant" type="button"><CircleX aria-hidden="true" className="size-3.5" /></button>
                               ) : null}
                             </>
                           ) : (
@@ -237,12 +237,12 @@ export function StaffApplicantRoster() {
             <button className={staffButton.danger} disabled={transition.isPending} onClick={() => void disqualify()} type="button">Disqualify</button>
           </>
         )}
-        icon={<Trash2 aria-hidden="true" className="size-4" />}
+        icon={<CircleX aria-hidden="true" className="size-4" />}
         iconClassName="bg-rose-100 text-rose-700"
         onClose={() => setDisqualifying(null)}
         open={disqualifying !== null}
         subtitle="The application moves to Not Selected. This cannot be undone from the roster."
-        title="Disqualify or remove applicant?"
+        title="Disqualify applicant?"
       >
         <p className="font-semibold text-slate-800">{disqualifying?.name}</p>
         <div>

@@ -88,13 +88,13 @@ describe("StaffJobPostings (jobpost.html)", () => {
     expect(within(row).getByRole("link", { name: "Edit Posting" })).toHaveAttribute("href", "/hr/jobs/3");
   });
 
-  it("deletes a draft without applications", async () => {
+  it("deletes draft and closed postings without applications", async () => {
     mocks.remove.mockResolvedValue(undefined);
     render(<StaffJobPostings />);
-    const row = screen.getByText("Be one of us").closest("tr")!;
-    await userEvent.click(within(row).getByRole("button", { name: "Delete Posting" }));
+    const closedRow = screen.getByText("Patrolman/Patrolwoman Recruitment").closest("tr")!;
+    await userEvent.click(within(closedRow).getByRole("button", { name: "Delete Posting" }));
     expect(window.confirm).toHaveBeenCalledWith("Are you sure you want to delete this posting?");
-    expect(mocks.remove).toHaveBeenCalledWith({ entityId: 4 });
+    expect(mocks.remove).toHaveBeenCalledWith({ entityId: 2 });
     expect(mocks.notify).toHaveBeenCalledWith({ title: "Posting deleted" });
   });
 
@@ -107,7 +107,7 @@ describe("StaffJobPostings (jobpost.html)", () => {
     expect(mocks.notify).toHaveBeenCalledWith({ title: "Could not withdraw posting", description: "This posting can't be withdrawn.", tone: "error" });
   });
 
-  it("offers no delete or withdraw on a closed posting", () => {
+  it("offers no delete or withdraw on a closed posting that has applications", () => {
     render(<StaffJobPostings />);
     const row = screen.getByText("PCpl Vacancy").closest("tr")!;
     expect(within(row).queryByRole("button", { name: /Delete Posting|Withdraw Posting/ })).not.toBeInTheDocument();

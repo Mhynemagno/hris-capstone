@@ -6,11 +6,12 @@ const job = (overrides: Partial<HrJobLike>): HrJobLike => ({ id: 1, title: "Patr
 const today = new Date("2026-10-08T03:00:00Z");
 
 describe("job postings", () => {
-  it("allows deleting only empty drafts and withdrawing anything else still open", () => {
+  it("allows deleting empty drafts and closed postings, while only published postings can be withdrawn", () => {
     expect(jobActions(job({ status: "draft" }))).toEqual({ canDelete: true, canWithdraw: false });
-    expect(jobActions(job({ status: "draft", applications: [{ count: 2 }] }))).toEqual({ canDelete: false, canWithdraw: true });
+    expect(jobActions(job({ status: "draft", applications: [{ count: 2 }] }))).toEqual({ canDelete: false, canWithdraw: false });
     expect(jobActions(job({ status: "published" }))).toEqual({ canDelete: false, canWithdraw: true });
-    expect(jobActions(job({ status: "closed" }))).toEqual({ canDelete: false, canWithdraw: false });
+    expect(jobActions(job({ status: "closed" }))).toEqual({ canDelete: true, canWithdraw: false });
+    expect(jobActions(job({ status: "closed", applications: [{ count: 2 }] }))).toEqual({ canDelete: false, canWithdraw: false });
   });
 
   it("describes the deadline relative to today", () => {

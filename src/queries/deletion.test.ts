@@ -27,7 +27,7 @@ describe("deletion queries", () => {
     await deleteRecord("job_opening", "3");
 
     expect(rpc).toHaveBeenNthCalledWith(1, "delete_leave_type", { target_leave_type_id: "00000000-0000-4000-8000-000000000001" });
-    expect(rpc).toHaveBeenNthCalledWith(2, "delete_draft_job_opening", { target_job_id: 3 });
+    expect(rpc).toHaveBeenNthCalledWith(2, "delete_job_opening", { target_job_id: 3 });
   });
 
   it("deletes accounts through the audited Edge Function, not a direct RPC", async () => {

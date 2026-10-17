@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(38);
+select extensions.plan(41);
 
 -- Fixture accounts: two administrators, HR, an unused applicant, and an applicant with an application.
 insert into auth.users (id, aud, role, email, created_at, updated_at)
@@ -29,8 +29,21 @@ values ('Deletion used rank', 'DUR', 9301), ('Deletion criterion rank', 'DCR', 9
 insert into public.job_openings (department_id, rank_id, title, description, status, published_at, created_by_user_id)
 select (select id from public.departments where name = 'Deletion used department'), rank.id, opening.title, 'An opening used by the safe deletion regression tests.', opening.status, opening.published_at, '00000000-0000-4000-8000-000000009503'::uuid
 from public.ranks rank
-cross join (values ('Deletion draft opening', 'draft'::text, null::timestamptz), ('Deletion published opening', 'published'::text, now())) opening(title, status, published_at)
+cross join (values
+  ('Deletion draft opening', 'draft'::text, null::timestamptz),
+  ('Deletion published opening', 'published'::text, now()),
+  ('Deletion closed empty opening', 'closed'::text, null::timestamptz),
+  ('Deletion closed used opening', 'closed'::text, null::timestamptz)
+) opening(title, status, published_at)
 where rank.code = 'DUR';
+
+insert into public.applicants (profile_id, first_name, last_name)
+values ('00000000-0000-4000-8000-000000009505', 'Deletion', 'Applicant');
+insert into public.applications (id, applicant_id, job_opening_id, status)
+select '00000000-0000-4000-8000-000000009551', applicant.id, opening.id, 'Application Submission'
+from public.applicants applicant
+join public.job_openings opening on opening.title = 'Deletion closed used opening'
+where applicant.profile_id = '00000000-0000-4000-8000-000000009505';
 
 insert into public.leave_types (id, name, created_by_user_id, updated_by_user_id)
 values ('00000000-0000-4000-8000-000000009521', 'Deletion unused leave', '00000000-0000-4000-8000-000000009503', '00000000-0000-4000-8000-000000009503');
@@ -128,20 +141,29 @@ select extensions.ok(
   'Criteria deactivation is persisted and audited');
 
 -- ---------------------------------------------------------------------------
--- Job openings: drafts only, audited
+-- Job openings: only unused drafts/closed openings, audited
 -- ---------------------------------------------------------------------------
 set local role authenticated;
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000009505';
+select extensions.throws_ok(
+  $$select public.delete_job_opening((select id from public.job_openings where title = 'Deletion closed empty opening'))$$,
+  '42501', 'HR access is required.', 'Applicants cannot delete recruitment openings');
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000009503';
 select extensions.throws_like(
-  $$select public.delete_draft_job_opening((select id from public.job_openings where title = 'Deletion published opening'))$$,
-  '%Only draft openings can be deleted%Withdraw the opening%', 'Published openings cannot be deleted and point to withdrawal');
+  $$select public.delete_job_opening((select id from public.job_openings where title = 'Deletion published opening'))$$,
+  '%Only draft or closed openings with no applications can be deleted%Withdraw the opening%', 'Published openings cannot be deleted and point to withdrawal');
+select extensions.throws_like(
+  $$select public.delete_job_opening((select id from public.job_openings where title = 'Deletion closed used opening'))$$,
+  '%1 job applications%Withdraw the opening%', 'Closed openings with applications cannot be deleted');
 select extensions.lives_ok(
-  $$select public.delete_draft_job_opening((select id from public.job_openings where title = 'Deletion draft opening'))$$,
+  $$select public.delete_job_opening((select id from public.job_openings where title = 'Deletion closed empty opening'))$$,
+  'HR can delete an unreferenced closed opening');
+select extensions.lives_ok(
+  $$select public.delete_job_opening((select id from public.job_openings where title = 'Deletion draft opening'))$$,
   'HR can delete an unreferenced draft opening');
 set local role postgres;
-select extensions.ok(exists (
-  select 1 from public.audit_logs where entity_type = 'job_openings' and action = 'delete' and metadata ->> 'title' = 'Deletion draft opening'
-), 'Draft opening deletion is audited');
+select extensions.is((select count(*) from public.audit_logs where entity_type = 'job_openings' and action = 'delete' and metadata ->> 'title' in ('Deletion draft opening', 'Deletion closed empty opening')),
+  2::bigint, 'Draft and closed opening deletions are audited');
 
 -- ---------------------------------------------------------------------------
 -- Notifications: only the recipient

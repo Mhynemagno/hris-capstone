@@ -69,11 +69,13 @@ describe("StaffApplicantRoster (roster.html)", () => {
     expect(within(status).getByRole("option", { name: "Physical Agility Test" })).toBeInTheDocument();
   });
 
-  it("disqualifies an applicant only with a reason", async () => {
+  it("disqualifies an applicant only with a reason, without a delete-candidate action", async () => {
     mocks.transition.mockResolvedValue(undefined);
     render(<StaffApplicantRoster />);
-    await userEvent.click(within(screen.getByText("Aldrick Jamlani").closest("tr")!).getByRole("button", { name: "Delete Candidate" }));
-    const dialog = await screen.findByRole("dialog", { name: "Disqualify or remove applicant?" });
+    const row = screen.getByText("Aldrick Jamlani").closest("tr")!;
+    expect(within(row).queryByRole("button", { name: /delete candidate/i })).not.toBeInTheDocument();
+    await userEvent.click(within(row).getByRole("button", { name: "Disqualify Applicant" }));
+    const dialog = await screen.findByRole("dialog", { name: "Disqualify applicant?" });
     await userEvent.click(within(dialog).getByRole("button", { name: "Disqualify" }));
     expect(within(dialog).getByText("Enter a reason.")).toBeInTheDocument();
     expect(mocks.transition).not.toHaveBeenCalled();
