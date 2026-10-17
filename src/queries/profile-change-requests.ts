@@ -42,11 +42,12 @@ const extensionFor = (file: File) => ({ "application/pdf": "pdf", "image/png": "
 export async function submitProfileChangeRequest(draftWithRequestId: { requestId: string; note?: string; changes: unknown[] }, files: File[]) {
   const draft = profileChangeDraftSchema.parse({ note: draftWithRequestId.note, changes: draftWithRequestId.changes });
   const requestId = uuidSchema.parse(draftWithRequestId.requestId);
+  if (files.length < 1) throw new Error("Attach at least one supporting document.");
+  if (files.length > 10) throw new Error("Attach at most 10 supporting documents.");
   const client = createBrowserSupabaseClient(); const { data: userData, error: userError } = await client.auth.getUser(); throwIfError(userError);
   if (!userData.user) throw new Error("Authentication is required.");
   const bucket = client.storage.from("private-documents");
   const documents = [] as Array<{ objectPath: string; fileName: string; mimeType: "application/pdf" | "image/png" | "image/jpeg" | "image/webp"; sizeBytes: number }>;
-  if (files.length > 10) throw new Error("Attach at most 10 supporting documents.");
   try {
     for (const file of files) {
       const extension = extensionFor(file); if (!extension || file.size < 1 || file.size > 10 * 1024 * 1024) throw new Error("Supporting documents must be PDF, PNG, JPEG, or WEBP files up to 10 MiB.");

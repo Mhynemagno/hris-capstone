@@ -92,10 +92,12 @@ export type ProfileChangeRequestChange = {
   id: string;
   request_id: string;
   ordinal: number;
-  kind: "contact" | "qualification";
+  kind: "contact" | "qualification" | "certification" | "training";
   field_key: string | null;
   operation: "add" | "edit" | "remove" | null;
   qualification_id: string | null;
+  certification_id: string | null;
+  training_record_id: string | null;
   original_value: unknown;
   requested_value: unknown;
   created_at: string;

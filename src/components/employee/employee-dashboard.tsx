@@ -2,19 +2,20 @@
 
 import { Building2, CalendarCheck, Camera, CircleCheck, CircleDashed, MapPin, MapPinned } from "lucide-react";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import { serviceLength } from "@/components/personnel-records/profile-layout";
 import { avatarTone, initialsOf } from "@/components/staff-shell/ui/initials-avatar";
 import { PageTitle } from "@/components/staff-shell/ui/page-title";
 import { StatusPill } from "@/components/staff-shell/ui/status-pill";
+import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useDepartmentOptions, useRankOptions } from "@/hooks/use-administration";
 import { useMyAttendanceLogs } from "@/hooks/use-attendance-integration";
 import { useMyDeployments } from "@/hooks/use-deployment-tracking";
 import { useLeaveTypes, useMyLeaveBalances } from "@/hooks/use-leave-management";
-import { useEmployeeForCurrentUser, useEmployeeProfilePhotoUrl } from "@/hooks/use-personnel-records";
+import { useEmployeeForCurrentUser, useEmployeeProfilePhotoUrl, useRequestEmployeeRecordAssistance } from "@/hooks/use-personnel-records";
 import { useMyPromotionEligibility } from "@/hooks/use-promotion-eligibility";
 import { usePublishedAnnouncements } from "@/hooks/use-public-site";
 import { formatDate, formatDateRange } from "@/lib/format-date";
@@ -75,6 +76,8 @@ export function EmployeeDashboard() {
   const photo = useEmployeeProfilePhotoUrl(employee.data?.profile_image_path ?? null);
   const promotion = useMyPromotionEligibility();
   const announcements = usePublishedAnnouncements(3);
+  const recordAssistance = useRequestEmployeeRecordAssistance();
+  const [recordAssistanceMessage, setRecordAssistanceMessage] = useState<string | null>(null);
 
   if (employee.isLoading) return <LoadingState label="Loading your dashboard…" />;
   if (employee.error) return <ErrorState message={employee.error.message} />;
@@ -83,7 +86,16 @@ export function EmployeeDashboard() {
     return (
       <div className="space-y-6">
         <PageTitle subtitle="Your live personnel overview." title="Personnel Dashboard" />
-        <p className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600">Your official personnel record has not been linked to this account yet. Contact HR for help.</p>
+        <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600">
+          <p>Your official personnel record has not been linked to this account yet. Contact HR for help.</p>
+          <Button disabled={recordAssistance.isPending} onClick={() => {
+            setRecordAssistanceMessage(null);
+            void recordAssistance.mutateAsync().then(() => setRecordAssistanceMessage("HR has been notified to help link your record.")).catch((cause: unknown) => setRecordAssistanceMessage(cause instanceof Error ? cause.message : "Unable to notify HR right now."));
+          }} type="button" variant="outline">
+            {recordAssistance.isPending ? "Contacting HR…" : "Contact HR"}
+          </Button>
+          {recordAssistanceMessage ? <p role="status">{recordAssistanceMessage}</p> : null}
+        </section>
       </div>
     );
   }

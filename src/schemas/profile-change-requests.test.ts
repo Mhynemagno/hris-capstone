@@ -54,6 +54,18 @@ describe("profile change request schemas", () => {
           originalValue: qualification,
           requestedValue: null,
         },
+        {
+          kind: "certification",
+          operation: "add",
+          originalValue: null,
+          requestedValue: { name: "Public Safety Basic Recruit Course (PSBRC)", issuer: null, credentialId: null, issuedOn: "2024-06-01", expiresOn: null, notes: null },
+        },
+        {
+          kind: "training",
+          operation: "add",
+          originalValue: null,
+          requestedValue: { courseName: "Field Training Program (FTP)", provider: "National Police Training Institute (NPTI)", completedOn: "2024-06-01", expiresOn: null, hours: 80, notes: null },
+        },
       ],
       documents: [{
         objectPath: `profile-change-requests/${employeeUserId}/${requestId}/123e4567-e89b-42d3-a456-426614174003.pdf`,
@@ -67,6 +79,8 @@ describe("profile change request schemas", () => {
       changes: expect.arrayContaining([
         expect.objectContaining({ kind: "contact", field: "phone", requestedValue: "+976 222 2222" }),
         expect.objectContaining({ kind: "qualification", operation: "edit", requestedValue: expect.objectContaining({ institution: "Updated National University" }) }),
+        expect.objectContaining({ kind: "certification", requestedValue: expect.objectContaining({ name: "Public Safety Basic Recruit Course (PSBRC)" }) }),
+        expect.objectContaining({ kind: "training", requestedValue: expect.objectContaining({ courseName: "Field Training Program (FTP)", hours: 80 }) }),
       ]),
       documents: [expect.objectContaining({ fileName: "evidence.pdf" })],
     });
@@ -76,6 +90,11 @@ describe("profile change request schemas", () => {
     expect(profileChangeSubmissionSchema.safeParse({ requestId, changes: [], documents: [] }).success).toBe(false);
     expect(profileChangeContactChangeSchema.safeParse({
       kind: "contact", field: "employmentStatus", originalValue: "active", requestedValue: "inactive",
+    }).success).toBe(false);
+    expect(profileChangeSubmissionSchema.safeParse({
+      requestId,
+      changes: [{ kind: "contact", field: "phone", originalValue: null, requestedValue: "+976 99112233" }],
+      documents: [],
     }).success).toBe(false);
     expect(profileChangeSubmissionSchema.safeParse({
       requestId,

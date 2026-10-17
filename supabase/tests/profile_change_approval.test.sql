@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(30);
+select extensions.plan(42);
 
 select extensions.has_table('public', 'profile_change_requests', 'Profile change request headers exist');
 select extensions.has_table('public', 'profile_change_request_changes', 'Proposed changes exist');
@@ -17,14 +17,15 @@ insert into auth.users (id, aud, role, email, created_at, updated_at)
 values
   ('00000000-0000-4000-8000-000000000101', 'authenticated', 'authenticated', 'profile-admin@example.test', now(), now()),
   ('00000000-0000-4000-8000-000000000102', 'authenticated', 'authenticated', 'profile-employee@example.test', now(), now()),
-  ('00000000-0000-4000-8000-000000000103', 'authenticated', 'authenticated', 'profile-other@example.test', now(), now());
+  ('00000000-0000-4000-8000-000000000103', 'authenticated', 'authenticated', 'profile-other@example.test', now(), now()),
+  ('00000000-0000-4000-8000-000000000104', 'authenticated', 'authenticated', 'profile-unlinked@example.test', now(), now());
 
 update public.user_roles
 set role = case user_id
   when '00000000-0000-4000-8000-000000000101'::uuid then 'system_administrator'::public.app_role
   else 'employee'::public.app_role
 end
-where user_id in ('00000000-0000-4000-8000-000000000101'::uuid, '00000000-0000-4000-8000-000000000102'::uuid, '00000000-0000-4000-8000-000000000103'::uuid);
+where user_id in ('00000000-0000-4000-8000-000000000101'::uuid, '00000000-0000-4000-8000-000000000102'::uuid, '00000000-0000-4000-8000-000000000103'::uuid, '00000000-0000-4000-8000-000000000104'::uuid);
 
 insert into public.employees (id, profile_id, employee_number, first_name, last_name, personal_email, employment_started_on)
 values
@@ -32,11 +33,23 @@ values
   ('00000000-0000-4000-8000-000000000202', '00000000-0000-4000-8000-000000000103', 'PROF-002', 'Other', 'Employee', 'profile-other@example.test', '2024-01-01');
 insert into public.qualifications (id, employee_id, name, institution, awarded_on)
 values ('00000000-0000-4000-8000-000000000401', '00000000-0000-4000-8000-000000000201', 'Diploma', 'Fixture University', '2020-01-01');
+insert into public.certifications (id, employee_id, name, issuer, issued_on)
+values ('00000000-0000-4000-8000-000000000402', '00000000-0000-4000-8000-000000000201', 'Public Safety Basic Recruit Course (PSBRC)', 'Fixture issuer', '2020-01-01');
+insert into public.training_records (id, employee_id, course_name, provider, completed_on)
+values ('00000000-0000-4000-8000-000000000403', '00000000-0000-4000-8000-000000000201', 'Field Training Program (FTP)', 'Fixture provider', '2020-01-01');
+
+create function public.profile_change_test_document(target_request_id uuid) returns jsonb language plpgsql as $$
+declare target_path text := 'profile-change-requests/' || auth.uid()::text || '/' || target_request_id::text || '/11111111-1111-4111-8111-111111111111.pdf';
+begin
+  insert into storage.objects (bucket_id, name, owner_id) values ('private-documents', target_path, auth.uid()::text);
+  return jsonb_build_array(jsonb_build_object('objectPath', target_path, 'fileName', 'proof.pdf', 'mimeType', 'application/pdf', 'sizeBytes', 100));
+end;
+$$;
 
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000102';
 select extensions.lives_ok(
-  $$select public.submit_profile_change_request('00000000-0000-4000-8000-000000000301'::uuid, 'Updated mobile number', '[{"kind":"contact","field":"phone","originalValue":null,"requestedValue":"+976 99112233"}]'::jsonb, '[]'::jsonb)$$,
+  $$select public.submit_profile_change_request('00000000-0000-4000-8000-000000000301'::uuid, 'Updated mobile number', '[{"kind":"contact","field":"phone","originalValue":null,"requestedValue":"+976 99112233"}]'::jsonb, public.profile_change_test_document('00000000-0000-4000-8000-000000000301'::uuid))$$,
   'Employee submits a pending contact change without writing official data'
 );
 select extensions.is((select phone from public.employees where id = '00000000-0000-4000-8000-000000000201'::uuid), null::text, 'Submission does not update the official employee record');
@@ -53,26 +66,27 @@ select extensions.ok(exists (select 1 from public.notifications where recipient_
 
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000102';
-select extensions.throws_ok($$select public.submit_profile_change_request('00000000-0000-4000-8000-000000000302'::uuid, null, '[{"kind":"contact","field":"address","originalValue":null,"requestedValue":"Ulaanbaatar"}]'::jsonb, '[]'::jsonb)$$, '22023', null, 'Employee self-service does not collect address changes');
+select extensions.throws_ok($$select public.submit_profile_change_request('00000000-0000-4000-8000-000000000302'::uuid, null, '[{"kind":"contact","field":"address","originalValue":null,"requestedValue":"Ulaanbaatar"}]'::jsonb, public.profile_change_test_document('00000000-0000-4000-8000-000000000302'::uuid))$$, '22023', null, 'Employee self-service does not collect address changes');
 
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000102';
-select extensions.lives_ok($$select public.submit_profile_change_request('00000000-0000-4000-8000-000000000303'::uuid, null, '[{"kind":"contact","field":"phone","originalValue":"+976 99112233","requestedValue":"+976 99112235"}]'::jsonb, '[]'::jsonb)$$, 'Employee submits a contact request that can be cancelled');
+select extensions.lives_ok($$select public.submit_profile_change_request('00000000-0000-4000-8000-000000000303'::uuid, null, '[{"kind":"contact","field":"phone","originalValue":"+976 99112233","requestedValue":"+976 99112235"}]'::jsonb, public.profile_change_test_document('00000000-0000-4000-8000-000000000303'::uuid))$$, 'Employee submits a contact request that can be cancelled');
 select extensions.lives_ok($$select public.cancel_profile_change_request('00000000-0000-4000-8000-000000000303'::uuid)$$, 'Employee cancels their pending request');
 set local role postgres;
 select extensions.is((select status from public.profile_change_requests where id = '00000000-0000-4000-8000-000000000303'::uuid), 'cancelled', 'Cancelled request is retained in history');
 
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000102';
-select extensions.lives_ok($$select public.submit_profile_change_request('00000000-0000-4000-8000-000000000304'::uuid, null, '[{"kind":"qualification","operation":"add","originalValue":null,"requestedValue":{"name":"Bachelor of Science","institution":"Fixture University","qualificationLevel":"Bachelor","fieldOfStudy":"Computer Science","awardedOn":"2024-06-01","notes":null}}]'::jsonb, '[]'::jsonb)$$, 'Employee submits a qualification addition');
+select extensions.lives_ok($$select public.submit_profile_change_request('00000000-0000-4000-8000-000000000304'::uuid, null, '[{"kind":"qualification","operation":"add","originalValue":null,"requestedValue":{"name":"Bachelor of Science","institution":"Fixture University","qualificationLevel":"Bachelor","fieldOfStudy":"Computer Science","awardedOn":"2024-06-01","notes":null}}]'::jsonb, public.profile_change_test_document('00000000-0000-4000-8000-000000000304'::uuid))$$, 'Employee submits a qualification addition');
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000101';
 select extensions.lives_ok($$select public.decide_profile_change_request('00000000-0000-4000-8000-000000000304'::uuid, 'approved', null)$$, 'Administrator approves a qualification addition');
 set local role postgres;
 select extensions.ok(exists (select 1 from public.qualifications where employee_id = '00000000-0000-4000-8000-000000000201'::uuid and name = 'Bachelor of Science'), 'Approval creates the requested qualification');
+select extensions.is((select count(*) from public.profile_change_request_documents where request_id = '00000000-0000-4000-8000-000000000304'::uuid), 1::bigint, 'A submitted request retains its required supporting document');
 
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000102';
-select extensions.lives_ok($$select public.submit_profile_change_request('00000000-0000-4000-8000-000000000305'::uuid, null, '[{"kind":"qualification","operation":"edit","qualificationId":"00000000-0000-4000-8000-000000000401","originalValue":{"name":"Diploma","institution":"Fixture University","qualificationLevel":null,"fieldOfStudy":null,"awardedOn":"2020-01-01","notes":null},"requestedValue":{"name":"Advanced Diploma","institution":"Fixture University","qualificationLevel":null,"fieldOfStudy":null,"awardedOn":"2020-01-01","notes":null}}]'::jsonb, '[]'::jsonb)$$, 'Employee submits a qualification edit');
+select extensions.lives_ok($$select public.submit_profile_change_request('00000000-0000-4000-8000-000000000305'::uuid, null, '[{"kind":"qualification","operation":"edit","qualificationId":"00000000-0000-4000-8000-000000000401","originalValue":{"name":"Diploma","institution":"Fixture University","qualificationLevel":null,"fieldOfStudy":null,"awardedOn":"2020-01-01","notes":null},"requestedValue":{"name":"Advanced Diploma","institution":"Fixture University","qualificationLevel":null,"fieldOfStudy":null,"awardedOn":"2020-01-01","notes":null}}]'::jsonb, public.profile_change_test_document('00000000-0000-4000-8000-000000000305'::uuid))$$, 'Employee submits a qualification edit');
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000101';
 select extensions.lives_ok($$select public.decide_profile_change_request('00000000-0000-4000-8000-000000000305'::uuid, 'approved', null)$$, 'Administrator approves a qualification edit');
 set local role postgres;
@@ -80,7 +94,7 @@ select extensions.is((select name from public.qualifications where id = '0000000
 
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000102';
-select extensions.lives_ok($$select public.submit_profile_change_request('00000000-0000-4000-8000-000000000306'::uuid, null, '[{"kind":"qualification","operation":"remove","qualificationId":"00000000-0000-4000-8000-000000000401","originalValue":{"name":"Advanced Diploma","institution":"Fixture University","qualificationLevel":null,"fieldOfStudy":null,"awardedOn":"2020-01-01","notes":null},"requestedValue":null}]'::jsonb, '[]'::jsonb)$$, 'Employee submits a qualification removal');
+select extensions.lives_ok($$select public.submit_profile_change_request('00000000-0000-4000-8000-000000000306'::uuid, null, '[{"kind":"qualification","operation":"remove","qualificationId":"00000000-0000-4000-8000-000000000401","originalValue":{"name":"Advanced Diploma","institution":"Fixture University","qualificationLevel":null,"fieldOfStudy":null,"awardedOn":"2020-01-01","notes":null},"requestedValue":null}]'::jsonb, public.profile_change_test_document('00000000-0000-4000-8000-000000000306'::uuid))$$, 'Employee submits a qualification removal');
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000101';
 select extensions.lives_ok($$select public.decide_profile_change_request('00000000-0000-4000-8000-000000000306'::uuid, 'approved', null)$$, 'Administrator approves a qualification removal');
 set local role postgres;
@@ -88,7 +102,27 @@ select extensions.is((select count(*) from public.qualifications where id = '000
 
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000102';
-select extensions.lives_ok($$select public.submit_profile_change_request('00000000-0000-4000-8000-000000000307'::uuid, null, '[{"kind":"contact","field":"phone","originalValue":"+976 99112233","requestedValue":"+976 99112234"}]'::jsonb, '[]'::jsonb)$$, 'Employee submits a request with a stale-snapshot guard');
+select extensions.lives_ok($$select public.submit_profile_change_request('00000000-0000-4000-8000-000000000308'::uuid, null, '[{"kind":"certification","operation":"add","originalValue":null,"requestedValue":{"name":"Public Safety Junior Leadership Course (PSJLC)","issuer":"PNP Training Service","credentialId":null,"issuedOn":"2024-06-01","expiresOn":null,"notes":null}}]'::jsonb, public.profile_change_test_document('00000000-0000-4000-8000-000000000308'::uuid))$$, 'Employee submits a certification addition');
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000101';
+select extensions.lives_ok($$select public.decide_profile_change_request('00000000-0000-4000-8000-000000000308'::uuid, 'approved', null)$$, 'Administrator approves a certification addition');
+set local role postgres;
+select extensions.ok(exists (select 1 from public.certifications where employee_id = '00000000-0000-4000-8000-000000000201'::uuid and name = 'Public Safety Junior Leadership Course (PSJLC)'), 'Approval creates the requested certification');
+
+set local role authenticated;
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000102';
+select extensions.lives_ok($$select public.submit_profile_change_request('00000000-0000-4000-8000-000000000309'::uuid, null, '[{"kind":"training","operation":"add","originalValue":null,"requestedValue":{"courseName":"Field Training Program (FTP)","provider":"National Police Training Institute (NPTI)","completedOn":"2024-06-02","expiresOn":null,"hours":80,"notes":null}}]'::jsonb, public.profile_change_test_document('00000000-0000-4000-8000-000000000309'::uuid))$$, 'Employee submits a training addition');
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000101';
+select extensions.lives_ok($$select public.decide_profile_change_request('00000000-0000-4000-8000-000000000309'::uuid, 'approved', null)$$, 'Administrator approves a training addition');
+set local role postgres;
+select extensions.ok(exists (select 1 from public.training_records where employee_id = '00000000-0000-4000-8000-000000000201'::uuid and course_name = 'Field Training Program (FTP)'), 'Approval creates the requested training record');
+
+set local role authenticated;
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000102';
+select extensions.throws_ok($$select public.submit_profile_change_request('00000000-0000-4000-8000-000000000310'::uuid, null, '[{"kind":"contact","field":"phone","originalValue":"+976 99112235","requestedValue":"+976 99112236"}]'::jsonb, '[]'::jsonb)$$, '22023', null, 'A profile-change request requires at least one supporting document');
+
+set local role authenticated;
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000102';
+select extensions.lives_ok($$select public.submit_profile_change_request('00000000-0000-4000-8000-000000000307'::uuid, null, '[{"kind":"contact","field":"phone","originalValue":"+976 99112233","requestedValue":"+976 99112234"}]'::jsonb, public.profile_change_test_document('00000000-0000-4000-8000-000000000307'::uuid))$$, 'Employee submits a request with a stale-snapshot guard');
 set local role postgres;
 update public.employees set phone = '+976 88880000' where id = '00000000-0000-4000-8000-000000000201'::uuid;
 set local role authenticated;
@@ -100,6 +134,15 @@ select extensions.is((select status from public.profile_change_requests where id
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000103';
 select extensions.is((select count(*) from public.profile_change_requests), 0::bigint, 'Other employees cannot read requests they did not submit');
+
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000104';
+select extensions.lives_ok($$select public.request_employee_record_assistance()$$, 'An unlinked employee can ask HR to link the official record');
+set local role postgres;
+select extensions.ok(exists (select 1 from public.notifications where recipient_user_id = '00000000-0000-4000-8000-000000000101'::uuid and type = 'employee_record_assistance'), 'The request notifies active HR staff');
+select extensions.ok(exists (select 1 from public.audit_logs where actor_user_id = '00000000-0000-4000-8000-000000000104'::uuid and entity_type = 'employee_record_assistance'), 'The request is audited');
+set local role authenticated;
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000104';
+select extensions.lives_ok($$select public.request_employee_record_assistance()$$, 'A repeated request is safely de-duplicated');
 
 select * from extensions.finish();
 rollback;

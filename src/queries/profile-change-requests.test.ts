@@ -47,6 +47,16 @@ describe("profile change request queries", () => {
     expect(remove).toHaveBeenCalledWith([expect.stringMatching(new RegExp(`^profile-change-requests/${userId}/${requestId}/`))]);
   });
 
+  it("rejects a request without supporting documents before it uploads or calls the RPC", async () => {
+    await expect(submitProfileChangeRequest({
+      requestId,
+      changes: [{ kind: "contact", field: "phone", originalValue: null, requestedValue: "+976 99112233" }],
+    }, [])).rejects.toThrow("Attach at least one supporting document.");
+
+    expect(mocks.storageFrom).not.toHaveBeenCalled();
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
   it("sends only approved or rejected decisions through the decision RPC", async () => {
     mocks.rpc.mockResolvedValue({ error: null });
     await decideProfileChangeRequest({ requestId, decision: "approved" });

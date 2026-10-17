@@ -8,7 +8,7 @@ vi.mock("@/lib/supabase/client", () => ({
   createBrowserSupabaseClient: () => ({ from, rpc, storage: { from: storageFrom } }),
 }));
 
-import { getEmployeeProfilePhotoUrl, listUnlinkedEmployeeAccounts, replaceMyEmployeeProfilePhoto, saveEmployee, updateMyGovernmentIds } from "./personnel-records";
+import { getEmployeeProfilePhotoUrl, listUnlinkedEmployeeAccounts, replaceMyEmployeeProfilePhoto, requestEmployeeRecordAssistance, saveEmployee, updateMyGovernmentIds } from "./personnel-records";
 
 const employee = {
   id: "00000000-0000-0000-0000-000000000010",
@@ -43,6 +43,12 @@ describe("personnel-record queries", () => {
       email: "candidate.employee@example.test",
     }]);
     expect(rpc).toHaveBeenCalledWith("list_unlinked_employee_accounts");
+  });
+
+  it("asks HR to help link an unlinked employee account", async () => {
+    rpc.mockResolvedValue({ data: null, error: null });
+    await expect(requestEmployeeRecordAssistance()).resolves.toBeUndefined();
+    expect(rpc).toHaveBeenCalledWith("request_employee_record_assistance");
   });
 
   it("saves the employee's own PhilHealth, GSIS and Pag-IBIG numbers", async () => {
