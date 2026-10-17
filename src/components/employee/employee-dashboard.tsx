@@ -115,7 +115,7 @@ export function EmployeeDashboard() {
   const typeById = new Map((leaveTypes.data?.rows ?? []).map((type) => [type.id, type]));
   const entitlements = (balances.data ?? []).flatMap((balance) => {
     const type = typeById.get(balance.leave_type_id);
-    return type ? [{ balance, type }] : [];
+    return type && (!type.eligible_gender || type.eligible_gender === record.gender) ? [{ balance, type }] : [];
   }).slice(0, 4);
   const stats: [string, string, string][] = [
     ["Badge Number", record.employee_number, "font-mono text-amber-300"],
@@ -233,15 +233,18 @@ export function EmployeeDashboard() {
             ) : <p className="text-xs text-slate-500" role="status">No leave entitlements are available yet.</p>}
           </Card>
 
-          <Card id="announcements-heading" title="Station Announcements">
+          <Card id="announcements-heading" title="Announcements">
             {announcements.isLoading ? <LoadingState label="Loading announcements…" /> : announcements.error ? <ErrorState message={announcements.error.message} /> : (announcements.data ?? []).length ? (
               <ul className="space-y-3 text-xs">
                 {(announcements.data ?? []).map((item) => (
-                  <li className={cn("space-y-1 rounded-xl border p-3", CATEGORY_TONE[item.category] ?? "border-slate-200/80 bg-slate-50 text-slate-600")} key={item.id}>
+                  <li className={cn("rounded-xl border", CATEGORY_TONE[item.category] ?? "border-slate-200/80 bg-slate-50 text-slate-600")} key={item.id}>
+                    <Link aria-label={`View details for ${item.title}`} className="block space-y-1 rounded-xl p-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600" href={`/announcements/${item.id}`}>
                     <span className="rounded bg-white/70 px-1.5 py-0.5 text-[9px] font-extrabold uppercase">{announcementCategoryLabel(item.category)}</span>
                     <p className="font-bold text-slate-900">{item.title}</p>
                     <p className="text-[11px] text-slate-600">{item.summary}</p>
                     {item.published_at ? <p className="text-[10px] text-slate-500">{formatDate(item.published_at)}</p> : null}
+                    <span className="block text-[11px] font-bold text-blue-700">View details</span>
+                    </Link>
                   </li>
                 ))}
               </ul>

@@ -24,7 +24,7 @@ vi.mock("@/hooks/use-reporting", () => ({
     data: {
       personnelByRank: [{ code: "PMAJ", name: "Police Major", count: 1 }, { code: null, name: null, count: 4 }],
       personnelByGender: [{ label: "male", count: 20 }, { label: "female", count: 8 }, { label: "unspecified", count: 0 }],
-      attendanceToday: { present: 25, late: 1, incomplete: 1, absent: 0, onLeave: 1 },
+      attendanceToday: { present: 25, late: 1, absent: 0, onLeave: 1 },
     },
   }),
 }));
@@ -49,14 +49,13 @@ describe("HrDashboardOverview (dashboard.html)", () => {
     render(<HrDashboardOverview />);
     expect(screen.getByRole("heading", { level: 1, name: "Dashboard Overview" })).toBeInTheDocument();
     const kpi = (label: string) => screen.getByText(label, { selector: "article p" }).closest("article")!;
-    expect(kpi("Total Active 201")).toHaveTextContent("28");
+    expect(kpi("Total Active")).toHaveTextContent("28");
     expect(kpi("On Duty")).toHaveTextContent("26/ 28");
-    expect(kpi("On Duty")).toHaveTextContent("92.9% Operational Strength");
-    expect(kpi("On Duty")).toHaveTextContent("25 present · 1 late");
     expect(kpi("Absent")).toHaveTextContent("0");
     expect(kpi("On Leave")).toHaveTextContent("1");
-    expect(kpi("Incomplete")).toHaveTextContent("1");
     expect(kpi("Plantilla Vacancies")).toHaveTextContent("1");
+    expect(screen.queryByText("Incomplete")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Operational Strength|No attendance record|Approved leave status|Open for Recruitment/)).not.toBeInTheDocument();
     // The doughnut splits on-duty personnel into on time and late.
     const attendance = within(screen.getByRole("region", { name: "Daily Attendance Overview" }));
     expect(attendance.getByText("Present").closest("li")).toHaveTextContent("25 (89.3%)");

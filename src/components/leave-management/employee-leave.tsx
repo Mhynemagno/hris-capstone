@@ -56,16 +56,18 @@ function balanceHint(balance: LeaveBalance | undefined, year: number) {
   return balance.excess_deducted_from_retirement ? `${left} Days beyond this are allowed but deducted from your retirement benefits.` : left;
 }
 
-type HistoryTab = "all" | "pending" | "approved";
+type HistoryTab = "all" | "pending" | "approved" | "rejected";
 const HISTORY_TABS: { value: HistoryTab; label: string }[] = [
   { value: "all", label: "All Requests" },
   { value: "pending", label: "For Approval" },
   { value: "approved", label: "Approved" },
+  { value: "rejected", label: "Rejected" },
 ];
 const EMPTY_HISTORY: Record<HistoryTab, string> = {
   all: "No leave requests yet. Use “Request New Leave” to file your first request.",
   pending: "No leave requests are waiting for approval.",
   approved: "No approved leave requests yet.",
+  rejected: "No rejected leave requests yet.",
 };
 const PAGE_SIZE = 10;
 /** Below md each table row becomes a card: the cell label comes from data-label. */

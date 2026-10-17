@@ -110,6 +110,8 @@ describe("EmployeeLeaveList", () => {
     expect(screen.getByRole("tab", { name: "For Approval" })).toHaveAttribute("aria-selected", "true");
     await user.click(screen.getByRole("tab", { name: "Approved" }));
     expect(mocks.leaveRequestFilters).toHaveBeenLastCalledWith({ page: 1, pageSize: 10, status: "approved" });
+    await user.click(screen.getByRole("tab", { name: "Rejected" }));
+    expect(mocks.leaveRequestFilters).toHaveBeenLastCalledWith({ page: 1, pageSize: 10, status: "rejected" });
   });
 
   it("explains an empty filtered tab", async () => {
@@ -119,6 +121,8 @@ describe("EmployeeLeaveList", () => {
     expect(screen.getByText("No leave requests are waiting for approval.")).toBeVisible();
     await user.click(screen.getByRole("tab", { name: "Approved" }));
     expect(screen.getByText("No approved leave requests yet.")).toBeVisible();
+    await user.click(screen.getByRole("tab", { name: "Rejected" }));
+    expect(screen.getByText("No rejected leave requests yet.")).toBeVisible();
   });
 
   it("moves between tabs with the arrow keys", async () => {
@@ -169,7 +173,7 @@ describe("EmployeeLeaveList", () => {
     expect(screen.getByText("September 1, 2026 – September 2, 2026")).toBeVisible();
     expect(screen.getByText("2 days")).toBeVisible();
     expect(screen.getByText("Notes from HR: Short staffed.")).toBeVisible();
-    expect(screen.getByText("Rejected")).toBeVisible();
+    expect(screen.getAllByText("Rejected")).toHaveLength(2);
   });
 
   it("tells the employee about paternity days deducted from retirement benefits", () => {

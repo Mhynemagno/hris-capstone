@@ -28,7 +28,7 @@ vi.mock("@/hooks/use-administration", () => ({
 vi.mock("@/hooks/use-deployment-tracking", () => ({ useMyDeployments: () => ok({ rows: state.deployments, count: state.deployments.length }) }));
 vi.mock("@/hooks/use-leave-management", () => ({
   useMyLeaveBalances: () => ok([{ leave_type_id: "t1", days_per_year: 15, excess_deducted_from_retirement: false, used_days: 3 }]),
-  useLeaveTypes: () => state.typesError ? { isLoading: false, error: state.typesError, data: undefined } : ok({ rows: [{ id: "t1", name: "Sick Leave", days_per_year: 15 }], count: 1 }),
+  useLeaveTypes: () => state.typesError ? { isLoading: false, error: state.typesError, data: undefined } : ok({ rows: [{ id: "t1", name: "Sick Leave", days_per_year: 15, eligible_gender: null }], count: 1 }),
 }));
 vi.mock("@/hooks/use-attendance-integration", () => ({ useMyAttendanceLogs: () => ok({ rows: state.logs, count: state.logs.length }) }));
 vi.mock("@/hooks/use-promotion-eligibility", () => ({ useMyPromotionEligibility: () => ok(state.promotion) }));
@@ -139,5 +139,6 @@ describe("EmployeeDashboard (empdash.html)", () => {
     expect(screen.getByText(/Target rank: PCpl/)).toBeVisible();
     expect(screen.getByText("Eligible")).toBeVisible();
     expect(screen.getByText("Kiosk Maintenance")).toBeVisible();
+    expect(screen.getByRole("link", { name: "View details for Kiosk Maintenance" })).toHaveAttribute("href", "/announcements/a1");
   });
 });

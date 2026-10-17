@@ -8,7 +8,7 @@ describe("staff page meta", () => {
     expect(staffPageSubtitle("/hr/leave-requests")).toBe("Leave Management & Personnel Entitlements");
     expect(staffPageSubtitle("/reports/deployments")).toBe("Personnel Management • Official Analytics & Station Reports");
     expect(staffPageSubtitle("/hr")).toBe("Dashboard • Manpower, Attendance & Deployment Overview");
-    expect(staffPageSubtitle("/employee/attendance")).toBe("Personnel Self-Service • My Attendance");
+    expect(staffPageSubtitle("/employee/attendance")).toBe("Personnel Self-Service • Attendance");
     expect(staffPageSubtitle("/admin/settings")).toBe("System Administration & Station Controls");
   });
   it("knows which pages are redesigned (the rest keep the workspace look)", () => {

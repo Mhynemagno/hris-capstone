@@ -10,11 +10,11 @@ const SUBTITLES: [root: string, subtitle: string][] = [
   ["/hr/public-site", "Public Site • Announcements & Station Contacts"],
   ["/admin", "System Administration & Station Controls"],
   ["/notifications", "Notifications"],
-  ["/employee/profile", "Personnel Self-Service • My Profile 201"],
-  ["/employee/leave", "Personnel Self-Service • My Leaves"],
-  ["/employee/deployments", "Personnel Self-Service • My Deployments"],
+  ["/employee/profile", "Personnel Self-Service • My Profile"],
+  ["/employee/leave", "Personnel Self-Service • Leave"],
+  ["/employee/deployments", "Personnel Self-Service • Deployment"],
   ["/employee/promotion-eligibility", "Personnel Self-Service • Promotion Status"],
-  ["/employee/attendance", "Personnel Self-Service • My Attendance"],
+  ["/employee/attendance", "Personnel Self-Service • Attendance"],
   ["/employee", "Personnel Self-Service Dashboard"],
 ];
 

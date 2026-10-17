@@ -1,6 +1,6 @@
 "use client";
 
-import { Award, Briefcase, Calendar, Check, MapPinned, Shield, UserCheck, UserRoundSearch, Users, UserX, type LucideIcon } from "lucide-react";
+import { Award, Briefcase, Calendar, MapPinned, Shield, UserCheck, UserRoundSearch, Users, UserX, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -38,7 +38,7 @@ const KPI_TONES = {
   indigo: "bg-indigo-50 border-indigo-200 text-indigo-700",
 } as const;
 
-function Kpi({ label, value, caption, captionClassName, icon: Icon, tone }: { label: string; value: ReactNode; caption: ReactNode; captionClassName: string; icon: LucideIcon; tone: keyof typeof KPI_TONES }) {
+function Kpi({ label, value, icon: Icon, tone }: { label: string; value: ReactNode; icon: LucideIcon; tone: keyof typeof KPI_TONES }) {
   return (
     <article className="flex items-center gap-4 rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm">
       <div className={`flex size-12 shrink-0 items-center justify-center rounded-xl border ${KPI_TONES[tone]}`}>
@@ -47,7 +47,6 @@ function Kpi({ label, value, caption, captionClassName, icon: Icon, tone }: { la
       <div className="min-w-0">
         <p className="text-[10px] font-bold tracking-wider text-slate-500 uppercase">{label}</p>
         <p className="text-2xl font-black text-slate-900">{value}</p>
-        <p className={`text-[10px] font-semibold ${captionClassName}`}>{caption}</p>
       </div>
     </article>
   );
@@ -88,7 +87,6 @@ export function HrDashboardOverview() {
   const absent = attendance?.absent ?? 0;
   const onLeave = attendance?.onLeave ?? 0;
   const attendanceAbsent = absent + onLeave;
-  const partial = (attendance?.incomplete ?? 0);
   const strength = activeTotal ? ((onDuty / activeTotal) * 100).toFixed(1) : "0.0";
   const readyCount = (readiness.data ?? []).filter((row) => row.readiness?.isReady).length;
   const quarter = Math.floor((Number(today.slice(5, 7)) - 1) / 3) + 1;
@@ -109,12 +107,11 @@ export function HrDashboardOverview() {
 
       {overview.error ? <ErrorState message={overview.error.message} onRetry={() => void overview.refetch()} /> : null}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
-        <Kpi caption={<><Check aria-hidden="true" className="inline size-3" /> Active personnel</>} captionClassName="text-emerald-700" icon={Users} label="Total Active 201" tone="blue" value={activeTotal} />
-        <Kpi caption={`${strength}% Operational Strength · ${present} present · ${late} late`} captionClassName="text-purple-700" icon={UserCheck} label="On Duty" tone="purple" value={<>{onDuty}<span className="text-xs font-normal text-slate-500">/ {activeTotal}</span></>} />
-        <Kpi caption="No attendance record" captionClassName="text-amber-700" icon={UserX} label="Absent" tone="amber" value={absent} />
-        <Kpi caption="Approved leave status" captionClassName="text-rose-600" icon={UserRoundSearch} label="On Leave" tone="rose" value={onLeave} />
-        <Kpi caption="Needs time-out" captionClassName="text-rose-600" icon={UserRoundSearch} label="Incomplete" tone="rose" value={partial} />
-        <Kpi caption="Open for Recruitment" captionClassName="text-indigo-600" icon={Briefcase} label="Plantilla Vacancies" tone="indigo" value={summary.data?.metrics.openJobs ?? 0} />
+        <Kpi icon={Users} label="Total Active" tone="blue" value={activeTotal} />
+        <Kpi icon={UserCheck} label="On Duty" tone="purple" value={<>{onDuty}<span className="text-xs font-normal text-slate-500">/ {activeTotal}</span></>} />
+        <Kpi icon={UserX} label="Absent" tone="amber" value={absent} />
+        <Kpi icon={UserRoundSearch} label="On Leave" tone="rose" value={onLeave} />
+        <Kpi icon={Briefcase} label="Plantilla Vacancies" tone="indigo" value={summary.data?.metrics.openJobs ?? 0} />
       </div>
 
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">

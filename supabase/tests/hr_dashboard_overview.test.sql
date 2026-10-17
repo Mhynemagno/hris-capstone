@@ -45,8 +45,9 @@ select extensions.is(
   'Gender counts cover male, female and unspecified'
 );
 select extensions.ok(
-  (public.get_hr_dashboard_overview() -> 'attendanceToday') ?& array['present', 'late', 'incomplete', 'absent', 'onLeave'],
-  'Today''s attendance has every bucket'
+  (public.get_hr_dashboard_overview() -> 'attendanceToday') ?& array['present', 'late', 'absent', 'onLeave']
+    and not (public.get_hr_dashboard_overview() -> 'attendanceToday' ? 'incomplete'),
+  'Today''s attendance excludes the stale incomplete dashboard bucket'
 );
 select extensions.is(
   (public.get_hr_dashboard_overview() -> 'attendanceToday' ->> 'present')::int, 0, 'No one has a log yet today'
@@ -70,7 +71,7 @@ set local role authenticated;
 
 select extensions.is(
   public.get_hr_dashboard_overview() -> 'attendanceToday',
-  '{"present": 1, "late": 1, "incomplete": 0, "absent": 2, "onLeave": 0}'::jsonb,
+  '{"present": 1, "late": 1, "absent": 2, "onLeave": 0}'::jsonb,
   'Today counts active personnel only; recorded absences and no-shows are both absent'
 );
 
@@ -93,8 +94,8 @@ set local role authenticated;
 
 select extensions.is(
   public.get_hr_dashboard_overview() -> 'attendanceToday',
-  '{"present": 2, "late": 2, "incomplete": 2, "absent": 2, "onLeave": 0}'::jsonb,
-  'Officers still timed in count as present or late from their time-in, so late arrivals are on duty'
+  '{"present": 2, "late": 2, "absent": 2, "onLeave": 0}'::jsonb,
+  'Timed-in officers count as present or late without an incomplete dashboard bucket'
 );
 
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000003202';
