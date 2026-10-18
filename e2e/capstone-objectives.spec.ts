@@ -184,10 +184,9 @@ test.describe("Objective 1: centralized personnel records", () => {
 });
 
 test.describe("Objective 2: recruitment management", () => {
-  test("an applicant applies, HR tracks the application, and hires them into a personnel record", async ({ page }) => {
+  test("an applicant applies and HR shortlists them at Final Evaluation", async ({ page }) => {
     const title = `E2E Recruit ${runId}`;
     const applicantEmail = `e2e.applicant.${runId.toLowerCase()}@example.test`;
-    const badge = uniqueBadge();
 
     await signIn(page, HR.email, HR.home);
     await page.goto("/hr/jobs/new");
@@ -255,7 +254,7 @@ test.describe("Objective 2: recruitment management", () => {
     await expect(page.getByText("Next Action Required: Application Submission")).toBeVisible();
     await signOut(page);
 
-    // HR tracks the application through its statuses and records the hiring decision.
+    // HR tracks the application through its statuses and shortlists it at Final Evaluation.
     await signIn(page, HR.email, HR.home);
     await page.goto("/hr/applications");
     // The Applicant Roster names each application by its applicant (PDF p. 22).
@@ -296,15 +295,7 @@ test.describe("Objective 2: recruitment management", () => {
     await expect(page.getByText("Candidate", { exact: true }).first()).toBeVisible();
     await page.getByRole("tab", { name: /Documents/ }).click();
     await expect(page.getByRole("heading", { name: "Stage supporting documents" })).toBeVisible();
-    await page.getByRole("button", { name: "Hire applicant" }).click();
-    const hireDialog = page.getByRole("dialog", { name: "Hire applicant" });
-    await hireDialog.getByLabel(/^Badge number/).fill(badge);
-    await hireDialog.getByRole("button", { name: "Hire applicant" }).click();
-    await expect(page.getByRole("status").filter({ hasText: "Applicant hired" }).first()).toBeVisible();
-
-    await page.goto("/hr/employees");
-    await page.getByLabel("Search").fill(badge);
-    await expect(page.getByRole("link", { name: new RegExp(`View record for Aplica Candidate ${runId}`) })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("button", { name: "Hire applicant" })).toHaveCount(0);
     await signOut(page);
 
     // The applicant signs in with their email: accepting the application issued their applicant number,

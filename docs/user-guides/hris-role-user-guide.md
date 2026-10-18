@@ -26,7 +26,7 @@ HR also manages recruitment, leave decisions, deployments, promotion reviews, at
 - New promotion criteria must use a minimum of one, two, or three years of service. Older criteria above that range remain visible until HR corrects them.
 - Use **Job postings** to create, publish, withdraw, or delete draft postings. Withdrawing and deleting are confirmed in a dialog.
 - Use **Applications** to review applicants. Filter by stage, job posting, or AI match, and switch to **Registered applicants** to see accounts that have not applied yet.
-- Open an application to review it. Move it one stage at a time through Application Submission, Physical Agility Test, Physical & Medical Examination, Neuro-Psychiatric Examination, Drug Test, Character & Background Investigation, Panel Interview, and Final Evaluation. At Final Evaluation, choose **Shortlisted** or **Not selected**. Only a Shortlisted applicant can be hired; enter the Badge Number when hiring.
+- Open an application to review it. Move it one stage at a time through Application Submission, Physical Agility Test, Physical & Medical Examination, Neuro-Psychiatric Examination, Drug Test, Character & Background Investigation, Panel Interview, and Final Evaluation. At Final Evaluation, choose **Shortlisted** or **Not selected**. **Shortlisted** completes recruitment and the applicant is endorsed to Training.
 
 ## Employee
 

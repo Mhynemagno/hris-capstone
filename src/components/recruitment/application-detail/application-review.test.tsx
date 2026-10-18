@@ -7,7 +7,6 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn(), push: 
 vi.mock("@/components/workspace-shell/breadcrumbs", () => ({ useBreadcrumbTrail: vi.fn() }));
 vi.mock("@/components/recruitment/stage-dialogs", () => ({
   StageResultDialog: ({ open, result }: { open: boolean; result: string }) => (open ? <div aria-label={`Record ${result}`} role="dialog" /> : null),
-  HireDialog: ({ open }: { open: boolean }) => (open ? <div aria-label="Hire applicant" role="dialog" /> : null),
 }));
 vi.mock("./overview-tab", () => ({ OverviewTab: () => <p>overview content</p> }));
 vi.mock("./profile-tab", () => ({ ProfileTab: () => <p>profile content</p> }));
@@ -49,7 +48,7 @@ describe("HrApplicationReview", () => {
     ["Application Submission", "pending", ["Verified", "Passed", "Failed"], ["Scheduled", "Hire applicant"]],
     ["Physical Agility Test", "pending", ["Scheduled", "Passed", "Failed"], ["Verified", "Hire applicant"]],
     ["Final Evaluation", "scheduled", ["Passed", "Failed"], ["Scheduled", "Hire applicant"]],
-    ["Shortlisted", "pending", ["Hire applicant"], ["Passed", "Failed"]],
+    ["Shortlisted", "pending", [], ["Passed", "Failed", "Hire applicant"]],
     ["Hired", "pending", [], ["Passed", "Failed", "Hire applicant"]],
     ["Not Selected", "pending", [], ["Passed", "Failed", "Hire applicant"]],
   ])("shows the right actions at %s (%s)", (status, stageResult, present, absent) => {

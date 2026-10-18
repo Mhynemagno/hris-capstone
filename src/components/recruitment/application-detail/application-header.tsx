@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { ApplicationStageBadge } from "@/components/recruitment/application-stage-badge";
-import { HireDialog, StageResultDialog } from "@/components/recruitment/stage-dialogs";
+import { StageResultDialog } from "@/components/recruitment/stage-dialogs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/format-date";
@@ -23,7 +23,6 @@ type HeaderProps = {
   name: string;
   initials: string;
   photoUrl: string | null;
-  applicantNumber: number | null;
   formattedNumber: string | null;
   jobId: number;
   jobTitle: string | null;
@@ -34,7 +33,7 @@ type HeaderProps = {
 };
 
 export function ApplicationHeader(props: HeaderProps) {
-  const [dialog, setDialog] = useState<RecordableResult | "hire" | null>(null);
+  const [dialog, setDialog] = useState<RecordableResult | null>(null);
   const action = stageActions(props.status);
   const results = stageResultActions(props.status, props.stageResult);
   const statusLabel = applicationStatusLabel(props.status, props.stageResult);
@@ -66,12 +65,10 @@ export function ApplicationHeader(props: HeaderProps) {
         {results.map((result) => (
           <Button key={result} onClick={() => setDialog(result)} variant={result === "passed" ? "default" : result === "failed" ? "destructive" : "outline"}>{RESULT_LABELS[result]}</Button>
         ))}
-        {action.kind === "hire" ? <Button onClick={() => setDialog("hire")}>Hire applicant</Button> : null}
       </div>
       {results.map((result) => (
         <StageResultDialog applicationId={props.applicationId} key={result} onOpenChange={(open) => setDialog(open ? result : null)} open={dialog === result} result={result} status={props.status} />
       ))}
-      <HireDialog applicantNumber={props.applicantNumber} applicationId={props.applicationId} onOpenChange={(open) => setDialog(open ? "hire" : null)} open={dialog === "hire"} />
     </header>
   );
 }
