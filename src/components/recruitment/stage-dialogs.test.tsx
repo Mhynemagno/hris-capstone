@@ -2,19 +2,18 @@ import userEvent from "@testing-library/user-event";
 import { render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ record: vi.fn(), hire: vi.fn(), notify: vi.fn(), pending: false }));
+const mocks = vi.hoisted(() => ({ record: vi.fn(), notify: vi.fn(), pending: false }));
 vi.mock("@/components/ui/toaster", () => ({ notifySuccess: mocks.notify }));
 vi.mock("@/hooks/use-recruitment", () => ({
   useRecordStageResult: () => ({ isPending: mocks.pending, mutateAsync: mocks.record }),
-  useHireApplication: () => ({ isPending: mocks.pending, mutateAsync: mocks.hire }),
 }));
 
-import { HireDialog, StageResultDialog } from "./stage-dialogs";
+import { StageResultDialog } from "./stage-dialogs";
 
 const id = "00000000-0000-0000-0000-000000000001";
 
 describe("stage dialogs", () => {
-  beforeEach(() => { mocks.record.mockReset(); mocks.hire.mockReset(); mocks.notify.mockReset(); mocks.pending = false; });
+  beforeEach(() => { mocks.record.mockReset(); mocks.notify.mockReset(); mocks.pending = false; });
 
   it("marks a test as scheduled with a note and confirms with a toast", async () => {
     mocks.record.mockResolvedValue(undefined);
@@ -68,12 +67,4 @@ describe("stage dialogs", () => {
     expect(within(dialog).getByRole("alert")).toHaveTextContent("This application is no longer in the recruitment process.");
   });
 
-  it("requires a badge number before hiring", async () => {
-    render(<HireDialog applicantNumber={12345} applicationId={id} onOpenChange={() => undefined} open />);
-    const dialog = screen.getByRole("dialog", { name: "Hire applicant" });
-    expect(within(dialog).getByLabelText("Applicant number")).toHaveValue("0-12345");
-    await userEvent.click(within(dialog).getByRole("button", { name: "Hire applicant" }));
-    expect(mocks.hire).not.toHaveBeenCalled();
-    expect(within(dialog).getByRole("alert")).toBeInTheDocument();
-  });
 });

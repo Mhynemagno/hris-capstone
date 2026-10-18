@@ -62,7 +62,6 @@ export function HrApplicationReview({ applicationId }: { applicationId: string }
   return (
     <PageContainer width="wide">
       <ApplicationHeader
-        applicantNumber={applicant?.applicant_number ?? null}
         applicationId={applicationId}
         formattedNumber={formatApplicantNumber(applicant?.applicant_number)}
         initials={initials}

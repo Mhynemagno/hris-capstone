@@ -8,7 +8,7 @@ describe("application stages", () => {
     ["Application Submission", { kind: "advance", next: ["Physical Agility Test"], canReject: false }],
     ["Physical Agility Test", { kind: "advance", next: ["Physical & Medical Examination"], canReject: false }],
     ["Final Evaluation", { kind: "advance", next: ["Shortlisted"], canReject: true }],
-    ["Shortlisted", { kind: "hire", canReject: false }],
+    ["Shortlisted", { kind: "closed" }],
     ["Hired", { kind: "closed" }],
     ["Not Selected", { kind: "closed" }],
   ] as const)("%s offers the right actions", (status, expected) => {

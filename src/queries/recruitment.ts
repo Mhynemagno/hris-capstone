@@ -12,7 +12,6 @@ import {
   applicationRemarkSchema,
   applicationStatusTransitionSchema,
   applicationSubmissionSchema,
-  hiringDecisionSchema,
   jobFiltersSchema,
   jobOpeningSchema,
   jobPostingImageFileSchema,
@@ -23,7 +22,6 @@ import {
   type ApplicationFilters,
   type ApplicationRemarkInput,
   type ApplicationStatusTransitionInput,
-  type HiringDecisionInput,
   type JobFilters,
   type JobOpeningInput,
 } from "@/schemas/recruitment";
@@ -663,17 +661,6 @@ export async function resubmitApplication(input: ResubmitApplicationInput) {
     if (uploadedPaths.length > 0) await bucket.remove(uploadedPaths).catch(() => undefined);
     throw cause;
   }
-}
-
-export async function hireApplication(input: HiringDecisionInput) {
-  const values = hiringDecisionSchema.parse(input);
-  const { data, error } = await createBrowserSupabaseClient().rpc("hire_application", {
-    target_application_id: values.applicationId,
-    target_badge_number: values.badgeNumber,
-    decision_note: values.note ?? null,
-  });
-  throwIfError(error);
-  return data as string;
 }
 
 const applicantDocumentPath = /^applicants\/[0-9a-f-]{36}\/[0-9a-f-]{36}\/[0-9a-f-]{36}\.(pdf|doc|docx|png|jpe?g)$/i;

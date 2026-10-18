@@ -36,12 +36,11 @@ export const allowedNextStatuses: Record<ApplicationStatus, readonly Application
 
 export type StageAction =
   | { kind: "advance"; next: ApplicationStatus[]; canReject: boolean }
-  | { kind: "hire"; canReject: boolean }
   | { kind: "closed" };
 
 export function stageActions(status: ApplicationStatus): StageAction {
   if (status === "Hired" || status === "Not Selected") return { kind: "closed" };
-  if (status === "Shortlisted") return { kind: "hire", canReject: false };
+  if (status === "Shortlisted") return { kind: "closed" };
   const allowed = allowedNextStatuses[status];
   const canReject = allowed.includes("Not Selected");
   return { kind: "advance", next: allowed.filter((next) => next !== "Not Selected"), canReject };

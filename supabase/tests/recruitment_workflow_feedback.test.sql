@@ -3,12 +3,13 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(7);
+select extensions.plan(8);
 
 select extensions.hasnt_function('public', 'resubmit_application', array['uuid', 'jsonb'], 'The retired Needs Revision resubmission RPC is unavailable');
 select extensions.has_function('public', 'delete_draft_job_opening', array['bigint'], 'Draft-only job delete RPC exists');
 select extensions.has_function('public', 'withdraw_job_opening', array['bigint'], 'Job withdrawal RPC exists');
-select extensions.has_function('public', 'hire_application', array['uuid', 'text', 'text'], 'Badge-number hiring RPC exists');
+select extensions.hasnt_function('public', 'hire_application', array['uuid', 'text', 'text'], 'The retired hiring RPC is unavailable');
+select extensions.hasnt_function('private', 'hire_application', array['uuid', 'text', 'text'], 'The retired private hiring implementation is unavailable');
 select extensions.hasnt_function('public', 'hire_application', array['uuid', 'text', 'bigint', 'bigint', 'date', 'text'], 'Legacy hiring RPC cannot bypass the default patrol position');
 select extensions.ok(
   exists (

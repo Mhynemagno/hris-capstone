@@ -3,8 +3,9 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(88);
+select extensions.plan(79);
 
+delete from public.employee_activation_requests;
 delete from public.applications;
 delete from public.job_openings;
 
@@ -187,7 +188,7 @@ select extensions.throws_ok(
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000009102';
 
 select extensions.has_function('public', 'transition_application_status', array['uuid', 'text', 'text'], 'HR transition workflow exists');
-select extensions.has_function('public', 'hire_application', array['uuid', 'text', 'text'], 'Badge-number hiring workflow exists');
+select extensions.hasnt_function('public', 'hire_application', array['uuid', 'text', 'text'], 'The retired hiring workflow is unavailable');
 
 select extensions.throws_ok(
   $$select public.transition_application_status('00000000-0000-4000-8000-000000009401'::uuid, 'Physical Agility Test', null)$$,
@@ -420,10 +421,6 @@ select extensions.lives_ok(
   'HR can advance an applicant to the Physical and Medical Examination'
 );
 select extensions.is((select status from public.applications where id = '00000000-0000-4000-8000-000000009401'::uuid), 'Physical & Medical Examination', 'Physical and Medical Examination transition persists');
-select extensions.throws_ok(
-  $$select public.hire_application('00000000-0000-4000-8000-000000009401'::uuid, 'EMP-2026-001', null)$$,
-  '22023', 'Only shortlisted applicants can be hired.', 'Hiring waits until the end of the cycle'
-);
 select extensions.lives_ok(
   $$select public.transition_application_status('00000000-0000-4000-8000-000000009401'::uuid, 'Neuro-Psychiatric Examination', null)$$,
   'HR can advance an applicant to the Neuro-Psychiatric Examination'
@@ -453,44 +450,11 @@ select extensions.lives_ok(
   'HR can shortlist an applicant only after Final Evaluation'
 );
 
-select extensions.lives_ok(
-  $$select public.hire_application(
-    '00000000-0000-4000-8000-000000009401'::uuid,
-    'EMP-2026-001',
-    'Selected after a successful interview.'
-  )$$,
-  'HR hiring creates the employee and pending activation request atomically'
+select extensions.is((select status from public.applications where id = '00000000-0000-4000-8000-000000009401'::uuid), 'Shortlisted', 'Shortlisting is the terminal recruitment status');
+select extensions.ok(
+  (select hired_employee_id is null from public.applications where id = '00000000-0000-4000-8000-000000009401'::uuid),
+  'Shortlisting does not create an employee record'
 );
-set local role postgres;
-select extensions.is((select status from public.applications where id = '00000000-0000-4000-8000-000000009401'::uuid), 'Hired', 'Hiring persists the terminal application status');
-select extensions.is(
-  (select profile_id from public.employees employee join public.applications application on application.hired_employee_id = employee.id where application.id = '00000000-0000-4000-8000-000000009401'::uuid),
-  '00000000-0000-4000-8000-000000009102'::uuid,
-  'Hired employee links the applicant account'
-);
-select extensions.is((select status from public.employee_activation_requests where application_id = '00000000-0000-4000-8000-000000009401'::uuid), 'pending', 'Hiring creates a pending activation request');
-select extensions.is((select role from public.user_roles where user_id = '00000000-0000-4000-8000-000000009102'::uuid), 'applicant'::public.app_role, 'Hiring does not grant the Employee role');
-select extensions.ok(exists (
-  select 1 from public.audit_logs
-  where actor_user_id = '00000000-0000-4000-8000-000000009101'::uuid
-    and entity_type = 'applications'
-    and entity_id = '00000000-0000-4000-8000-000000009401'
-    and action = 'hired'
-), 'Hiring writes an audit record');
-select extensions.is(
-  (select rank.code from public.employees employee join public.ranks rank on rank.id = employee.rank_id
-    join public.applications application on application.hired_employee_id = employee.id
-    where application.id = '00000000-0000-4000-8000-000000009401'::uuid),
-  'PAT', 'Hiring assigns the Patrolman / Patrolwoman rank looked up by its code');
-select extensions.is(
-  (select employee.department_id from public.employees employee
-    join public.applications application on application.hired_employee_id = employee.id
-    join public.job_openings opening on opening.id = application.job_opening_id
-    where application.id = '00000000-0000-4000-8000-000000009401'::uuid),
-  (select opening.department_id from public.applications application
-    join public.job_openings opening on opening.id = application.job_opening_id
-    where application.id = '00000000-0000-4000-8000-000000009401'::uuid),
-  'Hiring places the new employee in the department of the job they applied for');
 
 -- Applicants keep seeing the job they applied for after it stops being published.
 insert into public.job_qualification_criteria (job_opening_id, ordinal, kind, requirement)
@@ -510,13 +474,6 @@ select extensions.cmp_ok(
 set local role postgres;
 
 set local role authenticated;
-set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000009103';
-select extensions.lives_ok(
-  $$select public.update_managed_user('00000000-0000-4000-8000-000000009102'::uuid, 'employee'::public.app_role, true)$$,
-  'Administrator activates the hired applicant through the existing workflow'
-);
-select extensions.is((select status from public.employee_activation_requests where application_id = '00000000-0000-4000-8000-000000009401'::uuid), 'activated', 'Administrator activation completes the pending request');
-
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000009101';
 select extensions.lives_ok(
   $$insert into public.job_openings (department_id, rank_id, title, description, created_by_user_id)

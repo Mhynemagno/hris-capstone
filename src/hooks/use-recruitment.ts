@@ -12,7 +12,6 @@ import {
   getMyApplication,
   getMyApplicationForJob,
   getPublishedJob,
-  hireApplication,
   listHrApplications,
   listAllHrApplications,
   listHrJobs,
@@ -45,7 +44,6 @@ import type {
   ApplicationFilters,
   ApplicationRemarkInput,
   ApplicationStatusTransitionInput,
-  HiringDecisionInput,
   JobFilters,
   JobOpeningInput,
 } from "@/schemas/recruitment";
@@ -268,20 +266,6 @@ export function useRecordStageResult() {
 
 export function useApplicationStageDocuments(applicationId: string) {
   return useQuery({ queryKey: ["recruitment", "stage-documents", applicationId] as const, queryFn: () => listApplicationStageDocuments(applicationId), enabled: Boolean(applicationId) });
-}
-
-export function useHireApplication() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (input: HiringDecisionInput) => hireApplication(input),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["recruitment"] });
-      void queryClient.invalidateQueries({ queryKey: ["reporting"] });
-      void queryClient.invalidateQueries({ queryKey: ["personnel-records", "directory"] });
-      void queryClient.invalidateQueries({ queryKey: ["administration", "users"] });
-      void queryClient.invalidateQueries({ queryKey: ["administration", "audit-logs"] });
-    },
-  });
 }
 
 export function useAddApplicationRemark() {

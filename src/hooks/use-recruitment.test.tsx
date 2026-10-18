@@ -6,13 +6,11 @@ import { describe, expect, it, vi } from "vitest";
 const applicationId = "123e4567-e89b-42d3-a456-426614174000";
 
 const mocks = vi.hoisted(() => ({
-  hireApplication: vi.fn(),
   getApplicationAiScores: vi.fn(),
   transitionApplicationStatus: vi.fn(),
 }));
 
 vi.mock("@/queries/recruitment", () => ({
-  hireApplication: mocks.hireApplication,
   getApplicationAiScores: mocks.getApplicationAiScores,
   transitionApplicationStatus: mocks.transitionApplicationStatus,
 }));
@@ -40,30 +38,8 @@ describe("recruitment hooks", () => {
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ["reporting"] });
   });
 
-  it("refreshes recruitment, personnel, and administrator data after hiring", async () => {
-    const recruitment = hooks as typeof hooks & {
-      useHireApplication: () => {
-        mutateAsync: (input: {
-          applicationId: string;
-          badgeNumber: string;
-        }) => Promise<string>;
-      };
-    };
-    mocks.hireApplication.mockResolvedValue("123e4567-e89b-42d3-a456-426614174099");
-    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    const invalidateQueries = vi.spyOn(queryClient, "invalidateQueries");
-    const wrapper = createWrapper(queryClient);
-
-    expect(recruitment.useHireApplication).toBeDefined();
-    const { result } = renderHook(() => recruitment.useHireApplication(), { wrapper });
-    await result.current.mutateAsync({
-      applicationId,
-      badgeNumber: "2-02601",
-    });
-
-    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ["recruitment"] });
-    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ["personnel-records", "directory"] });
-    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ["administration", "users"] });
+  it("does not expose a client-side hiring action", () => {
+    expect((hooks as typeof hooks & { useHireApplication?: unknown }).useHireApplication).toBeUndefined();
   });
 
   it("refreshes the AI recommendation while analysis runs and stops once it settles", async () => {

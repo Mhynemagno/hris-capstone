@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { OTHERS_CHOICE } from "@/lib/pnp-catalogue";
 
-import { employeeNumberSchema, isoDateSchema, paginationSchema, uuidSchema } from "./common";
+import { isoDateSchema, paginationSchema, uuidSchema } from "./common";
 
 const optionalText = (max: number) =>
   z.string().trim().max(max).transform((value) => value || undefined).optional();
@@ -170,12 +170,6 @@ export const applicationRemarkSchema = z.object({
   remark: z.string().trim().min(1, "Enter a remark.").max(2_000, "Remarks must be 2000 characters or fewer."),
 });
 
-export const hiringDecisionSchema = z.object({
-  applicationId: uuidSchema,
-  badgeNumber: employeeNumberSchema,
-  note: optionalText(2_000),
-});
-
 export const jobFiltersSchema = paginationSchema.extend({
   search: optionalText(120),
   status: jobOpeningStatusSchema.optional(),
@@ -199,7 +193,6 @@ export type ApplicantProfileDocumentFile = z.infer<typeof applicantProfileDocume
 export type ApplicantDocumentInput = z.infer<typeof applicantDocumentSchema>;
 export type ApplicationSubmissionInput = z.infer<typeof applicationSubmissionSchema>;
 export type ApplicationStatusTransitionInput = z.infer<typeof applicationStatusTransitionSchema>;
-export type HiringDecisionInput = z.infer<typeof hiringDecisionSchema>;
 export type ApplicationRemarkInput = z.infer<typeof applicationRemarkSchema>;
 export type JobFilters = z.infer<typeof jobFiltersSchema>;
 export type ApplicationFilters = z.infer<typeof applicationFiltersSchema>;
