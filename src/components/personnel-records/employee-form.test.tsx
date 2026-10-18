@@ -358,11 +358,27 @@ describe("EmployeeForm", () => {
     expect(within(rank).getByRole("option", { name: "PCPL — Police Corporal" })).toBeInTheDocument();
   });
 
-  it("offers only the Active and Retired employment statuses", () => {
+  it("offers only the Active employment status", () => {
     render(<EmployeeForm employee={existingEmployee} onSaved={() => undefined} />);
 
     const status = screen.getByLabelText(/employment status/i);
-    expect(within(status).getAllByRole("option").map((option) => option.textContent)).toEqual(["Active", "Retired"]);
+    expect(within(status).getAllByRole("option").map((option) => option.textContent)).toEqual(["Active"]);
+  });
+
+  it("preserves a legacy retired status without making it selectable", async () => {
+    const onSaved = vi.fn();
+    const user = userEvent.setup();
+    render(<EmployeeForm employee={{ ...completeEmployee, employment_status: "retired" }} onSaved={onSaved} />);
+
+    const status = screen.getByLabelText(/employment status/i);
+    expect(status).toBeDisabled();
+    expect(status).toHaveValue("retired");
+
+    await user.clear(screen.getByLabelText(/personal email/i));
+    await user.type(screen.getByLabelText(/personal email/i), "anna@example.test");
+    await user.click(screen.getByRole("button", { name: /save employee/i }));
+
+    expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({ employmentStatus: "retired", personalEmail: "anna@example.test" }));
   });
 
   it("uses telephone inputs for phone numbers", () => {
