@@ -96,10 +96,10 @@ describe("EmployeeDirectory", () => {
     await user.selectOptions(screen.getByLabelText("Unit / Section"), "3");
     expect(within(screen.getByLabelText("Rank")).getByRole("option", { name: "PCpl — Police Corporal" })).toBeInTheDocument();
     await user.selectOptions(screen.getByLabelText("Rank"), "7");
-    expect(within(screen.getByLabelText("Employment status")).getAllByRole("option").map((option) => option.textContent)).toEqual(["All statuses", "Active", "Retired"]);
-    await user.selectOptions(screen.getByLabelText("Employment status"), "retired");
+    expect(within(screen.getByLabelText("Employment status")).getAllByRole("option").map((option) => option.textContent)).toEqual(["All statuses", "Active"]);
+    await user.selectOptions(screen.getByLabelText("Employment status"), "active");
 
-    expect(navigation.replace).toHaveBeenLastCalledWith("/hr/employees?status=retired", { scroll: false });
+    expect(navigation.replace).toHaveBeenLastCalledWith("/hr/employees?status=active", { scroll: false });
     // Filters can find records in inactive departments.
     expect(screen.getByRole("option", { name: "Records (inactive)" })).toBeInTheDocument();
 

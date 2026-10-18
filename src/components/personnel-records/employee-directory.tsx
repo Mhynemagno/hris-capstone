@@ -120,7 +120,7 @@ export function EmployeeDirectory() {
           <FormField htmlFor="employee-filter-status" label="Employment status">
             <NativeSelect id="employee-filter-status" onChange={(event) => set({ status: event.target.value })} value={employmentStatus}>
               <option value="">All statuses</option>
-              {(Object.keys(employmentStatusLabels) as Employee["employment_status"][]).map((status) => <option key={status} value={status}>{employmentStatusLabels[status]}</option>)}
+              {(["active"] as const).map((status) => <option key={status} value={status}>{employmentStatusLabels[status]}</option>)}
             </NativeSelect>
           </FormField>
           <div className="flex items-end">
