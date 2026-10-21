@@ -50,7 +50,7 @@ function rowLines(report: ReportResponse, row: ReportResponse["rows"][number]) {
   return report.columns.flatMap((column) => split(`${column.label}: ${formatPdfCell(row[column.key])}`, 94));
 }
 
-function pageContent(report: ReportResponse, pageRows: ReportResponse["rows"], page: number, pageCount: number) {
+function pageContent(report: ReportResponse, pageRows: string[][], page: number, pageCount: number) {
   const commands = [
     "0.2 w",
     text(left, 755, 9, "REPUBLIC OF THE PHILIPPINES • PHILIPPINE NATIONAL POLICE", true),
@@ -63,8 +63,7 @@ function pageContent(report: ReportResponse, pageRows: ReportResponse["rows"], p
     line(left, 662, pageWidth - left, 662),
   ];
   let y = firstRowY;
-  for (const row of pageRows) {
-    const fields = rowLines(report, row);
+  for (const fields of pageRows) {
     for (const field of fields) {
       commands.push(text(left, y, 8, field));
       y -= lineHeight;
@@ -78,18 +77,28 @@ function pageContent(report: ReportResponse, pageRows: ReportResponse["rows"], p
 
 /** Builds a compact, portrait, downloadable PDF without relying on the browser print dialog. */
 export function buildReportPdf(report: ReportResponse) {
-  const groups: ReportResponse["rows"][] = [[]];
+  const groups: string[][][] = [[]];
   let usedLines = 0;
   for (const row of report.rows) {
-    // A row has one rendered line per column (and may wrap). Page by those
-    // lines, not row count, so content never renders below the footer.
-    const lineCount = rowLines(report, row).length + 1;
-    if (usedLines > 0 && usedLines + lineCount > linesPerPage) {
-      groups.push([]);
-      usedLines = 0;
+    const fields = rowLines(report, row);
+    // A row has one rendered line per column (and may wrap). A very wide or
+    // verbose row is split at a field boundary across pages instead of being
+    // drawn through the footer.
+    while (fields.length) {
+      const remaining = linesPerPage - usedLines;
+      if (usedLines > 0 && remaining < 2) {
+        groups.push([]);
+        usedLines = 0;
+        continue;
+      }
+      const take = Math.max(1, Math.min(fields.length, remaining - 1));
+      groups.at(-1)?.push(fields.splice(0, take));
+      usedLines += take + 1;
+      if (fields.length) {
+        groups.push([]);
+        usedLines = 0;
+      }
     }
-    groups.at(-1)?.push(row);
-    usedLines += lineCount;
   }
   const pageObjectStart = 5;
   const objects: string[] = [

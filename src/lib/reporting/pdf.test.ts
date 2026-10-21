@@ -32,4 +32,11 @@ describe("buildReportPdf", () => {
     });
     expect(new TextDecoder().decode(pdf)).toContain("Page 2 of 2");
   });
+
+  it("splits an oversized record across portrait pages instead of drawing through the footer", () => {
+    const columns = Array.from({ length: 45 }, (_, index) => ({ key: `field${index}`, label: `Field ${index}` }));
+    const row = Object.fromEntries(columns.map((column) => [column.key, "Recorded value"]));
+    const pdf = buildReportPdf({ reportKey: "deployments", title: "Oversized", generatedAt: "2026-10-21T08:00:00.000Z", columns, rows: [row], totalCount: 1, page: 1, pageSize: 100 });
+    expect(new TextDecoder().decode(pdf)).toContain("Page 2 of 2");
+  });
 });
