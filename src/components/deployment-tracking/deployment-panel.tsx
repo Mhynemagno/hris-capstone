@@ -8,10 +8,10 @@ import { StaffInput, StaffLabel, StaffSelect, StaffTextarea } from "@/components
 import { StaffSlideOver } from "@/components/staff-shell/ui/staff-slide-over";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { LoadingState } from "@/components/ui/loading-state";
-import { useCreateDeployment, useDeployment, useEmployeeOptions, useUpdateDeployment } from "@/hooks/use-deployment-tracking";
+import { useCreateDeployment, useCreateDeploymentGroup, useDeployment, useEmployeeOptions, useUpdateDeployment } from "@/hooks/use-deployment-tracking";
 import { DEPLOYMENT_STATUS } from "@/lib/staff/status-maps";
 import type { Deployment } from "@/lib/types/database";
-import { DEPLOYMENT_STATUSES, DEPLOYMENT_TYPES, deploymentInputSchema, EVENT_OPERATIONS } from "@/schemas/deployment-tracking";
+import { DEPLOYMENT_STATUSES, DEPLOYMENT_TASKS, DEPLOYMENT_TYPES, DEPLOYMENT_TYPE_EVENTS, deploymentGroupInputSchema, deploymentInputSchema, EVENT_OPERATIONS } from "@/schemas/deployment-tracking";
 
 export type DeploymentPanelMode = { kind: "create" } | { kind: "edit"; id: string };
 
@@ -103,22 +103,115 @@ function DeploymentFields({ deployment, errors, employeeId, onEmployee }: { depl
   );
 }
 
+type Assignment = { employeeId: string; task: (typeof DEPLOYMENT_TASKS)[number] };
+
+function DeploymentGroupFields({ assignments, errors, onAssignments }: { assignments: Assignment[]; errors: Record<string, string>; onAssignments: (assignments: Assignment[]) => void }) {
+  const employees = useEmployeeOptions();
+  const [employeeId, setEmployeeId] = useState<string | null>(null);
+  const [deploymentType, setDeploymentType] = useState<(typeof DEPLOYMENT_TYPES)[number] | "">("");
+  const [eventOperation, setEventOperation] = useState("");
+  const employeeById = useMemo(() => new Map((employees.data ?? []).map((employee) => [employee.id, employee])), [employees.data]);
+  const options = useMemo<ComboboxOption[]>(() => (employees.data ?? [])
+    .filter((employee) => !assignments.some((assignment) => assignment.employeeId === employee.id))
+    .map((employee) => ({ value: employee.id, label: employee.fullName, description: employee.employeeNumber })), [assignments, employees.data]);
+  const eventOptions = deploymentType ? DEPLOYMENT_TYPE_EVENTS[deploymentType] : [];
+
+  return (
+    <>
+      <div className="space-y-1">
+        <StaffLabel htmlFor="deployment-employees" required>Employees</StaffLabel>
+        <Combobox
+          aria-label="Employees"
+          className="rounded-xl border-slate-200 bg-slate-50"
+          disabled={employees.isLoading}
+          emptyMessage="No active employees match that name or badge number."
+          id="deployment-employees"
+          inputClassName="text-xs font-medium text-slate-900 placeholder:text-slate-400"
+          onValueChange={(value) => {
+            setEmployeeId(null);
+            if (!value || assignments.some((assignment) => assignment.employeeId === value)) return;
+            onAssignments([...assignments, { employeeId: value, task: "Deployed" }]);
+          }}
+          options={options}
+          placeholder={employees.isLoading ? "Loading employees…" : "Type a name or badge number..."}
+          value={employeeId}
+        />
+        <p className="text-[10px] font-normal text-slate-500">Select one or more active personnel by name or badge number.</p>
+        <FieldError message={errors.assignments} />
+        {assignments.length ? <ul aria-label="Selected employees" className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-2">
+          {assignments.map((assignment) => {
+            const employee = employeeById.get(assignment.employeeId);
+            const name = employee?.fullName ?? "Selected employee";
+            return <li className="flex flex-wrap items-center gap-2" key={assignment.employeeId}>
+              <span className="min-w-40 flex-1 text-xs font-semibold text-slate-800">{name}</span>
+              <StaffSelect aria-label={`Task for ${name}`} className="w-40" onChange={(event) => onAssignments(assignments.map((item) => item.employeeId === assignment.employeeId ? { ...item, task: event.target.value as Assignment["task"] } : item))} value={assignment.task}>
+                {DEPLOYMENT_TASKS.map((task) => <option key={task} value={task}>{task}</option>)}
+              </StaffSelect>
+              <button aria-label={`Remove ${name}`} className="rounded-md px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50" onClick={() => onAssignments(assignments.filter((item) => item.employeeId !== assignment.employeeId))} type="button">Remove</button>
+            </li>;
+          })}
+        </ul> : null}
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="space-y-1">
+          <StaffLabel htmlFor="deployment-location" required>Location</StaffLabel>
+          <StaffInput id="deployment-location" maxLength={200} name="location" placeholder="e.g. Greenhills Sector" />
+          <FieldError message={errors.location} />
+        </div>
+        <div className="space-y-1">
+          <StaffLabel htmlFor="deployment-type" required>Deployment Type</StaffLabel>
+          <StaffSelect id="deployment-type" name="deploymentType" onChange={(event) => { setDeploymentType(event.target.value as (typeof DEPLOYMENT_TYPES)[number] | ""); setEventOperation(""); }} value={deploymentType}>
+            <option disabled value="">Select deployment type</option>
+            {DEPLOYMENT_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}
+          </StaffSelect>
+          <FieldError message={errors.deploymentType} />
+        </div>
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="space-y-1">
+          <StaffLabel htmlFor="deployment-event" required>Event / Operation</StaffLabel>
+          <StaffSelect disabled={!deploymentType} id="deployment-event" name="eventOperation" onChange={(event) => setEventOperation(event.target.value)} value={eventOperation}>
+            <option disabled value="">{deploymentType ? "Select event / operation" : "Choose a deployment type first"}</option>
+            {eventOptions.map((event) => <option key={event} value={event}>{event}</option>)}
+          </StaffSelect>
+          <FieldError message={errors.eventOperation} />
+        </div>
+        <div className="space-y-1">
+          <StaffLabel htmlFor="deployment-starts" required>Start Date</StaffLabel>
+          <StaffInput id="deployment-starts" name="startsOn" type="date" />
+          <FieldError message={errors.startsOn} />
+        </div>
+      </div>
+      <div className="space-y-1">
+        <StaffLabel htmlFor="deployment-ends">End Date</StaffLabel>
+        <StaffInput id="deployment-ends" name="endsOn" type="date" />
+        <p className="text-[10px] font-normal text-slate-500">Optional. Leave blank for ongoing duty.</p>
+        <FieldError message={errors.endsOn} />
+      </div>
+    </>
+  );
+}
+
 /** Create or edit a deployment in place (Capstone UI dep.html side panel, PDF p. 25). */
 export function DeploymentPanel({ mode, onClose }: { mode: DeploymentPanelMode | null; onClose: () => void }) {
   const editing = mode?.kind === "edit" ? mode.id : "";
   const existing = useDeployment(editing);
   const create = useCreateDeployment();
+  const createGroup = useCreateDeploymentGroup();
   const update = useUpdateDeployment();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [employeeId, setEmployeeId] = useState<string | null>(null);
-  const pending = create.isPending || update.isPending;
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const pending = create.isPending || createGroup.isPending || update.isPending;
   const current: Deployment | undefined = editing ? (existing.data ?? undefined) : undefined;
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (pending) return;
     const values = Object.fromEntries(new FormData(event.currentTarget));
-    const parsed = deploymentInputSchema.safeParse({ ...values, employeeId: current?.employee_id ?? employeeId ?? "", endsOn: typeof values.endsOn === "string" && values.endsOn ? values.endsOn : null });
+    const parsed = current
+      ? deploymentInputSchema.safeParse({ ...values, employeeId: current.employee_id, endsOn: typeof values.endsOn === "string" && values.endsOn ? values.endsOn : null })
+      : deploymentGroupInputSchema.safeParse({ ...values, assignments, endsOn: typeof values.endsOn === "string" && values.endsOn ? values.endsOn : null });
     if (!parsed.success) {
       const next: Record<string, string> = {};
       for (const issue of parsed.error.issues) {
@@ -131,9 +224,9 @@ export function DeploymentPanel({ mode, onClose }: { mode: DeploymentPanelMode |
     setErrors({});
     try {
       if (current) await update.mutateAsync({ ...parsed.data, id: current.id, expectedUpdatedAt: current.updated_at });
-      else await create.mutateAsync(parsed.data);
+      else await createGroup.mutateAsync(parsed.data);
       notifyStaff({ title: "Deployment saved" });
-      setEmployeeId(null);
+      setEmployeeId(null); setAssignments([]);
       onClose();
     } catch (cause) {
       notifyStaff({ title: "Could not save deployment", description: cause instanceof Error ? cause.message : undefined, tone: "error" });
@@ -158,7 +251,7 @@ export function DeploymentPanel({ mode, onClose }: { mode: DeploymentPanelMode |
         <p className="text-xs font-semibold text-slate-600">This deployment could not be found.</p>
       ) : (
         <form className="space-y-4" id={FORM_ID} key={current?.id ?? "new"} noValidate onSubmit={submit}>
-          <DeploymentFields deployment={current} employeeId={employeeId} errors={errors} onEmployee={(value) => { setEmployeeId(value); setErrors((previous) => ({ ...previous, employeeId: "" })); }} />
+          {current ? <DeploymentFields deployment={current} employeeId={employeeId} errors={errors} onEmployee={(value) => { setEmployeeId(value); setErrors((previous) => ({ ...previous, employeeId: "" })); }} /> : <DeploymentGroupFields assignments={assignments} errors={errors} onAssignments={(next) => { setAssignments(next); setErrors((previous) => ({ ...previous, assignments: "" })); }} />}
         </form>
       )}
     </StaffSlideOver>

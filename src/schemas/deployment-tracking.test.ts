@@ -1,10 +1,38 @@
 import { describe, expect, it } from "vitest";
 
-import { deploymentFiltersSchema, deploymentInputSchema } from "./deployment-tracking";
+import { deploymentFiltersSchema, deploymentGroupInputSchema, deploymentInputSchema } from "./deployment-tracking";
 
 const employeeId = "123e4567-e89b-42d3-a456-426614174000";
 
 describe("deployment tracking schemas", () => {
+  it("accepts a deployment group with unique employee assignments and required tasks", () => {
+    const parsed = deploymentGroupInputSchema.parse({
+      location: " San Juan ",
+      startsOn: "2026-10-22",
+      endsOn: "2026-10-23",
+      deploymentType: "Public Assembly",
+      eventOperation: "Rally",
+      assignments: [
+        { employeeId, task: "Deployed" },
+        { employeeId: "3f1e2d3c-4b5a-4968-8776-655443322110", task: "Reserve/Standby" },
+      ],
+    });
+
+    expect(parsed).toMatchObject({ location: "San Juan", assignments: [{ task: "Deployed" }, { task: "Reserve/Standby" }] });
+  });
+
+  it("rejects duplicate assignments and events that do not belong to the selected deployment type", () => {
+    const base = {
+      location: "San Juan",
+      startsOn: "2026-10-22",
+      deploymentType: "Public Assembly",
+      eventOperation: "Rally",
+      assignments: [{ employeeId, task: "Deployed" }],
+    };
+
+    expect(deploymentGroupInputSchema.safeParse({ ...base, assignments: [base.assignments[0], base.assignments[0]] }).success).toBe(false);
+    expect(deploymentGroupInputSchema.safeParse({ ...base, eventOperation: "Flood / Emergency" }).success).toBe(false);
+  });
   it("requires a location and remarks and normalizes the optional unit", () => {
     expect(deploymentInputSchema.parse({
       employeeId,

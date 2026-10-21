@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(18);
+select extensions.plan(20);
 
 select extensions.has_table('public', 'attendance_integration_settings', 'Attendance settings table exists');
 select extensions.has_table('public', 'attendance_identity_mappings', 'Attendance identity mappings table exists');
@@ -39,7 +39,11 @@ values
 
 select extensions.is(
   (select workday_start from public.attendance_integration_settings where adapter_key = 'csv_xlsx'),
-  time '05:00', 'CSV/XLSX attendance starts at 05:00'
+  time '08:00', 'CSV/XLSX scheduled duty starts at 08:00'
+);
+select extensions.is(
+  (select access_window_start from public.attendance_integration_settings where adapter_key = 'csv_xlsx'),
+  time '05:00', 'CSV/XLSX scans are accepted from 05:00'
 );
 
 set local role authenticated;
@@ -68,6 +72,10 @@ select extensions.is(
   ), 'inserted', 'A 05:00 time-in is accepted'
 );
 select extensions.is((select status from public.attendance_logs where source_event_id = 'EVT-002'), 'present', 'A 05:00 time-in is on time before late grace applies');
+select extensions.throws_ok(
+  $$select public.process_attendance_event(current_setting('test.import_id')::uuid, 'DEV-001', 'EVT-before-window', '2026-08-25', '2026-08-25 04:59:00+08'::timestamptz, '2026-08-25 17:00:00+08'::timestamptz, 'attendance', '{"adapterVersion":"csv-xlsx-v1","rowNumber":4}'::jsonb)$$,
+  '22007', 'Attendance time-in is before the 05:00 access window.', 'A scan before 05:00 is rejected'
+);
 select extensions.is(
   public.process_attendance_event(
     current_setting('test.import_id')::uuid, 'DEV-001', 'EVT-001', '2026-08-24',

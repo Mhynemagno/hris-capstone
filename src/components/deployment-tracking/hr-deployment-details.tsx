@@ -7,8 +7,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useDeployment } from "@/hooks/use-deployment-tracking";
-import { describeDeploymentEvent } from "@/lib/deployment-tracking/history-labels";
-import { formatDate, formatDateTime } from "@/lib/format-date";
+import { formatDate } from "@/lib/format-date";
 
 import { DeploymentReports } from "./deployment-reports";
 import { DeploymentStatusBadge } from "./deployment-status-badge";
@@ -46,18 +45,7 @@ export function HrDeploymentDetails({ deploymentId }: { deploymentId: string }) 
         <Detail label="End date">{formatDate(deployment.ends_on) ?? "One-day deployment"}</Detail>
         <Detail label="Remarks" wide>{deployment.notes}</Detail>
       </dl>
-      <section>
-        <h2 className="mb-3 text-xl font-bold">History</h2>
-        <ol className="space-y-2">
-          {deployment.deployment_history.map((event) => (
-            <li className="rounded-lg border p-3 text-sm" key={event.id}>
-              <p className="font-medium">{describeDeploymentEvent(event, event.actor?.full_name ?? null)}</p>
-              <p className="text-muted-foreground">{formatDateTime(event.created_at)}</p>
-            </li>
-          ))}
-        </ol>
-      </section>
-      <DeploymentReports deploymentId={deployment.id} />
+      <DeploymentReports canSubmit={false} deploymentId={deployment.id} />
     </section>
   );
 }

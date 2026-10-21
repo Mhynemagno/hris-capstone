@@ -11,8 +11,10 @@ import { useListParams } from "./list-params";
 
 // Written through the History API (no server round trip); Next.js syncs useSearchParams from it.
 beforeEach(() => {
+  vi.restoreAllMocks();
   nav.replace.mockReset();
   nav.search = "q=ana&page=3";
+  window.history.replaceState(null, "", "/hr/applications?q=ana&page=3");
   vi.spyOn(window.history, "replaceState").mockImplementation((_state, _unused, url) => nav.replace(url, { scroll: false }));
 });
 

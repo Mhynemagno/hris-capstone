@@ -86,6 +86,10 @@ export function StaffJobPostings() {
         title="RECRUITMENT OPENINGS"
       />
 
+      <p className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs font-semibold text-blue-900">
+        Annual recruitment schedule: plan and publish two recruitment openings per calendar year. Applicant accounts and applicant numbers remain valid between cycles.
+      </p>
+
       <section aria-label="Job postings" className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm">
         <div className="flex flex-col justify-between gap-4 border-b border-slate-100 bg-slate-50/50 p-4 md:flex-row md:items-center">
           <div aria-label="Posting status" className="flex flex-wrap items-center gap-1.5 rounded-xl bg-slate-200/60 p-1 text-xs font-bold text-slate-600" role="group">

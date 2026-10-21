@@ -14,7 +14,7 @@ import { StatusPill } from "@/components/staff-shell/ui/status-pill";
 import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { SearchInput } from "@/components/ui/search-input";
-import { useEmployeeOptions, useHrDeployments, useUpdateDeployment } from "@/hooks/use-deployment-tracking";
+import { useEmployeeOptions, useHrDeploymentGroupAssignments, useHrDeployments, useUpdateDeployment } from "@/hooks/use-deployment-tracking";
 import { usePanelParam } from "@/hooks/use-panel-param";
 import { formatDate } from "@/lib/format-date";
 import { DEPLOYMENT_STATUS } from "@/lib/staff/status-maps";
@@ -40,6 +40,7 @@ export function StaffDeployments() {
   const [type, setType] = useState<(typeof DEPLOYMENT_TYPES)[number] | "">("");
   const [search, setSearch] = useState("");
   const deployments = useHrDeployments({ page, pageSize: PAGE_SIZE, status: status || undefined, deploymentType: type || undefined, search: search || undefined });
+  const groupedAssignments = useHrDeploymentGroupAssignments();
   const employees = useEmployeeOptions();
   const update = useUpdateDeployment();
   const employeeById = useMemo(() => new Map((employees.data ?? []).map((employee) => [employee.id, employee])), [employees.data]);
@@ -151,6 +152,17 @@ export function StaffDeployments() {
         )}
         <StaffPager noun="deployments" onPageChange={setPage} page={page} pageSize={PAGE_SIZE} total={deployments.data?.count ?? 0} />
       </section>
+
+      {groupedAssignments.data?.length ? <section aria-label="Grouped deployment assignments" className="rounded-2xl border border-blue-200 bg-blue-50/40 p-4">
+        <div className="mb-3"><h2 className="text-sm font-bold text-slate-900">Grouped deployment assignments</h2><p className="text-xs text-slate-600">Assignments created together share one location, event, and date range.</p></div>
+        <ul className="grid gap-2 sm:grid-cols-2">
+          {groupedAssignments.data.map((assignment) => <li className="rounded-xl border border-slate-200 bg-white p-3" key={assignment.id}>
+            <p className="font-bold text-slate-900">{assignment.employee.fullName}</p>
+            <p className="text-xs text-slate-600">{assignment.deployment_group.location} · {assignment.deployment_group.deployment_type} / {assignment.deployment_group.event_operation}</p>
+            <p className="mt-1 text-xs font-semibold text-blue-800">{assignment.task}</p>
+          </li>)}
+        </ul>
+      </section> : null}
 
       <DeploymentPanel mode={panelMode} onClose={() => { if (create) setCreate(null); if (edit) setEdit(null); }} />
     </div>

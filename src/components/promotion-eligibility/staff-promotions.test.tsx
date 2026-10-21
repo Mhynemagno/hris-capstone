@@ -4,15 +4,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({ replace: vi.fn(), params: new URLSearchParams() }));
 vi.mock("next/navigation", () => ({ usePathname: () => "/hr/promotions", useRouter: () => ({ replace: mocks.replace }), useSearchParams: () => mocks.params }));
-vi.mock("./promotion-criteria-manager", () => ({ PromotionCriteriaManager: () => <p>Criteria manager</p> }));
 vi.mock("./promotion-review-modal", () => ({ PromotionReviewModal: ({ employeeId }: { employeeId: string }) => <div role="dialog">Review {employeeId}</div> }));
+vi.mock("@/components/deletion/delete-record-dialog", () => ({ DeleteRecordDialog: () => null }));
 vi.mock("@/hooks/use-administration", () => ({ useRankOptions: () => ({ data: [{ id: 4, name: "Police Master Sergeant", code: "PMSG", sort_order: 4, is_active: true }] }) }));
 vi.mock("@/hooks/use-promotion-eligibility", () => ({
+  useCreatePromotionCriterion: () => ({ isPending: false, mutateAsync: vi.fn() }),
+  usePromotionCriteria: () => ({ isLoading: false, error: null, data: [] }),
   usePromotionReadinessPage: () => ({
     isLoading: false,
     error: null,
     data: { count: 1, rows: [{ employee_id: "e1", employee_name: "Tyson Peters", evaluation_id: "v1", target_rank_id: 4, target_rank_name: "Police Master Sergeant", evaluated_on: "2026-10-09", recommendation: "recommended", readiness: { isReady: true, yearsOfService: 2.5, minimumYearsOfService: 2, missingRequirements: [], requirements: [] } }] },
   }),
+  useSetPromotionCriterionActive: () => ({ isPending: false, mutateAsync: vi.fn() }),
 }));
 
 import { StaffPromotions } from "./staff-promotions";
@@ -35,19 +38,30 @@ describe("StaffPromotions (promotions.html)", () => {
     expect(mocks.replace).toHaveBeenCalledWith("/hr/promotions?review=e1", { scroll: false });
   });
 
-  it("opens Manage Criteria in a side panel", async () => {
+  it("opens the read-only official policy matrix instead of manual policy configuration", async () => {
     render(<StaffPromotions />);
-    await userEvent.click(screen.getByRole("button", { name: /Manage Criteria/ }));
+    await userEvent.click(screen.getByRole("button", { name: /Official policy matrix/ }));
     expect(mocks.replace).toHaveBeenCalledWith("/hr/promotions?criteria=1", { scroll: false });
   });
 
   it("renders the criteria panel and the review from the URL", () => {
     mocks.params = new URLSearchParams("criteria=1");
     const { unmount } = render(<StaffPromotions />);
-    expect(screen.getByRole("dialog", { name: "Promotion Criteria" })).toHaveTextContent("Criteria manager");
+    expect(screen.getByRole("dialog", { name: "Official promotion policy matrix" })).toHaveTextContent("PLT–PLTCOL");
     unmount();
     mocks.params = new URLSearchParams("review=e1");
     render(<StaffPromotions />);
     expect(screen.getByRole("dialog")).toHaveTextContent("Review e1");
+  });
+
+  it("keeps the checklist fields available after selecting a target rank", async () => {
+    mocks.params = new URLSearchParams("criteria=1");
+    const user = userEvent.setup();
+    render(<StaffPromotions />);
+
+    await user.type(screen.getByRole("combobox", { name: "Target Rank" }), "PMSG");
+    await user.click(screen.getByRole("option", { name: "PMSG — Police Master Sergeant" }));
+
+    expect(screen.getByLabelText(/^Time in Grade/)).toBeInTheDocument();
   });
 });

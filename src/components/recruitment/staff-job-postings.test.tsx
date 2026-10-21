@@ -55,6 +55,7 @@ describe("StaffJobPostings (jobpost.html)", () => {
   it("shows the mockup header, tabs with counts and deadline notes", () => {
     render(<StaffJobPostings />);
     expect(screen.getByRole("heading", { level: 1, name: "RECRUITMENT OPENINGS" })).toBeInTheDocument();
+    expect(screen.getByText(/two recruitment openings per calendar year/i)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /create recruitment/i })).toHaveAttribute("href", "/hr/jobs/new");
     for (const name of ["All 4", "Published 1", "Draft 1", "Closed 2"]) expect(screen.getByRole("button", { name })).toBeInTheDocument();
     expect(screen.getByText("Closes in 3 days")).toBeInTheDocument();

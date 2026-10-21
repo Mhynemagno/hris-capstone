@@ -15,7 +15,21 @@ export function useSearchDraft(value: string, onCommit: (value: string) => void,
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const commitRef = useRef(onCommit);
   useEffect(() => { commitRef.current = onCommit; });
-  useEffect(() => () => clearTimeout(timer.current), []);
+  useEffect(() => {
+    // A list can remain mounted briefly while Next begins a client-side Link navigation.
+    // Cancel a pending search so its delayed callback cannot rewrite the destination URL.
+    function cancelForNavigation(event: MouseEvent) {
+      if (event.target instanceof Element && event.target.closest("a[href]")) {
+        clearTimeout(timer.current);
+      }
+    }
+
+    document.addEventListener("click", cancelForNavigation, true);
+    return () => {
+      clearTimeout(timer.current);
+      document.removeEventListener("click", cancelForNavigation, true);
+    };
+  }, []);
 
   if (value !== seen) {
     setSeen(value);

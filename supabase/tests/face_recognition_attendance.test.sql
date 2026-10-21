@@ -145,7 +145,7 @@ set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000a01';
 select set_config('test.import_id', public.create_attendance_import('face-day.csv', 'text/csv', repeat('b', 64))::text, true);
 select extensions.is(
-  public.process_attendance_event(current_setting('test.import_id')::uuid, 'FACEDEV-1', 'EVT-FACE-DAY', (now() at time zone 'Asia/Ulaanbaatar')::date, now(), null, 'attendance', '{}'::jsonb),
+  public.process_attendance_event(current_setting('test.import_id')::uuid, 'FACEDEV-1', 'EVT-FACE-DAY', (now() at time zone 'Asia/Ulaanbaatar')::date, ((now() at time zone 'Asia/Ulaanbaatar')::date + time '08:00') at time zone 'Asia/Ulaanbaatar', null, 'attendance', '{}'::jsonb),
   'duplicate', 'An import does not double-count a day recorded by a face scan'
 );
 

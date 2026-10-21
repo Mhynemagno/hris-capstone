@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(17);
+select extensions.plan(18);
 
 select extensions.has_column('public', 'qualifications', 'document_path', 'Eligibility keeps a supporting document');
 select extensions.has_table('public', 'deployment_reports', 'Deployments keep reports / proof of attendance');
@@ -53,6 +53,11 @@ select extensions.is((select count(*) from public.deployment_reports), 0::bigint
 
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000002701';
 select extensions.is((select file_name from public.deployment_reports where deployment_id = '00000000-0000-4000-8000-000000002791'), 'report.pdf', 'HR sees the submitted report');
+select extensions.throws_ok(
+  $$select public.submit_deployment_report('00000000-0000-4000-8000-000000002791', 'HR cannot submit employee evidence',
+      '{"objectPath":"deployments/00000000-0000-4000-8000-000000002791/report.pdf","fileName":"report.pdf","mimeType":"application/pdf","sizeBytes":100}'::jsonb)$$,
+  '42501', 'Only the assigned employee can submit deployment evidence.', 'HR cannot submit an employee deployment report'
+);
 
 select extensions.throws_ok(
   $$insert into public.qualifications (employee_id, name, awarded_on, document_path, document_name, document_mime_type, document_size_bytes)

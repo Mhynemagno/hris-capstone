@@ -30,7 +30,9 @@ export function ReportGenerateModal({ report, onClose }: { report: { key: Report
     if (!report) return;
     if (!from || !to) { setError("Choose both dates."); return; }
     if (from > to) { setError("Start date must be on or before the end date."); return; }
-    router.push(reportGenerateHref(report.key, { from, to, departmentId: departmentId ? Number(departmentId) : null, format }));
+    const href = reportGenerateHref(report.key, { from, to, departmentId: departmentId ? Number(departmentId) : null, format });
+    if (format === "pdf") window.location.assign(href);
+    else router.push(href);
   }
 
   return (

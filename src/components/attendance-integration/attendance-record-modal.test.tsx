@@ -13,7 +13,8 @@ describe("AttendanceRecordModal (attendance.html View)", () => {
     expect(screen.getByText("San Juan City Police Station — Admin Division")).toBeInTheDocument();
     expect(screen.getByText("Face Scan Biometrics")).toBeInTheDocument();
     expect(screen.getByText("Scan Mode:")).toBeInTheDocument();
-    expect(screen.getByText("00:49")).toBeInTheDocument();
+    expect(screen.getByText("00:49 (AM)")).toBeInTheDocument();
+    expect(screen.getByText("Worked Duration")).toBeInTheDocument();
     expect(screen.queryByText(/Facial Match Score/)).not.toBeInTheDocument();
   });
 

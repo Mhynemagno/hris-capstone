@@ -27,6 +27,7 @@ describe("EmployeeAttendanceList", () => {
     const first = screen.getByText("October 2, 2026").closest("article") as HTMLElement;
     expect(within(first).getByText("18:58")).toBeVisible();
     expect(within(first).getByText("19:12")).toBeVisible();
+    expect(within(first).getByText("14m")).toBeVisible();
     expect(screen.getByText("Showing 1–4 of 4 attendance records")).toBeVisible();
   });
 

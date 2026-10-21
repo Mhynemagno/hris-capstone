@@ -14,8 +14,8 @@ import { formatDateTime } from "@/lib/format-date";
 import { openSignedUrl } from "@/lib/open-signed-url";
 import { getDeploymentReportUrl } from "@/queries/deployment-tracking";
 
-/** Reports / proof of attendance for one deployment: the list, and a form to submit one (deployed employee or HR). */
-export function DeploymentReports({ deploymentId }: { deploymentId: string }) {
+/** Submitted evidence is visible to HR; only the assigned employee receives the submission form. */
+export function DeploymentReports({ deploymentId, canSubmit = true }: { deploymentId: string; canSubmit?: boolean }) {
   const reports = useDeploymentReports(deploymentId);
   const submit = useSubmitDeploymentReport();
   const [file, setFile] = useState<File | null>(null);
@@ -60,7 +60,7 @@ export function DeploymentReports({ deploymentId }: { deploymentId: string }) {
           ))}
         </ul>
       ) : <p className="rounded-lg border border-dashed px-4 py-4 text-sm text-muted-foreground">No report submitted yet.</p>}
-      <form className="grid gap-3 rounded-xl border p-4 sm:grid-cols-2" noValidate onSubmit={onSubmit}>
+      {canSubmit ? <form className="grid gap-3 rounded-xl border p-4 sm:grid-cols-2" noValidate onSubmit={onSubmit}>
         <FormField description="A short report, attendance sheet, or photo (PDF or image, up to 10 MB)." htmlFor={`report-file-${deploymentId}`} label="Report or proof of attendance" required>
           <Input accept="application/pdf,image/png,image/jpeg,image/webp" className="h-11" id={`report-file-${deploymentId}`} onChange={(event) => setFile(event.target.files?.[0] ?? null)} type="file" />
         </FormField>
@@ -72,7 +72,7 @@ export function DeploymentReports({ deploymentId }: { deploymentId: string }) {
           {notice ? <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400" role="status">{notice}</p> : null}
         </div>
         {error ? <div className="sm:col-span-2"><ErrorState message={error} /></div> : null}
-      </form>
+      </form> : null}
     </section>
   );
 }

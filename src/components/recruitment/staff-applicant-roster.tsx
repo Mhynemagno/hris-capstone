@@ -60,7 +60,7 @@ function statusFilterValue(params: ReturnType<typeof parseApplicationListParams>
   return "";
 }
 
-/** Applicant Roster (Capstone UI roster.html, PDF p. 22). Registered applicants who have not submitted read "Pending". */
+/** Applicant Roster (Final Revisions.pdf p. 15). Every registered applicant has a stable ID; unsubmitted applications read "Pending". */
 export function StaffApplicantRoster() {
   const { params: raw, set } = useListParams(KEYS);
   const params = parseApplicationListParams({ ...raw, quick: raw.quick || "all" });
@@ -197,7 +197,7 @@ export function StaffApplicantRoster() {
                           <InitialsAvatar name={row.name} size="lg" />
                           <div>
                             <p className="text-sm font-bold text-slate-900">{row.name}</p>
-                            <p className="font-mono text-[11px] text-slate-500">ID: {row.applicantNumber ?? "Pending"}</p>
+                            <p className="font-mono text-[11px] text-slate-500">ID: {row.applicantNumber ?? "—"}</p>
                           </div>
                         </div>
                       </td>

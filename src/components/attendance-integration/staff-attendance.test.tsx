@@ -37,7 +37,8 @@ describe("StaffAttendance (attendance.html)", () => {
     const row = screen.getByRole("link", { name: "Maria Cristina Balneg" }).closest("tr")!;
     expect(within(row).getByText("October 11, 2026")).toBeInTheDocument();
     expect(within(row).getByText("00:49")).toBeInTheDocument();
-    expect(within(row).getByText("—")).toBeInTheDocument();
+    expect(within(row).getAllByText("—")).toHaveLength(2);
+    expect(screen.getByRole("columnheader", { name: "Duration" })).toBeInTheDocument();
     expect(within(row).getByText("Partial")).toBeInTheDocument();
     expect(within(row).getByText("Face scan")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Maria Cristina Balneg" })).toHaveAttribute("href", "/hr/employees/e1");

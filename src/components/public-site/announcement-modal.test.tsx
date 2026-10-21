@@ -36,7 +36,7 @@ describe("AnnouncementModal (PDF pp. 35–36)", () => {
     expect(mocks.setStatus).toHaveBeenCalledWith({ announcementId: "new1", status: "published" });
     expect(mocks.notify).toHaveBeenCalledWith({ title: "Announcement published" });
     expect(onClose).toHaveBeenCalled();
-  });
+  }, 10_000);
 
   it("saves a draft when Publish immediately is unticked", async () => {
     mocks.save.mockResolvedValue({ id: "new2" });

@@ -90,17 +90,16 @@ function uniqueDeploymentDay() {
 }
 
 /** HR creates a deployment for the demo employee in the Deployments side panel, then opens its details page. */
-async function createDeployment(page: Page, location: string, { startDay = uniqueDeploymentDay(), status = "ongoing" }: { startDay?: number; status?: string } = {}) {
+async function createDeployment(page: Page, location: string, options: { startDay?: number } = {}) {
+  const { startDay = uniqueDeploymentDay() } = options;
   await page.goto("/hr/deployments");
   await page.getByRole("button", { name: /New Deployment/ }).click();
   const panel = page.getByRole("dialog", { name: "Create Deployment" });
-  await chooseComboboxOption(page, /^Employee/, "0-00001", /Demo Employee/);
+  await chooseComboboxOption(page, /^Employees/, "0-00001", /Demo Employee/);
   await panel.getByLabel(/^Location/).fill(location);
-  await panel.getByLabel(/^Remarks/).fill("Initial assignment");
-  await panel.getByLabel(/^Start Date/).fill(isoDate(startDay));
   await panel.getByLabel(/^Deployment Type/).selectOption("Public Assembly");
   await panel.getByLabel(/^Event \/ Operation/).selectOption("Rally");
-  await panel.getByLabel(/^Status/).selectOption(status);
+  await panel.getByLabel(/^Start Date/).fill(isoDate(startDay));
   await panel.getByRole("button", { name: "Save" }).click();
   await expect(panel).toHaveCount(0, { timeout: 30_000 });
   await page.getByRole("row").filter({ hasText: location }).first().getByRole("link", { name: "View Details" }).click();
@@ -221,9 +220,9 @@ test.describe("Objective 2: recruitment management", () => {
 
     // The personal data sheet requires the personal information and Primary, Secondary and
     // Tertiary education (qualifier, birthdate and mobile number come from registration;
-    // citizenship defaults to Filipino). There is no applicant number until HR accepts the application.
+    // citizenship defaults to Filipino). Registration immediately assigns a stable applicant number.
     await page.goto("/applicant/profile");
-    await expect(page.getByText("Applicant Number").locator("..")).toContainText("Pending");
+    await expect(page.getByText("Applicant Number").locator("..")).toContainText(/\d-\d{5,}/);
     await page.getByLabel(/^Place of Birth/).fill("San Juan City");
     await page.getByLabel(/^Gender/).selectOption("female");
     await page.getByLabel(/^Civil Status/).selectOption("single");
@@ -298,13 +297,13 @@ test.describe("Objective 2: recruitment management", () => {
     await expect(page.getByRole("button", { name: "Hire applicant" })).toHaveCount(0);
     await signOut(page);
 
-    // The applicant signs in with their email: accepting the application issued their applicant number,
-    // and every status change reached their notifications.
+    // The applicant signs in with their email; their registration number remains stable,
+    // and the HR workflow status changes reach their notifications. Registration itself
+    // deliberately does not create a duplicate applicant-number notification.
     await signIn(page, { mode: "applicant", identifier: applicantEmail }, "/applicant");
     await page.goto("/applicant/profile");
     await expect(page.getByText("Applicant Number").locator("..")).toContainText(/\d-\d{5,}/);
     await page.goto("/notifications");
-    await expect(page.getByText("Your applicant number").first()).toBeVisible();
     await expect(page.getByText("Application updated").first()).toBeVisible();
   });
 });
@@ -330,18 +329,18 @@ test.describe("Objective 3: deployment tracking", () => {
 
     await signIn(page, HR.email, HR.home);
 
-    // Validation: a deployment needs a location and remarks (the side panel, PDF p. 25).
+    // Validation: a grouped deployment still needs a location.
     await page.goto("/hr/deployments?create=1");
     const createPanel = page.getByRole("dialog", { name: "Create Deployment" });
-    await chooseComboboxOption(page, /^Employee/, "0-00001", /Demo Employee/);
+    await chooseComboboxOption(page, /^Employees/, "0-00001", /Demo Employee/);
     await createPanel.getByLabel(/^Start Date/).fill(isoDate(0));
     await createPanel.getByRole("button", { name: "Save" }).click();
     await expect(createPanel.getByText("Location is required.").first()).toBeVisible();
-    await expect(createPanel.getByText("Remarks are required.").first()).toBeVisible();
     await createPanel.getByRole("button", { name: "Cancel" }).click();
 
     await createDeployment(page, role);
-    await expect(page.getByText("Deployment created by").first()).toBeVisible();
+    await expect(page.getByText("Current status")).toBeVisible();
+    await expect(page.getByText(role, { exact: true })).toBeVisible();
     const detailUrl = page.url();
     // Details are read-only: the assignment fields are only in the edit panel (the report form has its own Notes box).
     await expect(page.getByLabel(/^Remarks/)).toHaveCount(0);
@@ -352,7 +351,6 @@ test.describe("Objective 3: deployment tracking", () => {
     await expect(editPanel).toHaveCount(0, { timeout: 30_000 });
     await page.goto(detailUrl);
     await expect(page.getByText(`Oplan Ligtas ${runId}`)).toBeVisible();
-    await expect(page.getByText("Details updated by").first()).toBeVisible();
 
     await page.goto("/hr/deployments");
     await expect(page.getByRole("row").filter({ hasText: role }).first()).toBeVisible({ timeout: 15_000 });
@@ -385,9 +383,10 @@ test.describe("Objective 4: promotion eligibility tracker", () => {
 
     // Each rank has one set of criteria; create them for PCPL on the first run, reuse afterwards (the slide-over, PDF p. 29).
     await page.goto("/hr/promotions?criteria=1");
-    const criteriaPanel = page.getByRole("dialog", { name: "Promotion Criteria" });
+    const criteriaPanel = page.getByRole("dialog", { name: "Official promotion policy matrix" });
     const existing = criteriaPanel.getByRole("button", { name: /(Deactivate|Activate) criteria for PCPL/ });
     await expect(criteriaPanel.getByText(/Loading promotion criteria/)).toHaveCount(0, { timeout: 15_000 });
+    await expect(criteriaPanel.getByText("PLT–PLTCOL")).toBeVisible();
     if (await existing.count() === 0) {
       await chooseComboboxOption(page, /^Target Rank/, "PCPL", /PCPL — Police Corporal/);
       await criteriaPanel.getByLabel(/^Time in Grade/).selectOption("3");
@@ -567,8 +566,8 @@ test.describe("Objective 8: automated reports", () => {
   test("HR generates, filters, and downloads reports; management reads them", async ({ page }) => {
     const role = `E2E Report ${runId}`;
     await signIn(page, HR.email, HR.home);
-    // Dated today so it falls in the report's default 30-day range; completed so it never double-books.
-    await createDeployment(page, role, { startDay: 0, status: "completed" });
+    // Dated today so it falls in the report's default 30-day range.
+    await createDeployment(page, role, { startDay: 0 });
 
     await page.goto("/reports");
     for (const report of ["Applicant Tracking", "Hiring Decisions", "Employee Performance", "Duty Deployments", "Attendance & Leave", "Promotion & Training Needs"]) {
