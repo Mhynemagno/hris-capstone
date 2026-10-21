@@ -649,6 +649,8 @@ export type AttendanceIntegrationSettings = {
   adapter_key: "csv_xlsx";
   timezone: "Asia/Ulaanbaatar";
   workday_start: string;
+  /** Earliest accepted biometric or import scan; scheduled duty still starts at workday_start. */
+  access_window_start?: string;
   late_grace_minutes: number;
   template_version: string;
   is_enabled: boolean;
