@@ -53,4 +53,15 @@ describe("StaffPromotions (promotions.html)", () => {
     render(<StaffPromotions />);
     expect(screen.getByRole("dialog")).toHaveTextContent("Review e1");
   });
+
+  it("keeps the checklist fields available after selecting a target rank", async () => {
+    mocks.params = new URLSearchParams("criteria=1");
+    const user = userEvent.setup();
+    render(<StaffPromotions />);
+
+    await user.type(screen.getByRole("combobox", { name: "Target Rank" }), "PMSG");
+    await user.click(screen.getByRole("option", { name: "PMSG — Police Master Sergeant" }));
+
+    expect(screen.getByLabelText(/^Time in Grade/)).toBeInTheDocument();
+  });
 });

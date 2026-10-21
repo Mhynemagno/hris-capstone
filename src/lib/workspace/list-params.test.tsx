@@ -43,14 +43,3 @@ it("resets a configured page key when a tab changes while preserving unrelated d
 
   expect(nav.replace).toHaveBeenCalledWith("/hr/applications?period=month&attention=attendance", { scroll: false });
 });
-
-it("does not let a delayed list update overwrite a destination navigation", () => {
-  const { result } = renderHook(() => useListParams(["q", "page"] as const));
-  vi.restoreAllMocks();
-  window.history.replaceState(null, "", "/hr/employees/00000000-0000-4000-8000-000000000001");
-  vi.spyOn(window.history, "replaceState").mockImplementation((_state, _unused, url) => nav.replace(url, { scroll: false }));
-
-  act(() => result.current.set({ q: "demo" }));
-
-  expect(nav.replace).not.toHaveBeenCalled();
-});

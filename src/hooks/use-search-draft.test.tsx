@@ -37,3 +37,19 @@ it("searches immediately on Enter and follows outside changes such as Clear all"
   rerender({ value: "" });
   expect(result.current.draft).toBe("");
 });
+
+it("cancels a pending search when a link begins navigation", () => {
+  const onCommit = vi.fn();
+  const { result } = renderHook(() => useSearchDraft("", onCommit));
+  const link = document.createElement("a");
+  link.href = "/hr/employees/00000000-0000-4000-8000-000000000001";
+  link.addEventListener("click", (event) => event.preventDefault());
+  document.body.append(link);
+
+  act(() => result.current.change("ana"));
+  act(() => link.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true })));
+  act(() => { vi.advanceTimersByTime(300); });
+
+  expect(onCommit).not.toHaveBeenCalled();
+  link.remove();
+});

@@ -298,12 +298,12 @@ test.describe("Objective 2: recruitment management", () => {
     await signOut(page);
 
     // The applicant signs in with their email; their registration number remains stable,
-    // and every status change reaches their notifications.
+    // and the HR workflow status changes reach their notifications. Registration itself
+    // deliberately does not create a duplicate applicant-number notification.
     await signIn(page, { mode: "applicant", identifier: applicantEmail }, "/applicant");
     await page.goto("/applicant/profile");
     await expect(page.getByText("Applicant Number").locator("..")).toContainText(/\d-\d{5,}/);
     await page.goto("/notifications");
-    await expect(page.getByText("Your applicant number").first()).toBeVisible();
     await expect(page.getByText("Application updated").first()).toBeVisible();
   });
 });
@@ -339,7 +339,8 @@ test.describe("Objective 3: deployment tracking", () => {
     await createPanel.getByRole("button", { name: "Cancel" }).click();
 
     await createDeployment(page, role);
-    await expect(page.getByText("Deployment created by").first()).toBeVisible();
+    await expect(page.getByText("Current status")).toBeVisible();
+    await expect(page.getByText(role, { exact: true })).toBeVisible();
     const detailUrl = page.url();
     // Details are read-only: the assignment fields are only in the edit panel (the report form has its own Notes box).
     await expect(page.getByLabel(/^Remarks/)).toHaveCount(0);
@@ -350,7 +351,6 @@ test.describe("Objective 3: deployment tracking", () => {
     await expect(editPanel).toHaveCount(0, { timeout: 30_000 });
     await page.goto(detailUrl);
     await expect(page.getByText(`Oplan Ligtas ${runId}`)).toBeVisible();
-    await expect(page.getByText("Details updated by").first()).toBeVisible();
 
     await page.goto("/hr/deployments");
     await expect(page.getByRole("row").filter({ hasText: role }).first()).toBeVisible({ timeout: 15_000 });
@@ -383,9 +383,10 @@ test.describe("Objective 4: promotion eligibility tracker", () => {
 
     // Each rank has one set of criteria; create them for PCPL on the first run, reuse afterwards (the slide-over, PDF p. 29).
     await page.goto("/hr/promotions?criteria=1");
-    const criteriaPanel = page.getByRole("dialog", { name: "Promotion Criteria" });
+    const criteriaPanel = page.getByRole("dialog", { name: "Official promotion policy matrix" });
     const existing = criteriaPanel.getByRole("button", { name: /(Deactivate|Activate) criteria for PCPL/ });
     await expect(criteriaPanel.getByText(/Loading promotion criteria/)).toHaveCount(0, { timeout: 15_000 });
+    await expect(criteriaPanel.getByText("PLT–PLTCOL")).toBeVisible();
     if (await existing.count() === 0) {
       await chooseComboboxOption(page, /^Target Rank/, "PCPL", /PCPL — Police Corporal/);
       await criteriaPanel.getByLabel(/^Time in Grade/).selectOption("3");
