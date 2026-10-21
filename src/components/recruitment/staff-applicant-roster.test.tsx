@@ -17,7 +17,7 @@ vi.mock("@/hooks/use-applicant-portal", () => ({
   useHrRegisteredApplicants: () => ({
     isLoading: false,
     error: null,
-    data: [{ user_id: "u2", first_name: "Maria", middle_name: null, last_name: "Santos", qualifier: null, full_name: "Maria Santos", email: "maria@example.test", application_count: 0, registered_at: "2026-10-10T00:00:00Z", applicant_number: null }],
+    data: [{ user_id: "u2", first_name: "Maria", middle_name: null, last_name: "Santos", qualifier: null, full_name: "Maria Santos", email: "maria@example.test", application_count: 0, registered_at: "2026-10-10T00:00:00Z", applicant_number: 202699 }],
   }),
 }));
 vi.mock("@/hooks/use-recruitment", () => ({
@@ -53,9 +53,10 @@ describe("StaffApplicantRoster (roster.html)", () => {
     expect(within(row).getByRole("link", { name: "Edit Candidate" })).toHaveAttribute("href", `/hr/applications/${APPLICATION_ID}#stage-actions`);
   });
 
-  it("shows registered applicants who have not submitted as Pending, with View only", async () => {
+  it("shows registered applicants who have not submitted as Pending with their persistent ID and View only", async () => {
     render(<StaffApplicantRoster />);
     const row = screen.getByText("Santos, Maria").closest("tr")!;
+    expect(within(row).getByText("ID: 2-02699")).toBeInTheDocument();
     expect(within(row).getByText("Pending")).toBeInTheDocument();
     expect(within(row).getAllByRole("button")).toHaveLength(1);
     await userEvent.click(within(row).getByRole("button", { name: "View Profile" }));
