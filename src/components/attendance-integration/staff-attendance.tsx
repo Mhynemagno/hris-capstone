@@ -21,7 +21,7 @@ import { useListParams } from "@/lib/workspace/list-params";
 
 import { AttendanceKioskOverlay } from "./attendance-kiosk-overlay";
 import { AttendanceRecordModal } from "./attendance-record-modal";
-import { formatAttendanceTime } from "./attendance-time";
+import { formatAttendanceTime, workedDuration } from "./attendance-time";
 
 const PAGE_SIZE = 10;
 const STATUSES: AttendanceStatus[] = ["present", "incomplete", "late", "absent"];
@@ -75,7 +75,7 @@ export function StaffAttendance() {
             <table className={staffTable.table}>
               <thead className={staffTable.thead}>
                 <tr className="border-b border-slate-100">
-                  {["Date", "Personnel Name", "External ID", "Time In", "Time Out", "Status", "Source"].map((heading) => <th className={staffTable.th} key={heading} scope="col">{heading}</th>)}
+                  {["Date", "Personnel Name", "External ID", "Time In", "Time Out", "Duration", "Status", "Source"].map((heading) => <th className={staffTable.th} key={heading} scope="col">{heading}</th>)}
                   <th className={cn(staffTable.th, "text-center")} scope="col">Action</th>
                 </tr>
               </thead>
@@ -99,6 +99,7 @@ export function StaffAttendance() {
                       <td className={cn(staffTable.td, "font-mono font-bold")}>{log.external_employee_id}</td>
                       <td className={cn(staffTable.td, "font-mono font-semibold")}>{formatAttendanceTime(log.time_in)}</td>
                       <td className={cn(staffTable.td, "font-mono font-semibold", !log.time_out && "text-slate-500")}>{formatAttendanceTime(log.time_out)}</td>
+                      <td className={cn(staffTable.td, "font-mono font-semibold", !log.time_out && "text-slate-500")}>{workedDuration(log.time_in, log.time_out)}</td>
                       <td className={staffTable.td}><StatusPill tone={pill.tone}>{pill.label}</StatusPill></td>
                       <td className={staffTable.td}>
                         <span className="inline-flex items-center gap-1 rounded-md border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700">
@@ -113,7 +114,7 @@ export function StaffAttendance() {
                       </td>
                     </tr>
                   );
-                }) : <tr><td className="px-6 py-10 text-center text-xs text-slate-500" colSpan={8}>{params.q || status ? "No attendance logs match your search or filter." : "No attendance logs found."}</td></tr>}
+                }) : <tr><td className="px-6 py-10 text-center text-xs text-slate-500" colSpan={9}>{params.q || status ? "No attendance logs match your search or filter." : "No attendance logs found."}</td></tr>}
               </tbody>
             </table>
           </div>

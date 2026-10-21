@@ -12,7 +12,7 @@ import { formatDate } from "@/lib/format-date";
 import { ATTENDANCE_STATUS, type PillTone } from "@/lib/staff/status-maps";
 import type { AttendanceStatus } from "@/lib/types/database";
 import { cn } from "@/lib/utils";
-import { formatAttendanceTime } from "./attendance-time";
+import { formatAttendanceTime, workedDuration } from "./attendance-time";
 
 const PAGE_SIZE = 10;
 const ICONS: Record<AttendanceStatus, typeof Clock> = { present: UserCheck, late: Clock, incomplete: Clock, absent: UserX };
@@ -70,6 +70,7 @@ export function EmployeeAttendanceList() {
                   <dl className="flex w-full items-center justify-between gap-3 border-t border-slate-200 pt-2 sm:w-auto sm:justify-end sm:border-0 sm:pt-0">
                     <div className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-center"><dt className="block text-[10px] leading-none font-bold text-slate-500 uppercase">Time In</dt><dd className="text-xs font-bold text-slate-900">{formatAttendanceTime(row.time_in)}</dd></div>
                     <div className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-center"><dt className="block text-[10px] leading-none font-bold text-slate-500 uppercase">Time Out</dt><dd className="text-xs font-bold text-slate-900">{formatAttendanceTime(row.time_out)}</dd></div>
+                    <div className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-center"><dt className="block text-[10px] leading-none font-bold text-slate-500 uppercase">Duration</dt><dd className="text-xs font-bold text-slate-900">{workedDuration(row.time_in, row.time_out)}</dd></div>
                   </dl>
                 </article>
               );

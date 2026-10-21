@@ -9,7 +9,7 @@ import { formatDate } from "@/lib/format-date";
 import { ATTENDANCE_STATUS } from "@/lib/staff/status-maps";
 import type { AttendanceLogWithEmployee } from "@/queries/attendance-integration";
 
-import { formatAttendanceTime } from "./attendance-time";
+import { formatAttendanceTimeWithMeridiem, workedDuration } from "./attendance-time";
 
 function initials(first: string, last: string) {
   return `${first[0] ?? ""}${last[0] ?? ""}`.toUpperCase();
@@ -57,11 +57,15 @@ export function AttendanceRecordModal({ log, missing, onClose }: { log: Attendan
             </div>
             <div className="space-y-1 rounded-xl border border-slate-200/80 bg-slate-50/80 p-3">
               <span className="flex items-center gap-1 text-[10px] font-extrabold text-emerald-700 uppercase"><LogIn aria-hidden="true" className="size-3" /> Time In</span>
-              <p className="font-mono text-sm font-black text-emerald-950">{formatAttendanceTime(log.time_in)}</p>
+              <p className="font-mono text-sm font-black text-emerald-950">{formatAttendanceTimeWithMeridiem(log.time_in)}</p>
             </div>
             <div className="space-y-1 rounded-xl border border-slate-200/80 bg-slate-50/80 p-3">
               <span className="flex items-center gap-1 text-[10px] font-extrabold text-rose-700 uppercase"><LogOut aria-hidden="true" className="size-3" /> Time Out</span>
-              <p className="font-mono text-sm font-black text-rose-950">{formatAttendanceTime(log.time_out)}</p>
+              <p className="font-mono text-sm font-black text-rose-950">{formatAttendanceTimeWithMeridiem(log.time_out)}</p>
+            </div>
+            <div className="col-span-2 space-y-1 rounded-xl border border-slate-200 bg-white p-3">
+              <span className="text-[10px] font-extrabold text-slate-500 uppercase">Worked Duration</span>
+              <p className="font-mono text-sm font-black text-slate-900">{workedDuration(log.time_in, log.time_out)}</p>
             </div>
           </div>
 
