@@ -4,7 +4,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({ replace: vi.fn(), params: new URLSearchParams() }));
 vi.mock("next/navigation", () => ({ usePathname: () => "/hr/promotions", useRouter: () => ({ replace: mocks.replace }), useSearchParams: () => mocks.params }));
-vi.mock("./promotion-criteria-manager", () => ({ PromotionCriteriaManager: () => <p>Criteria manager</p> }));
 vi.mock("./promotion-review-modal", () => ({ PromotionReviewModal: ({ employeeId }: { employeeId: string }) => <div role="dialog">Review {employeeId}</div> }));
 vi.mock("@/hooks/use-administration", () => ({ useRankOptions: () => ({ data: [{ id: 4, name: "Police Master Sergeant", code: "PMSG", sort_order: 4, is_active: true }] }) }));
 vi.mock("@/hooks/use-promotion-eligibility", () => ({
@@ -35,16 +34,16 @@ describe("StaffPromotions (promotions.html)", () => {
     expect(mocks.replace).toHaveBeenCalledWith("/hr/promotions?review=e1", { scroll: false });
   });
 
-  it("opens Manage Criteria in a side panel", async () => {
+  it("opens the read-only official policy matrix instead of manual policy configuration", async () => {
     render(<StaffPromotions />);
-    await userEvent.click(screen.getByRole("button", { name: /Manage Criteria/ }));
+    await userEvent.click(screen.getByRole("button", { name: /Official policy matrix/ }));
     expect(mocks.replace).toHaveBeenCalledWith("/hr/promotions?criteria=1", { scroll: false });
   });
 
   it("renders the criteria panel and the review from the URL", () => {
     mocks.params = new URLSearchParams("criteria=1");
     const { unmount } = render(<StaffPromotions />);
-    expect(screen.getByRole("dialog", { name: "Promotion Criteria" })).toHaveTextContent("Criteria manager");
+    expect(screen.getByRole("dialog", { name: "Official promotion policy matrix" })).toHaveTextContent("PLT–PLTCOL");
     unmount();
     mocks.params = new URLSearchParams("review=e1");
     render(<StaffPromotions />);

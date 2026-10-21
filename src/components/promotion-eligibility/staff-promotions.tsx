@@ -16,11 +16,11 @@ import { useRankOptions } from "@/hooks/use-administration";
 import { usePanelParam } from "@/hooks/use-panel-param";
 import { usePromotionReadinessPage } from "@/hooks/use-promotion-eligibility";
 import { formatDate } from "@/lib/format-date";
+import { OFFICIAL_PROMOTION_POLICIES } from "@/lib/promotion-policies";
 import { rankLabel } from "@/lib/ranks";
 import { RECOMMENDATION_STATUS } from "@/lib/staff/status-maps";
 import { cn } from "@/lib/utils";
 
-import { PromotionCriteriaManager } from "./promotion-criteria-manager";
 import { PromotionReviewModal } from "./promotion-review-modal";
 
 const PAGE_SIZE = 10;
@@ -45,7 +45,7 @@ export function StaffPromotions() {
   return (
     <div className="space-y-6">
       <PageTitle
-        actions={<button className={staffButton.dark} onClick={() => setCriteria("1")} type="button"><ListChecks aria-hidden="true" className="size-3.5 text-amber-400" /><span>Manage Criteria</span></button>}
+        actions={<button className={staffButton.dark} onClick={() => setCriteria("1")} type="button"><ListChecks aria-hidden="true" className="size-3.5 text-amber-400" /><span>Official policy matrix</span></button>}
         subtitle="Review rank readiness and eligibility without automatically changing employee records."
         title="Promotions Evaluation"
       />
@@ -57,7 +57,7 @@ export function StaffPromotions() {
         <div className="text-xs">
           <p className="font-bold text-amber-300">Promotion Board Guidelines</p>
           <p className="text-[11px] leading-relaxed text-slate-300">
-            Promotion reviews advise HR Admin on candidate readiness based on Time-in-Grade and mandatory training courses. Submissions do not alter ranks automatically.
+            The official rank-band matrix guides board readiness and evidence review. Board decisions do not alter employee ranks automatically.
           </p>
         </div>
       </div>
@@ -121,10 +121,21 @@ export function StaffPromotions() {
         onClose={() => setCriteria(null)}
         open={criteria === "1"}
         size="xl"
-        subtitle="Configure criteria requirements for rank progression."
-        title="Promotion Criteria"
+        subtitle="Fixed allocations transcribed from the approved promotion parameters. HR records evidence and board decisions; this matrix is not editable here."
+        title="Official promotion policy matrix"
       >
-        <PromotionCriteriaManager />
+        <div className="space-y-5">
+          {OFFICIAL_PROMOTION_POLICIES.map((policy) => (
+            <section className="overflow-hidden rounded-xl border border-slate-200" key={policy.rankBand}>
+              <h3 className="bg-slate-900 px-4 py-3 text-sm font-bold text-white">{policy.rankBand}</h3>
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 text-[10px] font-bold tracking-wide text-slate-500 uppercase"><tr><th className="px-4 py-2" scope="col">Criterion</th><th className="px-4 py-2 text-right" scope="col">Points</th></tr></thead>
+                <tbody>{policy.criteria.map((criterion) => <tr className="border-t border-slate-100" key={criterion.label}><td className="px-4 py-2"><p className="font-semibold text-slate-800">{criterion.label}</p><p className="text-[10px] text-slate-500">{criterion.detail}</p></td><td className="px-4 py-2 text-right font-mono font-bold text-blue-800">{criterion.points}</td></tr>)}</tbody>
+                <tfoot className="border-t border-slate-200 bg-slate-50"><tr><td className="px-4 py-2 font-bold text-slate-800">Total</td><td className="px-4 py-2 text-right font-mono font-bold text-slate-900">100</td></tr></tfoot>
+              </table>
+            </section>
+          ))}
+        </div>
       </StaffSlideOver>
       {review ? <PromotionReviewModal employeeId={review} onClose={() => setReview(null)} /> : null}
     </div>
