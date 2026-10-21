@@ -15,13 +15,13 @@ vi.mock("@/hooks/use-deployment-tracking", () => ({ useDeployment: () => ({ data
 import { HrDeploymentDetails } from "./hr-deployment-details";
 
 describe("HrDeploymentDetails", () => {
-  it("shows the assignment read-only with an Update link and readable history", () => {
+  it("shows the assignment read-only with an Update link and HR-visible submitted reports", () => {
     render(<HrDeploymentDetails deploymentId={deployment.id} />);
     expect(screen.getByText("Maria Balneg")).toBeVisible();
     expect(screen.getByText("Whiteplains, EDSA")).toBeVisible();
     expect(screen.getByRole("heading", { name: "Reports / proof of attendance" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Update" })).toHaveAttribute("href", `/hr/deployments?edit=${deployment.id}`);
-    expect(screen.getByText("Deployment created by Juan Dela Cruz")).toBeVisible();
-    expect(screen.queryByText(/^created$/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "History" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Submit report" })).not.toBeInTheDocument();
   });
 });

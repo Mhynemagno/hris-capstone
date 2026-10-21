@@ -14,6 +14,10 @@ import { DeploymentReports } from "./deployment-reports";
 const deploymentId = "00000000-0000-4000-8000-000000002791";
 
 describe("DeploymentReports", () => {
+  it("can show HR the submitted evidence without giving HR a submission form", () => {
+    render(<DeploymentReports canSubmit={false} deploymentId={deploymentId} />);
+    expect(screen.queryByRole("button", { name: "Submit report" })).not.toBeInTheDocument();
+  });
   beforeEach(() => { mocks.submit.mockReset(); mocks.reports = []; });
 
   it("lists submitted reports with a link to the proof", () => {
