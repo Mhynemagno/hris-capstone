@@ -57,7 +57,7 @@ export function StaffPromotions() {
         <div className="text-xs">
           <p className="font-bold text-amber-300">Promotion Board Guidelines</p>
           <p className="text-[11px] leading-relaxed text-slate-300">
-            The official rank-band matrix guides board readiness and evidence review. Board decisions do not alter employee ranks automatically.
+            The official rank-band matrix is an approved reference for Promotion Board review. The readiness checklist below remains the recorded requirements assessment; board decisions do not alter employee ranks automatically.
           </p>
         </div>
       </div>
@@ -121,7 +121,7 @@ export function StaffPromotions() {
         onClose={() => setCriteria(null)}
         open={criteria === "1"}
         size="xl"
-        subtitle="Fixed allocations transcribed from the approved promotion parameters. HR records evidence and board decisions; this matrix is not editable here."
+        subtitle="Fixed allocations transcribed from the approved promotion parameters. This reference does not replace the recorded readiness checklist or board decision."
         title="Official promotion policy matrix"
       >
         <div className="space-y-5">

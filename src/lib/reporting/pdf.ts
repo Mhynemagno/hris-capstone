@@ -6,7 +6,7 @@ const pageHeight = 792;
 const left = 42;
 const firstRowY = 660;
 const lineHeight = 14;
-const rowsPerPage = 38;
+const linesPerPage = 38;
 
 function ascii(value: string) {
   return value
@@ -46,6 +46,10 @@ function formatPdfCell(value: unknown) {
   return String(value);
 }
 
+function rowLines(report: ReportResponse, row: ReportResponse["rows"][number]) {
+  return report.columns.flatMap((column) => split(`${column.label}: ${formatPdfCell(row[column.key])}`, 94));
+}
+
 function pageContent(report: ReportResponse, pageRows: ReportResponse["rows"], page: number, pageCount: number) {
   const commands = [
     "0.2 w",
@@ -60,7 +64,7 @@ function pageContent(report: ReportResponse, pageRows: ReportResponse["rows"], p
   ];
   let y = firstRowY;
   for (const row of pageRows) {
-    const fields = report.columns.flatMap((column) => split(`${column.label}: ${formatPdfCell(row[column.key])}`, 94));
+    const fields = rowLines(report, row);
     for (const field of fields) {
       commands.push(text(left, y, 8, field));
       y -= lineHeight;
@@ -74,9 +78,19 @@ function pageContent(report: ReportResponse, pageRows: ReportResponse["rows"], p
 
 /** Builds a compact, portrait, downloadable PDF without relying on the browser print dialog. */
 export function buildReportPdf(report: ReportResponse) {
-  const groups = report.rows.length
-    ? Array.from({ length: Math.ceil(report.rows.length / rowsPerPage) }, (_, index) => report.rows.slice(index * rowsPerPage, (index + 1) * rowsPerPage))
-    : [[]];
+  const groups: ReportResponse["rows"][] = [[]];
+  let usedLines = 0;
+  for (const row of report.rows) {
+    // A row has one rendered line per column (and may wrap). Page by those
+    // lines, not row count, so content never renders below the footer.
+    const lineCount = rowLines(report, row).length + 1;
+    if (usedLines > 0 && usedLines + lineCount > linesPerPage) {
+      groups.push([]);
+      usedLines = 0;
+    }
+    groups.at(-1)?.push(row);
+    usedLines += lineCount;
+  }
   const pageObjectStart = 5;
   const objects: string[] = [
     "<< /Type /Catalog /Pages 2 0 R >>",

@@ -22,4 +22,14 @@ describe("buildReportPdf", () => {
     expect(output).toContain("SPO2 Maria Santos");
     expect(output).toContain("%%EOF");
   });
+
+  it("starts a new portrait page before wrapped report rows reach the footer", () => {
+    const pdf = buildReportPdf({
+      reportKey: "deployments", title: "Deployment status report", generatedAt: "2026-10-21T08:00:00.000Z",
+      columns: [{ key: "employee", label: "Employee" }, { key: "location", label: "Location" }, { key: "status", label: "Status" }],
+      rows: Array.from({ length: 18 }, (_, index) => ({ employee: `Officer ${index}`, location: "San Juan City Police Station", status: "Scheduled" })),
+      totalCount: 18, page: 1, pageSize: 100,
+    });
+    expect(new TextDecoder().decode(pdf)).toContain("Page 2 of 2");
+  });
 });

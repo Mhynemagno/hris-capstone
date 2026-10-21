@@ -139,6 +139,17 @@ begin
     end if;
     insert into public.deployment_assignments (deployment_group_id, employee_id, task)
     values (group_id, assigned_employee_id, assigned_task);
+
+    -- Keep one legacy deployment per assignment while the employee portal and
+    -- proof-of-attendance tables remain keyed to deployments.id. This makes a
+    -- grouped assignment immediately visible and reportable by its employee.
+    insert into public.deployments (
+      employee_id, location, unit, project, assignment_role, starts_on, ends_on,
+      status, notes, deployment_type, event_operation, created_by_user_id, updated_by_user_id
+    ) values (
+      assigned_employee_id, clean_location, clean_unit, null, assigned_task, target_starts_on, target_ends_on,
+      'scheduled', 'Grouped deployment assignment: ' || assigned_task, target_deployment_type, target_event_operation, caller_id, caller_id
+    );
   end loop;
 
   insert into public.audit_logs (actor_user_id, entity_type, entity_id, action, metadata)

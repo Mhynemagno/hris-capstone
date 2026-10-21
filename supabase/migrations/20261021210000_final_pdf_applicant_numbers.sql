@@ -15,10 +15,6 @@ as $$
 declare
   registered_at timestamptz;
 begin
-  if new.applicant_number is not null then
-    return new;
-  end if;
-
   select profile.created_at into registered_at
   from public.profiles profile
   where profile.id = new.profile_id;
@@ -56,3 +52,24 @@ where applicant.applicant_number is null;
 
 alter table public.applicants
   alter column applicant_number set not null;
+
+create or replace function private.prevent_applicant_number_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if new.applicant_number is distinct from old.applicant_number then
+    raise exception 'Applicant number cannot be changed.' using errcode = '42501';
+  end if;
+  return new;
+end;
+$$;
+
+revoke all on function private.prevent_applicant_number_change() from public, anon, authenticated;
+
+drop trigger if exists applicants_prevent_applicant_number_change on public.applicants;
+create trigger applicants_prevent_applicant_number_change
+  before update of applicant_number on public.applicants
+  for each row execute function private.prevent_applicant_number_change();

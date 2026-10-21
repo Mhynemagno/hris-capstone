@@ -52,6 +52,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ repo
     if (!parsed.success || !parsed.data.rows.length) break;
     rows.push(...parsed.data.rows);
   }
+  if (rows.length !== report.data.totalCount) {
+    return NextResponse.json({ error: "The report is too large to generate safely. Narrow the filters and try again." }, { status: 422 });
+  }
 
   const pdf = buildReportPdf({ ...report.data, rows, page: 1 });
   return new NextResponse(pdf, {
