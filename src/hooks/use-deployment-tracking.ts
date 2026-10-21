@@ -3,10 +3,11 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { queryKeys } from "@/lib/query-keys";
-import { createDeployment, createDeploymentGroup, deploymentFilters, getDeployment, listDeploymentReports, listEmployeeOptions, listHrDeployments, listMyDeployments, submitDeploymentReport, updateDeployment, type DeploymentReportInput } from "@/queries/deployment-tracking";
+import { createDeployment, createDeploymentGroup, deploymentFilters, getDeployment, listDeploymentReports, listEmployeeOptions, listHrDeploymentGroupAssignments, listHrDeployments, listMyDeployments, submitDeploymentReport, updateDeployment, type DeploymentReportInput } from "@/queries/deployment-tracking";
 import type { DeploymentFilters } from "@/schemas/deployment-tracking";
 
 export function useHrDeployments(input: Partial<DeploymentFilters> = {}) { const filters = deploymentFilters(input); return useQuery({ queryKey: queryKeys.deploymentTracking.hrDirectory(filters), queryFn: () => listHrDeployments(filters), placeholderData: keepPreviousData }); }
+export function useHrDeploymentGroupAssignments() { return useQuery({ queryKey: ["deployment-tracking", "group-assignments"], queryFn: listHrDeploymentGroupAssignments }); }
 export function useMyDeployments(input: Partial<DeploymentFilters> = {}) { const filters = deploymentFilters(input); return useQuery({ queryKey: queryKeys.deploymentTracking.mine(filters), queryFn: () => listMyDeployments(filters) }); }
 /** All employees (capped at 2000) for the deployment employee picker. */
 export function useEmployeeOptions() { return useQuery({ queryKey: ["deployment-tracking", "employee-options"], queryFn: listEmployeeOptions, staleTime: 60_000 }); }

@@ -17,6 +17,11 @@ vi.mock("@/hooks/use-deployment-tracking", () => ({
       { ...base, id: "d2", starts_on: "2026-09-25", ends_on: null, status: "cancelled" },
     ] },
   }),
+  useHrDeploymentGroupAssignments: () => ({
+    isLoading: false,
+    error: null,
+    data: [{ id: "ga1", employee_id: "e1", task: "Reserve/Standby", status: "scheduled", deployment_group: { id: "g1", location: "City Hall", starts_on: "2026-10-14", ends_on: null, deployment_type: "Public Assembly", event_operation: "Rally" }, employee: { id: "e1", fullName: "Danilo Fernandez Aguilar Jr", employeeNumber: "0-11152" } }],
+  }),
   useEmployeeOptions: () => ({ data: [{ id: "e1", fullName: "Danilo Fernandez Aguilar Jr", employeeNumber: "0-11152" }] }),
   useUpdateDeployment: () => ({ mutateAsync: mocks.update, isPending: false }),
 }));
@@ -36,6 +41,9 @@ describe("StaffDeployments (dep.html)", () => {
     expect(within(row).getByText("October 13, 2026 – October 13, 2026")).toBeInTheDocument();
     expect(within(row).getByText("Ongoing")).toBeInTheDocument();
     expect(within(row).getByRole("link", { name: "View Details" })).toHaveAttribute("href", "/hr/deployments/d1");
+    const grouped = screen.getByRole("region", { name: "Grouped deployment assignments" });
+    expect(within(grouped).getByText(/City Hall/)).toBeInTheDocument();
+    expect(within(grouped).getByText("Reserve/Standby")).toBeInTheDocument();
   });
 
   it("opens the side panel from New Deployment instead of a new page", async () => {

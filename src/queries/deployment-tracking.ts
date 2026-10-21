@@ -56,6 +56,14 @@ export async function getDeployment(deploymentId: string) {
 export const EMPLOYEE_OPTIONS_LIMIT = 2000;
 
 export type EmployeeOption = { id: string; fullName: string; employeeNumber: string };
+export type DeploymentGroupAssignment = {
+  id: string;
+  employee_id: string;
+  task: "Deployed" | "Reserve/Standby";
+  status: Deployment["status"];
+  deployment_group: { id: string; location: string; starts_on: string; ends_on: string | null; deployment_type: string; event_operation: string };
+  employee: EmployeeOption;
+};
 
 /** Active employees (up to 2000) for deployment pickers; retired personnel cannot be assigned new duty. */
 export async function listEmployeeOptions(): Promise<EmployeeOption[]> {
@@ -102,6 +110,27 @@ export async function createDeploymentGroup(input: unknown) {
   });
   throwIfError(error);
   return data as string;
+}
+
+/** Assignment rows from deployments created through the grouped workflow. */
+export async function listHrDeploymentGroupAssignments(): Promise<DeploymentGroupAssignment[]> {
+  const { data, error } = await createBrowserSupabaseClient()
+    .from("deployment_assignments")
+    .select("id, employee_id, task, status, deployment_group:deployment_groups(id, location, starts_on, ends_on, deployment_type, event_operation), employee:employees(id, employee_number, first_name, middle_name, last_name, qualifier)")
+    .order("created_at", { ascending: false })
+    .limit(200);
+  throwIfError(error);
+  return ((data ?? []) as unknown as Array<{ id: string; employee_id: string; task: DeploymentGroupAssignment["task"]; status: Deployment["status"]; deployment_group: DeploymentGroupAssignment["deployment_group"] | null; employee: Pick<Employee, "id" | "employee_number" | "first_name" | "middle_name" | "last_name" | "qualifier"> | null }>).flatMap((row) => {
+    if (!row.deployment_group || !row.employee) return [];
+    return [{
+      id: row.id,
+      employee_id: row.employee_id,
+      task: row.task,
+      status: row.status,
+      deployment_group: row.deployment_group,
+      employee: { id: row.employee.id, employeeNumber: row.employee.employee_number, fullName: [row.employee.first_name, row.employee.middle_name, row.employee.last_name, row.employee.qualifier].filter(Boolean).join(" ") },
+    }];
+  });
 }
 
 export async function updateDeployment(input: unknown) {
