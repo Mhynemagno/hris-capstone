@@ -7,11 +7,38 @@ vi.mock("@/lib/supabase/client", () => ({
   createBrowserSupabaseClient: () => ({ from, rpc }),
 }));
 
-import { createDeployment, deploymentFilters, EMPLOYEE_OPTIONS_LIMIT, listEmployeeOptions, listHrDeployments, updateDeployment } from "./deployment-tracking";
+import { createDeployment, createDeploymentGroup, deploymentFilters, EMPLOYEE_OPTIONS_LIMIT, listEmployeeOptions, listHrDeployments, updateDeployment } from "./deployment-tracking";
 
 const deployment = { employeeId: "3f1e2d3c-4b5a-4968-8776-655443322110", location: "San Juan", unit: "", startsOn: "2026-09-25", status: "ongoing", deploymentType: "Public Assembly", eventOperation: "Rally", notes: "Relief duty" };
 
 describe("deployment tracking queries", () => {
+  it("creates a grouped deployment through the assignment RPC", async () => {
+    rpc.mockResolvedValue({ data: "group-1", error: null });
+    await expect(createDeploymentGroup({
+      location: "San Juan",
+      startsOn: "2026-10-22",
+      deploymentType: "Public Assembly",
+      eventOperation: "Rally",
+      assignments: [
+        { employeeId: deployment.employeeId, task: "Deployed" },
+        { employeeId: "7c1e2d3c-4b5a-4968-8776-655443322110", task: "Reserve/Standby" },
+      ],
+    })).resolves.toBe("group-1");
+
+    expect(rpc).toHaveBeenLastCalledWith("create_deployment_group", {
+      target_location: "San Juan",
+      target_unit: null,
+      target_starts_on: "2026-10-22",
+      target_ends_on: null,
+      target_deployment_type: "Public Assembly",
+      target_event_operation: "Rally",
+      target_assignments: [
+        { employeeId: deployment.employeeId, task: "Deployed" },
+        { employeeId: "7c1e2d3c-4b5a-4968-8776-655443322110", task: "Reserve/Standby" },
+      ],
+    });
+  });
+
   it("creates with the employee and updates without it, matching the database functions", async () => {
     rpc.mockResolvedValue({ data: "d1", error: null });
     await createDeployment(deployment);
@@ -34,14 +61,17 @@ describe("deployment tracking queries", () => {
       error: null,
     });
     const order = vi.fn();
-    const chain = { order, limit };
+    const eq = vi.fn();
+    const chain = { order, limit, eq };
     order.mockReturnValue(chain);
+    eq.mockReturnValue(chain);
     const select = vi.fn(() => chain);
     from.mockReturnValue({ select });
 
     await expect(listEmployeeOptions()).resolves.toEqual([{ id: "e1", employeeNumber: "PAT-001", fullName: "Ana M Reyes Jr." }]);
     expect(from).toHaveBeenCalledWith("employees");
     expect(limit).toHaveBeenCalledWith(EMPLOYEE_OPTIONS_LIMIT);
+    expect(eq).toHaveBeenCalledWith("employment_status", "active");
     expect(EMPLOYEE_OPTIONS_LIMIT).toBe(2000);
   });
 

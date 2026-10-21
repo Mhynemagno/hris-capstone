@@ -2,7 +2,7 @@ import { withSearch } from "@/lib/search";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { Deployment, DeploymentHistory, DeploymentReport, Employee, PaginatedResult } from "@/lib/types/database";
 import { uuidSchema } from "@/schemas/common";
-import { deploymentFiltersSchema, deploymentInputSchema, deploymentUpdateSchema, type DeploymentFilters } from "@/schemas/deployment-tracking";
+import { deploymentFiltersSchema, deploymentGroupInputSchema, deploymentInputSchema, deploymentUpdateSchema, type DeploymentFilters } from "@/schemas/deployment-tracking";
 
 function throwIfError(error: { message: string } | null) { if (error) throw new Error(error.message); }
 
@@ -57,11 +57,12 @@ export const EMPLOYEE_OPTIONS_LIMIT = 2000;
 
 export type EmployeeOption = { id: string; fullName: string; employeeNumber: string };
 
-/** Every employee (up to 2000) for pickers such as the deployment employee combobox. */
+/** Active employees (up to 2000) for deployment pickers; retired personnel cannot be assigned new duty. */
 export async function listEmployeeOptions(): Promise<EmployeeOption[]> {
   const { data, error } = await createBrowserSupabaseClient()
     .from("employees")
     .select("id, employee_number, first_name, middle_name, last_name, qualifier")
+    .eq("employment_status", "active")
     .order("last_name")
     .order("first_name")
     .order("employee_number")
@@ -85,6 +86,22 @@ function rpcPayload(input: ReturnType<typeof deploymentInputSchema.parse>) {
 
 export async function createDeployment(input: unknown) {
   const values = deploymentInputSchema.parse(input); const { data, error } = await createBrowserSupabaseClient().rpc("create_deployment", { target_employee_id: values.employeeId, ...rpcPayload(values) }); throwIfError(error); return data as string;
+}
+
+/** Creates a single deployment header with one assignment row for every selected employee. */
+export async function createDeploymentGroup(input: unknown) {
+  const values = deploymentGroupInputSchema.parse(input);
+  const { data, error } = await createBrowserSupabaseClient().rpc("create_deployment_group", {
+    target_location: values.location,
+    target_unit: values.unit,
+    target_starts_on: values.startsOn,
+    target_ends_on: values.endsOn,
+    target_deployment_type: values.deploymentType,
+    target_event_operation: values.eventOperation,
+    target_assignments: values.assignments,
+  });
+  throwIfError(error);
+  return data as string;
 }
 
 export async function updateDeployment(input: unknown) {

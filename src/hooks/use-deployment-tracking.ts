@@ -3,7 +3,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { queryKeys } from "@/lib/query-keys";
-import { createDeployment, deploymentFilters, getDeployment, listDeploymentReports, listEmployeeOptions, listHrDeployments, listMyDeployments, submitDeploymentReport, updateDeployment, type DeploymentReportInput } from "@/queries/deployment-tracking";
+import { createDeployment, createDeploymentGroup, deploymentFilters, getDeployment, listDeploymentReports, listEmployeeOptions, listHrDeployments, listMyDeployments, submitDeploymentReport, updateDeployment, type DeploymentReportInput } from "@/queries/deployment-tracking";
 import type { DeploymentFilters } from "@/schemas/deployment-tracking";
 
 export function useHrDeployments(input: Partial<DeploymentFilters> = {}) { const filters = deploymentFilters(input); return useQuery({ queryKey: queryKeys.deploymentTracking.hrDirectory(filters), queryFn: () => listHrDeployments(filters), placeholderData: keepPreviousData }); }
@@ -13,6 +13,7 @@ export function useEmployeeOptions() { return useQuery({ queryKey: ["deployment-
 export function useDeployment(id: string) { return useQuery({ queryKey: queryKeys.deploymentTracking.detail(id), queryFn: () => getDeployment(id), enabled: Boolean(id) }); }
 function useInvalidate() { const client = useQueryClient(); return () => { void client.invalidateQueries({ queryKey: ["deployment-tracking"] }); void client.invalidateQueries({ queryKey: ["reporting"] }); void client.invalidateQueries({ queryKey: ["administration", "audit-logs"] }); }; }
 export function useCreateDeployment() { const invalidate = useInvalidate(); return useMutation({ mutationFn: createDeployment, onSuccess: invalidate }); }
+export function useCreateDeploymentGroup() { const invalidate = useInvalidate(); return useMutation({ mutationFn: createDeploymentGroup, onSuccess: invalidate }); }
 export function useUpdateDeployment() { const invalidate = useInvalidate(); return useMutation({ mutationFn: updateDeployment, onSuccess: invalidate }); }
 export function useDeploymentReports(deploymentId: string) { return useQuery({ queryKey: ["deployment-tracking", "reports", deploymentId] as const, queryFn: () => listDeploymentReports(deploymentId), enabled: Boolean(deploymentId) }); }
 export function useSubmitDeploymentReport() { const queryClient = useQueryClient(); return useMutation({ mutationFn: (input: DeploymentReportInput) => submitDeploymentReport(input), onSuccess: (_, input) => { void queryClient.invalidateQueries({ queryKey: ["deployment-tracking", "reports", input.deploymentId] }); } }); }
