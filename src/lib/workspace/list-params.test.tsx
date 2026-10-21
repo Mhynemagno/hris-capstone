@@ -11,8 +11,10 @@ import { useListParams } from "./list-params";
 
 // Written through the History API (no server round trip); Next.js syncs useSearchParams from it.
 beforeEach(() => {
+  vi.restoreAllMocks();
   nav.replace.mockReset();
   nav.search = "q=ana&page=3";
+  window.history.replaceState(null, "", "/hr/applications?q=ana&page=3");
   vi.spyOn(window.history, "replaceState").mockImplementation((_state, _unused, url) => nav.replace(url, { scroll: false }));
 });
 
@@ -40,4 +42,15 @@ it("resets a configured page key when a tab changes while preserving unrelated d
   act(() => result.current.set({ attention: "attendance" }));
 
   expect(nav.replace).toHaveBeenCalledWith("/hr/applications?period=month&attention=attendance", { scroll: false });
+});
+
+it("does not let a delayed list update overwrite a destination navigation", () => {
+  const { result } = renderHook(() => useListParams(["q", "page"] as const));
+  vi.restoreAllMocks();
+  window.history.replaceState(null, "", "/hr/employees/00000000-0000-4000-8000-000000000001");
+  vi.spyOn(window.history, "replaceState").mockImplementation((_state, _unused, url) => nav.replace(url, { scroll: false }));
+
+  act(() => result.current.set({ q: "demo" }));
+
+  expect(nav.replace).not.toHaveBeenCalled();
 });

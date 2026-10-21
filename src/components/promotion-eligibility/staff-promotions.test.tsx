@@ -5,13 +5,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ replace: vi.fn(), params: new URLSearchParams() }));
 vi.mock("next/navigation", () => ({ usePathname: () => "/hr/promotions", useRouter: () => ({ replace: mocks.replace }), useSearchParams: () => mocks.params }));
 vi.mock("./promotion-review-modal", () => ({ PromotionReviewModal: ({ employeeId }: { employeeId: string }) => <div role="dialog">Review {employeeId}</div> }));
+vi.mock("@/components/deletion/delete-record-dialog", () => ({ DeleteRecordDialog: () => null }));
 vi.mock("@/hooks/use-administration", () => ({ useRankOptions: () => ({ data: [{ id: 4, name: "Police Master Sergeant", code: "PMSG", sort_order: 4, is_active: true }] }) }));
 vi.mock("@/hooks/use-promotion-eligibility", () => ({
+  useCreatePromotionCriterion: () => ({ isPending: false, mutateAsync: vi.fn() }),
+  usePromotionCriteria: () => ({ isLoading: false, error: null, data: [] }),
   usePromotionReadinessPage: () => ({
     isLoading: false,
     error: null,
     data: { count: 1, rows: [{ employee_id: "e1", employee_name: "Tyson Peters", evaluation_id: "v1", target_rank_id: 4, target_rank_name: "Police Master Sergeant", evaluated_on: "2026-10-09", recommendation: "recommended", readiness: { isReady: true, yearsOfService: 2.5, minimumYearsOfService: 2, missingRequirements: [], requirements: [] } }] },
   }),
+  useSetPromotionCriterionActive: () => ({ isPending: false, mutateAsync: vi.fn() }),
 }));
 
 import { StaffPromotions } from "./staff-promotions";

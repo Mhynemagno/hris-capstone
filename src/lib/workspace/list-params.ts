@@ -11,6 +11,9 @@ export function useListParams<K extends string>(keys: readonly K[], { pageKey = 
   // The native History API updates useSearchParams without a server round trip. router.replace
   // re-ran the route on the server for every filter change, which made typing in search lag.
   function write(next: URLSearchParams) {
+    // A debounced search callback can run just after a Link starts navigation.
+    // Never let that stale callback rewrite the destination URL back to this list.
+    if (window.location.pathname !== pathname) return;
     const query = next.toString();
     window.history.replaceState(null, "", query ? `${pathname}?${query}` : pathname);
   }

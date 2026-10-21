@@ -26,7 +26,7 @@ export function StaffSlideOver({ open, onClose, title, subtitle, size = "lg", ch
               <X aria-hidden="true" className="size-4" />
             </Dialog.Close>
           </div>
-          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-6 text-xs font-semibold text-slate-700">{children}</div>
+          <div aria-label={`${title} content`} className="min-h-0 flex-1 space-y-4 overflow-y-auto p-6 text-xs font-semibold text-slate-700" tabIndex={0}>{children}</div>
           {footer ? <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200 bg-slate-50 p-4">{footer}</div> : null}
         </Dialog.Popup>
       </Dialog.Portal>

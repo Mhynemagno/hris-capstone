@@ -22,6 +22,7 @@ import { RECOMMENDATION_STATUS } from "@/lib/staff/status-maps";
 import { cn } from "@/lib/utils";
 
 import { PromotionReviewModal } from "./promotion-review-modal";
+import { PromotionCriteriaManager } from "./promotion-criteria-manager";
 
 const PAGE_SIZE = 10;
 
@@ -135,6 +136,11 @@ export function StaffPromotions() {
               </table>
             </section>
           ))}
+          <section aria-labelledby="readiness-checklist-configuration" className="border-t border-slate-200 pt-5">
+            <h3 className="text-sm font-bold text-slate-900" id="readiness-checklist-configuration">Readiness checklist configuration</h3>
+            <p className="mt-1 text-xs font-normal text-slate-600">Use the recorded checklist for employee eligibility assessments. It supports, but does not replace, the official Promotion Board policy matrix above.</p>
+            <div className="mt-4"><PromotionCriteriaManager /></div>
+          </section>
         </div>
       </StaffSlideOver>
       {review ? <PromotionReviewModal employeeId={review} onClose={() => setReview(null)} /> : null}
