@@ -1,7 +1,6 @@
 "use client";
 
 import { Download, FileText } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { staffButton } from "@/components/staff-shell/ui/staff-buttons";
@@ -17,7 +16,6 @@ function manilaToday() {
 
 /** "Generate Report" (Capstone UI reports.html): date range, sub-unit and export format, then the report page prints or downloads. */
 export function ReportGenerateModal({ report, onClose }: { report: { key: ReportFilters["reportKey"]; title: string } | null; onClose: () => void }) {
-  const router = useRouter();
   const departments = useDepartmentOptions();
   const today = manilaToday();
   const [from, setFrom] = useState(`${today.slice(0, 8)}01`);
@@ -30,7 +28,8 @@ export function ReportGenerateModal({ report, onClose }: { report: { key: Report
     if (!report) return;
     if (!from || !to) { setError("Choose both dates."); return; }
     if (from > to) { setError("Start date must be on or before the end date."); return; }
-    router.push(reportGenerateHref(report.key, { from, to, departmentId: departmentId ? Number(departmentId) : null, format }));
+    const href = reportGenerateHref(report.key, { from, to, departmentId: departmentId ? Number(departmentId) : null, format });
+    window.location.assign(href);
   }
 
   return (
