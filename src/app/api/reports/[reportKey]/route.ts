@@ -42,7 +42,18 @@ export async function GET(request: Request, { params }: { params: Promise<{ repo
   const report = reportResponseSchema.safeParse(data);
   if (!report.success) return NextResponse.json({ error: "The report response was invalid." }, { status: 500 });
 
-  const pdf = buildReportPdf(report.data);
+  // The protected route, rather than a browser client, follows all report pages.
+  // The fixed ceiling is a circuit breaker against an unexpected malformed count.
+  const rows = [...report.data.rows];
+  for (let page = 2; rows.length < report.data.totalCount && page <= 100; page += 1) {
+    const next = await supabase.rpc(rpc, reportArguments({ ...filters.data, page }));
+    if (next.error) return NextResponse.json({ error: "The complete report could not be generated." }, { status: 500 });
+    const parsed = reportResponseSchema.safeParse(next.data);
+    if (!parsed.success || !parsed.data.rows.length) break;
+    rows.push(...parsed.data.rows);
+  }
+
+  const pdf = buildReportPdf({ ...report.data, rows, page: 1 });
   return new NextResponse(pdf, {
     headers: {
       "Content-Disposition": `attachment; filename="${report.data.reportKey}-${filters.data.startsOn}-to-${filters.data.endsOn}.pdf"`,
