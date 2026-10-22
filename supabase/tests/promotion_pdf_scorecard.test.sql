@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(19);
+select extensions.plan(21);
 
 select extensions.has_function('private', 'evaluate_promotion_scorecard', array['uuid', 'date'], 'The PDF scorecard evaluator exists');
 select extensions.has_table('public', 'promotion_assignment_records', 'Verified promotion assignment records exist');
@@ -86,6 +86,14 @@ select extensions.lives_ok(
 select extensions.ok(
   exists (select 1 from public.list_promotion_candidates_page('pdf corporal', null, 1, 100) where employee_id = '00000000-0000-4000-8000-000000012301'),
   'The HR scorecard list includes an active uniformed employee even without legacy qualification gates'
+);
+select extensions.ok(
+  exists (select 1 from jsonb_array_elements(public.get_hr_report('promotion-evaluation', current_date - 29, current_date, null, null, 1, 100) -> 'rows') report_row where report_row ->> 'employee' = 'PDF Corporal' and report_row ->> 'score' = '63 / 100'),
+  'The Promotion Evaluation report lists the scorecard total'
+);
+select extensions.ok(
+  exists (select 1 from jsonb_array_elements(public.get_hr_report('training-needs', current_date - 29, current_date, null, null, 1, 100) -> 'rows') report_row where report_row ->> 'employee' = 'PDF Corporal' and report_row ->> 'course' <> ''),
+  'The Training Needs report lists required courses not yet on record'
 );
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000012312';
 select extensions.throws_ok(

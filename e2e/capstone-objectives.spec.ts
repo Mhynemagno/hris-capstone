@@ -526,8 +526,8 @@ test.describe("Objective 6: attendance monitoring and reporting", () => {
     await expect(page.getByRole("button", { name: /Launch Attendance Kiosk/ })).toBeVisible();
     await expect(page.getByRole("link", { name: /Face Registration/ })).toBeVisible();
 
-    await page.goto("/reports/attendance-leave");
-    await expect(page.getByRole("heading", { name: "Attendance and leave" })).toBeVisible();
+    await page.goto("/reports/attendance");
+    await expect(page.getByRole("heading", { name: "Attendance", exact: true })).toBeVisible();
     await expect(page.getByRole("row").filter({ hasText: employee.badge })).toContainText("late", { timeout: 15_000 });
     await signOut(page);
 
@@ -575,8 +575,8 @@ test.describe("Objective 8: automated reports", () => {
     await createDeployment(page, role, { startDay: 0 });
 
     await page.goto("/reports");
-    for (const report of ["Applicant Tracking", "Hiring Decisions", "Employee Performance", "Duty Deployments", "Attendance & Leave", "Promotion & Training Needs"]) {
-      await expect(page.getByRole("button", { name: `Generate ${report}` })).toBeVisible();
+    for (const report of ["Applicant Tracking", "Hiring Decisions", "Employee Performance", "Duty Deployments", "Attendance", "Leave", "Promotion Evaluation", "Training Needs"]) {
+      await expect(page.getByRole("button", { name: `Generate ${report}`, exact: true })).toBeVisible();
     }
 
     await page.goto("/reports/deployments");
@@ -594,7 +594,7 @@ test.describe("Objective 8: automated reports", () => {
     await page.getByLabel("End date").fill("2000-01-31");
     await expect(page.getByRole("row").filter({ hasText: role })).toHaveCount(0, { timeout: 15_000 });
 
-    for (const [key, heading] of [["applicant-tracking", "Applicant tracking"], ["employee-performance", "Employee performance"], ["promotion-training-needs", "Promotion and training needs"]]) {
+    for (const [key, heading] of [["applicant-tracking", "Applicant tracking"], ["employee-performance", "Employee performance"], ["promotion-evaluation", "Promotion evaluation"], ["training-needs", "Training needs"]]) {
       await page.goto(`/reports/${key}`);
       await expect(page.getByRole("heading", { name: heading })).toBeVisible();
       await expect(page.getByRole("table")).toBeVisible({ timeout: 15_000 });

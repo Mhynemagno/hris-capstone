@@ -463,11 +463,33 @@ create or replace function private.get_hr_report(target_report_key text, target_
 returns jsonb language plpgsql security definer set search_path = '' as $$
 declare result jsonb; page_offset integer := (target_page - 1) * target_page_size;
 begin
-  if target_report_key is distinct from 'promotion-evaluation' then
+  if target_report_key is distinct from 'promotion-evaluation' and target_report_key is distinct from 'training-needs' then
     return private.get_hr_report_operational(target_report_key, target_starts_on, target_ends_on, target_department_id, target_status, target_page, target_page_size);
   end if;
   perform private.require_active_reporting_role(array['hr_personnel'::public.app_role]);
   perform private.validate_reporting_range(target_starts_on, target_ends_on, target_page, target_page_size);
+  if target_report_key = 'training-needs' then
+    -- One row per required next-rank course not yet on record (the operational version read a column
+    -- that does not exist).
+    with evaluated as (
+      select e.id, concat_ws(' ', e.first_name, e.last_name) employee, r.code rank, private.evaluate_promotion(e.id, current_date) evaluation
+      from public.employees e
+      join public.ranks r on r.id = e.rank_id and r.code <> 'NUP'
+      where e.employment_status = 'active' and (target_department_id is null or e.department_id = target_department_id)
+    ), filtered as (
+      select evaluated.id, evaluated.employee, evaluated.rank, training ->> 'name' course
+      from evaluated
+      cross join lateral jsonb_array_elements(coalesce(evaluated.evaluation -> 'trainings', '[]'::jsonb)) training
+      where not coalesce((training ->> 'met')::boolean, false)
+    ), paged as (
+      select * from filtered order by employee, id, course limit target_page_size offset page_offset
+    )
+    select jsonb_build_object('reportKey', target_report_key, 'title', 'Training Needs', 'generatedAt', now(),
+      'columns', jsonb_build_array(jsonb_build_object('key', 'rank', 'label', 'Rank'), jsonb_build_object('key', 'employee', 'label', 'Name'), jsonb_build_object('key', 'course', 'label', 'Required Course')),
+      'rows', coalesce((select jsonb_agg(jsonb_build_object('rank', rank, 'employee', employee, 'course', course) order by employee, id, course) from paged), '[]'::jsonb),
+      'totalCount', (select count(*) from filtered), 'page', target_page, 'pageSize', target_page_size) into result;
+    return result;
+  end if;
   with scored as (
     select e.id, concat_ws(' ', e.first_name, e.last_name) employee, private.evaluate_promotion_scorecard(e.id, current_date) scorecard
     from public.employees e
