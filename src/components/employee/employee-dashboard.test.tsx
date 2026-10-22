@@ -34,8 +34,10 @@ vi.mock("@/hooks/use-attendance-integration", () => ({ useMyAttendanceLogs: () =
 vi.mock("@/hooks/use-promotion-eligibility", () => ({ useMyPromotionStatus: () => ok(state.promotion) }));
 const evaluation = (overrides: Record<string, unknown> = {}) => ({
   employeeId: "11111111-1111-4111-8111-111111111111", employeeName: "Peters, Tyson", employeeNumber: "4-15889", evaluatedOn: "2026-10-22", isUniformed: true,
-  currentRank: { id: 1, code: "PAT", name: "Patrolman / Patrolwoman" }, targetRank: { id: 2, code: "PCPL", name: "Police Corporal" }, reason: null,
-  requirements: [{ key: "time_in_grade", label: "Time in grade", met: true }], missingRequirements: [], isQualified: true, ...overrides,
+  currentRank: { id: 1, code: "PCPL", name: "Police Corporal" }, targetRank: { id: 2, code: "PSSG", name: "Police Staff Sergeant" }, reason: null,
+  band: "PCPL-PMSG", totalScore: 63.5, maximumScore: 100,
+  criteria: [{ key: "board", label: "Interview", points: 12, maximumPoints: 15, state: "assessed" }, { key: "reputation", label: "Service reputation", points: 18, maximumPoints: 20, state: "assessed" }],
+  ...overrides,
 });
 
 vi.mock("@/hooks/use-public-site", () => ({ usePublishedAnnouncements: () => ok(state.announcements) }));
@@ -100,8 +102,8 @@ describe("EmployeeDashboard (empdash.html)", () => {
   it("marks the banner tile with the HR decision", () => {
     state.promotion = { evaluation: evaluation(), decision: { id: "22222222-2222-4222-8222-222222222222", status: "approved", remarks: null, decidedAt: "2026-10-21T00:00:00Z", targetRankId: 2 }, history: [] };
     render(<EmployeeDashboard />);
-    expect(screen.getByText("PCPL Approved")).toBeVisible();
-    expect(screen.queryByText("PCPL In progress")).not.toBeInTheDocument();
+    expect(screen.getByText("PSSG Approved")).toBeVisible();
+    expect(screen.queryByText("PSSG For approval")).not.toBeInTheDocument();
   });
 
   it("shows the live overview with its no-data states and links", async () => {
@@ -142,7 +144,8 @@ describe("EmployeeDashboard (empdash.html)", () => {
     expect(screen.getByText("September 28, 2026 to present")).toBeVisible();
     expect(screen.queryByText("Old Post")).not.toBeInTheDocument();
     expect(screen.getByText("05:19")).toBeVisible();
-    expect(screen.getByText(/Target rank: PCPL/)).toBeVisible();
+    expect(screen.getByText(/Target rank: PSSG/)).toBeVisible();
+    expect(screen.getByText("63.5 / 100 score")).toBeVisible();
     expect(screen.getByText("For approval")).toBeVisible();
     expect(screen.getByText("Kiosk Maintenance")).toBeVisible();
     expect(screen.getByRole("link", { name: "View details for Kiosk Maintenance" })).toHaveAttribute("href", "/announcements/a1");

@@ -48,10 +48,10 @@ function isoDate(daysFromToday: number) {
 }
 
 /** HR creates a personnel record through the UI and returns its id. */
-async function createEmployee(page: Page, suffix: string, startedOn = "2015-06-01") {
+async function createEmployee(page: Page, suffix: string, startedOn = "2015-06-01", rank = "PAT — Patrolman / Patrolwoman") {
   const person = { badge: uniqueBadge(), firstName: "Etoe", lastName: `Tester ${suffix}${runId}` };
   await page.goto("/hr/employees/new");
-  await page.getByLabel(/^Rank/).selectOption({ label: "PAT — Patrolman / Patrolwoman" });
+  await page.getByLabel(/^Rank/).selectOption({ label: rank });
   await page.getByLabel(/^Badge number/).fill(person.badge);
   await page.getByLabel(/^Personal email/).fill(`e2e.${runId.toLowerCase()}.${suffix.toLowerCase()}@example.test`);
   await page.getByLabel(/^First name/).fill(person.firstName);
@@ -370,10 +370,10 @@ test.describe("Objective 3: deployment tracking", () => {
 });
 
 test.describe("Objective 4: promotion eligibility tracker", () => {
-  test("the system lists a PAT who meets the PCPL requirements; HR approves without posting criteria", async ({ page }) => {
+  test("the system scores a PCPL on the PDF scorecard; HR records the board assessments and approves", async ({ page }) => {
     await signIn(page, HR.email, HR.home);
-    // More than 36 months in grade as PAT.
-    const employee = await createEmployee(page, "PROMO", "2014-01-06");
+    // More than 7 years 6 months as PCPL: the top PCPL–PMSG seniority row (30 points).
+    const employee = await createEmployee(page, "PROMO", "2014-01-06", "PCPL — Police Corporal");
     await page.goto(`/hr/employees/${employee.id}?tab=qualifications&mode=edit`);
     const sections = page.getByRole("tablist", { name: "Personnel record sections" });
 
@@ -390,13 +390,6 @@ test.describe("Objective 4: promotion eligibility tracker", () => {
     await page.getByRole("button", { name: "Add eligibility" }).click();
     await expect(page.getByRole("status").filter({ hasText: "Eligibility added." })).toBeVisible();
 
-    // The training required for PCPL.
-    await sections.getByRole("tab", { name: "Certification / Training" }).click();
-    await page.locator("#certification-primary").selectOption("Public Safety Junior Leadership Course (PSJLC)");
-    await page.getByLabel(/^Completion date/).fill("2021-05-20");
-    await page.getByRole("button", { name: "Add certification / training" }).click();
-    await expect(page.getByRole("status").filter({ hasText: "Certification / Training added." })).toBeVisible();
-
     // HR no longer posts promotion criteria: the policy matrix is read-only.
     await page.goto("/hr/promotions?criteria=1");
     const matrix = page.getByRole("dialog", { name: "Official promotion policy matrix" });
@@ -406,34 +399,31 @@ test.describe("Objective 4: promotion eligibility tracker", () => {
     await expect(page.getByRole("button", { name: /Save Criteria/ })).toHaveCount(0);
     await matrix.getByRole("button", { name: "Close" }).first().click();
 
-    // Until IPER and PFT are recorded the employee is not listed.
+    // Every active PCPL is scored at once. There is no pass mark; decisions wait for the Promotion Board.
     await page.getByRole("searchbox", { name: "Search candidates" }).fill(employee.lastName);
-    await expect(page.getByText("No personnel match these filters.")).toBeVisible({ timeout: 15_000 });
-
-    // HR records the supervisor's IPER (6-month period) and a passed PFT.
-    await page.getByRole("button", { name: "Record IPER / PFT" }).click();
-    const record = page.getByRole("dialog", { name: "Record IPER / PFT" });
-    await chooseComboboxOption(page, /^Employee/, employee.lastName, new RegExp(employee.lastName));
-    await record.getByLabel("Rating period start").fill(isoDate(-180));
-    await record.getByLabel("Rating period end").fill(isoDate(-1));
-    await record.getByLabel("Adjectival rating").selectOption("Very Satisfactory");
-    await record.getByLabel("Date taken").fill(isoDate(-7));
-    await record.getByLabel("Result").selectOption("passed");
-    await record.getByRole("button", { name: "Save" }).click();
-    await expect(page.getByText("IPER and PFT recorded")).toBeVisible();
-
-    // The system now lists the employee for approval: Rank, Name, Target Rank, Status.
     const row = page.getByRole("row").filter({ hasText: employee.lastName }).first();
     await expect(row).toBeVisible({ timeout: 15_000 });
-    await expect(row).toContainText("PAT");
-    await expect(row).toContainText("PCPL — Police Corporal");
-    await expect(row).toContainText("For approval");
+    await expect(row).toContainText("PCPL");
+    await expect(row).toContainText("PSSG — Police Staff Sergeant");
+    await expect(row).toContainText("30 / 100");
+    await expect(row).toContainText("NAPOLCOM PNP Entrance Examination");
+    await expect(row).toContainText("Board assessment pending");
+    await expect(row.getByRole("button", { name: /^Approve promotion of/ })).toBeDisabled();
 
-    // The details view shows the met checklist.
+    // HR records the interview and service-reputation scores; the score is recomputed.
     await row.getByRole("button", { name: /View details for/ }).click();
     const details = page.getByRole("dialog", { name: "Promotion evaluation" });
-    await expect(details.getByRole("list", { name: "Requirements checklist" })).toContainText("Public Safety Junior Leadership Course (PSJLC)");
-    await expect(details.getByRole("list", { name: "Requirements checklist" })).not.toContainText("MISSING");
+    await expect(details.getByRole("list", { name: "Scorecard breakdown" })).toContainText("Seniority / time in grade");
+    await expect(details.getByRole("button", { name: "Approve" })).toBeDisabled();
+    for (const [criterion, title, score] of [["Interview", "Record Promotion Board assessment", "12"], ["Service reputation", "Record service reputation assessment", "18"]] as const) {
+      await details.getByRole("button", { name: `Add evidence for ${criterion}` }).click();
+      const evidence = page.getByRole("dialog", { name: title });
+      await evidence.getByLabel(/^Score/).fill(score);
+      await evidence.getByLabel(/^Supporting evidence/).fill(`Objective tests ${runId}`);
+      await evidence.getByRole("button", { name: "Save" }).click();
+      await expect(evidence).toHaveCount(0);
+    }
+    await expect(details).toContainText("60 / 100", { timeout: 15_000 });
     await details.getByRole("button", { name: "Approve" }).click();
     const approve = page.getByRole("dialog", { name: "Approve promotion" });
     await approve.getByLabel(/^Remarks/).fill(`Approved by the objective tests ${runId}`);
@@ -444,7 +434,7 @@ test.describe("Objective 4: promotion eligibility tracker", () => {
     await expect(page.getByRole("row").filter({ hasText: employee.lastName }).first()).toContainText("Approved", { timeout: 15_000 });
     // Approval does not change the rank automatically.
     await page.goto(`/hr/employees/${employee.id}`);
-    await expect(page.getByText("PAT — Patrolman / Patrolwoman").first()).toBeVisible();
+    await expect(page.getByText("PCPL — Police Corporal").first()).toBeVisible();
     await expect(page.getByRole("link", { name: "Promotion evaluation" })).toHaveAttribute("href", `/hr/promotions?view=${employee.id}`);
     await signOut(page);
 

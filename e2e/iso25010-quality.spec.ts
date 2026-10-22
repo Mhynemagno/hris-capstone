@@ -30,9 +30,9 @@ function localSql(script: string) {
 const demoEmployee = "(select id from public.employees where employee_number = '0-00001')";
 
 /**
- * Makes the demo employee a Patrolman who meets every system requirement for Police Corporal
- * (time in grade, PSJLC, eligibility, IPER and PFT), so they appear for HR approval, and returns
- * a function that restores every row it touched.
+ * Makes the demo employee a Police Corporal with eligibility, IPER and both Promotion Board
+ * assessments on record, so their PDF scorecard is ready for an HR decision, and returns a
+ * function that restores every row it touched.
  */
 function arrangeQualifiedEmployee() {
   const saved = JSON.parse(localSql(`select json_build_object(
@@ -40,7 +40,7 @@ function arrangeQualifiedEmployee() {
   if (!saved.employee) throw new Error("The demo employee 0-00001 is missing from the seed data.");
 
   const created = JSON.parse(localSql(`begin;
-    update public.employees set rank_id = (select id from public.ranks where code = 'PAT'), employment_started_on = '2015-01-01' where id = ${demoEmployee};
+    update public.employees set rank_id = (select id from public.ranks where code = 'PCPL'), employment_started_on = '2015-01-01' where id = ${demoEmployee};
     with certification as (
       insert into public.certifications (employee_id, name, issuer, issued_on)
       values (${demoEmployee}, 'Public Safety Junior Leadership Course (PSJLC)', 'Philippine Public Safety College (PPSC)', current_date - 200) returning id
@@ -53,8 +53,11 @@ function arrangeQualifiedEmployee() {
     ), pft as (
       insert into public.physical_fitness_results (employee_id, result, assessed_on, valid_until, recorded_by_user_id)
       values (${demoEmployee}, 'passed', current_date - 7, current_date + 350, (select profile_id from public.employees where employee_number = '0-00002')) returning id
+    ), board as (
+      insert into public.promotion_board_assessments (employee_id, criterion, band, assessed_on, score, evidence)
+      values (${demoEmployee}, 'board', 'PCPL-PMSG', current_date - 3, 12, 'Panel interview sheet'), (${demoEmployee}, 'reputation', 'PCPL-PMSG', current_date - 3, 18, 'Records review') returning id
     )
-    select json_build_object('certification', (select id from certification), 'qualification', (select id from qualification), 'iper', (select id from iper), 'pft', (select id from pft));
+    select json_build_object('certification', (select id from certification), 'qualification', (select id from qualification), 'iper', (select id from iper), 'pft', (select id from pft), 'board', (select json_agg(id) from board));
     commit;`).split("\n").find((line) => line.startsWith("{")) ?? "{}");
 
   const literal = (value: unknown) => (value === null || value === undefined ? "null" : `'${String(value).replaceAll("'", "''")}'`);
@@ -63,6 +66,7 @@ function arrangeQualifiedEmployee() {
     restore() {
       localSql(`begin;
         delete from public.promotion_decisions where employee_id = ${demoEmployee};
+        delete from public.promotion_board_assessments where id::text = any(string_to_array(${literal((created.board ?? []).join(","))}, ','));
         delete from public.certifications where id = ${literal(created.certification)};
         delete from public.qualifications where id = ${literal(created.qualification)};
         delete from public.performance_ratings where id = ${literal(created.iper)};
@@ -173,10 +177,10 @@ test.describe("Interaction capability (usability): accessibility", () => {
     };
     try {
       await signIn(page, accounts.hr);
-      // The qualified Patrolman is listed by the system without any HR-posted criteria.
+      // The scored Police Corporal is listed by the system without any HR-posted criteria.
       await page.goto(`/hr/promotions?view=${arranged.employeeId}`);
       const details = page.getByRole("dialog", { name: "Promotion evaluation" });
-      await expect(details.getByRole("list", { name: "Requirements checklist" })).toBeVisible({ timeout: 15_000 });
+      await expect(details.getByRole("list", { name: "Scorecard breakdown" })).toBeVisible({ timeout: 15_000 });
       await check("promotion details");
       await details.getByRole("button", { name: "Reject" }).click();
       await expect(page.getByRole("dialog", { name: "Reject promotion" })).toBeVisible();
