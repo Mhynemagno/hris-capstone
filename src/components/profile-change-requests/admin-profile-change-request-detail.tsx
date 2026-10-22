@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useDecideProfileChangeRequest, useProfileChangeDocumentUrl, useProfileChangeRequest } from "@/hooks/use-profile-change-requests";
 import { formatDateTime } from "@/lib/format-date";
 import type { ProfileChangeRequestChange, ProfileChangeRequestDocument, ProfileChangeRequestHistory } from "@/lib/types/database";
-import { profileChangeDecisionSchema } from "@/schemas/profile-change-requests";
+import { PERSONAL_FIELD_LABELS, profileChangeDecisionSchema, type PersonalField } from "@/schemas/profile-change-requests";
 
 export function humanize(key: string) {
   return key
@@ -31,7 +31,7 @@ export function ValueView({ value }: { value: unknown }) {
         {Object.entries(value as Record<string, unknown>).map(([key, item]) => (
           <div className="grid gap-1 sm:grid-cols-[10rem_1fr]" key={key}>
             <dt className="font-medium text-muted-foreground">{humanize(key)}</dt>
-            <dd className="break-words whitespace-pre-line">{item === null || item === "" ? "—" : String(item)}</dd>
+            <dd className="break-words whitespace-pre-line">{item === null || item === undefined || item === "" ? "—" : key === "rating" ? `${Number(item)}%` : String(item)}</dd>
           </div>
         ))}
       </dl>
@@ -51,11 +51,26 @@ export function DocumentLink({ document }: { document: ProfileChangeRequestDocum
   );
 }
 
+const changeKindLabels: Record<Exclude<ProfileChangeRequestChange["kind"], "contact">, string> = {
+  qualification: "Eligibility",
+  certification: "Certification / Training",
+  training: "Training",
+};
+
+/** "Date of birth" for a personal field; "Eligibility: add", "Certification / Training: edit", … for record changes. */
+export function changeLabel(change: Pick<ProfileChangeRequestChange, "kind" | "field_key" | "operation">) {
+  if (change.kind === "contact") {
+    const field = change.field_key ?? "";
+    return field in PERSONAL_FIELD_LABELS ? PERSONAL_FIELD_LABELS[field as PersonalField] : humanize(field || "Personal detail");
+  }
+  return `${changeKindLabels[change.kind]}: ${change.operation ?? "change"}`;
+}
+
 export function ChangeCard({ change, originalLabel = "Current (when submitted)" }: { change: ProfileChangeRequestChange; originalLabel?: string }) {
-  const label = change.kind === "contact" ? humanize(change.field_key ?? "Contact detail") : `Eligibility: ${change.operation ?? "change"}`;
+  const label = changeLabel(change);
   return (
     <li className="rounded-xl border p-4">
-      <h3 className="font-bold capitalize">{label}</h3>
+      <h3 className="font-bold">{label}</h3>
       <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
         <div>
           <dt className="font-semibold text-muted-foreground">{originalLabel}</dt>
@@ -92,7 +107,8 @@ function History({ entries }: { entries: ProfileChangeRequestHistory[] }) {
   );
 }
 
-export function AdminProfileChangeRequestDetail({ requestId }: { requestId: string }) {
+/** `basePath` is the review queue this detail returns to: the HR or the system administrator page. */
+export function AdminProfileChangeRequestDetail({ requestId, basePath = "/admin/profile-change-requests", backLabel = "Back to Approvals" }: { requestId: string; basePath?: string; backLabel?: string }) {
   const request = useProfileChangeRequest(requestId);
   const decide = useDecideProfileChangeRequest();
   const router = useRouter();
@@ -127,7 +143,7 @@ export function AdminProfileChangeRequestDetail({ requestId }: { requestId: stri
     setPendingDecision(decision);
     try {
       await decide.mutateAsync(parsed.data);
-      router.push("/admin/profile-change-requests");
+      router.push(basePath);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Unable to record this decision.");
     } finally {
@@ -139,8 +155,8 @@ export function AdminProfileChangeRequestDetail({ requestId }: { requestId: stri
 
   return (
     <section className="max-w-4xl space-y-6">
-      <Link className="text-sm font-medium text-primary underline underline-offset-4" href="/admin/profile-change-requests">
-        Back to Approvals
+      <Link className="text-sm font-medium text-primary underline underline-offset-4" href={basePath}>
+        {backLabel}
       </Link>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>

@@ -1,8 +1,10 @@
 import type { ReactNode } from "react";
-import { Award, BadgeCheck, Building2, Cake, Church, Clock, GraduationCap, HeartPulse, History, House, Mail, MapPin, Phone, ShieldCheck, UserRound, Users } from "lucide-react";
+import { Award, BadgeCheck, Building2, Cake, Church, Clock, GraduationCap, HeartPulse, History, Hourglass, House, Mail, MapPin, Phone, ShieldCheck, UserRound, Users } from "lucide-react";
 
 import { StatusPill } from "@/components/staff-shell/ui/status-pill";
 import { useDepartmentOptions, useRankOptions } from "@/hooks/use-administration";
+import { useEmployeeTimeInGrade } from "@/hooks/use-personnel-records";
+import { eligibilityLabel } from "@/lib/personnel/eligibility";
 import { rankLabel } from "@/lib/ranks";
 import type { Certification, Employee, Qualification, ServiceHistory, TrainingRecord } from "@/lib/types/database";
 
@@ -54,6 +56,7 @@ export function EmployeeProfile({ employee, trainings, qualifications, serviceHi
   const departments = useDepartmentOptions();
   const rank = employee.rank_id ? ranks.data?.find((row) => row.id === employee.rank_id) : undefined;
   const department = employee.department_id ? departments.data?.find((row) => row.id === employee.department_id) : undefined;
+  const timeInGrade = useEmployeeTimeInGrade(variant === "full" ? employee.id : "");
 
   const badge = { label: "Badge number", value: <span className="tabular-nums">{employee.employee_number}</span>, icon: BadgeCheck };
   const retired = employee.employment_status === "retired";
@@ -76,6 +79,7 @@ export function EmployeeProfile({ employee, trainings, qualifications, serviceHi
         { label: "Born", value: valueOrNotProvided(formatDay(employee.date_of_birth)), icon: Cake },
         { label: "Gender", value: valueOrNotProvided(words(employee.gender)), icon: UserRound },
         service,
+        { label: "Time-In-Grade", value: timeInGrade.isLoading ? "Loading…" : serviceLength(timeInGrade.data) ?? "Not recorded", icon: Hourglass },
         ...assignment,
       ]}
       name={fullName}
@@ -115,7 +119,7 @@ export function EmployeeProfile({ employee, trainings, qualifications, serviceHi
         </InfoCard>
         <GovernmentIdsCard canEdit={canEditGovernmentIds} employee={employee} />
         {qualifications ? <InfoCard className="md:col-span-2" icon={GraduationCap} id="profile-eligibility" title="Eligibility">
-          <RecordList emptyMessage="No eligibility recorded." items={byNewest(qualifications, (row) => row.awarded_on).map((row) => ({ id: row.id, title: row.name, detail: [formatDay(row.awarded_on), row.notes].filter(Boolean).join(" · "), document: <RecordDocumentRow canEdit={false} entry={row} kind="qualification" /> }))} />
+          <RecordList emptyMessage="No eligibility recorded." items={byNewest(qualifications, (row) => row.awarded_on).map((row) => ({ id: row.id, title: eligibilityLabel(row), detail: [formatDay(row.awarded_on), row.notes].filter(Boolean).join(" · "), document: <RecordDocumentRow canEdit={false} entry={row} kind="qualification" /> }))} />
         </InfoCard> : null}
         {serviceHistory.length ? <InfoCard className="md:col-span-2" icon={History} id="profile-service-history" title="Service history">
           <RecordList emptyMessage="" items={byNewest(serviceHistory, (row) => row.started_on).map((row) => {

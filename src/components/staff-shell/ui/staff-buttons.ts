@@ -4,6 +4,6 @@ export const staffButton = {
   dark: `${base} bg-slate-900 text-white shadow-md hover:bg-slate-800`,
   secondary: `${base} border border-slate-200 bg-white text-slate-700 hover:bg-slate-100`,
   danger: `${base} border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100`,
-  success: `${base} bg-emerald-600 text-white shadow-md shadow-emerald-900/20 hover:bg-emerald-700`,
+  success: `${base} bg-emerald-700 text-white shadow-md shadow-emerald-900/20 hover:bg-emerald-800`,
 } as const;
 export const staffIconButton = "rounded-lg p-2 text-slate-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600";

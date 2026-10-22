@@ -16,6 +16,8 @@ describe("AttendanceRecordModal (attendance.html View)", () => {
     expect(screen.getByText("00:49 (AM)")).toBeInTheDocument();
     expect(screen.getByText("Worked Duration")).toBeInTheDocument();
     expect(screen.queryByText(/Facial Match Score/)).not.toBeInTheDocument();
+    expect(screen.getByText("Close", { selector: "button" })).toBeInTheDocument();
+    expect(screen.queryByText("Close Window")).not.toBeInTheDocument();
   });
 
   it("shows the import file for an imported record", () => {

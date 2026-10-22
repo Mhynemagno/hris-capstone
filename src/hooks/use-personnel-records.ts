@@ -6,6 +6,7 @@ import { queryKeys } from "@/lib/query-keys";
 import {
   getEmployee,
   getEmployeeForCurrentUser,
+  getEmployeeTimeInGrade,
   updateMyGovernmentIds,
   getEmployeeForProfile,
   getEmployeeProfilePhotoUrl,
@@ -39,6 +40,11 @@ export function useUnitStations() {
 
 export function useEmployee(employeeId: string) {
   return useQuery({ queryKey: queryKeys.personnelRecords.detail(employeeId), queryFn: () => getEmployee(employeeId), enabled: Boolean(employeeId) });
+}
+
+/** Time-In-Grade start date; nested under the record's detail key so record saves refresh it. */
+export function useEmployeeTimeInGrade(employeeId: string) {
+  return useQuery({ queryKey: [...queryKeys.personnelRecords.detail(employeeId), "time-in-grade"] as const, queryFn: () => getEmployeeTimeInGrade(employeeId), enabled: Boolean(employeeId) });
 }
 
 export function useEmployeeForCurrentUser() {

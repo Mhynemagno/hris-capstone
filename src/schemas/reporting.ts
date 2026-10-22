@@ -7,8 +7,10 @@ export const REPORT_KEYS = [
   "hiring-decisions",
   "employee-performance",
   "deployments",
-  "attendance-leave",
-  "promotion-training-needs",
+  "attendance",
+  "leave",
+  "promotion-evaluation",
+  "training-needs",
 ] as const;
 
 export const reportKeySchema = z.enum(REPORT_KEYS);

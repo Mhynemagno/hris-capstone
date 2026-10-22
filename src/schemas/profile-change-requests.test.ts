@@ -3,8 +3,10 @@ import { describe, expect, it } from "vitest";
 import { queryKeys } from "@/lib/query-keys";
 
 import {
+  personalFieldError,
   profileChangeContactChangeSchema,
   profileChangeDecisionSchema,
+  profileChangeQualificationSnapshotSchema,
   profileChangeRequestFiltersSchema,
   profileChangeSubmissionSchema,
 } from "./profile-change-requests";
@@ -108,10 +110,32 @@ describe("profile change request schemas", () => {
     }).success).toBe(false);
   });
 
-  it("rejects address changes from employee self-service", () => {
-    expect(profileChangeContactChangeSchema.safeParse({
-      kind: "contact", field: "address", originalValue: null, requestedValue: "New address",
-    }).success).toBe(false);
+  it("accepts corrections to every HR-entered personal field and validates each value", () => {
+    const valid = (field: string, requestedValue: string | null) => profileChangeContactChangeSchema.safeParse({ kind: "contact", field, originalValue: null, requestedValue }).success;
+    expect(valid("address", "12 Mabini St., Quezon City")).toBe(true);
+    expect(valid("firstName", "Juan Miguel")).toBe(true);
+    expect(valid("dateOfBirth", "1990-02-14")).toBe(true);
+    expect(valid("dateOfBirth", "2999-01-01")).toBe(false);
+    expect(valid("employmentStartedOn", "not a date")).toBe(false);
+    expect(valid("gender", "male")).toBe(true);
+    expect(valid("gender", "unknown")).toBe(false);
+    expect(valid("civilStatus", "married")).toBe(true);
+    expect(valid("emergencyContactRelationship", "sibling")).toBe(true);
+    expect(valid("employeeNumber", "1-23456")).toBe(true);
+    expect(valid("employeeNumber", "20261015")).toBe(true);
+    expect(valid("employeeNumber", "12345")).toBe(false);
+    expect(valid("gsisNumber", "12345678901")).toBe(true);
+    expect(valid("pagibigNumber", "1234")).toBe(false);
+    expect(valid("middleName", null)).toBe(true);
+    expect(valid("lastName", null)).toBe(false);
+    expect(valid("salary", "1")).toBe(false);
+  });
+
+  it("keeps an eligibility rating between 0 and 100 percent", () => {
+    const base = { name: "NAPOLCOM PNP Entrance Examination", institution: null, qualificationLevel: null, fieldOfStudy: null, awardedOn: "2014-10-01", notes: null };
+    expect(profileChangeQualificationSnapshotSchema.parse({ ...base, rating: 85 })).toMatchObject({ rating: 85 });
+    expect(profileChangeQualificationSnapshotSchema.safeParse({ ...base, rating: 101 }).success).toBe(false);
+    expect(personalFieldError("firstName", "x".repeat(81))).toBe("Names can have at most 80 characters.");
   });
 
   it("requires a reason for rejection and keeps request caches scoped by filters", () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { deploymentFiltersSchema, deploymentGroupInputSchema, deploymentInputSchema } from "./deployment-tracking";
+import { DEPLOYMENT_TYPE_EVENTS, deploymentFiltersSchema, deploymentGroupInputSchema, deploymentInputSchema, deploymentStatusProposalSchema, deploymentUpdateSchema } from "./deployment-tracking";
 
 const employeeId = "123e4567-e89b-42d3-a456-426614174000";
 
@@ -33,56 +33,38 @@ describe("deployment tracking schemas", () => {
     expect(deploymentGroupInputSchema.safeParse({ ...base, assignments: [base.assignments[0], base.assignments[0]] }).success).toBe(false);
     expect(deploymentGroupInputSchema.safeParse({ ...base, eventOperation: "Flood / Emergency" }).success).toBe(false);
   });
-  it("requires a location and remarks and normalizes the optional unit", () => {
-    expect(deploymentInputSchema.parse({
-      employeeId,
-      location: " San Juan ",
-      unit: " ",
-      startsOn: "2026-09-01",
-      status: "ongoing",
-      deploymentType: "Public Assembly",
-      eventOperation: "Rally",
-      notes: " Relief duty ",
-    })).toMatchObject({
-      location: "San Juan",
-      unit: null,
-      endsOn: null,
-      notes: "Relief duty",
+  it("partitions events by deployment type", () => {
+    expect(DEPLOYMENT_TYPE_EVENTS).toEqual({
+      "Public Assembly": ["Rally"],
+      "Special Event": ["Fiesta / Major Event", "Government Event"],
+      "Election Security": ["Election Period"],
+      "Disaster Response": ["Flood / Emergency"],
     });
   });
 
-  it("rejects a missing location, missing remarks, reversed dates, and unsupported statuses", () => {
-    const base = { employeeId, location: "San Juan", unit: "Operations", startsOn: "2026-09-01", status: "ongoing", deploymentType: "Public Assembly", eventOperation: "Rally", notes: "Relief duty" };
-    expect(deploymentInputSchema.safeParse(base).success).toBe(true);
-    const noLocation = deploymentInputSchema.safeParse({ ...base, location: " " });
-    expect(noLocation.error?.issues).toEqual([expect.objectContaining({ path: ["location"], message: "Location is required." })]);
-    const noRemarks = deploymentInputSchema.safeParse({ ...base, notes: "" });
-    expect(noRemarks.error?.issues).toEqual([expect.objectContaining({ path: ["notes"], message: "Remarks are required." })]);
-    expect(deploymentInputSchema.safeParse({ ...base, notes: undefined }).success).toBe(false);
+  it("edits location, dates, type, event and task without remarks or a status", () => {
+    const base = { location: " San Juan ", startsOn: "2026-09-01", deploymentType: "Special Event", eventOperation: "Government Event", task: "Reserve/Standby" };
+    const parsed = deploymentInputSchema.parse({ ...base, notes: "ignored", status: "completed" });
+    expect(parsed).toEqual({ location: "San Juan", startsOn: "2026-09-01", endsOn: null, deploymentType: "Special Event", eventOperation: "Government Event", task: "Reserve/Standby" });
+    expect(deploymentInputSchema.safeParse({ ...base, location: " " }).error?.issues).toEqual([expect.objectContaining({ path: ["location"], message: "Location is required." })]);
     expect(deploymentInputSchema.safeParse({ ...base, startsOn: "2026-09-03", endsOn: "2026-09-01" }).success).toBe(false);
-    expect(deploymentInputSchema.safeParse({ ...base, status: "planned" }).success).toBe(false);
-    expect(deploymentInputSchema.safeParse({ ...base, status: "active" }).success).toBe(false);
+    expect(deploymentInputSchema.safeParse({ ...base, task: "Patrol" }).success).toBe(false);
+    expect(deploymentInputSchema.safeParse({ ...base, eventOperation: "Rally" }).error?.issues).toEqual([expect.objectContaining({ path: ["eventOperation"], message: "Select an event or operation for this deployment type." })]);
+    expect(deploymentInputSchema.safeParse({ ...base, deploymentType: "" }).error?.issues).toEqual(expect.arrayContaining([expect.objectContaining({ path: ["deploymentType"], message: "Select a deployment type." })]));
   });
 
-  it("accepts the four statuses and requires a listed deployment type and event / operation", () => {
-    const base = { employeeId, location: "San Juan", startsOn: "2026-09-01", status: "scheduled", deploymentType: "Public Assembly", eventOperation: "Rally", notes: "Relief duty" };
-    for (const status of ["scheduled", "ongoing", "completed", "cancelled"]) expect(deploymentInputSchema.safeParse({ ...base, status }).success).toBe(true);
-    for (const deploymentType of ["Public Assembly", "Special Event", "Election Security", "Disaster Response"]) expect(deploymentInputSchema.safeParse({ ...base, deploymentType }).success).toBe(true);
-    for (const eventOperation of ["Rally", "Fiesta / Major Event", "Election Period", "Flood / Emergency", "Government Event"]) expect(deploymentInputSchema.safeParse({ ...base, eventOperation }).success).toBe(true);
-    expect(deploymentInputSchema.safeParse({ ...base, deploymentType: "" }).error?.issues).toEqual([expect.objectContaining({ path: ["deploymentType"], message: "Select a deployment type." })]);
-    expect(deploymentInputSchema.safeParse({ ...base, eventOperation: "Parade" }).error?.issues).toEqual([expect.objectContaining({ path: ["eventOperation"], message: "Select an event / operation." })]);
-  });
-
-  it("no longer takes an assignment role or project", () => {
-    const parsed = deploymentInputSchema.parse({ employeeId, location: "San Juan", assignmentRole: "Patrol", project: "Oplan", startsOn: "2026-09-25", status: "ongoing", deploymentType: "Public Assembly", eventOperation: "Rally", notes: "Relief" });
-    expect(parsed).not.toHaveProperty("assignmentRole");
-    expect(parsed).not.toHaveProperty("project");
-  });
-
-  it("accepts its own parsed output, so the form and the query can both validate", () => {
-    const once = deploymentInputSchema.parse({ employeeId: "3f1e2d3c-4b5a-4968-8776-655443322110", location: "San Juan", unit: "", startsOn: "2026-09-25", status: "ongoing", deploymentType: "Public Assembly", eventOperation: "Rally", notes: "Relief" });
-    expect(once).toMatchObject({ unit: null, notes: "Relief" });
+  it("accepts its own parsed output and adds the concurrency fields for updates", () => {
+    const once = deploymentInputSchema.parse({ location: "San Juan", startsOn: "2026-09-25", deploymentType: "Public Assembly", eventOperation: "Rally", task: "Deployed" });
     expect(deploymentInputSchema.parse(once)).toEqual(once);
+    expect(deploymentUpdateSchema.safeParse({ ...once, id: employeeId, expectedUpdatedAt: "2026-09-25T00:00:00Z" }).success).toBe(true);
+    expect(deploymentUpdateSchema.safeParse(once).success).toBe(false);
+  });
+
+  it("lets employees propose only Ongoing or Completed", () => {
+    expect(deploymentStatusProposalSchema.safeParse({ deploymentId: employeeId, status: "ongoing" }).success).toBe(true);
+    expect(deploymentStatusProposalSchema.safeParse({ deploymentId: employeeId, status: "completed" }).success).toBe(true);
+    expect(deploymentStatusProposalSchema.safeParse({ deploymentId: employeeId, status: "cancelled" }).success).toBe(false);
+    expect(deploymentStatusProposalSchema.safeParse({ deploymentId: employeeId, status: "scheduled" }).success).toBe(false);
   });
 
   it("caps page size and rejects a reversed reporting range", () => {

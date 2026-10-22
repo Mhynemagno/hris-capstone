@@ -12,8 +12,8 @@ import { LoadingState } from "@/components/ui/loading-state";
 import { SearchInput } from "@/components/ui/search-input";
 import { useHrLeaveRequests, useLeaveTypes } from "@/hooks/use-leave-management";
 import { usePanelParam } from "@/hooks/use-panel-param";
-import { formatDate, formatDateRange } from "@/lib/format-date";
-import { LEAVE_TONE_CLASSES, leaveDateRange, leaveEmployeeName, leaveTypeStyle } from "@/lib/leave-management/leave-type-style";
+import { formatDateRange } from "@/lib/format-date";
+import { LEAVE_TONE_CLASSES, leaveEmployeeName, leaveTypeStyle } from "@/lib/leave-management/leave-type-style";
 import { LEAVE_STATUS } from "@/lib/staff/status-maps";
 import type { LeaveRequestStatus, LeaveType } from "@/lib/types/database";
 import { cn } from "@/lib/utils";
@@ -102,7 +102,7 @@ export function StaffLeave() {
             <table className={staffTable.table}>
               <thead className={staffTable.thead}>
                 <tr className="border-b border-slate-100">
-                  {["Employee", "Leave Type", "Inclusive Dates", "Submitted", "Status"].map((heading) => <th className={staffTable.th} key={heading} scope="col">{heading}</th>)}
+                  {["Rank", "Name", "Leave Type", "Status"].map((heading) => <th className={staffTable.th} key={heading} scope="col">{heading}</th>)}
                   <th className={cn(staffTable.th, "text-center")} scope="col">Actions</th>
                 </tr>
               </thead>
@@ -113,6 +113,7 @@ export function StaffLeave() {
                   const label = `${name}'s ${row.leave_type_name} request, ${formatDateRange(row.starts_on, row.ends_on)}`;
                   return (
                     <tr className={cn(staffTable.tr, pending && "bg-amber-50/20")} key={row.id}>
+                      <td className={cn(staffTable.td, "font-mono text-[11px] font-bold text-slate-700")}>{row.employees?.ranks?.code ?? "—"}</td>
                       <td className={staffTable.td}>
                         <div className="flex items-center gap-3">
                           <InitialsAvatar name={name} />
@@ -123,8 +124,6 @@ export function StaffLeave() {
                         </div>
                       </td>
                       <td className={cn(staffTable.td, "font-bold text-slate-800")}>{row.leave_type_name}</td>
-                      <td className={cn(staffTable.td, "font-mono text-[11px] text-slate-600")}>{leaveDateRange(row.starts_on, row.ends_on, formatDate)}</td>
-                      <td className={cn(staffTable.td, "text-slate-500")}>{formatDate(row.created_at)}</td>
                       <td className={staffTable.td}><StatusPill tone={LEAVE_STATUS[row.status].tone}>{LEAVE_STATUS[row.status].label}</StatusPill></td>
                       <td className={cn(staffTable.td, "text-center")}>
                         {pending ? (
@@ -139,7 +138,7 @@ export function StaffLeave() {
                       </td>
                     </tr>
                   );
-                }) : <tr><td className="px-6 py-10 text-center text-xs text-slate-500" colSpan={6}>No leave requests found matching your filters.</td></tr>}
+                }) : <tr><td className="px-6 py-10 text-center text-xs text-slate-500" colSpan={5}>No leave requests found matching your filters.</td></tr>}
               </tbody>
             </table>
           </div>

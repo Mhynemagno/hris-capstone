@@ -35,13 +35,13 @@ select throws_ok(
 
 select is(
   (select count(*)::int from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-    where n.nspname in ('public', 'private', 'reporting') and p.prosrc ~* 'position'),
+    where n.nspname in ('public', 'private', 'reporting') and regexp_replace(p.prosrc, 'Competence to assume position', '', 'g') ~* 'position'),
   0, 'no function body still mentions position'
 );
 
-select is((select count(*)::int from public.ranks), 12, 'twelve ranks seeded');
+select is((select count(*)::int from public.ranks), 13, 'NUP and the twelve uniformed ranks seeded');
 select is((select string_agg(code, ',' order by sort_order) from public.ranks),
-  'PAT,PCPL,PSSG,PMSG,PSMS,PCMS,PEMS,PLT,PCPT,PMAJ,PLTCOL,PCOL', 'rank codes in seniority order');
+  'NUP,PAT,PCPL,PSSG,PMSG,PSMS,PCMS,PEMS,PLT,PCPT,PMAJ,PLTCOL,PCOL', 'rank codes in seniority order, NUP first');
 select is((select name from public.ranks where code = 'PAT'), 'Patrolman / Patrolwoman', 'PAT is Patrolman / Patrolwoman');
 select is((select count(*)::int from public.departments where is_active), 8, 'eight active units / sections');
 select is((select count(*)::int from public.job_openings), 0, 'job openings cleared');

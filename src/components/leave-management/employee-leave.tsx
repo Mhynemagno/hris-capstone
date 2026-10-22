@@ -6,6 +6,7 @@ import { Fragment, useState, type FormEvent, type KeyboardEvent, type ReactNode 
 
 import { StaffInput, StaffLabel, StaffSelect, StaffTextarea } from "@/components/staff-shell/ui/staff-fields";
 import { staffButton } from "@/components/staff-shell/ui/staff-buttons";
+import { StaffModal } from "@/components/staff-shell/ui/staff-modal";
 import { StaffPager, staffTable } from "@/components/staff-shell/ui/staff-table-card";
 import { StatusPill } from "@/components/staff-shell/ui/status-pill";
 import { ErrorState } from "@/components/ui/error-state";
@@ -19,6 +20,7 @@ import {
 } from "@/hooks/use-leave-management";
 import { useEmployeeForCurrentUser } from "@/hooks/use-personnel-records";
 import { formatDate, formatDateRange } from "@/lib/format-date";
+import { dayCount, excessLeaveDays, leaveDays, remainingLeaveDays } from "@/lib/leave-days";
 import { LEAVE_TONE_CLASSES, leaveDateRange, leaveTypeStyle, type LeaveTone } from "@/lib/leave-management/leave-type-style";
 import { requestableLeaveTypes } from "@/lib/leave/requestable-types";
 import { LEAVE_STATUS } from "@/lib/staff/status-maps";
@@ -27,19 +29,6 @@ import { cn } from "@/lib/utils";
 import { leaveRequestDraftSchema, maxLeaveDate } from "@/schemas/leave-management";
 
 const today = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
-
-const dayCount = (days: number) => `${days} ${days === 1 ? "day" : "days"}`;
-
-/** Inclusive calendar days between two ISO dates, the way submit_leave_request counts them. */
-export function leaveDays(startsOn: string, endsOn: string) {
-  return Math.round((Date.parse(`${endsOn}T00:00:00Z`) - Date.parse(`${startsOn}T00:00:00Z`)) / 86_400_000) + 1;
-}
-
-/** Days still available of a limited leave type, or null when the type has no yearly limit. */
-export function remainingLeaveDays(balance: Pick<LeaveBalance, "days_per_year" | "used_days"> | undefined) {
-  if (!balance || balance.days_per_year === null) return null;
-  return Math.max(balance.days_per_year - balance.used_days, 0);
-}
 
 /** Inline message for a typed leave date outside today … two years ahead, or a partial value. */
 export function leaveDateError(value: string, min: string, max: string) {
@@ -52,8 +41,7 @@ export function leaveDateError(value: string, min: string, max: string) {
 function balanceHint(balance: LeaveBalance | undefined, year: number) {
   const remaining = remainingLeaveDays(balance);
   if (!balance || remaining === null || balance.days_per_year === null) return undefined;
-  const left = `${dayCount(remaining)} of ${balance.days_per_year} left for ${year}.`;
-  return balance.excess_deducted_from_retirement ? `${left} Days beyond this are allowed but deducted from your retirement benefits.` : left;
+  return `${dayCount(remaining)} of ${balance.days_per_year} left for ${year}.`;
 }
 
 type HistoryTab = "all" | "pending" | "approved" | "rejected";
@@ -172,7 +160,7 @@ export function EmployeeLeaveList() {
                         <td className={cn(staffTable.td, cardStack, "max-w-xs space-y-1 max-md:max-w-none")} data-label="Reason / HR Feedback">
                           {request.reason ? <p className="whitespace-pre-line text-slate-600">{request.reason}</p> : null}
                           {request.decision_note ? <p className="font-semibold text-slate-800">Notes from HR: {request.decision_note}</p> : null}
-                          {request.excess_days > 0 ? <p className="text-amber-700">{dayCount(request.excess_days)} beyond the yearly limit, deducted from your retirement benefits.</p> : null}
+                          {request.excess_days > 0 ? <p className="text-amber-700">{dayCount(request.excess_days)} beyond your leave credits, to be deducted.</p> : null}
                           {hasRemarks ? null : <p className="text-slate-500">No remarks</p>}
                         </td>
                         <td className={cn(staffTable.td, cardCell)} data-label="Approval Status"><StatusPill tone={LEAVE_STATUS[request.status].tone}>{LEAVE_STATUS[request.status].label}</StatusPill></td>
@@ -308,6 +296,7 @@ export function EmployeeLeaveRequestForm({ onCancel, onSubmitted }: { onCancel?:
   const [fieldErrors, setFieldErrors] = useState<LeaveFieldErrors>({});
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [confirmation, setConfirmation] = useState<{ excess: number; remaining: number } | null>(null);
   const minDate = today();
   const maxDate = maxLeaveDate();
   // Only a complete, in-range start date picks the balance year, so a half-typed year never queries year 1.
@@ -335,15 +324,23 @@ export function EmployeeLeaveRequestForm({ onCancel, onSubmitted }: { onCancel?:
         if (key && !nextErrors[key]) nextErrors[key] = key === "leaveTypeId" ? "Choose a leave type." : issue.message;
       }
     }
-    const remaining = remainingLeaveDays(balance);
-    if (parsed.success && remaining !== null && !balance?.excess_deducted_from_retirement && leaveDays(startsOn, endsOn) > remaining) {
-      nextErrors.endsOn = remaining === 0 ? `You have already used all your days of this leave for ${year}.` : `You have ${dayCount(remaining)} of this leave left for ${year}. Shorten the request to fit.`;
-    }
     if (selectedType?.requires_attachment && !document) nextErrors.document = "Attach a supporting document, such as a medical certificate.";
     setFieldErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
+    // Not enough credits: ask "Would you like to proceed?" first; Yes submits with the deduction accepted.
+    const remaining = remainingLeaveDays(balance);
+    const excess = excessLeaveDays(leaveDays(startsOn, endsOn), remaining);
+    if (excess > 0 && remaining !== null) {
+      setConfirmation({ excess, remaining });
+      return;
+    }
+    await send(false);
+  }
+
+  async function send(acceptDeduction: boolean) {
+    setConfirmation(null);
     try {
-      await submit.mutateAsync({ draft: { requestId: crypto.randomUUID(), ...draft }, files: document ? [document] : [] });
+      await submit.mutateAsync({ draft: { requestId: crypto.randomUUID(), leaveTypeId, startsOn, endsOn, reason: notes, acceptDeduction }, files: document ? [document] : [] });
       setLeaveTypeId("");
       setStartsOn("");
       setEndsOn("");
@@ -422,6 +419,32 @@ export function EmployeeLeaveRequestForm({ onCancel, onSubmitted }: { onCancel?:
         {onCancel ? <button className={staffButton.secondary} disabled={submit.isPending} onClick={onCancel} type="button">Cancel</button> : null}
         <button className={staffButton.primary} disabled={submit.isPending || !activeTypes.length} type="submit">{submit.isPending ? "Submitting…" : "Submit Application"}</button>
       </div>
+      <StaffModal
+        footer={(
+          <>
+            <button className={staffButton.secondary} onClick={() => setConfirmation(null)} type="button">No</button>
+            <button className={staffButton.primary} onClick={() => void send(true)} type="button">Yes</button>
+          </>
+        )}
+        icon={<TriangleAlert aria-hidden="true" className="size-3.5" />}
+        iconClassName="bg-amber-100 text-amber-700"
+        onClose={() => setConfirmation(null)}
+        open={confirmation !== null}
+        size="md"
+        title="Not Enough Leave Credits"
+      >
+        {confirmation ? (
+          <div className="space-y-3 text-sm text-slate-700">
+            <p>
+              {confirmation.remaining === 0
+                ? `You have no ${selectedType?.name ?? "leave"} credits left for ${year}.`
+                : `You only have ${dayCount(confirmation.remaining)} of ${selectedType?.name ?? "leave"} credits left for ${year}.`}
+              {` Because you do not have enough leave credits, the ${confirmation.excess} excess ${confirmation.excess === 1 ? "day" : "days"} will be deducted.`}
+            </p>
+            <p className="font-bold text-slate-900">Would you like to proceed?</p>
+          </div>
+        ) : null}
+      </StaffModal>
     </form>
   );
 }

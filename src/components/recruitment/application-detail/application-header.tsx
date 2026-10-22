@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 
+import { ReopenApplicationButton } from "@/components/recruitment/applicant-account-actions";
 import { ApplicationStageBadge } from "@/components/recruitment/application-stage-badge";
 import { StageResultDialog } from "@/components/recruitment/stage-dialogs";
 import { Badge } from "@/components/ui/badge";
@@ -62,6 +63,7 @@ export function ApplicationHeader(props: HeaderProps) {
         </div>
       </div>
       <div className="flex shrink-0 scroll-mt-24 flex-wrap items-center gap-2" id="stage-actions">
+        {props.status === "Not Selected" ? <ReopenApplicationButton applicationId={props.applicationId} /> : null}
         {results.map((result) => (
           <Button key={result} onClick={() => setDialog(result)} variant={result === "passed" ? "default" : result === "failed" ? "destructive" : "outline"}>{RESULT_LABELS[result]}</Button>
         ))}

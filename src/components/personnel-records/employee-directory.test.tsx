@@ -11,11 +11,6 @@ vi.mock("@/hooks/use-personnel-records", () => ({
   useEmployeeProfilePhotoUrl: () => ({ data: undefined }),
 }));
 
-vi.mock("@/hooks/use-deletion", () => ({
-  useDeletionImpact: () => ({ data: undefined, isLoading: false, error: null }),
-  useDeleteRecord: () => ({ isPending: false, mutateAsync: vi.fn(), reset: vi.fn(), error: null }),
-}));
-
 vi.mock("@/hooks/use-administration", () => ({
   useDepartmentOptions: () => ({
     isLoading: false,
@@ -60,8 +55,7 @@ describe("EmployeeDirectory", () => {
     mocks.useEmployeeDirectory.mockReturnValue({ data: { rows: [employee], count: 1 }, error: null, isLoading: false });
   });
 
-  it("lists records with rank, names, qualifier, status, and view, edit, and delete actions", async () => {
-    const user = userEvent.setup();
+  it("lists records with rank, names, qualifier, status, and view and edit actions but no delete action", () => {
     render(<EmployeeDirectory />);
 
     const table = screen.getByRole("table", { name: "Personnel records" });
@@ -75,8 +69,7 @@ describe("EmployeeDirectory", () => {
     expect(screen.getByRole("link", { name: "Add New Employee" })).toHaveAttribute("href", "/hr/employees/new");
     expect(screen.getByText("1 record")).toBeInTheDocument();
 
-    await user.click(within(table).getByRole("button", { name: /delete record for ana reyes/i }));
-    expect(await screen.findByRole("alertdialog")).toBeInTheDocument();
+    expect(within(table).queryByRole("button", { name: /delete record/i })).not.toBeInTheDocument();
   });
 
   it("shows neither the badge number nor a badge-number prompt under the name", () => {
@@ -87,7 +80,7 @@ describe("EmployeeDirectory", () => {
     expect(screen.queryByRole("link", { name: /update to 0-00000/i })).not.toBeInTheDocument();
   });
 
-  it("writes department, rank, and employment-status filters to the URL and resets the page", async () => {
+  it("writes department, rank, and status filters to the URL and resets the page", async () => {
     const user = userEvent.setup();
     render(<EmployeeDirectory />);
 
@@ -96,10 +89,10 @@ describe("EmployeeDirectory", () => {
     await user.selectOptions(screen.getByLabelText("Unit / Section"), "3");
     expect(within(screen.getByLabelText("Rank")).getByRole("option", { name: "PCpl — Police Corporal" })).toBeInTheDocument();
     await user.selectOptions(screen.getByLabelText("Rank"), "7");
-    expect(within(screen.getByLabelText("Employment status")).getAllByRole("option").map((option) => option.textContent)).toEqual(["All statuses", "Active"]);
-    await user.selectOptions(screen.getByLabelText("Employment status"), "active");
+    expect(within(screen.getByLabelText("Status")).getAllByRole("option").map((option) => option.textContent)).toEqual(["All statuses", "Active", "Retired"]);
+    await user.selectOptions(screen.getByLabelText("Status"), "retired");
 
-    expect(navigation.replace).toHaveBeenLastCalledWith("/hr/employees?status=active", { scroll: false });
+    expect(navigation.replace).toHaveBeenLastCalledWith("/hr/employees?status=retired", { scroll: false });
     // Filters can find records in inactive departments.
     expect(screen.getByRole("option", { name: "Records (inactive)" })).toBeInTheDocument();
 

@@ -23,7 +23,7 @@ export function AttendanceRecordModal({ log, missing, onClose }: { log: Attendan
   const status = log ? ATTENDANCE_STATUS[log.status] : null;
   return (
     <StaffModal
-      footer={<button className={staffButton.dark} onClick={onClose} type="button">Close Window</button>}
+      footer={<button className={staffButton.dark} onClick={onClose} type="button">Close</button>}
       icon={<UserRoundSearch aria-hidden="true" className="size-4" />}
       iconClassName="bg-blue-900 text-amber-400 shadow-sm"
       onClose={onClose}

@@ -1,4 +1,4 @@
-import type { AttendanceStatus, DeploymentStatus, LeaveRequestStatus, PromotionEvaluation } from "@/lib/types/database";
+import type { AttendanceStatus, DeploymentStatus, LeaveRequestStatus, PromotionStatus } from "@/lib/types/database";
 import type { ApplicationStatus } from "@/schemas/recruitment";
 
 export type PillTone = "amber" | "emerald" | "rose" | "blue" | "slate";
@@ -25,10 +25,10 @@ export const ATTENDANCE_STATUS: Record<AttendanceStatus, Pill> = {
   absent: { label: "Absent", tone: "slate" },
 };
 
-export const RECOMMENDATION_STATUS: Record<PromotionEvaluation["recommendation"], Pill> = {
-  recommended: { label: "Recommended", tone: "blue" },
-  not_recommended: { label: "Not Recommended", tone: "rose" },
-  deferred: { label: "Deferred", tone: "slate" },
+export const PROMOTION_STATUS: Record<PromotionStatus, Pill> = {
+  for_approval: { label: "For approval", tone: "amber" },
+  approved: { label: "Approved", tone: "emerald" },
+  rejected: { label: "Rejected", tone: "rose" },
 };
 
 /** Applicant Roster status pill (roster.html, PDF p. 22): "Pending" before anything is submitted. */

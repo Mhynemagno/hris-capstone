@@ -3,13 +3,13 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(16);
+select extensions.plan(19);
 
 select extensions.has_table('public', 'leave_types', 'Leave types table exists');
 select extensions.has_table('public', 'leave_requests', 'Leave requests table exists');
 select extensions.has_table('public', 'leave_request_attachments', 'Leave attachments table exists');
 select extensions.has_table('public', 'leave_request_history', 'Leave history table exists');
-select extensions.has_function('public', 'submit_leave_request', array['uuid', 'uuid', 'date', 'date', 'text', 'jsonb'], 'Leave submission RPC exists');
+select extensions.has_function('public', 'submit_leave_request', array['uuid', 'uuid', 'date', 'date', 'text', 'jsonb', 'boolean'], 'Leave submission RPC exists, with the deduction confirmation');
 select extensions.has_function('public', 'cancel_leave_request', array['uuid'], 'Leave cancellation RPC exists');
 select extensions.has_function('public', 'decide_leave_request', array['uuid', 'text', 'text'], 'Leave decision RPC exists');
 select extensions.has_function('public', 'create_leave_type', array['text', 'text', 'boolean'], 'Leave type creation RPC exists');
@@ -78,6 +78,32 @@ select extensions.is(
   (select reason from public.leave_requests where id = '00000000-0000-4000-8000-000000000742'),
   null::text,
   'Blank leave notes are stored as null'
+);
+
+-- Over the remaining credits: any leave type is allowed once the employee confirms the deduction.
+select extensions.throws_ok(
+  $$select public.submit_leave_request(
+    '00000000-0000-4000-8000-000000000743'::uuid,
+    (select id from public.leave_types where lower(name) = 'mandatory leave' and is_active),
+    '2099-03-10', '2099-03-12', null, '[]'::jsonb
+  )$$,
+  '22023', 'You do not have enough Mandatory Leave credits for 2099. Confirm that the 1 excess day will be deducted to proceed.',
+  'A request beyond the remaining credits needs the deduction confirmation'
+);
+
+select extensions.lives_ok(
+  $$select public.submit_leave_request(
+    '00000000-0000-4000-8000-000000000743'::uuid,
+    (select id from public.leave_types where lower(name) = 'mandatory leave' and is_active),
+    '2099-03-10', '2099-03-12', null, '[]'::jsonb, true
+  )$$,
+  'A confirmed request beyond the remaining credits is accepted'
+);
+
+select extensions.is(
+  (select excess_days from public.leave_requests where id = '00000000-0000-4000-8000-000000000743'),
+  1,
+  'The days beyond the remaining credits are recorded as deduction days'
 );
 
 select * from extensions.finish();

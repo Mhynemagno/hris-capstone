@@ -2,6 +2,7 @@ import type { Certification, Employee, Qualification, ServiceHistory, TrainingRe
 import { DUPLICATE_EMAIL_MESSAGE } from "@/lib/auth/duplicate-email";
 import { withSearch } from "@/lib/search";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { uuidSchema } from "@/schemas/common";
 import {
   certificationSchema,
   employeeDirectoryFiltersSchema,
@@ -66,6 +67,17 @@ export async function getEmployee(employeeId: string) {
   const { data, error } = await createBrowserSupabaseClient().from("employees").select("*").eq("id", employeeId).maybeSingle();
   throwIfError(error);
   return data as Employee | null;
+}
+
+/**
+ * The date the employee's current rank took effect (Time-In-Grade start): the first service-history
+ * entry in that rank, otherwise the Date Entered Service. Null when no rank is recorded.
+ */
+export async function getEmployeeTimeInGrade(employeeId: string) {
+  const id = uuidSchema.parse(employeeId);
+  const { data, error } = await createBrowserSupabaseClient().rpc("get_employee_time_in_grade", { target_employee_id: id });
+  throwIfError(error);
+  return (data as string | null) ?? null;
 }
 
 export async function getEmployeeForCurrentUser() {
@@ -177,7 +189,7 @@ type PersonnelKind = "serviceHistory" | "qualification" | "certification" | "tra
 
 const childConfig = {
   serviceHistory: { table: "service_history", schema: serviceHistorySchema, payload: (v: ServiceHistoryInput) => ({ employee_id: v.employeeId, department_id: v.departmentId ?? null, rank_id: v.rankId ?? null, unit_station: v.unitStation ?? null, employment_title: v.employmentTitle ?? null, started_on: v.startedOn, ended_on: v.endedOn ?? null, notes: v.notes ?? null }) },
-  qualification: { table: "qualifications", schema: qualificationSchema, payload: (v: QualificationInput) => ({ employee_id: v.employeeId, name: v.name, institution: v.institution ?? null, qualification_level: v.qualificationLevel ?? null, field_of_study: v.fieldOfStudy ?? null, awarded_on: v.awardedOn, notes: v.notes ?? null }) },
+  qualification: { table: "qualifications", schema: qualificationSchema, payload: (v: QualificationInput) => ({ employee_id: v.employeeId, name: v.name, institution: v.institution ?? null, qualification_level: v.qualificationLevel ?? null, field_of_study: v.fieldOfStudy ?? null, awarded_on: v.awardedOn, notes: v.notes ?? null, rating: v.rating ?? null }) },
   certification: { table: "certifications", schema: certificationSchema, payload: (v: CertificationInput) => ({ employee_id: v.employeeId, name: v.name, issuer: v.issuer ?? null, credential_id: v.credentialId ?? null, issued_on: v.issuedOn, expires_on: v.expiresOn ?? null, notes: v.notes ?? null }) },
   training: { table: "training_records", schema: trainingRecordSchema, payload: (v: TrainingRecordInput) => ({ employee_id: v.employeeId, course_name: v.courseName, provider: v.provider, completed_on: v.completedOn, expires_on: v.expiresOn ?? null, hours: v.hours ?? null, notes: v.notes ?? null }) },
 } as const;

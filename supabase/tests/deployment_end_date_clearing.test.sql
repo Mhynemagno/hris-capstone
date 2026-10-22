@@ -13,13 +13,13 @@ values ('00000000-0000-4000-8000-000000002511', 'END-001', 'End', 'Date', 'end-d
 
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000002501';
-select public.create_deployment('00000000-0000-4000-8000-000000002511'::uuid, 'Plaza', null, null, 'Plaza', '2099-03-01', '2099-03-05', 'scheduled', 'Fiesta', 'Special Event', 'Fiesta / Major Event');
+select public.create_deployment_group('Plaza', null, '2099-03-01', '2099-03-05', 'Special Event', 'Fiesta / Major Event', '[{"employeeId":"00000000-0000-4000-8000-000000002511","task":"Deployed"}]'::jsonb);
 
 select extensions.lives_ok(
-  $$select public.update_deployment(
+  $$select public.update_deployment_details(
       (select id from public.deployments where employee_id = '00000000-0000-4000-8000-000000002511'),
       (select updated_at from public.deployments where employee_id = '00000000-0000-4000-8000-000000002511'),
-      'Plaza', null, null, 'Plaza', '2099-03-01', null, 'scheduled', 'Now one day', 'Special Event', 'Fiesta / Major Event')$$,
+      'Plaza', '2099-03-01', null, 'Special Event', 'Fiesta / Major Event', 'Deployed')$$,
   'HR clears the end date to make it a one-day deployment'
 );
 select extensions.ok(

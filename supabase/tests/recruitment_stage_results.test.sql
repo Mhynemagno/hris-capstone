@@ -9,7 +9,7 @@ select extensions.has_function('public', 'record_stage_result', array['uuid', 't
 select extensions.has_table('public', 'application_stage_documents', 'Stage supporting documents are stored');
 
 insert into public.job_openings (title, description, location, closes_on, status, published_at, created_by_user_id)
-values ('Stage result test opening', 'Opening for stage result tests.', 'San Juan City', current_date + 30, 'published', now(), '00000000-0000-4000-8000-000000008102');
+values ('Stage result test opening', 'Opening for stage result tests.', 'San Juan City', (date_trunc('month', current_date) + interval '1 month - 1 day')::date, 'published', now(), '00000000-0000-4000-8000-000000008102');
 insert into public.applications (id, applicant_id, job_opening_id, status)
 select '00000000-0000-4000-8000-000000028001', applicant.id, opening.id, 'Application Submission'
 from public.applicants applicant

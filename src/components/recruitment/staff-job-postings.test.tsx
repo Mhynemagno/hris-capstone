@@ -19,7 +19,7 @@ vi.mock("@/components/staff-shell/staff-notify", () => ({ notifyStaff: mocks.not
 vi.mock("@/hooks/use-deletion", () => ({ useDeleteRecord: () => ({ mutateAsync: mocks.remove, isPending: false }) }));
 
 const job = (id: number, title: string, status: "draft" | "published" | "closed", closes_on: string, applications: number, updated_at: string) =>
-  ({ id, title, location: "San Juan City Police Station", status, closes_on, updated_at, applications: [{ count: applications }], job_qualification_criteria: [] });
+  ({ id, title, location: "San Juan City Police Station", status, closes_on, updated_at, recruitment_cycle: 2 as const, recruitment_year: 2026, applications: [{ count: applications }], job_qualification_criteria: [] });
 
 vi.mock("@/hooks/use-recruitment", () => ({
   useAllHrJobs: () => ({
@@ -55,7 +55,9 @@ describe("StaffJobPostings (jobpost.html)", () => {
   it("shows the mockup header, tabs with counts and deadline notes", () => {
     render(<StaffJobPostings />);
     expect(screen.getByRole("heading", { level: 1, name: "RECRUITMENT OPENINGS" })).toBeInTheDocument();
-    expect(screen.getByText(/two recruitment openings per calendar year/i)).toBeInTheDocument();
+    expect(screen.getByText(/Recruitment opens twice a year: Cycle 1 \(January–June\) and Cycle 2 \(July–December\)/)).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Cycle" })).toBeInTheDocument();
+    expect(within(screen.getByRole("row", { name: /SAN JUAN CITY RECRUITMENT/ })).getByText("Cycle 2 · July–December 2026")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /create recruitment/i })).toHaveAttribute("href", "/hr/jobs/new");
     for (const name of ["All 4", "Published 1", "Draft 1", "Closed 2"]) expect(screen.getByRole("button", { name })).toBeInTheDocument();
     expect(screen.getByText("Closes in 3 days")).toBeInTheDocument();

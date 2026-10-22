@@ -188,6 +188,8 @@ export type Qualification = {
   field_of_study: string | null;
   awarded_on: string;
   notes: string | null;
+  /** Rating in percent, e.g. 85 for NAPOLCOM 85%; older entries may have none. */
+  rating?: number | null;
   /** Supporting document proving the exam was passed (client round 5); older entries may have none. */
   document_path?: string | null;
   document_name?: string | null;
@@ -234,6 +236,9 @@ export type JobOpening = {
   closes_on: string | null;
   status: "draft" | "published" | "closed";
   published_at: string | null;
+  /** Cycle 1 (January–June) or Cycle 2 (July–December) of the opening date, assigned by the database. */
+  recruitment_cycle: 1 | 2;
+  recruitment_year: number;
   image_path?: string | null;
   created_by_user_id: string | null;
   created_at: string;
@@ -260,8 +265,8 @@ export type AppliedJob = Pick<JobOpening, "id" | "title" | "description" | "loca
 export type Applicant = {
   id: string;
   profile_id: string;
-  /** Issued when HR accepts the application (passes Application Submission); null until then. */
-  applicant_number: number | null;
+  /** Issued at registration; every applicant record has one and it never changes. */
+  applicant_number: number;
   /** The posting the applicant chose on the public site; their Documents-page Save applies to it. */
   preferred_job_opening_id: number | null;
   first_name: string;
@@ -321,8 +326,8 @@ export type ApplicantEducation = {
 /** A registered applicant account as HR sees it, including accounts that have not applied yet. */
 export type HrRegisteredApplicant = {
   user_id: string;
-  applicant_id: string | null;
-  applicant_number: number | null;
+  applicant_id: string;
+  applicant_number: number;
   first_name: string | null;
   middle_name: string | null;
   last_name: string | null;
@@ -332,6 +337,8 @@ export type HrRegisteredApplicant = {
   phone: string | null;
   registered_at: string;
   email_confirmed: boolean;
+  /** False when the account was deactivated and cannot sign in; HR can reactivate it. */
+  account_active: boolean;
   application_count: number;
   latest_application_id: string | null;
   latest_application_status: Application["status"] | null;
@@ -445,9 +452,9 @@ export type LeaveBalance = {
   used_days: number;
 };
 
-/** A leave request with the submitting employee's name, as HR sees it in the queue and detail page. */
+/** A leave request with the submitting employee's name and rank, as HR sees it in the queue and detail page. */
 export type LeaveRequestWithEmployee = LeaveRequest & {
-  employees: Pick<Employee, "first_name" | "middle_name" | "last_name" | "employee_number"> | null;
+  employees: (Pick<Employee, "first_name" | "middle_name" | "last_name" | "employee_number"> & { ranks?: Pick<Rank, "code"> | null }) | null;
 };
 
 export type LeaveRequestAttachment = {
@@ -486,11 +493,23 @@ export type Deployment = {
   notes: string | null;
   deployment_type: string | null;
   event_operation: string | null;
+  /** Per-employee duty: "Deployed" or "Reserve/Standby". */
+  task: DeploymentTask;
+  /** The shared header when the deployment was created for several employees at once. */
+  deployment_group_id: string | null;
+  /** Status the deployed employee asked HR to approve. */
+  proposed_status: DeploymentProposedStatus | null;
+  proposed_at: string | null;
+  status_reviewed_at: string | null;
+  status_reviewed_by_user_id: string | null;
   created_by_user_id: string | null;
   updated_by_user_id: string | null;
   created_at: string;
   updated_at: string;
 };
+
+export type DeploymentTask = "Deployed" | "Reserve/Standby";
+export type DeploymentProposedStatus = "ongoing" | "completed";
 
 export type DeploymentHistory = {
   id: number;
@@ -502,33 +521,6 @@ export type DeploymentHistory = {
 };
 
 export type DeploymentReport = { id: string; deployment_id: string; notes: string | null; object_path: string; file_name: string; mime_type: string; size_bytes: number; submitted_by_user_id: string; created_at: string };
-
-export type PromotionCriterion = {
-  id: string;
-  target_rank_id: number;
-  minimum_years_of_service: number;
-  minimum_performance_rating: number | null;
-  minimum_time_in_grade_years?: number | null;
-  iper_review_period_months?: number | null;
-  pft_minimum_score?: number | null;
-  pft_validity_months?: number | null;
-  is_active: boolean;
-  created_by_user_id: string | null;
-  updated_by_user_id: string | null;
-  created_at: string;
-  updated_at: string;
-};
-
-export type PromotionCriterionRequirement = {
-  id: string;
-  criterion_id: string;
-  ordinal: number;
-  record_kind: "qualification" | "certification" | "training";
-  required_name: string;
-  label: string;
-  is_mandatory: boolean;
-  created_at: string;
-};
 
 export type PerformanceRating = {
   id: string;
@@ -545,6 +537,8 @@ export type PerformanceRating = {
   total_points?: number | null;
   grade_equivalent?: string | null;
   descriptive_rating?: string | null;
+  /** "iper" = supervisor IPER entered by HR (adjectival in descriptive_rating); "rubric" = legacy points rubric. */
+  rating_kind?: "rubric" | "iper";
   created_by_user_id: string | null;
   updated_by_user_id: string | null;
   created_at: string;
@@ -554,7 +548,9 @@ export type PerformanceRating = {
 export type PhysicalFitnessResult = {
   id: string;
   employee_id: string;
-  score: number;
+  /** Legacy numeric score; results recorded since 2026-10-22 store only `result`. */
+  score: number | null;
+  result: "passed" | "failed" | null;
   assessed_on: string;
   valid_until: string;
   notes: string | null;
@@ -601,45 +597,92 @@ export type EmployeePromotionEligibilitySummary = {
   missing_requirements: string[];
 };
 
-/** Promotion readiness worked out live from the employee's current records (private.promotion_readiness). */
-export type PromotionReadiness = {
-  yearsOfService: number;
-  minimumYearsOfService: number;
-  timeInGradeYears?: number;
-  minimumTimeInGradeYears?: number | null;
-  isReady: boolean;
-  missingRequirements: string[];
-  requirements: { label: string; met: boolean }[];
+/** System-owned requirements for promotion to a target rank (public.promotion_rank_requirements). */
+export type PromotionRankRequirement = {
+  target_rank_id: number;
+  min_time_in_grade_months: number;
+  required_training: string[];
+  requires_eligibility: boolean;
+  min_iper: IperRating;
+  iper_period_months: number;
+  requires_pft_passed: boolean;
+  pft_validity_months: number;
+  updated_at: string;
 };
 
-/** One row per reviewed employee: their latest review, with readiness as of today. */
-export type PromotionReadinessRow = {
+export type IperRating = "Outstanding" | "Very Satisfactory" | "Satisfactory" | "Unsatisfactory" | "Poor";
+export type PromotionStatus = "for_approval" | "approved" | "rejected";
+export type PromotionRankRef = { id: number; code: string; name: string };
+
+/** private.evaluate_promotion: the employee checked against the requirements for their next rank. */
+export type PromotionEvaluationResult = {
+  employeeId: string;
+  employeeName: string;
+  employeeNumber: string;
+  evaluatedOn: string;
+  isUniformed: boolean;
+  currentRank: PromotionRankRef | null;
+  targetRank: PromotionRankRef | null;
+  /** Why there is no target rank: no rank, NUP, top rank or not active. */
+  reason: "no_rank" | "non_uniformed" | "below_scored_rank" | "top_rank" | "inactive" | null;
+  rankSince?: string;
+  timeInGradeMonths?: number;
+  minimumTimeInGradeMonths?: number;
+  trainings?: { name: string; code: string; met: boolean; record: { recordKind: "certification" | "training"; recordId: string; recordName: string; completedOn: string; documentPath: string | null; documentName: string | null } | null }[];
+  eligibility?: { required: boolean; record: { id: string; name: string; rating: string | null; awardedOn: string; documentPath: string | null; documentName: string | null } | null };
+  iper?: { minimum: IperRating; periodMonths: number; record: { id: string; rating: IperRating; periodStartsOn: string; periodEndsOn: string } | null };
+  pft?: { required: boolean; validityMonths: number; record: { id: string; result: "passed" | "failed" | "scored" | null; score: number | null; assessedOn: string } | null };
+  requirements: { key: string; label: string; met: boolean }[];
+  missingRequirements: string[];
+  isQualified?: boolean;
+  band?: "PCPL-PMSG" | "PSMS-PEMS" | "PLT-PLTCOL";
+  totalScore?: number;
+  maximumScore?: number;
+  criteria?: { key: string; label: string; points: number; maximumPoints: number; state: "calculated" | "missing" | "unassessed" | "assessed"; evidence?: unknown }[];
+};
+
+export type PromotionDecisionSummary = { id: string; status: "approved" | "rejected"; remarks: string | null; decidedAt: string; targetRankId: number };
+
+/** HR's approve/reject decision on a system-evaluated promotion (public.promotion_decisions). */
+export type PromotionDecision = {
+  id: string;
+  employee_id: string;
+  from_rank_id: number | null;
+  target_rank_id: number;
+  status: "approved" | "rejected";
+  remarks: string | null;
+  evaluation_snapshot: Record<string, unknown>;
+  decided_by_user_id: string | null;
+  decided_at: string;
+};
+
+/** One row of the Promotion Evaluation dashboard (list_promotion_candidates_page). */
+export type PromotionCandidateRow = {
   employee_id: string;
   employee_name: string;
-  evaluation_id: string;
+  employee_number: string;
+  rank_id: number;
+  rank_code: string;
+  rank_name: string;
   target_rank_id: number;
+  target_rank_code: string;
   target_rank_name: string;
-  evaluated_on: string;
-  recommendation: PromotionEvaluation["recommendation"];
-  readiness: PromotionReadiness;
+  status: PromotionStatus;
+  decision_id: string | null;
+  remarks: string | null;
+  decided_at: string | null;
+  score?: number;
+  maximum_score?: number;
+  band?: "PCPL-PMSG" | "PSMS-PEMS" | "PLT-PLTCOL";
+  eligibility_rating?: string | null;
+  evaluation?: PromotionEvaluationResult;
+  total_count: number;
 };
 
-export type MyPromotionReadiness = {
-  criterionId: string;
-  currentRankName: string;
-  targetRankName: string;
-  targetRankCode: string;
-  evaluatedOn: string | null;
-  docket: EmployeePromotionDocket | null;
-  readiness: PromotionReadiness;
-};
+export type PromotionEvaluationDetail = { evaluation: PromotionEvaluationResult; decision: PromotionDecisionSummary | null };
 
-/** An employee's submitted request for HR to review a rank-matched promotion criterion. */
-export type EmployeePromotionDocket = {
-  id: string;
-  criterionId: string;
-  remarks: string;
-  submittedAt: string;
+export type MyPromotionStatus = PromotionEvaluationDetail & {
+  history: { id: string; status: "approved" | "rejected"; remarks: string | null; decidedAt: string; targetRankCode: string; targetRankName: string }[];
 };
 
 export type AttendanceStatus = "present" | "late" | "absent" | "incomplete";
@@ -694,6 +737,8 @@ export type AttendanceLog = {
   time_in: string | null;
   time_out: string | null;
   status: AttendanceStatus;
+  /** True when time_in is after the workday start plus grace (kept by the database). An open log with a late time-in reads as Late. */
+  time_in_late?: boolean;
   /** Null for face-recognition scans, which have no import run. */
   import_id: string | null;
   capture_method: "import" | "face_recognition";

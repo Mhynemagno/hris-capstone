@@ -31,7 +31,15 @@ vi.mock("@/hooks/use-leave-management", () => ({
   useLeaveTypes: () => state.typesError ? { isLoading: false, error: state.typesError, data: undefined } : ok({ rows: [{ id: "t1", name: "Sick Leave", days_per_year: 15, eligible_gender: null }], count: 1 }),
 }));
 vi.mock("@/hooks/use-attendance-integration", () => ({ useMyAttendanceLogs: () => ok({ rows: state.logs, count: state.logs.length }) }));
-vi.mock("@/hooks/use-promotion-eligibility", () => ({ useMyPromotionEligibility: () => ok(state.promotion) }));
+vi.mock("@/hooks/use-promotion-eligibility", () => ({ useMyPromotionStatus: () => ok(state.promotion) }));
+const evaluation = (overrides: Record<string, unknown> = {}) => ({
+  employeeId: "11111111-1111-4111-8111-111111111111", employeeName: "Peters, Tyson", employeeNumber: "4-15889", evaluatedOn: "2026-10-22", isUniformed: true,
+  currentRank: { id: 1, code: "PCPL", name: "Police Corporal" }, targetRank: { id: 2, code: "PSSG", name: "Police Staff Sergeant" }, reason: null,
+  band: "PCPL-PMSG", totalScore: 63.5, maximumScore: 100,
+  criteria: [{ key: "board", label: "Interview", points: 12, maximumPoints: 15, state: "assessed" }, { key: "reputation", label: "Service reputation", points: 18, maximumPoints: 20, state: "assessed" }],
+  ...overrides,
+});
+
 vi.mock("@/hooks/use-public-site", () => ({ usePublishedAnnouncements: () => ok(state.announcements) }));
 
 import { EmployeeDashboard } from "./employee-dashboard";
@@ -58,7 +66,7 @@ describe("EmployeeDashboard (empdash.html)", () => {
     render(<EmployeeDashboard />);
     expect(screen.queryByText("No current field assignment")).not.toBeInTheDocument();
     expect(screen.queryByText("Not yet recorded today")).not.toBeInTheDocument();
-    expect(screen.queryByText(/No active promotion criterion/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/No next rank to evaluate/)).not.toBeInTheDocument();
     expect(screen.queryByText("No active criterion")).not.toBeInTheDocument();
     expect(screen.queryByText(/No leave entitlements/)).not.toBeInTheDocument();
     expect(screen.queryByText("No announcements right now.")).not.toBeInTheDocument();
@@ -91,11 +99,11 @@ describe("EmployeeDashboard (empdash.html)", () => {
     expect(container.querySelector("img")).toHaveAttribute("src", "https://signed.example/photo.jpg");
   });
 
-  it("marks the banner tile as submitted when a docket exists", () => {
-    state.promotion = { criterionId: "c1", currentRankName: "Patrolman", targetRankName: "Police Corporal", targetRankCode: "PCpl", evaluatedOn: null, docket: { id: "k", criterionId: "c1", remarks: "x", submittedAt: "2026-10-01T00:00:00Z" }, readiness: { yearsOfService: 2, minimumYearsOfService: 2, isReady: false, missingRequirements: [], requirements: [] } };
+  it("marks the banner tile with the HR decision", () => {
+    state.promotion = { evaluation: evaluation(), decision: { id: "22222222-2222-4222-8222-222222222222", status: "approved", remarks: null, decidedAt: "2026-10-21T00:00:00Z", targetRankId: 2 }, history: [] };
     render(<EmployeeDashboard />);
-    expect(screen.getByText("PCpl Submitted")).toBeVisible();
-    expect(screen.queryByText("PCpl In progress")).not.toBeInTheDocument();
+    expect(screen.getByText("PSSG Approved")).toBeVisible();
+    expect(screen.queryByText("PSSG For approval")).not.toBeInTheDocument();
   });
 
   it("shows the live overview with its no-data states and links", async () => {
@@ -116,9 +124,9 @@ describe("EmployeeDashboard (empdash.html)", () => {
     expect(screen.getByTestId("profile-initials")).toHaveTextContent("TP");
   });
 
-  it("explains a missing active criterion without a false eligible state", () => {
+  it("explains a missing next rank without a false eligible state", () => {
     render(<EmployeeDashboard />);
-    expect(screen.getByText(/No active promotion criterion applies/)).toBeVisible();
+    expect(screen.getByText(/No next rank to evaluate/)).toBeVisible();
     expect(screen.queryByText(/Eligible/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Ready/)).not.toBeInTheDocument();
   });
@@ -129,15 +137,16 @@ describe("EmployeeDashboard (empdash.html)", () => {
       { id: "d1", status: "ongoing", location: "Greenhills Shopping Complex", project: "Mobile Patrol", unit: "Traffic and Investigation", deployment_type: "Regular Duty", starts_on: "2026-09-28", ends_on: null },
     ];
     state.logs = [{ id: "l1", time_in: "2026-10-10T21:19:00Z", time_out: null, status: "incomplete", capture_method: "face_recognition" }];
-    state.promotion = { criterionId: "c1", currentRankName: "Patrolman", targetRankName: "Police Corporal", targetRankCode: "PCpl", evaluatedOn: null, docket: null, readiness: { yearsOfService: 2, minimumYearsOfService: 2, isReady: true, missingRequirements: [], requirements: [{ label: "Basic Course", met: true }] } };
+    state.promotion = { evaluation: evaluation(), decision: null, history: [] };
     state.announcements = [{ id: "a1", title: "Kiosk Maintenance", summary: "Scheduled recalibration.", category: "advisory", published_at: "2026-10-10T00:00:00Z" }];
     render(<EmployeeDashboard />);
     expect(screen.getByText("Greenhills Shopping Complex")).toBeVisible();
     expect(screen.getByText("September 28, 2026 to present")).toBeVisible();
     expect(screen.queryByText("Old Post")).not.toBeInTheDocument();
     expect(screen.getByText("05:19")).toBeVisible();
-    expect(screen.getByText(/Target rank: PCpl/)).toBeVisible();
-    expect(screen.getByText("Eligible")).toBeVisible();
+    expect(screen.getByText(/Target rank: PSSG/)).toBeVisible();
+    expect(screen.getByText("63.5 / 100 score")).toBeVisible();
+    expect(screen.getByText("For approval")).toBeVisible();
     expect(screen.getByText("Kiosk Maintenance")).toBeVisible();
     expect(screen.getByRole("link", { name: "View details for Kiosk Maintenance" })).toHaveAttribute("href", "/announcements/a1");
   });

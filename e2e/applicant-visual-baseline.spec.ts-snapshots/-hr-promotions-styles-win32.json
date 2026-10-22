@@ -52,7 +52,19 @@
     "padding-left": "36px",
     "box-shadow": "none"
   },
-  "select": null,
+  "select": {
+    "font-family": "Inter, \"Inter Fallback\", ui-sans-serif, system-ui, sans-serif",
+    "font-size": "12px",
+    "font-weight": "600",
+    "line-height": "16px",
+    "color": "lab(7.787 1.823 -15.054)",
+    "background-color": "lab(98.143 -0.370 -1.060)",
+    "border-top-color": "lab(91.735 -0.999 -4.770)",
+    "border-top-left-radius": "11.200px",
+    "min-height": "0px",
+    "padding-left": "12px",
+    "box-shadow": "none"
+  },
   "[data-slot=badge]": null,
   "[data-slot=sidebar-inner]": {
     "font-family": "Inter, \"Inter Fallback\", ui-sans-serif, system-ui, sans-serif",

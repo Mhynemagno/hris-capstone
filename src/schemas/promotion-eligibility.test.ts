@@ -1,64 +1,64 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  performanceRatingSchema,
-  promotionCriterionSchema,
-  promotionDocketSchema,
-  promotionEvaluationFiltersSchema,
-} from "./promotion-eligibility";
+import { iperEntrySchema, myPromotionStatusSchema, pftEntrySchema, promotionCandidateFiltersSchema, promotionDecisionSchema, promotionEvaluationResultSchema } from "./promotion-eligibility";
 
 const employeeId = "123e4567-e89b-42d3-a456-426614174000";
 
-describe("promotion eligibility schemas", () => {
-  it("normalizes target-rank criteria and record requirements", () => {
-    expect(promotionCriterionSchema.parse({
-      targetRankId: "4",
-      minimumYearsOfService: "3",
-      minimumTimeInGradeYears: "2",
-      minimumPerformanceRating: "4",
-      iperReviewPeriodMonths: "12",
-      pftMinimumScore: "75",
-      pftValidityMonths: "12",
-      requirements: [{ recordKind: "certification", requiredName: " First Aid ", label: " First-aid certification ", isMandatory: true }],
-    })).toEqual({
-      targetRankId: 4,
-      minimumYearsOfService: 3,
-      minimumTimeInGradeYears: 2,
-      minimumPerformanceRating: 4,
-      iperReviewPeriodMonths: 12,
-      pftMinimumScore: 75,
-      pftValidityMonths: 12,
-      requirements: [{ recordKind: "certification", requiredName: "First Aid", label: "First-aid certification", isMandatory: true }],
+describe("promotion schemas", () => {
+  it("bounds dashboard filters and accepts only known statuses", () => {
+    expect(promotionCandidateFiltersSchema.parse({ page: "2", pageSize: "500", status: "approved" })).toEqual({ page: 2, pageSize: 100, status: "approved" });
+    expect(promotionCandidateFiltersSchema.safeParse({ status: "pending" }).success).toBe(false);
+  });
+
+  it("requires a reason to reject but not to approve", () => {
+    expect(promotionDecisionSchema.safeParse({ employeeId, approve: false, remarks: "  " }).error?.issues[0]?.message).toBe("Enter the reason for rejecting this promotion.");
+    expect(promotionDecisionSchema.parse({ employeeId, approve: true })).toEqual({ employeeId, approve: true, remarks: null });
+    expect(promotionDecisionSchema.parse({ employeeId, approve: false, remarks: " Lacks PSJLC " })).toEqual({ employeeId, approve: false, remarks: "Lacks PSJLC" });
+  });
+
+  it("accepts adjectival IPER ratings for up to 6 months", () => {
+    expect(iperEntrySchema.safeParse({ employeeId, periodStartsOn: "2026-01-01", periodEndsOn: "2026-07-01", rating: "Satisfactory" }).success).toBe(true);
+    expect(iperEntrySchema.safeParse({ employeeId, periodStartsOn: "2026-01-01", periodEndsOn: "2026-07-02", rating: "Satisfactory" }).error?.issues[0]?.message).toBe("An IPER rating period covers at most 6 months.");
+    expect(iperEntrySchema.safeParse({ employeeId, periodStartsOn: "2026-01-01", periodEndsOn: "2026-06-30", rating: "4" }).success).toBe(false);
+    expect(iperEntrySchema.safeParse({ employeeId, periodStartsOn: "2026-06-30", periodEndsOn: "2026-01-01", rating: "Poor" }).error?.issues[0]?.message).toBe("The rating period must end on or after it starts.");
+  });
+
+  it("records PFT as passed or failed", () => {
+    expect(pftEntrySchema.parse({ employeeId, assessedOn: "2026-09-01", passed: false })).toEqual({ employeeId, assessedOn: "2026-09-01", passed: false, notes: null });
+    expect(pftEntrySchema.safeParse({ employeeId, assessedOn: "2026-09-01" }).success).toBe(false);
+  });
+
+  it("parses the employee status with a top-rank evaluation", () => {
+    const parsed = myPromotionStatusSchema.parse({
+      evaluation: { employeeId, employeeName: "Cruz, Ana", employeeNumber: "1-23456", evaluatedOn: "2026-10-22", isUniformed: true, currentRank: { id: 12, code: "PCOL", name: "Police Colonel" }, targetRank: null, reason: "top_rank", requirements: [], missingRequirements: [], isQualified: false },
+      decision: null,
     });
+    expect(parsed.history).toEqual([]);
+    expect(parsed.evaluation.reason).toBe("top_rank");
   });
 
-  it("rejects invalid rating periods and unsupported requirement kinds", () => {
-    expect(performanceRatingSchema.safeParse({ employeeId, rating: 6, reviewPeriodStartsOn: "2026-07-01", reviewPeriodEndsOn: "2026-06-30" }).success).toBe(false);
-    expect(promotionCriterionSchema.safeParse({ targetRankId: 4, minimumYearsOfService: -1, requirements: [{ recordKind: "deployment", requiredName: "x", label: "x", isMandatory: true }] }).success).toBe(false);
+  it("preserves PDF scorecard totals and unassessed criterion state", () => {
+    const parsed = promotionEvaluationResultSchema.parse({
+      employeeId, employeeName: "Cruz, Ana", employeeNumber: "1-23456", evaluatedOn: "2026-10-22", isUniformed: true,
+      currentRank: { id: 2, code: "PCPL", name: "Police Corporal" }, targetRank: { id: 3, code: "PSSG", name: "Police Staff Sergeant" },
+      band: "PCPL-PMSG", totalScore: 63.5, maximumScore: 100, eligibility: { record: { id: employeeId, name: "NAPOLCOM", rating: "84%", awardedOn: "2026-01-01", documentPath: null, documentName: null } },
+      criteria: [{ key: "board", label: "Interview", points: 0, maximumPoints: 15, state: "unassessed", evidence: null }],
+    });
+    expect(parsed.totalScore).toBe(63.5);
+    expect(parsed.criteria?.[0]).toMatchObject({ maximumPoints: 15, state: "unassessed" });
   });
 
-  it.each([0, 31, 100])("rejects %i years of service for a criterion", (minimumYearsOfService) => {
-    expect(promotionCriterionSchema.safeParse({ targetRankId: 4, minimumYearsOfService, requirements: [{ recordKind: "training", requiredName: "PSJLC", label: "PSJLC", isMandatory: true }] }).success).toBe(false);
-  });
-
-  it("allows optional courses, rejects duplicates, and keeps evaluation groups paired", () => {
-    const training = (name: string) => ({ recordKind: "training", requiredName: name, label: name, isMandatory: true });
-    const base = { targetRankId: 4, minimumYearsOfService: 3 };
-    expect(promotionCriterionSchema.safeParse({ ...base, requirements: [] }).success).toBe(true);
-    expect(promotionCriterionSchema.safeParse(base).success).toBe(false);
-    expect(promotionCriterionSchema.safeParse({ ...base, requirements: [training("PSJLC"), training(" psjlc ")] }).error?.issues[0]?.message).toBe("Each requirement can only be added once.");
-    expect(promotionCriterionSchema.safeParse({ ...base, requirements: [training("")] }).error?.issues[0]?.message).toBe("Choose a requirement.");
-    expect(promotionCriterionSchema.parse({ ...base, requirements: [training("PSJLC"), training("PSOAC")] })).toMatchObject({ minimumPerformanceRating: null, requirements: [{ requiredName: "PSJLC" }, { requiredName: "PSOAC" }] });
-    expect(promotionCriterionSchema.safeParse({ ...base, minimumPerformanceRating: 4, requirements: [] }).success).toBe(false);
-    expect(promotionCriterionSchema.safeParse({ ...base, pftMinimumScore: 75, requirements: [] }).success).toBe(false);
-  });
-
-  it("bounds page size while normalizing directory filters", () => {
-    expect(promotionEvaluationFiltersSchema.parse({ page: "2", pageSize: "200", readiness: "ready", recommendation: "recommended" })).toEqual({ page: 2, pageSize: 100, readiness: "ready", recommendation: "recommended" });
-  });
-
-  it("requires substantive, trimmed remarks for an employee promotion docket", () => {
-    expect(promotionDocketSchema.safeParse({ criterionId: employeeId, remarks: "  " }).success).toBe(false);
-    expect(promotionDocketSchema.parse({ criterionId: employeeId, remarks: "  Board-ready record  " })).toEqual({ criterionId: employeeId, remarks: "Board-ready record" });
+  it("accepts the employee's own scorecard, whose criteria omit HR evidence", () => {
+    const parsed = myPromotionStatusSchema.parse({
+      evaluation: {
+        employeeId, employeeName: "Cruz, Ana", employeeNumber: "1-23456", evaluatedOn: "2026-10-22", isUniformed: true,
+        currentRank: { id: 2, code: "PCPL", name: "Police Corporal" }, targetRank: { id: 3, code: "PSSG", name: "Police Staff Sergeant" },
+        band: "PCPL-PMSG", totalScore: 30, maximumScore: 100, eligibility: { record: null },
+        criteria: [{ key: "reputation", label: "Service reputation", points: 0, maximumPoints: 20, state: "unassessed" }],
+      },
+      decision: null,
+      history: [],
+    });
+    expect(parsed.evaluation.criteria?.[0]).not.toHaveProperty("evidence");
   });
 });

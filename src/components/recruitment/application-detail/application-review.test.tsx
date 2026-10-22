@@ -12,7 +12,15 @@ vi.mock("./overview-tab", () => ({ OverviewTab: () => <p>overview content</p> })
 vi.mock("./profile-tab", () => ({ ProfileTab: () => <p>profile content</p> }));
 vi.mock("./documents-tab", () => ({ DocumentsTab: () => <p>documents content</p> }));
 vi.mock("./activity-tab", () => ({ ActivityTab: () => <p>activity content</p> }));
-vi.mock("@/hooks/use-applicant-portal", () => ({ useHrRegisteredApplicants: () => ({ data: [{ applicant_id: "a1", email: "ana@example.test" }] }), useApplicantEducationFor: () => ({ data: [], error: null, refetch: vi.fn() }) }));
+const accountMocks = vi.hoisted(() => ({ reopen: vi.fn(), reactivate: vi.fn(), send: vi.fn(), active: true }));
+vi.mock("@/components/ui/toaster", () => ({ notifySuccess: vi.fn() }));
+vi.mock("@/hooks/use-applicant-portal", () => ({
+  useHrRegisteredApplicants: () => ({ data: [{ user_id: "u1", applicant_id: "a1", email: "ana@example.test", account_active: accountMocks.active }] }),
+  useApplicantEducationFor: () => ({ data: [], error: null, refetch: vi.fn() }),
+  useReopenApplicationForResubmission: () => ({ isPending: false, mutateAsync: accountMocks.reopen }),
+  useReactivateApplicantAccount: () => ({ isPending: false, mutateAsync: accountMocks.reactivate }),
+  useSendApplicantCredentials: () => ({ isPending: false, mutateAsync: accountMocks.send }),
+}));
 vi.mock("@/hooks/use-recruitment", () => ({
   useMyApplication: () => (state.missing ? { isLoading: false, error: null, data: null } : {
     isLoading: false, error: null,
@@ -32,7 +40,7 @@ vi.mock("@/hooks/use-recruitment", () => ({
 import { HrApplicationReview } from "./application-review";
 
 describe("HrApplicationReview", () => {
-  beforeEach(() => { state.status = "Application Submission"; state.stageResult = "pending"; state.documents = []; state.missing = false; state.history = [{ id: "h", previous_status: null, next_status: "Application Submission", created_at: new Date(Date.now() - 4 * 86_400_000).toISOString(), note: null }]; });
+  beforeEach(() => { accountMocks.active = true; accountMocks.reopen.mockReset().mockResolvedValue(undefined); accountMocks.reactivate.mockReset().mockResolvedValue(undefined); state.status = "Application Submission"; state.stageResult = "pending"; state.documents = []; state.missing = false; state.history = [{ id: "h", previous_status: null, next_status: "Application Submission", created_at: new Date(Date.now() - 4 * 86_400_000).toISOString(), note: null }]; });
 
   it("names the applicant, links the job and shows how long they have been at this stage", () => {
     render(<HrApplicationReview applicationId="00000000-0000-0000-0000-000000000001" />);
@@ -44,13 +52,31 @@ describe("HrApplicationReview", () => {
     expect(screen.getByRole("complementary", { name: "Applicant details" })).toHaveTextContent("ana@example.test");
   });
 
+  it("reopens a Not Selected application for resubmission with an optional note", async () => {
+    state.status = "Not Selected";
+    render(<HrApplicationReview applicationId="00000000-0000-0000-0000-000000000001" />);
+    await userEvent.click(screen.getByRole("button", { name: "Reopen for resubmission" }));
+    const dialog = await screen.findByRole("dialog", { name: "Reopen for resubmission" });
+    await userEvent.type(within(dialog).getByLabelText(/Note to applicant/), "Please upload a clearer diploma.");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Reopen application" }));
+    expect(accountMocks.reopen).toHaveBeenCalledWith({ applicationId: "00000000-0000-0000-0000-000000000001", note: "Please upload a clearer diploma." });
+  });
+
+  it("offers HR account help: reactivate a deactivated applicant account", async () => {
+    accountMocks.active = false;
+    render(<HrApplicationReview applicationId="00000000-0000-0000-0000-000000000001" />);
+    await userEvent.click(screen.getByRole("button", { name: "Reactivate account" }));
+    expect(accountMocks.reactivate).toHaveBeenCalledWith("u1");
+    expect(screen.getByRole("button", { name: "Send new credentials" })).toBeDisabled();
+  });
+
   it.each([
-    ["Application Submission", "pending", ["Verified", "Passed", "Failed"], ["Scheduled", "Hire applicant"]],
+    ["Application Submission", "pending", ["Verified", "Passed", "Failed"], ["Scheduled", "Hire applicant", "Reopen for resubmission"]],
     ["Physical Agility Test", "pending", ["Scheduled", "Passed", "Failed"], ["Verified", "Hire applicant"]],
     ["Final Evaluation", "scheduled", ["Passed", "Failed"], ["Scheduled", "Hire applicant"]],
     ["Shortlisted", "pending", [], ["Passed", "Failed", "Hire applicant"]],
     ["Hired", "pending", [], ["Passed", "Failed", "Hire applicant"]],
-    ["Not Selected", "pending", [], ["Passed", "Failed", "Hire applicant"]],
+    ["Not Selected", "pending", ["Reopen for resubmission"], ["Passed", "Failed", "Hire applicant"]],
   ])("shows the right actions at %s (%s)", (status, stageResult, present, absent) => {
     state.status = status;
     state.stageResult = stageResult;

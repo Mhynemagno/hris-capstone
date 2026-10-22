@@ -10,6 +10,7 @@ describe("staff page meta", () => {
     expect(staffPageSubtitle("/hr")).toBe("Dashboard • Manpower, Attendance & Deployment Overview");
     expect(staffPageSubtitle("/employee/attendance")).toBe("Personnel Self-Service • Attendance");
     expect(staffPageSubtitle("/admin/settings")).toBe("System Administration & Station Controls");
+    expect(staffPageSubtitle("/hr/profile-requests/123")).toBe("Personnel Management • Profile Change Requests");
   });
   it("knows which pages are redesigned (the rest keep the workspace look)", () => {
     expect(isRedesignedStaffRoute("/hr/deployments")).toBe(true);
@@ -19,5 +20,6 @@ describe("staff page meta", () => {
     expect(isRedesignedStaffRoute("/reports/deployments")).toBe(false);
     expect(isRedesignedStaffRoute("/employee/promotion-eligibility")).toBe(true);
     expect(isRedesignedStaffRoute("/admin/audit-logs")).toBe(true);
+    expect(isRedesignedStaffRoute("/hr/profile-requests")).toBe(true);
   });
 });

@@ -179,6 +179,11 @@ export const qualificationSchema = z.object({
   fieldOfStudy: optionalText(160),
   awardedOn: isoDateSchema,
   notes: optionalText(2000),
+  /** Rating in percent, e.g. 85 for NAPOLCOM 85%. Blank means no rating. */
+  rating: z.preprocess(
+    (value) => (value === "" || value === null || value === undefined ? undefined : typeof value === "string" ? Number(value) : value),
+    z.number({ error: "Enter a rating from 0 to 100." }).min(0, "Enter a rating from 0 to 100.").max(100, "Enter a rating from 0 to 100.").optional(),
+  ),
 });
 
 export const certificationSchema = z

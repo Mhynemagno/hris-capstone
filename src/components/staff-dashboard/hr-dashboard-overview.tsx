@@ -10,7 +10,7 @@ import { StatusPill } from "@/components/staff-shell/ui/status-pill";
 import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useEmployeeOptions, useHrDeployments } from "@/hooks/use-deployment-tracking";
-import { usePromotionReadiness } from "@/hooks/use-promotion-eligibility";
+import { usePromotionCandidates } from "@/hooks/use-promotion-eligibility";
 import { useRecentApplications } from "@/hooks/use-recruitment";
 import { useHrDashboard, useHrDashboardOverview } from "@/hooks/use-reporting";
 import { formatDate } from "@/lib/format-date";
@@ -74,7 +74,8 @@ export function HrDashboardOverview() {
   const today = manilaToday();
   const summary = useHrDashboard({ startsOn: daysBefore(today, 29), endsOn: today });
   const overview = useHrDashboardOverview();
-  const readiness = usePromotionReadiness();
+  // Scored personnel (PDF promotion scorecard) still awaiting an HR decision.
+  const forApproval = usePromotionCandidates({ page: 1, pageSize: 1, status: "for_approval" });
   const recentApplications = useRecentApplications();
   const deployments = useHrDeployments({ page: 1, pageSize: 5, activeEmployeesOnly: true });
   const employees = useEmployeeOptions();
@@ -88,7 +89,7 @@ export function HrDashboardOverview() {
   const onLeave = attendance?.onLeave ?? 0;
   const attendanceAbsent = absent + onLeave;
   const strength = activeTotal ? ((onDuty / activeTotal) * 100).toFixed(1) : "0.0";
-  const readyCount = (readiness.data ?? []).filter((row) => row.readiness?.isReady).length;
+  const readyCount = forApproval.data?.count ?? 0;
   const quarter = Math.floor((Number(today.slice(5, 7)) - 1) / 3) + 1;
   const employeeNames = new Map((employees.data ?? []).map((employee) => [employee.id, employee.fullName]));
 
@@ -131,10 +132,10 @@ export function HrDashboardOverview() {
                 <span className="rounded-full border border-amber-400/30 bg-amber-500/20 px-2.5 py-0.5 text-[10px] font-bold tracking-wider text-amber-300 uppercase">Promotion Notice</span>
                 <Award aria-hidden="true" className="size-5 text-amber-400" />
               </div>
-              <h3 className="text-sm font-bold text-white" id="promotion-notice-heading">Qualified for Promotion</h3>
-              <p className="text-xs leading-relaxed text-slate-300">{readyCount} personnel are qualified for promotion review this quarter.</p>
+              <h3 className="text-sm font-bold text-white" id="promotion-notice-heading">Promotion Scorecards</h3>
+              <p className="text-xs leading-relaxed text-slate-300">{readyCount} scored personnel are awaiting your promotion review.</p>
               <Link className="block w-full rounded-xl bg-amber-500 py-2 text-center text-xs font-bold text-slate-950 transition-colors hover:bg-amber-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300" href="/hr/promotions">
-                Review Endorsements
+                Review Scorecards
               </Link>
             </section>
           ) : null}

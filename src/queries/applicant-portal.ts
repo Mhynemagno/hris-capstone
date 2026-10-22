@@ -1,4 +1,7 @@
+import { createClient } from "@supabase/supabase-js";
+
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { getPublicSupabaseConfig } from "@/lib/supabase/env";
 import type { ApplicantEducation, ApplicantEducationLevel, ApplicantProfileDocumentKind, ApplicationStatusHistory, HrRegisteredApplicant } from "@/lib/types/database";
 import { APPLICANT_EDUCATION_LEVELS, applicantEducationSchema, type ApplicantEducationInput } from "@/schemas/applicant-portal";
 
@@ -63,6 +66,33 @@ export async function listHrRegisteredApplicants() {
   const { data, error } = await createBrowserSupabaseClient().rpc("list_hr_registered_applicants");
   throwIfError(error);
   return ((data ?? []) as HrRegisteredApplicant[]).map((row) => ({ ...row, application_count: Number(row.application_count ?? 0) }));
+}
+
+/** HR reactivates a deactivated applicant account so the applicant can sign in and resubmit. */
+export async function reactivateApplicantAccount(userId: string) {
+  const { error } = await createBrowserSupabaseClient().rpc("reactivate_applicant_account", { target_user_id: userId });
+  throwIfError(error);
+}
+
+/**
+ * HR issues new credentials: Supabase Auth emails the applicant a password-reset link that opens the
+ * existing /reset-password page. A non-persisting client sends it, so no PKCE verifier is left in HR's
+ * browser; the recovery email template (supabase/templates/recovery.html) uses a token_hash link that
+ * /auth/callback verifies in the applicant's own browser.
+ */
+export async function sendApplicantCredentials(email: string) {
+  const { url, publishableKey } = getPublicSupabaseConfig();
+  const client = createClient(url, publishableKey, { auth: { flowType: "implicit", persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
+  const callback = new URL("/auth/callback", window.location.origin);
+  callback.searchParams.set("next", "/reset-password");
+  const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo: callback.toString() });
+  if (error) throw new Error("We could not send new credentials. Please try again.");
+}
+
+/** HR reopens a Not Selected application so the applicant can resubmit documents for review. */
+export async function reopenApplicationForResubmission(applicationId: string, note?: string) {
+  const { error } = await createBrowserSupabaseClient().rpc("reopen_application_for_resubmission", { target_application_id: applicationId, target_note: note?.trim() || null });
+  throwIfError(error);
 }
 
 /** The applicant's own application history (RLS limits it to their applications), oldest first. */

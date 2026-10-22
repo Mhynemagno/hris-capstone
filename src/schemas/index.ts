@@ -125,32 +125,32 @@ export type {
   DeploymentUpdateInput,
 } from "./deployment-tracking";
 export {
-  employeePromotionEligibilitySchema,
-  performanceRatingSchema,
-  performanceRatingUpdateSchema,
-  promotionCriterionRequirementSchema,
-  promotionCriterionSchema,
-  promotionCriterionUpdateSchema,
-  promotionEvaluationFiltersSchema,
-  promotionEvaluationSchema,
-  promotionEvaluationUpdateSchema,
-  promotionEvidenceSchema,
-  promotionReadinessSchema,
-  promotionRecommendationSchema,
-  promotionRecordKindSchema,
+  iperEntrySchema,
+  iperRatingSchema,
+  myPromotionStatusSchema,
+  pftEntrySchema,
+  promotionCandidateFiltersSchema,
+  promotionDecisionSchema,
+  promotionEvaluationDetailSchema,
+  promotionEvaluationResultSchema,
+  promotionStatusSchema,
 } from "./promotion-eligibility";
 export type {
-  PerformanceRatingInput,
-  PerformanceRatingUpdateInput,
-  PromotionCriterionInput,
-  PromotionCriterionUpdateInput,
-  PromotionEvaluationFilters,
-  PromotionEvaluationInput,
-  PromotionEvaluationUpdateInput,
-  PromotionEvidenceInput,
-  PromotionRecommendation,
-  PromotionRecordKind,
+  IperEntryInput,
+  PftEntryInput,
+  PromotionCandidateFilters,
+  PromotionDecisionInput,
 } from "./promotion-eligibility";
+export {
+  promotionAssignmentInputSchema,
+  promotionAwardInputSchema,
+  promotionBoardAssessmentInputSchema,
+} from "./promotion-scorecard";
+export type {
+  PromotionAssignmentInput,
+  PromotionAwardInput,
+  PromotionBoardAssessmentInput,
+} from "./promotion-scorecard";
 export type {
   LeaveAttachmentInput,
   LeaveCancellationInput,

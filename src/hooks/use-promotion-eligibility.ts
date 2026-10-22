@@ -1,32 +1,40 @@
 "use client";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
 import { queryKeys } from "@/lib/query-keys";
-import { createPerformanceRating, createPromotionCriterion, createPromotionEvaluation, getHrPromotionEmployee, getMyPromotionEligibility, listPromotionCriteria, listPromotionEvaluations, listPromotionReadiness, listPromotionReadinessPage, promotionEvaluationFilters, promotionReadinessFilters, recordPerformanceEvaluation, setPromotionCriterionActive, submitEmployeePromotionDocket, updatePerformanceRating, updatePromotionCriterion, updatePromotionEvaluation } from "@/queries/promotion-eligibility";
-import type { PromotionDocketInput, PromotionEvaluationFilters, PromotionReadinessFilters } from "@/schemas/promotion-eligibility";
-export function usePromotionCriteria(input: { isActive?: boolean } = {}) { return useQuery({ queryKey: queryKeys.promotionEligibility.criteria(input), queryFn: () => listPromotionCriteria(input) }); }
-export function usePromotionEvaluations(input: Partial<PromotionEvaluationFilters> = {}) { const filters = promotionEvaluationFilters(input); return useQuery({ queryKey: queryKeys.promotionEligibility.hrDirectory(filters), queryFn: () => listPromotionEvaluations(filters) }); }
-export function useHrPromotionEmployee(id: string) { return useQuery({ queryKey: queryKeys.promotionEligibility.hrEmployee(id), queryFn: () => getHrPromotionEmployee(id), enabled: Boolean(id) }); }
-export function usePromotionReadiness(employeeId?: string) { return useQuery({ queryKey: queryKeys.promotionEligibility.readiness(employeeId), queryFn: () => listPromotionReadiness(employeeId) }); }
-export function usePromotionReadinessPage(input: Partial<PromotionReadinessFilters> = {}) { const filters = promotionReadinessFilters(input); return useQuery({ queryKey: queryKeys.promotionEligibility.readiness(filters), queryFn: () => listPromotionReadinessPage(filters), placeholderData: keepPreviousData }); }
-export function useMyPromotionEligibility() { return useQuery({ queryKey: queryKeys.promotionEligibility.mine(), queryFn: getMyPromotionEligibility }); }
-function useInvalidate() { const client = useQueryClient(); return () => { void client.invalidateQueries({ queryKey: ["promotion-eligibility"] }); void client.invalidateQueries({ queryKey: ["reporting"] }); void client.invalidateQueries({ queryKey: ["administration", "audit-logs"] }); }; }
-export function useCreatePromotionCriterion() { const invalidate = useInvalidate(); return useMutation({ mutationFn: createPromotionCriterion, onSuccess: invalidate }); }
-export function useUpdatePromotionCriterion() { const invalidate = useInvalidate(); return useMutation({ mutationFn: updatePromotionCriterion, onSuccess: invalidate }); }
-export function useSetPromotionCriterionActive() { const invalidate = useInvalidate(); return useMutation({ mutationFn: setPromotionCriterionActive, onSuccess: invalidate }); }
-export function useCreatePerformanceRating() { const invalidate = useInvalidate(); return useMutation({ mutationFn: createPerformanceRating, onSuccess: invalidate }); }
-export function useRecordPerformanceEvaluation() { const invalidate = useInvalidate(); return useMutation({ mutationFn: recordPerformanceEvaluation, onSuccess: invalidate }); }
-export function useUpdatePerformanceRating() { const invalidate = useInvalidate(); return useMutation({ mutationFn: updatePerformanceRating, onSuccess: invalidate }); }
-export function useCreatePromotionEvaluation() { const invalidate = useInvalidate(); return useMutation({ mutationFn: createPromotionEvaluation, onSuccess: invalidate }); }
-export function useUpdatePromotionEvaluation() { const invalidate = useInvalidate(); return useMutation({ mutationFn: updatePromotionEvaluation, onSuccess: invalidate }); }
-export function useSubmitEmployeePromotionDocket() {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: (input: PromotionDocketInput) => submitEmployeePromotionDocket(input),
-    onSuccess: () => {
-      void client.invalidateQueries({ queryKey: ["promotion-eligibility"] });
-      void client.invalidateQueries({ queryKey: queryKeys.employeeDashboard.all() });
-      void client.invalidateQueries({ queryKey: ["notifications"] });
-      void client.invalidateQueries({ queryKey: ["reporting"] });
-    },
-  });
+import {
+  decidePromotion,
+  getMyPromotionStatus,
+  getPromotionEvaluation,
+  listPromotionCandidatesPage,
+  listPromotionEmployees,
+  listPromotionRankRequirements,
+  promotionCandidateFilters,
+  recordIperRating,
+  recordPftResult,
+} from "@/queries/promotion-eligibility";
+import type { IperEntryInput, PftEntryInput, PromotionCandidateFilters, PromotionDecisionInput } from "@/schemas/promotion-eligibility";
+
+export function usePromotionCandidates(input: Partial<PromotionCandidateFilters> = {}) {
+  const filters = promotionCandidateFilters(input);
+  return useQuery({ queryKey: queryKeys.promotionEligibility.candidates(filters), queryFn: () => listPromotionCandidatesPage(filters), placeholderData: keepPreviousData });
 }
+export function usePromotionEvaluation(employeeId: string | null) {
+  return useQuery({ queryKey: queryKeys.promotionEligibility.evaluation(employeeId ?? ""), queryFn: () => getPromotionEvaluation(employeeId!), enabled: Boolean(employeeId) });
+}
+export function useMyPromotionStatus() { return useQuery({ queryKey: queryKeys.promotionEligibility.mine(), queryFn: getMyPromotionStatus }); }
+export function usePromotionRankRequirements() { return useQuery({ queryKey: queryKeys.promotionEligibility.requirements(), queryFn: listPromotionRankRequirements, staleTime: 5 * 60_000 }); }
+export function usePromotionEmployees(enabled = true) { return useQuery({ queryKey: queryKeys.promotionEligibility.employees(), queryFn: listPromotionEmployees, enabled }); }
+
+/** Refreshes every view a promotion record feeds: scorecards, reports and the audit log. */
+export function useInvalidatePromotion() {
+  const client = useQueryClient();
+  return () => {
+    void client.invalidateQueries({ queryKey: ["promotion-eligibility"] });
+    void client.invalidateQueries({ queryKey: ["reporting"] });
+    void client.invalidateQueries({ queryKey: ["administration", "audit-logs"] });
+  };
+}
+export function useDecidePromotion() { const invalidate = useInvalidatePromotion(); return useMutation({ mutationFn: (input: PromotionDecisionInput) => decidePromotion(input), onSuccess: invalidate }); }
+export function useRecordIperRating() { const invalidate = useInvalidatePromotion(); return useMutation({ mutationFn: (input: IperEntryInput) => recordIperRating(input), onSuccess: invalidate }); }
+export function useRecordPftResult() { const invalidate = useInvalidatePromotion(); return useMutation({ mutationFn: (input: PftEntryInput) => recordPftResult(input), onSuccess: invalidate }); }

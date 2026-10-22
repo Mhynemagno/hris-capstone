@@ -6,13 +6,14 @@ import { describe, expect, it, vi } from "vitest";
 import { DeploymentStatusBadge } from "./deployment-status-badge";
 import { EmployeeDeploymentList } from "./employee-deployment-list";
 
-const row = { id: "d1", employee_id: "e1", location: "San Juan", unit: "Station 1", project: null, assignment_role: "San Juan", starts_on: "2026-09-23", ends_on: "2026-10-09", status: "ongoing", deployment_type: "Public Assembly", event_operation: "Rally", notes: "Relief duty", updated_at: "2026-09-23T00:00:00Z" };
+const row = { id: "d1", employee_id: "e1", location: "San Juan", unit: "Station 1", project: null, assignment_role: "Deployed", task: "Deployed", starts_on: "2026-09-23", ends_on: "2026-10-09", status: "ongoing", deployment_type: "Public Assembly", event_operation: "Rally", notes: "Relief duty", proposed_status: null, updated_at: "2026-09-23T00:00:00Z" };
 vi.mock("@/hooks/use-deployment-tracking", () => ({
   useMyDeployments: () => ({ isLoading: false, error: null, data: { rows: [row], count: 1 } }),
   useHrDeployments: () => ({ isLoading: false, error: null, data: { rows: [row], count: 1 } }),
   useEmployeeOptions: () => ({ isLoading: false, error: null, data: [{ id: "e1", fullName: "Ana One", employeeNumber: "PAT-001" }] }),
   useDeploymentReports: () => ({ isLoading: false, error: null, data: [] }),
   useSubmitDeploymentReport: () => ({ isPending: false, mutateAsync: vi.fn() }),
+  useProposeDeploymentStatus: () => ({ isPending: false, mutateAsync: vi.fn() }),
 }));
 vi.mock("next/link", () => ({ default: ({ children, href, ...props }: { children: ReactNode; href: string }) => <a href={href} {...props}>{children}</a> }));
 vi.mock("next/navigation", () => ({ usePathname: () => "/hr/deployments", useRouter: () => ({ replace: vi.fn() }), useSearchParams: () => new URLSearchParams("") }));
@@ -23,13 +24,14 @@ describe("deployment tracking presentation", () => {
     expect(screen.getByText(label)).toBeVisible();
   });
 
-  it("shows the employee's deployments by location with dates in words and remarks", () => {
+  it("shows the employee's deployments by location with dates in words, task and no remarks", () => {
     render(<EmployeeDeploymentList />);
     expect(screen.getByText("San Juan")).toBeVisible();
     expect(screen.queryByText("Station 1")).not.toBeInTheDocument();
     expect(screen.getByText("September 23, 2026 – October 9, 2026")).toBeVisible();
-    expect(screen.getByText(/Relief duty/)).toBeVisible();
-    expect(screen.getByText("Public Assembly · Rally")).toBeVisible();
+    expect(screen.queryByText(/Relief duty/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Remarks/)).not.toBeInTheDocument();
+    expect(screen.getByText("Deployed · Public Assembly · Rally")).toBeVisible();
   });
 
   it("lets the employee submit a report / proof of attendance for each deployment", async () => {

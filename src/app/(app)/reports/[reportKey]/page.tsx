@@ -8,7 +8,7 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 export default async function ReportDetailPage({ params, searchParams }: {
   params: Promise<{ reportKey: string }>;
-  searchParams: Promise<{ from?: string; to?: string; department?: string; print?: string; export?: string }>;
+  searchParams: Promise<{ from?: string; to?: string; department?: string; export?: string }>;
 }) {
   const { reportKey } = await params;
   const parsed = reportKeySchema.safeParse(reportKey);
@@ -22,6 +22,6 @@ export default async function ReportDetailPage({ params, searchParams }: {
     endsOn: query.to && ISO_DATE.test(query.to) ? query.to : "",
     departmentId: query.department && /^\d+$/.test(query.department) ? query.department : "",
   };
-  const autoAction = query.export === "csv" ? "csv" : query.print === "1" ? "print" : null;
+  const autoAction = query.export === "csv" ? "csv" : null;
   return <ReportDetail autoAction={autoAction} initialFilters={initialFilters} role={role} reportKey={parsed.data} />;
 }

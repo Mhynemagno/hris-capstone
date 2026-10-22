@@ -8,6 +8,7 @@ import { LoadingState } from "@/components/ui/loading-state";
 import { StatusPanel } from "@/components/ui/status-panel";
 import { usePublishedJobs } from "@/hooks/use-recruitment";
 import { formatDate } from "@/lib/format-date";
+import { formatRecruitmentCycle, openingRecruitmentCycle } from "@/lib/recruitment/recruitment-cycle";
 
 export function PublicJobList({ pageSize = 50 }: { pageSize?: number }) {
   const jobs = usePublishedJobs({ page: 1, pageSize });
@@ -34,6 +35,7 @@ export function PublicJobList({ pageSize = 50 }: { pageSize?: number }) {
           <div>
             <h2 className="text-lg font-semibold" id={`job-${job.id}-title`}>{job.title}</h2>
             <p className="mt-1 text-sm text-muted-foreground">{job.closes_on ? `Deadline of Application: ${formatDate(job.closes_on)}` : "Open until filled"}</p>
+            <p className="mt-1 text-sm font-medium text-muted-foreground">{formatRecruitmentCycle(openingRecruitmentCycle(job))}</p>
           </div>
           <Link
             aria-label={`View details for ${job.title}`}

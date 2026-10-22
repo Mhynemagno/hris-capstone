@@ -1,110 +1,77 @@
 import { render, screen, within } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ query: vi.fn(), submit: vi.fn(), notify: vi.fn() }));
-vi.mock("@/hooks/use-promotion-eligibility", () => ({
-  useMyPromotionEligibility: mocks.query,
-  useSubmitEmployeePromotionDocket: () => ({ mutateAsync: mocks.submit, isPending: false }),
-}));
-vi.mock("@/components/staff-shell/staff-notify", () => ({ notifyStaff: mocks.notify, notifyStaffError: vi.fn() }));
+const mocks = vi.hoisted(() => ({ query: vi.fn() }));
+vi.mock("@/hooks/use-promotion-eligibility", () => ({ useMyPromotionStatus: mocks.query }));
+vi.mock("@/components/staff-shell/staff-notify", () => ({ notifyStaff: vi.fn() }));
 
 import { EmployeePromotionEligibility } from "./employee-promotion-eligibility";
 
-const criterionId = "11111111-1111-4111-8111-111111111111";
-const data = (overrides: Record<string, unknown> = {}, readiness: Record<string, unknown> = {}) => ({
-  criterionId,
-  currentRankName: "Patrolman",
-  targetRankName: "Police Corporal",
-  targetRankCode: "PCpl",
-  evaluatedOn: null,
-  docket: null,
-  readiness: {
-    yearsOfService: 3,
-    minimumYearsOfService: 2,
-    isReady: false,
-    missingRequirements: ["First-aid certification"],
-    requirements: [{ label: "Basic Course", met: true }, { label: "First-aid certification", met: false }],
-    ...readiness,
-  },
+const criteria = (overrides: { board?: object; reputation?: object } = {}) => [
+  { key: "seniority", label: "Seniority / time in grade", points: 17, maximumPoints: 30, state: "calculated" },
+  { key: "assignment", label: "Diversity of assignment", points: 0, maximumPoints: 20, state: "missing" },
+  { key: "awards", label: "Awards and recognition", points: 0.5, maximumPoints: 10, state: "calculated" },
+  { key: "iper", label: "IPER", points: 0, maximumPoints: 5, state: "missing" },
+  { key: "board", label: "Interview", points: 0, maximumPoints: 15, state: "unassessed", ...overrides.board },
+  { key: "reputation", label: "Service reputation", points: 0, maximumPoints: 20, state: "unassessed", ...overrides.reputation },
+];
+
+const evaluation = (overrides: Record<string, unknown> = {}) => ({
+  employeeId: "11111111-1111-4111-8111-111111111111", employeeName: "Peters, Tyson", employeeNumber: "4-15889", evaluatedOn: "2026-10-22", isUniformed: true,
+  currentRank: { id: 2, code: "PCPL", name: "Police Corporal" }, targetRank: { id: 3, code: "PSSG", name: "Police Staff Sergeant" }, reason: null,
+  band: "PCPL-PMSG", totalScore: 17.5, maximumScore: 100, criteria: criteria(),
+  eligibility: { record: { id: "44444444-4444-4444-8444-444444444444", name: "NAPOLCOM PNP Entrance Examination", rating: "85.50", awardedOn: "2021-06-01", documentPath: null, documentName: null } },
   ...overrides,
 });
 
-beforeEach(() => { vi.clearAllMocks(); mocks.submit.mockResolvedValue("docket-id"); });
+beforeEach(() => vi.clearAllMocks());
 
 describe("EmployeePromotionEligibility", () => {
-  it("shows the rank-matched overview, checklist with text states, and the missing requirements", () => {
-    mocks.query.mockReturnValue({ isLoading: false, error: null, data: data() });
+  it("shows the next rank, the score out of 100 and every criterion without a pass label", () => {
+    mocks.query.mockReturnValue({ isLoading: false, error: null, data: { evaluation: evaluation(), decision: null, history: [] } });
     render(<EmployeePromotionEligibility />);
-    expect(screen.getByText("Promotion Status")).toBeVisible();
-    expect(screen.getByText("Police Corporal")).toBeVisible();
-    expect(screen.getByText("Missing Requirements")).toBeVisible();
-    expect(screen.getByText(/not an automatic promotion decision/i)).toBeVisible();
-    const missing = screen.getByRole("region", { name: "Missing Requirements" });
-    expect(within(missing).getByText("First-aid certification")).toBeVisible();
-    expect(screen.getAllByText("MET")).toHaveLength(2);
-    expect(screen.getAllByText("NOT MET").length).toBeGreaterThan(0);
-    expect(screen.queryByRole("button", { name: "Submit to Promotion Board" })).not.toBeInTheDocument();
-    expect(screen.getByText("Requirements pending")).toBeVisible();
+    expect(screen.getByText("Police Staff Sergeant")).toBeVisible();
+    expect(screen.getByText("PCPL → PSSG")).toBeVisible();
+    expect(screen.getByText("17.5 / 100")).toBeVisible();
+    expect(screen.getByRole("progressbar", { name: "Promotion score" })).toHaveAttribute("aria-valuenow", "17.5");
+    expect(screen.getByText("Awaiting Promotion Board")).toBeVisible();
+    const breakdown = screen.getByRole("list", { name: "Scorecard breakdown" });
+    expect(within(breakdown).getAllByRole("listitem")).toHaveLength(6);
+    expect(within(breakdown).getByText("Seniority / time in grade").closest("li")).toHaveTextContent("17 / 30");
+    expect(within(breakdown).getByText("Awards and recognition").closest("li")).toHaveTextContent("0.5 / 10");
+    expect(within(breakdown).getByText("Interview").closest("li")).toHaveTextContent("Not yet assessed by the Promotion Board— / 15");
+    expect(within(breakdown).getByText("Diversity of assignment").closest("li")).toHaveTextContent("No verified records yet0 / 20");
+    expect(screen.queryByRole("button", { name: /Add evidence/ })).not.toBeInTheDocument();
+    expect(screen.queryByText(/pass|recommended|qualified/i)).not.toBeInTheDocument();
   });
 
-  it("uses the server-calculated time-in-grade, IPER, and PFT checks without adding a duplicate service row", () => {
-    mocks.query.mockReturnValue({ isLoading: false, error: null, data: data({}, {
-      timeInGradeYears: 2,
-      minimumTimeInGradeYears: 3,
-      missingRequirements: ["Time in Grade (3 years)", "PFT score 75+ (valid 12 months)"],
-      requirements: [
-        { label: "Time in Grade (3 years)", met: false },
-        { label: "IPER rating 4+ within 12 months", met: true },
-        { label: "PFT score 75+ (valid 12 months)", met: false },
-        { label: "PSJLC", met: true },
-      ],
-    }) });
+  it("shows eligibility and its rating outside the score", () => {
+    mocks.query.mockReturnValue({ isLoading: false, error: null, data: { evaluation: evaluation(), decision: null, history: [] } });
     render(<EmployeePromotionEligibility />);
-    expect(screen.getByText((_, element) => element?.textContent === "(Req: 3 Yrs)")).toBeVisible();
-    expect(screen.getAllByText("2 Yrs")).toHaveLength(2);
-    expect(screen.getAllByText(/Time in Grade \(3 years\)/)).toHaveLength(2);
-    expect(screen.getByText(/IPER rating 4\+ within 12 months/)).toBeVisible();
-    expect(screen.getAllByText(/PFT score 75\+ \(valid 12 months\)/)).toHaveLength(2);
-    expect(screen.getByText("2 of 4 Criteria Verified")).toBeVisible();
+    const overview = screen.getByRole("region", { name: "Promotion overview" });
+    expect(overview).toHaveTextContent("NAPOLCOM PNP Entrance Examination — rating 85.50%");
+    expect(overview).toHaveTextContent("not part of the score");
   });
 
-  it("lets a ready employee open the docket modal, requires remarks, and submits through the mutation", async () => {
-    const user = userEvent.setup();
-    mocks.query.mockReturnValue({ isLoading: false, error: null, data: data({}, { isReady: true, missingRequirements: [], requirements: [{ label: "Basic Course", met: true }] }) });
+  it("shows For approval once the Promotion Board has assessed the employee, even at 0 / 100", () => {
+    mocks.query.mockReturnValue({ isLoading: false, error: null, data: { evaluation: evaluation({ totalScore: 0, criteria: criteria({ board: { state: "assessed" }, reputation: { state: "assessed" } }) }), decision: null, history: [] } });
     render(<EmployeePromotionEligibility />);
-    expect(screen.getByText("Every requirement is on record.")).toBeVisible();
-    await user.click(screen.getAllByRole("button", { name: "Submit to Promotion Board" })[0]);
-    await user.click(screen.getByRole("button", { name: "Submit Application" }));
-    expect(screen.getByText("Enter your remarks before submitting.")).toBeVisible();
-    expect(mocks.submit).not.toHaveBeenCalled();
-    await user.type(screen.getByLabelText(/Applicant Remarks/), "  Ready for review.  ");
-    await user.click(screen.getByRole("button", { name: "Submit Application" }));
-    expect(mocks.submit).toHaveBeenCalledWith({ criterionId, remarks: "Ready for review." });
-    expect(mocks.notify).toHaveBeenCalledWith(expect.objectContaining({ title: "Promotion docket submitted" }));
+    expect(screen.getByText("0 / 100")).toBeVisible();
+    expect(screen.getByText("For approval")).toBeVisible();
   });
 
-  it("shows the submitted docket instead of submit controls", () => {
-    mocks.query.mockReturnValue({ isLoading: false, error: null, data: data({ docket: { id: "d", criterionId, remarks: "Please review.", submittedAt: "2026-10-05T01:00:00+00:00" } }, { isReady: true, missingRequirements: [] }) });
+  it("reflects the HR decision with remarks", () => {
+    mocks.query.mockReturnValue({ isLoading: false, error: null, data: { evaluation: evaluation(), decision: { id: "22222222-2222-4222-8222-222222222222", status: "rejected", remarks: "Insufficient time in grade", decidedAt: "2026-10-21T02:00:00Z", targetRankId: 3 }, history: [] } });
     render(<EmployeePromotionEligibility />);
-    expect(screen.getAllByText(/Docket submitted/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/October 5, 2026/).length).toBeGreaterThan(0);
-    expect(screen.queryByRole("button", { name: "Submit to Promotion Board" })).not.toBeInTheDocument();
+    expect(screen.getByText("Rejected by HR")).toBeVisible();
+    const decision = screen.getByRole("region", { name: "HR decision" });
+    expect(decision).toHaveTextContent("Rejected on October 21, 2026");
+    expect(decision).toHaveTextContent("Remarks: Insufficient time in grade");
   });
 
-  it("shows no-active-criterion only once loaded", () => {
-    mocks.query.mockReturnValue({ isLoading: false, error: null, data: null });
+  it("explains why a PAT is not scored", () => {
+    mocks.query.mockReturnValue({ isLoading: false, error: null, data: { evaluation: evaluation({ targetRank: null, reason: "below_scored_rank", criteria: undefined }), decision: null, history: [] } });
     render(<EmployeePromotionEligibility />);
-    expect(screen.getByText(/No active promotion criterion applies to your current rank/)).toBeVisible();
-  });
-
-  it("shows loading and error states, never the empty state", () => {
-    mocks.query.mockReturnValue({ isLoading: true, error: null, data: undefined });
-    const { rerender } = render(<EmployeePromotionEligibility />);
-    expect(screen.queryByText(/No active promotion criterion/)).not.toBeInTheDocument();
-    mocks.query.mockReturnValue({ isLoading: false, error: new Error("boom"), data: undefined });
-    rerender(<EmployeePromotionEligibility />);
-    expect(screen.getByText("boom")).toBeVisible();
-    expect(screen.queryByText(/No active promotion criterion/)).not.toBeInTheDocument();
+    expect(screen.getByText(/not covered by the official promotion scorecards/)).toBeVisible();
   });
 });

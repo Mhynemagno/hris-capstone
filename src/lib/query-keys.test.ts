@@ -79,26 +79,15 @@ describe("queryKeys", () => {
     ]);
   });
 
-  it("scopes promotion data by criteria, HR review, and employee audience", () => {
-    const promotionEligibility = queryKeys as typeof queryKeys & {
-      promotionEligibility: {
-        criteria: (filters: Record<string, unknown>) => readonly unknown[];
-        hrDirectory: (filters: Record<string, unknown>) => readonly unknown[];
-        hrEmployee: (employeeId: string) => readonly unknown[];
-        mine: () => readonly unknown[];
-      };
-    };
-
-    expect(promotionEligibility.promotionEligibility.criteria({ isActive: true })).toEqual([
-      "promotion-eligibility", "criteria", { isActive: true },
+  it("scopes promotion data by dashboard filters, employee evaluation, and employee audience", () => {
+    expect(queryKeys.promotionEligibility.candidates({ status: "for_approval" })).toEqual([
+      "promotion-eligibility", "candidates", { status: "for_approval" },
     ]);
-    expect(promotionEligibility.promotionEligibility.hrDirectory({ readiness: "ready" })).toEqual([
-      "promotion-eligibility", "hr-directory", { readiness: "ready" },
+    expect(queryKeys.promotionEligibility.evaluation("123e4567-e89b-42d3-a456-426614174000")).toEqual([
+      "promotion-eligibility", "evaluation", "123e4567-e89b-42d3-a456-426614174000",
     ]);
-    expect(promotionEligibility.promotionEligibility.hrEmployee("123e4567-e89b-42d3-a456-426614174000")).toEqual([
-      "promotion-eligibility", "hr-employee", "123e4567-e89b-42d3-a456-426614174000",
-    ]);
-    expect(promotionEligibility.promotionEligibility.mine()).toEqual(["promotion-eligibility", "mine"]);
+    expect(queryKeys.promotionEligibility.requirements()).toEqual(["promotion-eligibility", "requirements"]);
+    expect(queryKeys.promotionEligibility.mine()).toEqual(["promotion-eligibility", "mine"]);
   });
 
   it("keeps attendance history, operations, and settings caches distinct", () => {

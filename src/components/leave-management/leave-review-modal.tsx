@@ -6,9 +6,11 @@ import { useState } from "react";
 import { notifyStaff } from "@/components/staff-shell/staff-notify";
 import { staffButton } from "@/components/staff-shell/ui/staff-buttons";
 import { StaffModal } from "@/components/staff-shell/ui/staff-modal";
+import { StatusPill } from "@/components/staff-shell/ui/status-pill";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useDecideLeaveRequest, useEmployeeLeaveBalances, useLeaveRequest } from "@/hooks/use-leave-management";
 import { formatDate } from "@/lib/format-date";
+import { dayCount, leaveDays } from "@/lib/leave-days";
 import { leaveDateRange, leaveEmployeeName } from "@/lib/leave-management/leave-type-style";
 import { getLeaveAttachmentUrl } from "@/queries/leave-management";
 
@@ -63,7 +65,7 @@ export function LeaveReviewModal({ requestId, onClose }: { requestId: string; on
             <button className={staffButton.success} disabled={decide.isPending} onClick={() => void submit("approved")} type="button"><Check aria-hidden="true" className="size-3.5" /><span>Approve Request</span></button>
           </div>
         </>
-      ) : <button className={staffButton.dark} onClick={onClose} type="button">Close Window</button>}
+      ) : <button className={staffButton.dark} onClick={onClose} type="button">Close</button>}
       footerClassName={isPending ? "justify-between" : undefined}
       icon={<FileSignature aria-hidden="true" className="size-3.5" />}
       iconClassName="bg-blue-100 text-blue-700"
@@ -87,11 +89,14 @@ export function LeaveReviewModal({ requestId, onClose }: { requestId: string; on
               <span className="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-[10px] font-bold text-blue-700">{data.leave_type_name}</span>
             </div>
             <div className="grid grid-cols-1 gap-2 border-t border-slate-200/60 pt-1 text-[11px] sm:grid-cols-2">
-              <div><span className="text-slate-500">Inclusive Dates:</span> <span className="font-semibold text-slate-800">{leaveDateRange(data.starts_on, data.ends_on, formatDate)}</span></div>
+              <div className="flex flex-wrap items-center gap-1.5"><span className="text-slate-500">Inclusive Dates:</span> <span className="font-semibold text-slate-800">{leaveDateRange(data.starts_on, data.ends_on, formatDate)}</span> <StatusPill tone="blue">{dayCount(leaveDays(data.starts_on, data.ends_on))}</StatusPill></div>
               <div><span className="text-slate-500">Submitted:</span> <span className="font-semibold text-slate-800">{formatDate(data.created_at)}</span></div>
             </div>
             {credit && credit.days_per_year !== null ? (
               <p className="text-[11px] font-semibold text-slate-800">{`Balance: ${Math.max(credit.days_per_year - credit.used_days, 0)} of ${credit.days_per_year} days`}</p>
+            ) : null}
+            {data.excess_days > 0 ? (
+              <p className="text-[11px] font-semibold text-amber-700">{`Days deducted: ${dayCount(data.excess_days)} beyond the employee's leave credits`}</p>
             ) : null}
             {attachments.length ? (
               <div className="flex flex-wrap gap-3 border-t border-slate-200/60 pt-2 text-[11px]">

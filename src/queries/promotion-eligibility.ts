@@ -1,33 +1,80 @@
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
-import type { Employee, MyPromotionReadiness, PaginatedResult, PerformanceRating, PromotionCriterion, PromotionEvaluation, PromotionReadinessRow } from "@/lib/types/database";
+import type { MyPromotionStatus, PaginatedResult, PromotionCandidateRow, PromotionEvaluationDetail, PromotionRankRequirement } from "@/lib/types/database";
 import { uuidSchema } from "@/schemas/common";
-import { myPromotionReadinessSchema, performanceEvaluationSchema, performanceRatingSchema, performanceRatingUpdateSchema, promotionCriterionSchema, promotionCriterionUpdateSchema, promotionDocketSchema, promotionEvaluationFiltersSchema, promotionEvaluationSchema, promotionEvaluationUpdateSchema, promotionReadinessFiltersSchema, type PromotionEvaluationFilters, type PromotionReadinessFilters } from "@/schemas/promotion-eligibility";
+import {
+  iperEntrySchema,
+  myPromotionStatusSchema,
+  pftEntrySchema,
+  promotionCandidateFiltersSchema,
+  promotionDecisionSchema,
+  promotionEvaluationDetailSchema,
+  type PromotionCandidateFilters,
+} from "@/schemas/promotion-eligibility";
 
 function throwIfError(error: { message: string } | null) { if (error) throw new Error(error.message); }
-export function promotionEvaluationFilters(input: unknown = {}) { return promotionEvaluationFiltersSchema.parse(input); }
-export function promotionReadinessFilters(input: unknown = {}) { return promotionReadinessFiltersSchema.parse(input); }
 
-export async function listPromotionCriteria(input: { isActive?: boolean } = {}) { let query = createBrowserSupabaseClient().from("promotion_criteria").select("*, promotion_criteria_requirements(*)").order("updated_at", { ascending: false }); if (input.isActive !== undefined) query = query.eq("is_active", input.isActive); const { data, error } = await query; throwIfError(error); return (data ?? []) as Array<PromotionCriterion & { promotion_criteria_requirements: unknown[] }>; }
-export async function listPromotionEvaluations(input: Partial<PromotionEvaluationFilters> = {}): Promise<PaginatedResult<PromotionEvaluation, PromotionEvaluationFilters>> { const filters = promotionEvaluationFilters(input); const from = (filters.page - 1) * filters.pageSize; let query = createBrowserSupabaseClient().from("promotion_evaluations").select("*", { count: "exact" }).order("updated_at", { ascending: false }).range(from, from + filters.pageSize - 1); if (filters.employeeId) query = query.eq("employee_id", filters.employeeId); if (filters.targetRankId) query = query.eq("target_rank_id", filters.targetRankId); if (filters.readiness) query = query.eq("is_ready", filters.readiness === "ready"); if (filters.recommendation) query = query.eq("recommendation", filters.recommendation); const { data, error, count } = await query; throwIfError(error); return { rows: (data ?? []) as PromotionEvaluation[], count: count ?? 0, filters }; }
-export async function getHrPromotionEmployee(employeeId: string) { const id = uuidSchema.parse(employeeId); const client = createBrowserSupabaseClient(); const [employee, qualifications, certifications, training, ratings, evaluations] = await Promise.all([client.from("employees").select("*").eq("id", id).maybeSingle(), client.from("qualifications").select("*").eq("employee_id", id), client.from("certifications").select("*").eq("employee_id", id), client.from("training_records").select("*").eq("employee_id", id), client.from("performance_ratings").select("*").eq("employee_id", id).order("review_period_ends_on", { ascending: false }), client.from("promotion_evaluations").select("*, promotion_evaluation_evidence(*)").eq("employee_id", id).order("updated_at", { ascending: false })]); [employee, qualifications, certifications, training, ratings, evaluations].forEach((result) => throwIfError(result.error)); if (!employee.data) return null; return { employee: employee.data as Employee, qualifications: qualifications.data ?? [], certifications: certifications.data ?? [], training: training.data ?? [], ratings: (ratings.data ?? []) as PerformanceRating[], evaluations: evaluations.data ?? [] }; }
-/** The signed-in employee's immediate-next-rank readiness, calculated from current records. */
-export async function getMyPromotionEligibility() { const { data, error } = await createBrowserSupabaseClient().rpc("get_my_promotion_readiness"); throwIfError(error); return data === null ? null : myPromotionReadinessSchema.parse(data) as MyPromotionReadiness; }
-/** Submits a rank-matched promotion docket through the server-side authorization boundary. */
-export async function submitEmployeePromotionDocket(input: unknown) { const value = promotionDocketSchema.parse(input); const { data, error } = await createBrowserSupabaseClient().rpc("submit_employee_promotion_docket", { target_criterion_id: value.criterionId, target_remarks: value.remarks }); throwIfError(error); return uuidSchema.parse(data); }
-/** HR: one row per reviewed employee (latest review), readiness recalculated from current records. */
-export async function listPromotionReadiness(employeeId?: string) { const { data, error } = await createBrowserSupabaseClient().rpc("list_promotion_readiness", employeeId ? { target_employee_id: uuidSchema.parse(employeeId) } : {}); throwIfError(error); return (data ?? []) as PromotionReadinessRow[]; }
-export async function listPromotionReadinessPage(input: Partial<PromotionReadinessFilters> = {}): Promise<PaginatedResult<PromotionReadinessRow, PromotionReadinessFilters>> { const filters = promotionReadinessFilters(input); const { data, error } = await createBrowserSupabaseClient().rpc("list_promotion_readiness_page", { target_page: filters.page, target_page_size: filters.pageSize, target_employee_id: filters.employeeId ?? null, target_search: filters.search ?? null }); throwIfError(error); const rows = (data ?? []) as Array<PromotionReadinessRow & { total_count: number }> ; return { rows, count: rows[0]?.total_count ?? 0, filters }; }
-/** Criteria are evaluated server-side against official service, IPER, PFT, and course records. */
-function criterionPayload(input: unknown) { const value = promotionCriterionSchema.parse(input); return { target_rank_id: value.targetRankId, target_minimum_years: value.minimumYearsOfService, target_minimum_rating: value.minimumPerformanceRating, target_requirements: value.requirements, target_time_in_grade_years: value.minimumTimeInGradeYears, target_iper_period_months: value.iperReviewPeriodMonths, target_pft_minimum_score: value.pftMinimumScore, target_pft_validity_months: value.pftValidityMonths }; }
-function ratingPayload(input: unknown) { const value = performanceRatingSchema.parse(input); return { target_employee_id: value.employeeId, target_rating: value.rating, target_starts_on: value.reviewPeriodStartsOn, target_ends_on: value.reviewPeriodEndsOn, target_notes: value.notes }; }
-function evaluationPayload(input: unknown) { const value = promotionEvaluationSchema.parse(input); return { target_employee_id: value.employeeId, target_rank_id: value.targetRankId, target_criterion_id: value.criterionId, target_evaluated_on: value.evaluatedOn, target_recommendation: value.recommendation, target_notes: value.notes, target_evidence: value.evidence.map(({ requirementId, qualificationId, certificationId, trainingRecordId }) => ({ requirementId, qualificationId, certificationId, trainingRecordId })) }; }
-export async function createPromotionCriterion(input: unknown) { const { data, error } = await createBrowserSupabaseClient().rpc("create_promotion_criterion", criterionPayload(input)); throwIfError(error); return data as string; }
-export async function updatePromotionCriterion(input: unknown) { const value = promotionCriterionUpdateSchema.parse(input); const { error } = await createBrowserSupabaseClient().rpc("update_promotion_criterion", { target_criterion_id: value.id, expected_updated_at: value.expectedUpdatedAt, target_rank_id: value.targetRankId, target_minimum_years: value.minimumYearsOfService, target_minimum_rating: value.minimumPerformanceRating, target_is_active: value.isActive, target_requirements: value.requirements }); throwIfError(error); }
-/** Activates or deactivates criteria without touching their requirements (safe once evaluations exist). */
-export async function setPromotionCriterionActive(input: { id: string; isActive: boolean }) { const id = uuidSchema.parse(input.id); const { error } = await createBrowserSupabaseClient().rpc("set_promotion_criterion_active", { target_criterion_id: id, next_is_active: input.isActive }); throwIfError(error); }
-export async function createPerformanceRating(input: unknown) { const { data, error } = await createBrowserSupabaseClient().rpc("create_performance_rating", ratingPayload(input)); throwIfError(error); return data as string; }
-/** Saves a rubric evaluation; the server computes the points, grade and rating as of the period end. */
-export async function recordPerformanceEvaluation(input: unknown) { const value = performanceEvaluationSchema.parse(input); const { data, error } = await createBrowserSupabaseClient().rpc("record_performance_evaluation", { target_employee_id: value.employeeId, target_starts_on: value.reviewPeriodStartsOn, target_ends_on: value.reviewPeriodEndsOn, target_notes: value.notes ?? "" }); throwIfError(error); return data as string; }
-export async function updatePerformanceRating(input: unknown) { const value = performanceRatingUpdateSchema.parse(input); const { error } = await createBrowserSupabaseClient().rpc("update_performance_rating", { target_rating_id: value.id, expected_updated_at: value.expectedUpdatedAt, target_rating: value.rating, target_starts_on: value.reviewPeriodStartsOn, target_ends_on: value.reviewPeriodEndsOn, target_notes: value.notes }); throwIfError(error); }
-export async function createPromotionEvaluation(input: unknown) { const { data, error } = await createBrowserSupabaseClient().rpc("create_promotion_evaluation", evaluationPayload(input)); throwIfError(error); return data as string; }
-export async function updatePromotionEvaluation(input: unknown) { const value = promotionEvaluationUpdateSchema.parse(input); const { error } = await createBrowserSupabaseClient().rpc("update_promotion_evaluation", { target_evaluation_id: value.id, expected_updated_at: value.expectedUpdatedAt, target_evaluated_on: value.evaluatedOn, target_recommendation: value.recommendation, target_notes: value.notes, target_evidence: value.evidence }); throwIfError(error); }
+export function promotionCandidateFilters(input: unknown = {}) { return promotionCandidateFiltersSchema.parse(input); }
+
+/** HR dashboard: qualified personnel for approval plus decided promotions, evaluated by the system. */
+export async function listPromotionCandidatesPage(input: Partial<PromotionCandidateFilters> = {}): Promise<PaginatedResult<PromotionCandidateRow, PromotionCandidateFilters>> {
+  const filters = promotionCandidateFilters(input);
+  const { data, error } = await createBrowserSupabaseClient().rpc("list_promotion_candidates_page", {
+    target_search: filters.search ?? null,
+    target_status: filters.status ?? null,
+    target_page: filters.page,
+    target_page_size: filters.pageSize,
+    target_employee_id: filters.employeeId ?? null,
+  });
+  throwIfError(error);
+  const rows = (data ?? []) as PromotionCandidateRow[];
+  return { rows, count: Number(rows[0]?.total_count ?? 0), filters };
+}
+
+/** HR: one employee's next-rank checklist and the recorded decision, if any. */
+export async function getPromotionEvaluation(employeeId: string): Promise<PromotionEvaluationDetail | null> {
+  const { data, error } = await createBrowserSupabaseClient().rpc("get_promotion_evaluation", { target_employee_id: uuidSchema.parse(employeeId) });
+  throwIfError(error);
+  return data === null ? null : promotionEvaluationDetailSchema.parse(data) as PromotionEvaluationDetail;
+}
+
+/** The signed-in employee's next-rank checklist and HR decision. */
+export async function getMyPromotionStatus(): Promise<MyPromotionStatus | null> {
+  const { data, error } = await createBrowserSupabaseClient().rpc("get_my_promotion_status");
+  throwIfError(error);
+  return data === null ? null : myPromotionStatusSchema.parse(data) as MyPromotionStatus;
+}
+
+/** Read-only system requirements per target rank. */
+export async function listPromotionRankRequirements() {
+  const { data, error } = await createBrowserSupabaseClient().from("promotion_rank_requirements").select("*");
+  throwIfError(error);
+  return (data ?? []) as PromotionRankRequirement[];
+}
+
+/** Active personnel for the IPER / PFT entry picker. */
+export async function listPromotionEmployees() {
+  const { data, error } = await createBrowserSupabaseClient().from("employees").select("id, employee_number, first_name, last_name").eq("employment_status", "active").order("last_name");
+  throwIfError(error);
+  return (data ?? []) as { id: string; employee_number: string; first_name: string; last_name: string }[];
+}
+
+export async function decidePromotion(input: unknown) {
+  const value = promotionDecisionSchema.parse(input);
+  const { data, error } = await createBrowserSupabaseClient().rpc("decide_promotion", { target_employee_id: value.employeeId, target_approve: value.approve, target_remarks: value.remarks });
+  throwIfError(error);
+  return uuidSchema.parse(data);
+}
+
+export async function recordIperRating(input: unknown) {
+  const value = iperEntrySchema.parse(input);
+  const { data, error } = await createBrowserSupabaseClient().rpc("record_iper_rating", { target_employee_id: value.employeeId, target_starts_on: value.periodStartsOn, target_ends_on: value.periodEndsOn, target_rating: value.rating, target_notes: value.notes });
+  throwIfError(error);
+  return uuidSchema.parse(data);
+}
+
+export async function recordPftResult(input: unknown) {
+  const value = pftEntrySchema.parse(input);
+  const { data, error } = await createBrowserSupabaseClient().rpc("record_pft_result", { target_employee_id: value.employeeId, target_assessed_on: value.assessedOn, target_passed: value.passed, target_notes: value.notes });
+  throwIfError(error);
+  return uuidSchema.parse(data);
+}

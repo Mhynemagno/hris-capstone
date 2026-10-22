@@ -15,6 +15,7 @@ import { useDeleteRecord } from "@/hooks/use-deletion";
 import { usePanelParam } from "@/hooks/use-panel-param";
 import { useAllHrJobs, useWithdrawJobOpening } from "@/hooks/use-recruitment";
 import { formatDate } from "@/lib/format-date";
+import { formatRecruitmentCycle, openingRecruitmentCycle } from "@/lib/recruitment/recruitment-cycle";
 import { applicationCount, deadlineNote, DEFAULT_JOB_SORT, filterJobs, jobActions, JOB_SORT_ACCESSORS, JOB_STATUS_LABELS, jobStatusCounts } from "@/lib/recruitment/job-postings";
 import { nextSort, paginate, sortRows, type SortState } from "@/lib/workspace/table";
 import { cn } from "@/lib/utils";
@@ -87,7 +88,7 @@ export function StaffJobPostings() {
       />
 
       <p className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs font-semibold text-blue-900">
-        Annual recruitment schedule: plan and publish two recruitment openings per calendar year. Applicant accounts and applicant numbers remain valid between cycles.
+        Recruitment opens twice a year: Cycle 1 (January–June) and Cycle 2 (July–December). Each opening belongs to the cycle of its opening date, and its deadline must fall within that cycle. Applicant accounts and applicant numbers remain valid between cycles.
       </p>
 
       <section aria-label="Job postings" className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm">
@@ -125,6 +126,7 @@ export function StaffJobPostings() {
             <thead className={staffTable.thead}>
               <tr className="border-b border-slate-100">
                 <SortHeader label="Posting Title" onSort={(key) => setSort(nextSort(sort, key))} sort={sort} sortKey="title" />
+                <th className={staffTable.th} scope="col">Cycle</th>
                 <th className={staffTable.th} scope="col">Status</th>
                 <th className={cn(staffTable.th, "text-center")} scope="col">Applications</th>
                 <SortHeader label="Deadline" onSort={(key) => setSort(nextSort(sort, key))} sort={sort} sortKey="deadline" />
@@ -143,6 +145,7 @@ export function StaffJobPostings() {
                       <p className="text-sm font-bold text-slate-900">{job.title}</p>
                       {job.location ? <p className="text-[11px] text-slate-500">{job.location}</p> : null}
                     </td>
+                    <td className={cn(staffTable.td, "whitespace-nowrap font-semibold text-slate-700")}>{formatRecruitmentCycle(openingRecruitmentCycle(job))}</td>
                     <td className={staffTable.td}><StatusPill tone={job.status === "published" ? "emerald" : "slate"}>{JOB_STATUS_LABELS[job.status]}</StatusPill></td>
                     <td className={cn(staffTable.td, "text-center")}><span className={cn("font-mono text-sm font-bold", count ? "text-slate-900" : "text-slate-500")}>{count}</span></td>
                     <td className={staffTable.td}>
@@ -164,7 +167,7 @@ export function StaffJobPostings() {
                   </tr>
                 );
               }) : (
-                <tr><td className="px-6 py-10 text-center text-xs text-slate-500" colSpan={6}>No job postings match your filters.</td></tr>
+                <tr><td className="px-6 py-10 text-center text-xs text-slate-500" colSpan={7}>No job postings match your filters.</td></tr>
               )}
             </tbody>
           </table>

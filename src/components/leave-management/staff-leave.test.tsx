@@ -9,7 +9,7 @@ vi.mock("./leave-review-modal", () => ({ LeaveReviewModal: ({ requestId }: { req
 vi.mock("./leave-details-modal", () => ({ LeaveDetailsModal: ({ requestId }: { requestId: string }) => <div role="dialog">Details {requestId}</div> }));
 
 const type = (id: string, name: string, days: number | null) => ({ id, name, description: null, requires_attachment: false, is_active: true, days_per_year: days, excess_deducted_from_retirement: false, eligible_gender: null });
-const request = (id: string, status: string) => ({ id, employee_id: "e1", leave_type_id: "t1", leave_type_name: "Mandatory Leave", starts_on: "2026-10-05", ends_on: "2026-10-06", status, created_at: "2026-10-05T01:00:00Z", employees: { first_name: "Tyson", middle_name: null, last_name: "Peters", employee_number: "4-15889" } });
+const request = (id: string, status: string) => ({ id, employee_id: "e1", leave_type_id: "t1", leave_type_name: "Mandatory Leave", starts_on: "2026-10-05", ends_on: "2026-10-06", status, created_at: "2026-10-05T01:00:00Z", employees: { first_name: "Tyson", middle_name: null, last_name: "Peters", employee_number: "4-15889", ranks: { code: "PCPL" } } });
 
 vi.mock("@/hooks/use-leave-management", () => ({
   useLeaveTypes: () => ({ isLoading: false, error: null, data: { rows: [type("00000000-0000-4000-8000-000000000001", "Mandatory Leave", 2), type("00000000-0000-4000-8000-000000000002", "Maternity Leave", 105), type("00000000-0000-4000-8000-000000000003", "Paternity Leave", 7), type("00000000-0000-4000-8000-000000000004", "Sick Leave", 15), type("00000000-0000-4000-8000-000000000005", "Special Privilege Leave", null)], count: 5 } }),
@@ -55,7 +55,9 @@ describe("StaffLeave (leave.html)", () => {
   it("lists the queue with Review for pending rows and View for others", async () => {
     render(<StaffLeave />);
     expect(screen.getByRole("searchbox", { name: "Search leave requests" })).toHaveAttribute("placeholder", "Search employee or badge no...");
+    expect(screen.getAllByRole("columnheader").map((cell) => cell.textContent)).toEqual(["Rank", "Name", "Leave Type", "Status", "Actions"]);
     const [, pendingRow, approvedRow] = screen.getAllByRole("row");
+    expect(within(pendingRow!).getAllByRole("cell")[0]).toHaveTextContent("PCPL");
     expect(within(pendingRow!).getByText("For Approval")).toBeInTheDocument();
     expect(within(approvedRow!).queryByRole("button", { name: /^Review/ })).not.toBeInTheDocument();
     await userEvent.click(within(pendingRow!).getByRole("button", { name: "Review Tyson Peters's Mandatory Leave request, October 5, 2026 to October 6, 2026" }));

@@ -580,7 +580,7 @@ function RankForm({ nextOrder, onSaved, pending, rank }: { nextOrder?: number; o
       <FormField description="Short code shown with the rank, for example PAT." error={errors.code?.message} htmlFor="rank-code" label="Code" required>
         <Input id="rank-code" {...form.register("code")} />
       </FormField>
-      <FormField description="Seniority order: 1 is the most junior rank. Each rank needs its own order." error={errors.sortOrder?.message} htmlFor="rank-order" label="Order" required>
+      <FormField description="Seniority order: 0 is the most junior rank (NUP), then 1 (PAT) and up. Each rank needs its own order." error={errors.sortOrder?.message} htmlFor="rank-order" label="Order" required>
         <Input id="rank-order" inputMode="numeric" type="number" {...form.register("sortOrder")} />
       </FormField>
       <label className="flex items-center gap-2 text-sm font-medium"><input type="checkbox" {...form.register("isActive")} /> Active rank</label>
@@ -742,7 +742,7 @@ export function SettingsWorkspace() {
 const AUDIT_ENTITY_SUGGESTIONS = [
   "announcements", "applications", "attendance_imports", "attendance_integration_settings", "attendance_unmatched_events", "deployments",
   "departments", "employees", "job_openings", "leave_requests", "leave_types", "organization_settings", "performance_ratings",
-  "profile_change_requests", "ranks", "profiles", "promotion_criteria", "promotion_evaluations", "public_contacts", "unit_stations", "user_roles",
+  "profile_change_requests", "ranks", "profiles", "promotion_decisions", "physical_fitness_results", "public_contacts", "unit_stations", "user_roles",
 ];
 
 export function AuditLogsWorkspace() {

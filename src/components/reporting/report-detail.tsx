@@ -14,7 +14,7 @@ import { useDepartmentOptions } from "@/hooks/use-administration";
 import { useFetchFullReport, useReport } from "@/hooks/use-reporting";
 import { formatDate, formatDateTime } from "@/lib/format-date";
 import { toReportCsv } from "@/lib/reporting/csv";
-import { reportFiltersSchema, type ReportFilters, type ReportResponse } from "@/schemas/reporting";
+import { reportFiltersSchema, type ReportFilters } from "@/schemas/reporting";
 
 type ReportKey = ReportFilters["reportKey"];
 type StatusOption = { value: string; label: string; group?: string };
@@ -24,8 +24,10 @@ export const REPORT_TITLES: Record<ReportKey, string> = {
   "hiring-decisions": "Hiring decisions",
   "employee-performance": "Employee performance",
   deployments: "Deployments",
-  "attendance-leave": "Attendance and leave",
-  "promotion-training-needs": "Promotion and training needs",
+  attendance: "Attendance",
+  leave: "Leave",
+  "promotion-evaluation": "Promotion evaluation",
+  "training-needs": "Training needs",
 };
 
 const applicationStatuses = ["Application Submission", "Physical Agility Test", "Physical & Medical Examination", "Neuro-Psychiatric Examination", "Drug Test", "Character & Background Investigation", "Panel Interview", "Final Evaluation", "Shortlisted", "Hired", "Not Selected"];
@@ -61,27 +63,33 @@ export const REPORT_STATUS_FILTERS: Record<ReportKey, { label: string; options: 
       { value: "cancelled", label: "Cancelled" },
     ],
   },
-  "attendance-leave": {
-    label: "Record status",
+  attendance: {
+    label: "Attendance status",
     options: [
       { value: "present", label: "Present", group: "Attendance" },
       { value: "late", label: "Late", group: "Attendance" },
       { value: "absent", label: "Absent", group: "Attendance" },
       { value: "incomplete", label: "Partial", group: "Attendance" },
-      { value: "pending", label: "For approval", group: "Leave" },
+    ],
+  },
+  leave: {
+    label: "Leave status",
+    options: [
+      { value: "pending", label: "For approval" },
       { value: "approved", label: "Approved", group: "Leave" },
       { value: "rejected", label: "Rejected", group: "Leave" },
       { value: "cancelled", label: "Cancelled", group: "Leave" },
     ],
   },
-  "promotion-training-needs": {
-    label: "Recommendation",
+  "promotion-evaluation": {
+    label: "Status",
     options: [
-      { value: "recommended", label: "Recommended" },
-      { value: "deferred", label: "Deferred" },
-      { value: "not_recommended", label: "Not recommended" },
+      { value: "for_approval", label: "For approval" },
+      { value: "approved", label: "Approved" },
+      { value: "rejected", label: "Rejected" },
     ],
   },
+  "training-needs": { label: "Status", options: [] },
 };
 
 export type DraftFilters = { startsOn: string; endsOn: string; departmentId: string; status: string };
@@ -130,14 +138,13 @@ export function ReportDetail({ role, reportKey, initialFilters, autoAction = nul
   /** Filters chosen in the Generate Report modal (Capstone UI reports.html). */
   initialFilters?: Partial<Pick<DraftFilters, "startsOn" | "endsOn" | "departmentId">>;
   /** Print or download once the report has loaded, as the modal's export format asked. */
-  autoAction?: "print" | "csv" | null;
+  autoAction?: "csv" | null;
 }) {
   const initialDraft: DraftFilters = { ...emptyDraft, ...initialFilters };
   const [draft, setDraft] = useState<DraftFilters>(() => (reportDateRangeError(reportKey, initialDraft) ? emptyDraft : initialDraft));
   // Only valid filters are applied: useReport parses them during render and the RPC rejects start > end.
   const [applied, setApplied] = useState(() => buildFilters(reportKey, reportDateRangeError(reportKey, initialDraft) ? emptyDraft : initialDraft));
   const autoDone = useRef(false);
-  const [printReport, setPrintReport] = useState<ReportResponse | null>(null);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
   if (applied.reportKey !== reportKey) {
@@ -189,21 +196,10 @@ export function ReportDetail({ role, reportKey, initialFilters, autoAction = nul
     URL.revokeObjectURL(href);
   };
 
-  const print = async () => {
-    const full = await loadAll();
-    if (full) setPrintReport(full);
-  };
-
-  useEffect(() => {
-    if (!printReport) return;
-    window.print();
-    queueMicrotask(() => setPrintReport(null));
-  }, [printReport]);
-
   useEffect(() => {
     if (!autoAction || autoDone.current || !query.data) return;
     autoDone.current = true;
-    queueMicrotask(() => void (autoAction === "print" ? print() : download()));
+    queueMicrotask(() => void download());
   });
 
   const departmentName = departments.data?.find((department) => String(department.id) === String(applied.departmentId ?? ""))?.name;
@@ -222,9 +218,6 @@ export function ReportDetail({ role, reportKey, initialFilters, autoAction = nul
           <div className="flex flex-wrap gap-2 print:hidden">
             <Button disabled={!query.data || exporting} onClick={() => void download()} type="button" variant="outline">
               Download CSV
-            </Button>
-            <Button disabled={!query.data || exporting} onClick={() => void print()} type="button">
-              Print report
             </Button>
           </div>
         }
@@ -323,10 +316,10 @@ export function ReportDetail({ role, reportKey, initialFilters, autoAction = nul
           </p>
           <div className="relative overflow-x-auto rounded-xl border">
             <table className="w-full min-w-[640px] text-left text-sm">
-              <caption className="sr-only">{(printReport ?? query.data).title}</caption>
+              <caption className="sr-only">{query.data.title}</caption>
               <thead className="bg-muted/60">
                 <tr>
-                  {(printReport ?? query.data).columns.map((column) => (
+                  {query.data.columns.map((column) => (
                     <th className="px-4 py-3 font-semibold text-muted-foreground" key={column.key} scope="col">
                       {column.label}
                     </th>
@@ -334,10 +327,10 @@ export function ReportDetail({ role, reportKey, initialFilters, autoAction = nul
                 </tr>
               </thead>
               <tbody>
-                {(printReport ?? query.data).rows.length ? (
-                  (printReport ?? query.data).rows.map((row, index) => (
+                {query.data.rows.length ? (
+                  query.data.rows.map((row, index) => (
                     <tr className="border-t" key={index}>
-                      {(printReport ?? query.data).columns.map((column) => (
+                      {query.data.columns.map((column) => (
                         <td className="px-4 py-3 align-top" key={column.key}>
                           {formatCell(row[column.key])}
                         </td>
@@ -347,7 +340,7 @@ export function ReportDetail({ role, reportKey, initialFilters, autoAction = nul
                 ) : (
                   <tr>
                     <EmptyTableState
-                      colSpan={(printReport ?? query.data).columns.length}
+                      colSpan={query.data.columns.length}
                       message={
                         hasFilters
                           ? "No records match these filters. Widen the date range or clear filters."

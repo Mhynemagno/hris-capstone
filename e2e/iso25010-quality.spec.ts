@@ -27,44 +27,51 @@ function localSql(script: string) {
   return execFileSync("docker", ["exec", "-i", "supabase_db_hris-capstone", "psql", "-U", "postgres", "-d", "postgres", "-v", "ON_ERROR_STOP=1", "-qtA"], { input: script, encoding: "utf8" }).trim();
 }
 
-const corporal = "(select id from public.ranks where code = 'PCPL')";
 const demoEmployee = "(select id from public.employees where employee_number = '0-00001')";
-const corporalCriterion = `(select id from public.promotion_criteria where target_rank_id = ${corporal})`;
 
 /**
- * Makes the demo employee ready to file a promotion docket (Patrolman, long service, an active
- * Police Corporal criterion with no mandatory records) and returns a function that restores every row it touched.
+ * Makes the demo employee a Police Corporal with eligibility, IPER and both Promotion Board
+ * assessments on record, so their PDF scorecard is ready for an HR decision, and returns a
+ * function that restores every row it touched.
  */
-function arrangeReadyEmployee() {
+function arrangeQualifiedEmployee() {
   const saved = JSON.parse(localSql(`select json_build_object(
-    'employee', (select json_build_object('rankId', rank_id, 'startedOn', employment_started_on) from public.employees where id = ${demoEmployee}),
-    'criterion', (select json_build_object('isActive', is_active, 'years', minimum_years_of_service, 'rating', minimum_performance_rating) from public.promotion_criteria where id = ${corporalCriterion}),
-    'mandatory', (select coalesce(json_agg(id), '[]') from public.promotion_criteria_requirements where criterion_id = ${corporalCriterion} and is_mandatory),
-    'dockets', (select coalesce(json_agg(d), '[]') from public.employee_promotion_dockets d where employee_id = ${demoEmployee} and criterion_id = ${corporalCriterion}));`));
+    'employee', (select json_build_object('id', id, 'rankId', rank_id, 'startedOn', employment_started_on) from public.employees where id = ${demoEmployee}));`));
   if (!saved.employee) throw new Error("The demo employee 0-00001 is missing from the seed data.");
 
-  localSql(`begin;
-    insert into public.promotion_criteria (target_rank_id, minimum_years_of_service, is_active)
-      select ${corporal}, 1, true where not exists (select 1 from public.promotion_criteria where target_rank_id = ${corporal});
-    update public.promotion_criteria set is_active = true, minimum_years_of_service = 1, minimum_performance_rating = null where id = ${corporalCriterion};
-    update public.promotion_criteria_requirements set is_mandatory = false where criterion_id = ${corporalCriterion};
-    delete from public.employee_promotion_dockets where employee_id = ${demoEmployee} and criterion_id = ${corporalCriterion};
-    update public.employees set rank_id = (select id from public.ranks where code = 'PAT'), employment_started_on = '2015-01-01' where id = ${demoEmployee};
-    commit;`);
+  const created = JSON.parse(localSql(`begin;
+    update public.employees set rank_id = (select id from public.ranks where code = 'PCPL'), employment_started_on = '2015-01-01' where id = ${demoEmployee};
+    with certification as (
+      insert into public.certifications (employee_id, name, issuer, issued_on)
+      values (${demoEmployee}, 'Public Safety Junior Leadership Course (PSJLC)', 'Philippine Public Safety College (PPSC)', current_date - 200) returning id
+    ), qualification as (
+      insert into public.qualifications (employee_id, name, institution, awarded_on)
+      values (${demoEmployee}, 'NAPOLCOM PNP Entrance Examination', 'National Police Commission (NAPOLCOM)', '2014-06-01') returning id
+    ), iper as (
+      insert into public.performance_ratings (employee_id, rating, descriptive_rating, rating_kind, review_period_starts_on, review_period_ends_on)
+      values (${demoEmployee}, 4, 'Very Satisfactory', 'iper', current_date - 180, current_date - 1) returning id
+    ), pft as (
+      insert into public.physical_fitness_results (employee_id, result, assessed_on, valid_until, recorded_by_user_id)
+      values (${demoEmployee}, 'passed', current_date - 7, current_date + 350, (select profile_id from public.employees where employee_number = '0-00002')) returning id
+    ), board as (
+      insert into public.promotion_board_assessments (employee_id, criterion, band, assessed_on, score, evidence)
+      values (${demoEmployee}, 'board', 'PCPL-PMSG', current_date - 3, 12, 'Panel interview sheet'), (${demoEmployee}, 'reputation', 'PCPL-PMSG', current_date - 3, 18, 'Records review') returning id
+    )
+    select json_build_object('certification', (select id from certification), 'qualification', (select id from qualification), 'iper', (select id from iper), 'pft', (select id from pft), 'board', (select json_agg(id) from board));
+    commit;`).split("\n").find((line) => line.startsWith("{")) ?? "{}");
 
   const literal = (value: unknown) => (value === null || value === undefined ? "null" : `'${String(value).replaceAll("'", "''")}'`);
   return {
+    employeeId: saved.employee.id as string,
     restore() {
-      const criterion = saved.criterion
-        ? `update public.promotion_criteria set is_active = ${saved.criterion.isActive}, minimum_years_of_service = ${literal(saved.criterion.years)}, minimum_performance_rating = ${literal(saved.criterion.rating)} where id = ${corporalCriterion};`
-        : `delete from public.promotion_criteria where id = ${corporalCriterion};`;
-      const mandatory = saved.mandatory.length ? `update public.promotion_criteria_requirements set is_mandatory = true where id in (${saved.mandatory.map(literal).join(", ")});` : "";
       localSql(`begin;
-        delete from public.employee_promotion_dockets where employee_id = ${demoEmployee} and criterion_id = ${corporalCriterion};
-        insert into public.employee_promotion_dockets select * from jsonb_populate_recordset(null::public.employee_promotion_dockets, ${literal(JSON.stringify(saved.dockets))}::jsonb);
+        delete from public.promotion_decisions where employee_id = ${demoEmployee};
+        delete from public.promotion_board_assessments where id::text = any(string_to_array(${literal((created.board ?? []).join(","))}, ','));
+        delete from public.certifications where id = ${literal(created.certification)};
+        delete from public.qualifications where id = ${literal(created.qualification)};
+        delete from public.performance_ratings where id = ${literal(created.iper)};
+        delete from public.physical_fitness_results where id = ${literal(created.pft)};
         update public.employees set rank_id = ${literal(saved.employee.rankId)}, employment_started_on = ${literal(saved.employee.startedOn)} where id = ${demoEmployee};
-        ${mandatory}
-        ${criterion}
         commit;`);
     },
   };
@@ -161,20 +168,31 @@ test.describe("Interaction capability (usability): accessibility", () => {
       }
     });
   }
-  test("the employee promotion docket dialog has no serious or critical accessibility violations", async ({ page }) => {
-    const arranged = arrangeReadyEmployee();
+  test("the promotion evaluation and decision dialogs have no serious or critical accessibility violations", async ({ page }) => {
+    const arranged = arrangeQualifiedEmployee();
+    const check = async (label: string) => {
+      const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
+      const blocking = results.violations.filter((violation) => violation.impact === "serious" || violation.impact === "critical");
+      expect(blocking.map((violation) => `${violation.id}: ${violation.help} (${violation.nodes.length} element(s))`), label).toEqual([]);
+    };
     try {
+      await signIn(page, accounts.hr);
+      // The scored Police Corporal is listed by the system without any HR-posted criteria.
+      await page.goto(`/hr/promotions?view=${arranged.employeeId}`);
+      const details = page.getByRole("dialog", { name: "Promotion evaluation" });
+      await expect(details.getByRole("list", { name: "Scorecard breakdown" })).toBeVisible({ timeout: 15_000 });
+      await check("promotion details");
+      await details.getByRole("button", { name: "Reject" }).click();
+      await expect(page.getByRole("dialog", { name: "Reject promotion" })).toBeVisible();
+      await check("promotion decision dialog");
+      await page.context().clearCookies();
+
       await signIn(page, accounts.employee);
       await page.goto("/employee/promotion-eligibility");
       await expect(page.getByRole("heading", { level: 1, name: "Promotion Status" })).toBeVisible();
       await expect(page.getByText(/^Loading/)).toHaveCount(0, { timeout: 15_000 });
-      const file = page.getByRole("button", { name: "Submit to Promotion Board" });
-      await expect(file).toHaveCount(1);
-      await file.click();
-      await expect(page.getByRole("dialog").first()).toBeVisible();
-      const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
-      const blocking = results.violations.filter((violation) => violation.impact === "serious" || violation.impact === "critical");
-      expect(blocking.map((violation) => `${violation.id}: ${violation.help} (${violation.nodes.length} element(s))`), "promotion docket dialog").toEqual([]);
+      await expect(page.getByText("For approval").first()).toBeVisible();
+      await check("employee promotion status");
     } finally {
       arranged.restore();
     }

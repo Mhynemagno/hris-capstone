@@ -81,7 +81,6 @@ export function ReportGenerateModal({ report, onClose }: { report: { key: Report
             <StaffSelect id="report-format" onChange={(event) => setFormat(event.target.value as ReportExportFormat)} value={format}>
               <option value="pdf">PDF Document (.pdf)</option>
               <option value="csv">Excel Spreadsheet (.csv)</option>
-              <option value="print">Direct Print View</option>
             </StaffSelect>
           </div>
         </div>

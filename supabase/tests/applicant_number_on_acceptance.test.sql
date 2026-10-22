@@ -18,7 +18,7 @@ select extensions.is(
   0::bigint, 'Nothing is sent about an applicant number at sign-up');
 
 insert into public.job_openings (title, description, location, closes_on, status, published_at, created_by_user_id)
-values ('Acceptance test opening', 'Opening for acceptance tests.', 'San Juan City', current_date + 30, 'published', now(), '00000000-0000-4000-8000-000000008102');
+values ('Acceptance test opening', 'Opening for acceptance tests.', 'San Juan City', (date_trunc('month', current_date) + interval '1 month - 1 day')::date, 'published', now(), '00000000-0000-4000-8000-000000008102');
 
 insert into public.applications (id, applicant_id, job_opening_id, status)
 select '00000000-0000-4000-8000-000000030001', applicant.id, opening.id, 'Application Submission'

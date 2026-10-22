@@ -57,8 +57,27 @@ describe("HrJobForm", () => {
     expect(within(panel).getByRole("button", { name: "Publish opening" })).toBeInTheDocument();
   });
 
+  it("shows the recruitment cycle and keeps the deadline within it", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-22T09:00:00+08:00"));
+    try {
+      const user = userEvent.setup();
+      render(<HrJobForm />);
+      expect(screen.getByText("Cycle 2 · July–December 2026. On or before December 31, 2026.")).toBeInTheDocument();
+      expect(screen.getByLabelText(/Deadline of Application/)).toHaveAttribute("max", "2026-12-31");
+      await fillValidJobOpening(user);
+      await user.clear(screen.getByLabelText(/Deadline of Application/));
+      await user.type(screen.getByLabelText(/Deadline of Application/), "2027-01-15");
+      await user.click(screen.getByRole("button", { name: "Publish opening" }));
+      expect(await screen.findByText("The deadline must fall within Cycle 2 · July–December 2026. Choose a date on or before December 31, 2026.")).toBeInTheDocument();
+      expect(mocks.save).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("links a published posting to the public site", () => {
-    render(<HrJobForm job={{ id: 7, title: "Patrol", description: "x".repeat(30), location: "San Juan", closes_on: "2099-12-31", status: "published", department_id: null, rank_id: null, published_at: null, created_by_user_id: null, created_at: "", updated_at: "", job_qualification_criteria: [], applications: [{ count: 2 }] }} />);
+    render(<HrJobForm job={{ id: 7, title: "Patrol", description: "x".repeat(30), location: "San Juan", closes_on: "2099-12-31", status: "published", department_id: null, rank_id: null, published_at: null, recruitment_cycle: 2, recruitment_year: 2026, created_by_user_id: null, created_at: "", updated_at: "", job_qualification_criteria: [], applications: [{ count: 2 }] }} />);
     expect(screen.getByRole("link", { name: "View on public site" })).toHaveAttribute("href", "/jobs/7");
     expect(screen.getByText("2 applications")).toBeInTheDocument();
   });
@@ -131,7 +150,7 @@ describe("HrJobForm", () => {
   it("keeps an older opening's unlisted criteria when editing it", async () => {
     const user = userEvent.setup();
     const criterion = (ordinal: number, kind: "education" | "eligibility" | "experience" | "other", requirement: string) => ({ id: `9b8f2c1e-1111-4222-8333-94445555666${ordinal}`, job_opening_id: 8, ordinal, kind, requirement, is_required: true, created_at: "" });
-    const job = { id: 8, title: "Patrolman", description: "Serve the community through visible patrol work.", location: "San Juan City", closes_on: "2026-10-31", status: "draft" as const, image_path: null, department_id: null, rank_id: null, published_at: null, created_by_user_id: "u1", created_at: "", updated_at: "", job_qualification_criteria: [
+    const job = { id: 8, title: "Patrolman", description: "Serve the community through visible patrol work.", location: "San Juan City", closes_on: "2026-10-31", status: "draft" as const, image_path: null, department_id: null, rank_id: null, published_at: null, recruitment_cycle: 2 as const, recruitment_year: 2026, created_by_user_id: "u1", created_at: "", updated_at: "", job_qualification_criteria: [
       criterion(1, "education", "Baccalaureate degree in Criminology"),
       criterion(2, "eligibility", "NAPOLCOM PNP Entrance Examination"),
       criterion(3, "experience", "At least 2 years of police service"),
@@ -177,7 +196,7 @@ describe("HrJobForm", () => {
   it("rejects an unsupported image type and removes a saved image on save", async () => {
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "http://127.0.0.1:54321");
     const user = userEvent.setup({ applyAccept: false });
-    const job = { id: 8, title: "Patrolman", description: "Serve the community through visible patrol work.", location: "San Juan City", closes_on: "2026-10-31", status: "draft" as const, image_path: "job-openings/8/0b8f2c1e-1111-4222-8333-944455556666.png", department_id: null, rank_id: null, published_at: null, created_by_user_id: "u1", created_at: "", updated_at: "", job_qualification_criteria: [{ id: "9b8f2c1e-1111-4222-8333-944455556666", job_opening_id: 8, ordinal: 1, kind: "experience" as const, requirement: "At least 2 years of police service", is_required: true, created_at: "" }] };
+    const job = { id: 8, title: "Patrolman", description: "Serve the community through visible patrol work.", location: "San Juan City", closes_on: "2026-10-31", status: "draft" as const, image_path: "job-openings/8/0b8f2c1e-1111-4222-8333-944455556666.png", department_id: null, rank_id: null, published_at: null, recruitment_cycle: 2 as const, recruitment_year: 2026, created_by_user_id: "u1", created_at: "", updated_at: "", job_qualification_criteria: [{ id: "9b8f2c1e-1111-4222-8333-944455556666", job_opening_id: 8, ordinal: 1, kind: "experience" as const, requirement: "At least 2 years of police service", is_required: true, created_at: "" }] };
     render(<HrJobForm job={job} />);
 
     expect(screen.getByRole("img", { name: "Job posting image preview" })).toHaveAttribute("src", expect.stringContaining("/job-posting-images/job-openings/8/"));

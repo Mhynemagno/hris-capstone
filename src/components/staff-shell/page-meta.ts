@@ -5,6 +5,7 @@ const SUBTITLES: [root: string, subtitle: string][] = [
   ["/hr/deployments", "Personnel Management • Duty Deployments & Field Assignments"],
   ["/hr/leave-requests", "Leave Management & Personnel Entitlements"],
   ["/hr/promotions", "Personnel Management • Promotion Board & Criteria"],
+  ["/hr/profile-requests", "Personnel Management • Profile Change Requests"],
   ["/hr/attendance", "Personnel Management • Face Biometrics & Attendance Logs"],
   ["/reports", "Personnel Management • Official Analytics & Station Reports"],
   ["/hr/public-site", "Public Site • Announcements & Station Contacts"],
@@ -27,7 +28,7 @@ export function staffPageSubtitle(pathname: string) {
 
 /** Pages copied from a Capstone UI mockup; every other staff page keeps the workspace look. */
 const REDESIGNED = new Set([
-  "/hr", "/hr/jobs", "/hr/applications", "/hr/deployments", "/hr/leave-requests", "/hr/promotions", "/hr/attendance", "/reports", "/hr/public-site",
+  "/hr", "/hr/jobs", "/hr/applications", "/hr/deployments", "/hr/leave-requests", "/hr/promotions", "/hr/profile-requests", "/hr/attendance", "/reports", "/hr/public-site",
   "/employee", "/employee/profile", "/employee/leave", "/employee/deployments", "/employee/promotion-eligibility", "/employee/attendance",
   "/admin", "/admin/users", "/admin/departments", "/admin/unit-stations", "/admin/ranks", "/admin/profile-change-requests", "/admin/integrations/attendance", "/admin/audit-logs", "/admin/settings",
 ]);

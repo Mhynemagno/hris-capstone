@@ -33,6 +33,8 @@ describe("LeaveReviewModal (leave.html Review)", () => {
     expect(screen.getByText("Tyson Bernal Peters")).toBeInTheDocument();
     expect(screen.getByText("Badge: 4-15889")).toBeInTheDocument();
     expect(screen.getByText("Balance: 1 of 2 days")).toBeInTheDocument();
+    expect(screen.getByText("2 days", { selector: "span" })).toBeInTheDocument();
+    expect(screen.queryByText(/Days deducted/)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Attachment: medcert.pdf" })).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Approve Request" }));
     expect(screen.getByText("HR Remarks are required to proceed.")).toBeInTheDocument();
@@ -60,6 +62,14 @@ describe("LeaveReviewModal (leave.html Review)", () => {
     render(<LeaveReviewModal onClose={vi.fn()} requestId={REQUEST_ID} />);
     expect(screen.getByText("This leave request was already decided.")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Approve Request" })).not.toBeInTheDocument();
+    expect(screen.getByText("Close", { selector: "button" })).toBeInTheDocument();
+    expect(screen.queryByText("Close Window")).not.toBeInTheDocument();
+  });
+
+  it("shows the days deducted when the request goes beyond the leave credits", () => {
+    mocks.request = { data: { ...pending, excess_days: 1 }, isLoading: false, error: null };
+    render(<LeaveReviewModal onClose={vi.fn()} requestId={REQUEST_ID} />);
+    expect(screen.getByText("Days deducted: 1 day beyond the employee's leave credits")).toBeInTheDocument();
   });
 
   it("says when the request cannot be found", () => {

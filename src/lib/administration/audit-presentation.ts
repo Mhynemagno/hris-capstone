@@ -66,6 +66,8 @@ const entityLabels: Record<string, string> = {
   profile_change_requests: "Profile change request",
   promotion_criteria: "Promotion criteria",
   promotion_evaluations: "Promotion evaluation",
+  promotion_decisions: "Promotion decision",
+  physical_fitness_results: "PFT result",
   public_contacts: "Public contact",
 };
 

@@ -38,7 +38,7 @@ export const unitStationSchema = z.object({
 export const rankSchema = z.object({
   name: z.string().trim().min(2).max(160),
   code: z.string().trim().min(1).max(16),
-  sortOrder: z.coerce.number().int().min(1).max(10000),
+  sortOrder: z.coerce.number().int().min(0).max(10000),
   isActive: z.boolean().default(true),
 });
 

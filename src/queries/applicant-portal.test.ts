@@ -2,7 +2,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const applicantId = "323e4567-e89b-42d3-a456-426614174000";
 
-const mocks = vi.hoisted(() => ({ from: vi.fn(), rpc: vi.fn(), remove: vi.fn(), storageFrom: vi.fn() }));
+const mocks = vi.hoisted(() => ({ from: vi.fn(), rpc: vi.fn(), remove: vi.fn(), storageFrom: vi.fn(), createClient: vi.fn(), resetPasswordForEmail: vi.fn() }));
+
+vi.mock("@supabase/supabase-js", () => ({
+  createClient: (...args: unknown[]) => { mocks.createClient(...args); return { auth: { resetPasswordForEmail: mocks.resetPasswordForEmail } }; },
+}));
+vi.mock("@/lib/supabase/env", () => ({ getPublicSupabaseConfig: () => ({ url: "http://127.0.0.1:54321", publishableKey: "test-key" }) }));
 
 vi.mock("@/lib/supabase/client", () => ({
   createBrowserSupabaseClient: () => ({
@@ -12,7 +17,7 @@ vi.mock("@/lib/supabase/client", () => ({
   }),
 }));
 
-import { listHrRegisteredApplicants, listMyApplicationHistory, removeMyApplicantProfileDocument, saveMyApplicantEducation } from "./applicant-portal";
+import { listHrRegisteredApplicants, listMyApplicationHistory, reactivateApplicantAccount, removeMyApplicantProfileDocument, reopenApplicationForResubmission, saveMyApplicantEducation, sendApplicantCredentials } from "./applicant-portal";
 
 function tableMock(existing: { id: string; level: string }[]) {
   const writes: { op: string; payload?: unknown; id?: unknown }[] = [];
@@ -89,6 +94,40 @@ describe("listHrRegisteredApplicants", () => {
     mocks.rpc.mockResolvedValue({ data: [{ user_id: "u1", application_count: "0", latest_application_status: null }], error: null });
     await expect(listHrRegisteredApplicants()).resolves.toEqual([{ user_id: "u1", application_count: 0, latest_application_status: null }]);
     expect(mocks.rpc).toHaveBeenCalledWith("list_hr_registered_applicants");
+  });
+});
+
+describe("HR applicant account help", () => {
+  beforeEach(() => vi.resetAllMocks());
+
+  it("reactivates an applicant account through the HR RPC", async () => {
+    mocks.rpc.mockResolvedValue({ error: null });
+    await reactivateApplicantAccount("u1");
+    expect(mocks.rpc).toHaveBeenCalledWith("reactivate_applicant_account", { target_user_id: "u1" });
+  });
+
+  it("reopens a Not Selected application with a trimmed optional note", async () => {
+    mocks.rpc.mockResolvedValue({ error: null });
+    await reopenApplicationForResubmission("app-1", "  Upload a clearer diploma.  ");
+    expect(mocks.rpc).toHaveBeenCalledWith("reopen_application_for_resubmission", { target_application_id: "app-1", target_note: "Upload a clearer diploma." });
+    await reopenApplicationForResubmission("app-1");
+    expect(mocks.rpc).toHaveBeenLastCalledWith("reopen_application_for_resubmission", { target_application_id: "app-1", target_note: null });
+  });
+
+  it("emails new credentials as a password reset that opens the reset-password page, without persisting a session", async () => {
+    mocks.resetPasswordForEmail.mockResolvedValue({ error: null });
+    await sendApplicantCredentials("ana@example.test");
+    expect(mocks.createClient).toHaveBeenCalledWith("http://127.0.0.1:54321", "test-key", expect.objectContaining({ auth: expect.objectContaining({ persistSession: false, flowType: "implicit" }) }));
+    const [email, options] = mocks.resetPasswordForEmail.mock.calls[0]!;
+    expect(email).toBe("ana@example.test");
+    const redirect = new URL((options as { redirectTo: string }).redirectTo);
+    expect(redirect.pathname).toBe("/auth/callback");
+    expect(redirect.searchParams.get("next")).toBe("/reset-password");
+  });
+
+  it("reports a failed credentials email", async () => {
+    mocks.resetPasswordForEmail.mockResolvedValue({ error: { message: "rate limited" } });
+    await expect(sendApplicantCredentials("ana@example.test")).rejects.toThrow("We could not send new credentials. Please try again.");
   });
 });
 

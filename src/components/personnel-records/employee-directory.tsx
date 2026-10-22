@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { Eye, Pencil, Plus, SlidersHorizontal, Trash2, UserRound } from "lucide-react";
+import { Eye, Pencil, Plus, SlidersHorizontal, UserRound } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import { DeleteRecordDialog } from "@/components/deletion/delete-record-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
@@ -62,8 +61,6 @@ export function EmployeeDirectory() {
   const rankId = params.rank;
   const employmentStatus = params.status as Employee["employment_status"] | "";
   const page = Math.max(1, Number(params.page) || 1);
-  const [deleting, setDeleting] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
   const { data, error, isFetching, isLoading } = useEmployeeDirectory({
     search,
     departmentId: departmentId ? Number(departmentId) : undefined,
@@ -117,10 +114,10 @@ export function EmployeeDirectory() {
             rankId={rankId}
             rankPlaceholder="All ranks"
           />
-          <FormField htmlFor="employee-filter-status" label="Employment status">
+          <FormField htmlFor="employee-filter-status" label="Status">
             <NativeSelect id="employee-filter-status" onChange={(event) => set({ status: event.target.value })} value={employmentStatus}>
               <option value="">All statuses</option>
-              {(["active"] as const).map((status) => <option key={status} value={status}>{employmentStatusLabels[status]}</option>)}
+              {(["active", "retired"] as const).map((status) => <option key={status} value={status}>{employmentStatusLabels[status]}</option>)}
             </NativeSelect>
           </FormField>
           <div className="flex items-end">
@@ -132,7 +129,6 @@ export function EmployeeDirectory() {
           <p aria-live="polite">
             {isLoading || isFetching ? "Searching…" : total > rows.length ? `Showing ${rows.length} of ${total} records` : total === 1 ? "1 record" : `${total} records`}
           </p>
-          <p aria-live="polite" className="font-medium text-emerald-700 dark:text-emerald-400" role="status">{notice ?? ""}</p>
         </div>
 
         {isLoading ? <div className="p-4"><LoadingState label="Loading personnel records…" /></div> : error ? <div className="p-4"><ErrorState message={error.message} /></div> : (
@@ -175,15 +171,6 @@ export function EmployeeDirectory() {
                           <Link aria-label={`Edit record for ${name}`} className={cn(iconAction, "text-foreground hover:bg-muted")} href={`/hr/employees/${employee.id}?tab=official&mode=edit`} title="Edit">
                             <Pencil aria-hidden="true" className="size-[18px]" />
                           </Link>
-                          <button
-                            aria-label={`Delete record for ${name}`}
-                            className={cn(iconAction, "cursor-pointer text-destructive hover:bg-destructive/10")}
-                            onClick={() => { setNotice(null); setDeleting(employee.id); }}
-                            title="Delete"
-                            type="button"
-                          >
-                            <Trash2 aria-hidden="true" className="size-[18px]" />
-                          </button>
                         </div>
                       </Cell>
                     </tr>
@@ -203,14 +190,6 @@ export function EmployeeDirectory() {
         )}
         <Pagination from={rows.length ? (page - 1) * 10 + 1 : 0} noun="employees" onPageChange={(next) => set({ page: String(next) })} page={page} pageCount={Math.max(1, Math.ceil(total / 10))} to={Math.min(page * 10, total)} total={total} />
       </section>
-
-      <DeleteRecordDialog
-        entityId={deleting}
-        entityType="employee"
-        noun="personnel record"
-        onClose={() => setDeleting(null)}
-        onDeleted={() => setNotice("The personnel record was deleted successfully.")}
-      />
     </div>
   );
 }

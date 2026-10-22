@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { formatDate } from "../src/lib/format-date";
+import { recruitmentCycleEnd, recruitmentCycleOf } from "../src/lib/recruitment/recruitment-cycle";
 import { openLoginAndSignIn, signOutFromShell } from "./demo-accounts";
 
 // These journeys create and remove their own uniquely named records in the
@@ -236,7 +237,7 @@ test.describe("read-only and public journeys", () => {
     await page.goto("/hr/jobs/new");
     await page.getByLabel(/^Title/).fill(title);
     await page.getByLabel(/^Location/).fill("San Juan City Police Station");
-    await page.getByLabel(/^Deadline of Application/).fill("2099-12-31");
+    await page.getByLabel(/^Deadline of Application/).fill(recruitmentCycleEnd(recruitmentCycleOf(new Date())));
     await page.getByLabel(/^Description/).fill("An opening published by the end-to-end journey tests.");
     await page.getByLabel(/^Requirement 1: Education/).selectOption("Baccalaureate Degree");
     await page.getByLabel(/^Requirement 2: Eligibility/).selectOption("NAPOLCOM PNP Entrance Examination");

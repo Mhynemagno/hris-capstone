@@ -20,12 +20,12 @@ describe("StaffReports (reports.html)", () => {
   it("shows the six report cards", () => {
     render(<StaffReports />);
     expect(screen.getByRole("heading", { level: 1, name: "Reports & Analytics" })).toBeInTheDocument();
-    for (const title of ["Applicant Tracking", "Hiring Decisions", "Employee Performance", "Duty Deployments", "Attendance & Leave", "Promotion & Training Needs"]) {
+    for (const title of ["Applicant Tracking", "Hiring Decisions", "Employee Performance", "Duty Deployments", "Attendance", "Leave", "Promotion Evaluation", "Training Needs"]) {
       expect(screen.getByRole("heading", { name: title })).toBeInTheDocument();
     }
-    expect(screen.getAllByRole("button", { name: /^Generate/ })).toHaveLength(6);
+    expect(screen.getAllByRole("button", { name: /^Generate/ })).toHaveLength(8);
     expect(screen.getAllByText("Live data")).toHaveLength(2);
-    expect(screen.getByText("CY 2026 Cycle")).toBeInTheDocument();
+    expect(screen.getAllByText("CY 2026 Cycle")).toHaveLength(2);
   });
 
   it("generates a report with the chosen range, unit and format", async () => {
@@ -52,6 +52,13 @@ describe("StaffReports (reports.html)", () => {
     await userEvent.click(within(dialog).getByRole("button", { name: /Download Official Report/ }));
     expect(within(dialog).getByText("Start date must be on or before the end date.")).toBeInTheDocument();
     expect(mocks.push).not.toHaveBeenCalled();
+  });
+
+  it("offers downloadable formats without a direct print view", async () => {
+    render(<StaffReports />);
+    await userEvent.click(screen.getByRole("button", { name: "Generate Duty Deployments" }));
+    const dialog = await screen.findByRole("dialog", { name: "Duty Deployments Master Report" });
+    expect(within(dialog).queryByRole("option", { name: "Direct Print View" })).not.toBeInTheDocument();
   });
 
   it("exports the station masterlist as CSV", async () => {

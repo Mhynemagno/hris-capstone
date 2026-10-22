@@ -14,9 +14,8 @@ describe("station masterlist", () => {
 });
 
 describe("reportGenerateHref", () => {
-  it("uses the protected download endpoint for a PDF and keeps other formats in the report page", () => {
+  it("uses the protected download endpoint for a PDF and keeps CSV exports in the report page", () => {
     expect(reportGenerateHref("deployments", { from: "2026-10-01", to: "2026-10-11", departmentId: 3, format: "pdf" })).toBe("/api/reports/deployments.pdf?from=2026-10-01&to=2026-10-11&department=3");
     expect(reportGenerateHref("deployments", { from: "2026-10-01", to: "2026-10-11", departmentId: null, format: "csv" })).toBe("/reports/deployments?from=2026-10-01&to=2026-10-11&export=csv");
-    expect(reportGenerateHref("deployments", { from: "2026-10-01", to: "2026-10-11", departmentId: null, format: "print" })).toBe("/reports/deployments?from=2026-10-01&to=2026-10-11&print=1");
   });
 });
