@@ -74,7 +74,7 @@ export function HrDashboardOverview() {
   const today = manilaToday();
   const summary = useHrDashboard({ startsOn: daysBefore(today, 29), endsOn: today });
   const overview = useHrDashboardOverview();
-  // Personnel the system found qualified for their next rank, awaiting HR approval.
+  // Scored personnel (PDF promotion scorecard) still awaiting an HR decision.
   const forApproval = usePromotionCandidates({ page: 1, pageSize: 1, status: "for_approval" });
   const recentApplications = useRecentApplications();
   const deployments = useHrDeployments({ page: 1, pageSize: 5, activeEmployeesOnly: true });
@@ -132,10 +132,10 @@ export function HrDashboardOverview() {
                 <span className="rounded-full border border-amber-400/30 bg-amber-500/20 px-2.5 py-0.5 text-[10px] font-bold tracking-wider text-amber-300 uppercase">Promotion Notice</span>
                 <Award aria-hidden="true" className="size-5 text-amber-400" />
               </div>
-              <h3 className="text-sm font-bold text-white" id="promotion-notice-heading">Qualified for Promotion</h3>
-              <p className="text-xs leading-relaxed text-slate-300">{readyCount} personnel are qualified for promotion review this quarter.</p>
+              <h3 className="text-sm font-bold text-white" id="promotion-notice-heading">Promotion Scorecards</h3>
+              <p className="text-xs leading-relaxed text-slate-300">{readyCount} scored personnel are awaiting your promotion review.</p>
               <Link className="block w-full rounded-xl bg-amber-500 py-2 text-center text-xs font-bold text-slate-950 transition-colors hover:bg-amber-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300" href="/hr/promotions">
-                Review Endorsements
+                Review Scorecards
               </Link>
             </section>
           ) : null}

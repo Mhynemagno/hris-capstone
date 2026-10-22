@@ -11,7 +11,7 @@ import { useDecidePromotion } from "@/hooks/use-promotion-eligibility";
 
 export type PromotionDecisionTarget = { employeeId: string; employeeName: string; targetRankCode: string; approve: boolean };
 
-/** Approve or reject a system-qualified promotion. Rejection needs a reason; approval never changes the rank. */
+/** Approve or reject a scored promotion. Rejection needs a reason; approval never changes the rank. */
 export function PromotionDecisionDialog({ target, onClose, onDecided }: { target: PromotionDecisionTarget; onClose: () => void; onDecided?: () => void }) {
   const decide = useDecidePromotion();
   const [remarks, setRemarks] = useState("");
@@ -51,7 +51,7 @@ export function PromotionDecisionDialog({ target, onClose, onDecided }: { target
       <p className="text-slate-600">
         {approve
           ? "Approval records the decision and notifies the employee. It does not change the rank automatically; update the rank in the personnel record."
-          : "The employee is notified with your reason. Use this when requirements are lacking."}
+          : "The employee is notified with your reason."}
       </p>
       <div>
         <StaffLabel htmlFor="promotion-decision-remarks" required={!approve}>{approve ? "Remarks (optional)" : "Reason for rejection"}</StaffLabel>

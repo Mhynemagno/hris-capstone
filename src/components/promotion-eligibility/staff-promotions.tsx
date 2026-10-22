@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 
 import { PromotionDecisionDialog, type PromotionDecisionTarget } from "./promotion-decision-dialog";
 import { PromotionDetailsModal } from "./promotion-details-modal";
+import { eligibilityLabel, formatScore, hasUnassessedCriteria } from "./promotion-scorecard";
 import { RecordIperPftDialog } from "./record-iper-pft-dialog";
 
 const PAGE_SIZE = 10;
@@ -33,7 +34,7 @@ const STATUS_FILTERS: { value: "" | PromotionStatus; label: string }[] = [
   { value: "rejected", label: "Rejected" },
 ];
 
-/** Promotion Evaluation (Final Revisions PDF pp. 10–11): the system lists qualified personnel; HR approves or rejects. */
+/** Promotion Evaluation (Final Revisions PDF pp. 10–11, 17–20): every scorable employee ranked by PDF score; HR approves or rejects. */
 export function StaffPromotions() {
   const [criteria, setCriteria] = usePanelParam("criteria");
   const [view, setView] = usePanelParam("view");
@@ -54,7 +55,7 @@ export function StaffPromotions() {
           <button className={staffButton.secondary} onClick={() => setRecording(true)} type="button"><ClipboardCheck aria-hidden="true" className="size-3.5 text-blue-700" /><span>Record IPER / PFT</span></button>
           <button className={staffButton.dark} onClick={() => setCriteria("1")} type="button"><ListChecks aria-hidden="true" className="size-3.5 text-amber-400" /><span>Official policy matrix</span></button>
         </>}
-        subtitle="Personnel who meet the requirements for their next rank, evaluated automatically from their records."
+        subtitle="Every active uniformed employee from PCPL to PLTCOL, scored on the official 100-point promotion scorecard."
         title="Promotions Evaluation"
       />
 
@@ -65,7 +66,7 @@ export function StaffPromotions() {
         <div className="text-xs">
           <p className="font-bold text-amber-300">Promotion Board Guidelines</p>
           <p className="text-[11px] leading-relaxed text-slate-300">
-            The system lists personnel who meet the requirements for their next rank. HR approves or rejects; approval does not change the rank automatically.
+            Scores follow the fixed PDF matrices and have no pass mark. HR records the Promotion Board assessments, then approves or rejects; approval does not change the rank automatically.
           </p>
         </div>
       </div>
@@ -91,13 +92,15 @@ export function StaffPromotions() {
             <table className={staffTable.table}>
               <thead className={staffTable.thead}>
                 <tr className="border-b border-slate-100">
-                  {["Rank", "Name", "Target Rank", "Status"].map((heading) => <th className={staffTable.th} key={heading} scope="col">{heading}</th>)}
+                  {["Rank", "Name", "Target Rank", "Score", "Eligibility", "Status"].map((heading) => <th className={staffTable.th} key={heading} scope="col">{heading}</th>)}
                   <th className={cn(staffTable.th, "text-center")} scope="col">Actions</th>
                 </tr>
               </thead>
               <tbody className={staffTable.tbody}>
                 {rows.length ? rows.map((row) => {
                   const pill = PROMOTION_STATUS[row.status];
+                  const boardPending = hasUnassessedCriteria(row.evaluation);
+                  const eligibility = eligibilityLabel(row.evaluation);
                   return (
                     <tr className={staffTable.tr} key={row.employee_id}>
                       <td className={staffTable.td}><span className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-xs font-bold text-slate-700" title={row.rank_name}>{row.rank_code}</span></td>
@@ -111,6 +114,11 @@ export function StaffPromotions() {
                         </div>
                       </td>
                       <td className={staffTable.td}><span className="rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-800">{row.target_rank_code} — {row.target_rank_name}</span></td>
+                      <td className={staffTable.td}>
+                        <p className="font-mono text-sm font-extrabold text-slate-900">{formatScore(row.score ?? 0)} / {formatScore(row.maximum_score ?? 100)}</p>
+                        {boardPending ? <p className="text-[10px] font-semibold text-amber-700">Board assessment pending</p> : null}
+                      </td>
+                      <td className={cn(staffTable.td, "max-w-56 text-xs text-slate-700")}>{eligibility}</td>
                       <td className={staffTable.td}><StatusPill tone={pill.tone}>{pill.label}</StatusPill></td>
                       <td className={cn(staffTable.td, "text-center")}>
                         <div className="flex items-center justify-center gap-1.5">
@@ -119,10 +127,10 @@ export function StaffPromotions() {
                           </button>
                           {row.status === "for_approval" ? (
                             <>
-                              <button aria-label={`Approve promotion of ${row.employee_name} to ${row.target_rank_code}`} className="inline-flex items-center gap-1 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600" onClick={() => setDeciding({ employeeId: row.employee_id, employeeName: row.employee_name, targetRankCode: row.target_rank_code, approve: true })} type="button">
+                              <button aria-label={`Approve promotion of ${row.employee_name} to ${row.target_rank_code}`} className="inline-flex items-center gap-1 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 disabled:cursor-not-allowed disabled:opacity-50" disabled={boardPending} title={boardPending ? "Record the Promotion Board assessments first." : undefined} onClick={() => setDeciding({ employeeId: row.employee_id, employeeName: row.employee_name, targetRankCode: row.target_rank_code, approve: true })} type="button">
                                 <CircleCheck aria-hidden="true" className="size-3.5" />Approve
                               </button>
-                              <button aria-label={`Reject promotion of ${row.employee_name} to ${row.target_rank_code}`} className="inline-flex items-center gap-1 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-600" onClick={() => setDeciding({ employeeId: row.employee_id, employeeName: row.employee_name, targetRankCode: row.target_rank_code, approve: false })} type="button">
+                              <button aria-label={`Reject promotion of ${row.employee_name} to ${row.target_rank_code}`} className="inline-flex items-center gap-1 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-600 disabled:cursor-not-allowed disabled:opacity-50" disabled={boardPending} title={boardPending ? "Record the Promotion Board assessments first." : undefined} onClick={() => setDeciding({ employeeId: row.employee_id, employeeName: row.employee_name, targetRankCode: row.target_rank_code, approve: false })} type="button">
                                 <CircleX aria-hidden="true" className="size-3.5" />Reject
                               </button>
                             </>
@@ -131,7 +139,7 @@ export function StaffPromotions() {
                       </td>
                     </tr>
                   );
-                }) : <tr><td className="px-6 py-10 text-center text-xs text-slate-500" colSpan={5}>{search || status ? "No personnel match these filters." : "No personnel currently meet every requirement for their next rank."}</td></tr>}
+                }) : <tr><td className="px-6 py-10 text-center text-xs text-slate-500" colSpan={7}>{search || status ? "No personnel match these filters." : "No active uniformed personnel from PCPL to PLTCOL to score."}</td></tr>}
               </tbody>
             </table>
           </div>
@@ -144,7 +152,7 @@ export function StaffPromotions() {
         onClose={() => setCriteria(null)}
         open={criteria === "1"}
         size="xl"
-        subtitle="Fixed allocations transcribed from the approved promotion parameters, with the requirements the system checks for each next rank."
+        subtitle="Fixed allocations transcribed from the approved promotion parameters. HR cannot edit them."
         title="Official promotion policy matrix"
       >
         <PolicyMatrix />
@@ -182,8 +190,8 @@ function PolicyMatrix() {
         </section>
       ))}
       <section aria-labelledby="next-rank-requirements" className="border-t border-slate-200 pt-5">
-        <h3 className="text-sm font-bold text-slate-900" id="next-rank-requirements">Requirements checked for each next rank</h3>
-        <p className="mt-1 text-xs text-slate-600">Set by the system; HR does not post criteria. Every requirement must be on record for the employee to appear on the dashboard.</p>
+        <h3 className="text-sm font-bold text-slate-900" id="next-rank-requirements">Supporting readiness requirements for each next rank</h3>
+        <p className="mt-1 text-xs text-slate-600">Set by the system for reference. They do not change the 100-point score or who appears on the dashboard.</p>
         {requirements.isLoading ? <LoadingState label="Loading requirements…" /> : requirements.error ? <ErrorState message={requirements.error.message} /> : (
           <table className="mt-3 w-full text-left text-xs">
             <thead className="bg-slate-50 text-[10px] font-bold tracking-wide text-slate-500 uppercase"><tr><th className="px-3 py-2" scope="col">Target rank</th><th className="px-3 py-2" scope="col">Required training</th><th className="px-3 py-2" scope="col">Other requirements</th></tr></thead>

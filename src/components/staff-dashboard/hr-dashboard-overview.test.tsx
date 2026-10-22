@@ -80,9 +80,9 @@ describe("HrDashboardOverview (dashboard.html)", () => {
     render(<HrDashboardOverview />);
     expect(screen.getByText("2 Total Applicants")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /go to full attendance roster/i })).toHaveAttribute("href", "/hr/attendance");
-    expect(screen.getByRole("heading", { name: "Qualified for Promotion" })).toBeInTheDocument();
-    expect(screen.getByText("1 personnel are qualified for promotion review this quarter.")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /review endorsements/i })).toHaveAttribute("href", "/hr/promotions");
+    expect(screen.getByRole("heading", { name: "Promotion Scorecards" })).toBeInTheDocument();
+    expect(screen.getByText("1 scored personnel are awaiting your promotion review.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /review scorecards/i })).toHaveAttribute("href", "/hr/promotions");
     expect(screen.getByRole("heading", { name: "Recruitment Openings" })).toBeInTheDocument();
     expect(screen.getByText("Juan Dela Cruz")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /view all applications/i })).toHaveAttribute("href", "/hr/applications");
@@ -94,6 +94,6 @@ describe("HrDashboardOverview (dashboard.html)", () => {
   it("hides the Promotion Notice when nobody is ready", () => {
     state.forApproval = 0;
     render(<HrDashboardOverview />);
-    expect(screen.queryByText(/Promotion Endorsement/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Promotion Scorecards" })).not.toBeInTheDocument();
   });
 });

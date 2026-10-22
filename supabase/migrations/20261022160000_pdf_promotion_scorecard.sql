@@ -200,7 +200,7 @@ begin
   into eligibility_record
   from public.qualifications qualification
   where qualification.employee_id = employee_row.id
-  order by qualification.awarded_on desc, qualification.created_at desc
+  order by qualification.rating is null, qualification.awarded_on desc, qualification.created_at desc
   limit 1;
 
   return base || jsonb_build_object(
@@ -384,6 +384,10 @@ declare
   own_employee_id uuid := private.require_active_employee_self();
   evaluation jsonb := private.evaluate_promotion_scorecard(own_employee_id, current_date);
 begin
+  -- Employees see their points and assessment state, never HR's evidence summaries.
+  if jsonb_typeof(evaluation -> 'criteria') = 'array' then
+    evaluation := jsonb_set(evaluation, '{criteria}', (select jsonb_agg(criterion - 'evidence' order by ordinality) from jsonb_array_elements(evaluation -> 'criteria') with ordinality as rows(criterion, ordinality)));
+  end if;
   return jsonb_build_object(
     'evaluation', evaluation,
     'decision', case when jsonb_typeof(evaluation -> 'targetRank') = 'object' then private.promotion_decision_json(own_employee_id, (evaluation -> 'targetRank' ->> 'id')::bigint) end,

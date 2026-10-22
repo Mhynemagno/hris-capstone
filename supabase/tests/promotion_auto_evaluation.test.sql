@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(26);
+select extensions.plan(27);
 
 select extensions.has_table('public', 'promotion_rank_requirements', 'System-owned rank requirements exist');
 select extensions.has_table('public', 'promotion_decisions', 'HR promotion decisions exist');
@@ -114,6 +114,11 @@ select extensions.ok(
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000012202';
 select extensions.is(public.get_my_promotion_status() -> 'decision' ->> 'status', 'approved', 'The employee sees the HR decision');
+select extensions.ok(
+  not exists (select 1 from jsonb_array_elements(public.get_my_promotion_status() -> 'evaluation' -> 'criteria') criterion where criterion ? 'evidence')
+    and jsonb_array_length(public.get_my_promotion_status() -> 'evaluation' -> 'criteria') = 6,
+  'The employee sees every criterion score but none of the HR evidence'
+);
 select extensions.throws_ok($$select public.decide_promotion('00000000-0000-4000-8000-000000012212', false, 'Nope')$$, '42501', null, 'Employees cannot decide promotions');
 select extensions.throws_ok($$insert into public.promotion_rank_requirements (target_rank_id) values ((select id from public.ranks where code = 'PAT'))$$, '42501', null, 'Employees cannot write requirements');
 select extensions.throws_ok($$select public.create_promotion_criterion(2, 1, null, '[]'::jsonb)$$, '42501', null, 'Promotion criteria can no longer be created');
