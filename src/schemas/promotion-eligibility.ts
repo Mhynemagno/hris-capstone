@@ -100,7 +100,7 @@ export const promotionEvaluationResultSchema = z.object({
   band: z.enum(["PCPL-PMSG", "PSMS-PEMS", "PLT-PLTCOL"]).optional(),
   totalScore: z.number().finite().min(0).max(100).optional(),
   maximumScore: z.number().finite().positive().optional(),
-  criteria: z.array(z.object({ key: z.string(), label: z.string(), points: z.number().finite().min(0), maximumPoints: z.number().finite().positive(), state: z.enum(["calculated", "missing", "unassessed", "assessed"]), evidence: z.unknown() })).optional(),
+  criteria: z.array(z.object({ key: z.string(), label: z.string(), points: z.number().finite().min(0), maximumPoints: z.number().finite().positive(), state: z.enum(["calculated", "missing", "unassessed", "assessed"]), evidence: z.unknown().optional() })).optional(),
 });
 
 const decisionSummarySchema = z.object({

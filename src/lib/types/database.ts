@@ -638,7 +638,7 @@ export type PromotionEvaluationResult = {
   band?: "PCPL-PMSG" | "PSMS-PEMS" | "PLT-PLTCOL";
   totalScore?: number;
   maximumScore?: number;
-  criteria?: { key: string; label: string; points: number; maximumPoints: number; state: "calculated" | "missing" | "unassessed" | "assessed"; evidence: unknown }[];
+  criteria?: { key: string; label: string; points: number; maximumPoints: number; state: "calculated" | "missing" | "unassessed" | "assessed"; evidence?: unknown }[];
 };
 
 export type PromotionDecisionSummary = { id: string; status: "approved" | "rejected"; remarks: string | null; decidedAt: string; targetRankId: number };

@@ -47,4 +47,18 @@ describe("promotion schemas", () => {
     expect(parsed.totalScore).toBe(63.5);
     expect(parsed.criteria?.[0]).toMatchObject({ maximumPoints: 15, state: "unassessed" });
   });
+
+  it("accepts the employee's own scorecard, whose criteria omit HR evidence", () => {
+    const parsed = myPromotionStatusSchema.parse({
+      evaluation: {
+        employeeId, employeeName: "Cruz, Ana", employeeNumber: "1-23456", evaluatedOn: "2026-10-22", isUniformed: true,
+        currentRank: { id: 2, code: "PCPL", name: "Police Corporal" }, targetRank: { id: 3, code: "PSSG", name: "Police Staff Sergeant" },
+        band: "PCPL-PMSG", totalScore: 30, maximumScore: 100, eligibility: { record: null },
+        criteria: [{ key: "reputation", label: "Service reputation", points: 0, maximumPoints: 20, state: "unassessed" }],
+      },
+      decision: null,
+      history: [],
+    });
+    expect(parsed.evaluation.criteria?.[0]).not.toHaveProperty("evidence");
+  });
 });
