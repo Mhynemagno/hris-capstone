@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(18);
+select extensions.plan(19);
 
 select extensions.has_function('private', 'evaluate_promotion_scorecard', array['uuid', 'date'], 'The PDF scorecard evaluator exists');
 select extensions.has_table('public', 'promotion_assignment_records', 'Verified promotion assignment records exist');
@@ -82,6 +82,10 @@ set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000012311';
 select extensions.lives_ok(
   $$select public.record_promotion_assignment('00000000-0000-4000-8000-000000012302', 'administrative', null, current_date - 30, current_date, 'HR verified assignment')$$,
   'HR can record verified score evidence through the secured RPC'
+);
+select extensions.ok(
+  exists (select 1 from public.list_promotion_candidates_page('pdf corporal', null, 1, 100) where employee_id = '00000000-0000-4000-8000-000000012301'),
+  'The HR scorecard list includes an active uniformed employee even without legacy qualification gates'
 );
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000012312';
 select extensions.throws_ok(

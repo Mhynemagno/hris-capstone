@@ -18,6 +18,7 @@ import type { PromotionDecisionTarget } from "./promotion-decision-dialog";
 const NO_TARGET: Record<NonNullable<PromotionEvaluationResult["reason"]>, string> = {
   no_rank: "No rank is recorded for this employee, so there is no next rank to evaluate.",
   non_uniformed: "Non-Uniformed Personnel (NUP) are not on the uniformed promotion ladder.",
+  below_scored_rank: "This rank is not covered by the official promotion scorecards (PCPL to PLTCOL).",
   top_rank: "This employee already holds the highest rank on the promotion ladder.",
   inactive: "Only active personnel are evaluated for promotion.",
 };

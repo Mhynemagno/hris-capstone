@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { iperEntrySchema, myPromotionStatusSchema, pftEntrySchema, promotionCandidateFiltersSchema, promotionDecisionSchema } from "./promotion-eligibility";
+import { iperEntrySchema, myPromotionStatusSchema, pftEntrySchema, promotionCandidateFiltersSchema, promotionDecisionSchema, promotionEvaluationResultSchema } from "./promotion-eligibility";
 
 const employeeId = "123e4567-e89b-42d3-a456-426614174000";
 
@@ -35,5 +35,16 @@ describe("promotion schemas", () => {
     });
     expect(parsed.history).toEqual([]);
     expect(parsed.evaluation.reason).toBe("top_rank");
+  });
+
+  it("preserves PDF scorecard totals and unassessed criterion state", () => {
+    const parsed = promotionEvaluationResultSchema.parse({
+      employeeId, employeeName: "Cruz, Ana", employeeNumber: "1-23456", evaluatedOn: "2026-10-22", isUniformed: true,
+      currentRank: { id: 2, code: "PCPL", name: "Police Corporal" }, targetRank: { id: 3, code: "PSSG", name: "Police Staff Sergeant" },
+      band: "PCPL-PMSG", totalScore: 63.5, maximumScore: 100, eligibility: { record: { id: employeeId, name: "NAPOLCOM", rating: "84%", awardedOn: "2026-01-01", documentPath: null, documentName: null } },
+      criteria: [{ key: "board", label: "Interview", points: 0, maximumPoints: 15, state: "unassessed", evidence: null }],
+    });
+    expect(parsed.totalScore).toBe(63.5);
+    expect(parsed.criteria?.[0]).toMatchObject({ maximumPoints: 15, state: "unassessed" });
   });
 });

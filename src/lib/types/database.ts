@@ -624,7 +624,7 @@ export type PromotionEvaluationResult = {
   currentRank: PromotionRankRef | null;
   targetRank: PromotionRankRef | null;
   /** Why there is no target rank: no rank, NUP, top rank or not active. */
-  reason: "no_rank" | "non_uniformed" | "top_rank" | "inactive" | null;
+  reason: "no_rank" | "non_uniformed" | "below_scored_rank" | "top_rank" | "inactive" | null;
   rankSince?: string;
   timeInGradeMonths?: number;
   minimumTimeInGradeMonths?: number;
@@ -634,7 +634,11 @@ export type PromotionEvaluationResult = {
   pft?: { required: boolean; validityMonths: number; record: { id: string; result: "passed" | "failed" | "scored" | null; score: number | null; assessedOn: string } | null };
   requirements: { key: string; label: string; met: boolean }[];
   missingRequirements: string[];
-  isQualified: boolean;
+  isQualified?: boolean;
+  band?: "PCPL-PMSG" | "PSMS-PEMS" | "PLT-PLTCOL";
+  totalScore?: number;
+  maximumScore?: number;
+  criteria?: { key: string; label: string; points: number; maximumPoints: number; state: "calculated" | "missing" | "unassessed" | "assessed"; evidence: unknown }[];
 };
 
 export type PromotionDecisionSummary = { id: string; status: "approved" | "rejected"; remarks: string | null; decidedAt: string; targetRankId: number };
@@ -667,6 +671,11 @@ export type PromotionCandidateRow = {
   decision_id: string | null;
   remarks: string | null;
   decided_at: string | null;
+  score?: number;
+  maximum_score?: number;
+  band?: "PCPL-PMSG" | "PSMS-PEMS" | "PLT-PLTCOL";
+  eligibility_rating?: string | null;
+  evaluation?: PromotionEvaluationResult;
   total_count: number;
 };
 

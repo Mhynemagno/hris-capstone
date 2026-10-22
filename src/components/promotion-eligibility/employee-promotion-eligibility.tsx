@@ -21,6 +21,7 @@ const months = (value: number) => `${value} ${value === 1 ? "Mo" : "Mos"}`;
 const NO_TARGET: Record<NonNullable<PromotionEvaluationResult["reason"]>, string> = {
   no_rank: "No rank is recorded on your personnel file yet. Ask HR to update your record.",
   non_uniformed: "Non-Uniformed Personnel (NUP) are not on the uniformed promotion ladder.",
+  below_scored_rank: "Your rank is not covered by the official promotion scorecards (PCPL to PLTCOL).",
   top_rank: "You already hold the highest rank on the promotion ladder.",
   inactive: "Only active personnel are evaluated for promotion.",
 };

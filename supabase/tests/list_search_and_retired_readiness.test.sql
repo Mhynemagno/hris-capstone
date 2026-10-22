@@ -17,8 +17,8 @@ values (9920, 'Search Base Rank', 'SBR', 9920, true), (9921, 'Search Target Rank
 
 insert into public.employees (id, employee_number, first_name, middle_name, last_name, personal_email, rank_id, employment_started_on, employment_status)
 values
-  ('00000000-0000-4000-8000-000000003311', 'SRCH-001', 'Juan', 'Santos', 'Dela Cruz', 'srch1@example.test', 9920, '2015-01-01', 'active'),
-  ('00000000-0000-4000-8000-000000003312', 'SRCH-002', 'Maria', null, 'Retirado', 'srch2@example.test', 9920, '2015-01-01', 'active');
+  ('00000000-0000-4000-8000-000000003311', 'SRCH-001', 'Juan', 'Santos', 'Dela Cruz', 'srch1@example.test', (select id from public.ranks where code = 'PCPL'), '2015-01-01', 'active'),
+  ('00000000-0000-4000-8000-000000003312', 'SRCH-002', 'Maria', null, 'Retirado', 'srch2@example.test', (select id from public.ranks where code = 'PCPL'), '2015-01-01', 'active');
 
 insert into public.attendance_logs (employee_id, integration_id, source_event_id, external_employee_id, attendance_date, time_in, status, capture_method)
 values ('00000000-0000-4000-8000-000000003311', (select id from public.attendance_integration_settings where adapter_key = 'face_recognition'), 'search-test-1', 'SRCH-001', current_date, now(), 'incomplete', 'face_recognition');
@@ -35,7 +35,7 @@ select is(
   'Attendance search matches a full name across first and last name'
 );
 
--- Both employees meet every system requirement for the next rank (no HR criteria needed).
+-- Both employees are active PCPLs, so both have a PDF scorecard regardless of supporting records.
 reset role;
 insert into public.qualifications (employee_id, name, institution, awarded_on)
 select id, 'NAPOLCOM PNP Entrance Examination', 'National Police Commission (NAPOLCOM)', '2014-06-01'

@@ -43,7 +43,7 @@ create table public.promotion_board_assessments (
   score numeric(5,2) not null check (score >= 0),
   evidence text not null check (evidence = btrim(evidence) and char_length(evidence) between 1 and 2000),
   recorded_by_user_id uuid references public.profiles(id) on delete set null,
-  created_at timestamptz not null default now(),
+  created_at timestamptz not null default clock_timestamp(),
   check ((band = 'PCPL-PMSG' and ((criterion = 'board' and score <= 15) or (criterion = 'reputation' and score <= 20))) or (band in ('PSMS-PEMS', 'PLT-PLTCOL') and ((criterion = 'board' and score <= 10) or (criterion = 'reputation' and score <= 25))))
 );
 create index promotion_board_assessments_employee_band_idx on public.promotion_board_assessments (employee_id, band, criterion, assessed_on desc);
@@ -97,26 +97,34 @@ declare
   board_record jsonb;
   reputation_record jsonb;
   iper_ratings text[];
+  base jsonb;
 begin
   select * into employee_row from public.employees where id = target_employee_id;
   if employee_row.id is null then return null; end if;
   select * into current_rank from public.ranks where id = employee_row.rank_id;
+  base := jsonb_build_object(
+    'employeeId', employee_row.id,
+    'employeeName', concat_ws(', ', employee_row.last_name, employee_row.first_name),
+    'employeeNumber', employee_row.employee_number,
+    'evaluatedOn', on_date,
+    'isUniformed', current_rank.id is not null and current_rank.code <> 'NUP'
+  );
   if employee_row.employment_status <> 'active' then
-    return jsonb_build_object('employeeId', employee_row.id, 'evaluatedOn', on_date, 'currentRank', null, 'targetRank', null, 'reason', 'inactive');
+    return base || jsonb_build_object('currentRank', null, 'targetRank', null, 'reason', 'inactive');
   end if;
   if current_rank.id is null then
-    return jsonb_build_object('employeeId', employee_row.id, 'evaluatedOn', on_date, 'currentRank', null, 'targetRank', null, 'reason', 'no_rank');
+    return base || jsonb_build_object('currentRank', null, 'targetRank', null, 'reason', 'no_rank');
   end if;
   if current_rank.code = 'NUP' then
-    return jsonb_build_object('employeeId', employee_row.id, 'evaluatedOn', on_date, 'currentRank', jsonb_build_object('id', current_rank.id, 'code', current_rank.code, 'name', current_rank.name), 'targetRank', null, 'reason', 'non_uniformed');
+    return base || jsonb_build_object('currentRank', jsonb_build_object('id', current_rank.id, 'code', current_rank.code, 'name', current_rank.name), 'targetRank', null, 'reason', 'non_uniformed');
   end if;
   scorecard_band := private.promotion_scorecard_band(current_rank.code);
   if scorecard_band is null then
-    return jsonb_build_object('employeeId', employee_row.id, 'evaluatedOn', on_date, 'currentRank', jsonb_build_object('id', current_rank.id, 'code', current_rank.code, 'name', current_rank.name), 'targetRank', null, 'reason', 'below_scored_rank');
+    return base || jsonb_build_object('currentRank', jsonb_build_object('id', current_rank.id, 'code', current_rank.code, 'name', current_rank.name), 'targetRank', null, 'reason', 'below_scored_rank');
   end if;
   select * into target_rank from public.ranks where id = private.next_promotion_rank(current_rank.id);
   if target_rank.id is null then
-    return jsonb_build_object('employeeId', employee_row.id, 'evaluatedOn', on_date, 'currentRank', jsonb_build_object('id', current_rank.id, 'code', current_rank.code, 'name', current_rank.name), 'targetRank', null, 'reason', 'top_rank');
+    return base || jsonb_build_object('currentRank', jsonb_build_object('id', current_rank.id, 'code', current_rank.code, 'name', current_rank.name), 'targetRank', null, 'reason', 'top_rank');
   end if;
 
   select min(history.started_on) into rank_since
@@ -188,16 +196,15 @@ begin
     jsonb_build_object('key', 'board', 'label', case when scorecard_band = 'PCPL-PMSG' then 'Interview' else 'Competence to assume position / leadership experience' end, 'points', board_points, 'maximumPoints', allocation -> 'board', 'state', case when board_record is null then 'unassessed' else 'assessed' end, 'evidence', coalesce(board_record, 'null'::jsonb)),
     jsonb_build_object('key', 'reputation', 'label', 'Service reputation', 'points', reputation_points, 'maximumPoints', allocation -> 'reputation', 'state', case when reputation_record is null then 'unassessed' else 'assessed' end, 'evidence', coalesce(reputation_record, 'null'::jsonb))
   );
-  select jsonb_build_object('id', qualification.id, 'name', qualification.name, 'rating', to_jsonb(qualification) ->> 'rating', 'awardedOn', qualification.awarded_on)
+  select jsonb_build_object('id', qualification.id, 'name', qualification.name, 'rating', qualification.rating::text, 'awardedOn', qualification.awarded_on, 'documentPath', qualification.document_path, 'documentName', qualification.document_name)
   into eligibility_record
   from public.qualifications qualification
   where qualification.employee_id = employee_row.id
   order by qualification.awarded_on desc, qualification.created_at desc
   limit 1;
 
-  return jsonb_build_object(
-    'employeeId', employee_row.id, 'evaluatedOn', on_date,
-    'band', scorecard_band, 'totalScore', seniority_points + assignment_points + award_points + iper_points + board_points + reputation_points, 'maximumScore', 100,
+  return base || jsonb_build_object(
+    'band', scorecard_band, 'totalScore', trim_scale(seniority_points + assignment_points + award_points + iper_points + board_points + reputation_points), 'maximumScore', 100,
     'criteria', criteria,
     'eligibility', jsonb_build_object('record', eligibility_record),
     'currentRank', jsonb_build_object('id', current_rank.id, 'code', current_rank.code, 'name', current_rank.name),
@@ -293,3 +300,187 @@ $$;
 
 revoke all on function public.record_promotion_assignment(uuid, text, text, date, date, text), public.record_promotion_award(uuid, text, date, bigint, text), public.record_promotion_board_assessment(uuid, text, text, date, numeric, text) from public, anon;
 grant execute on function public.record_promotion_assignment(uuid, text, text, date, date, text), public.record_promotion_award(uuid, text, date, bigint, text), public.record_promotion_board_assessment(uuid, text, text, date, numeric, text) to authenticated, service_role;
+
+drop function public.list_promotion_candidates_page(text, text, integer, integer, uuid);
+create function public.list_promotion_candidates_page(
+  target_search text default null,
+  target_status text default null,
+  target_page integer default 1,
+  target_page_size integer default 25,
+  target_employee_id uuid default null
+)
+returns table (
+  employee_id uuid, employee_name text, employee_number text, rank_id bigint, rank_code text, rank_name text,
+  target_rank_id bigint, target_rank_code text, target_rank_name text, status text, decision_id uuid, remarks text,
+  decided_at timestamptz, score numeric, maximum_score numeric, band text, eligibility_rating text, evaluation jsonb, total_count bigint
+)
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare
+  safe_page integer := greatest(coalesce(target_page, 1), 1);
+  safe_page_size integer := least(greatest(coalesce(target_page_size, 25), 1), 100);
+  terms text[] := (select coalesce(array_agg(term), '{}') from (select term from regexp_split_to_table(lower(btrim(coalesce(target_search, ''))), '\s+') term where term <> '' limit 6) words);
+begin
+  perform private.require_active_hr();
+  if target_status is not null and target_status not in ('for_approval', 'approved', 'rejected') then raise exception 'Unknown promotion status.' using errcode = '22023'; end if;
+  return query
+  with scored as (
+    select employee.id, employee.employee_number, concat_ws(', ', employee.last_name, employee.first_name) as full_name,
+      current_rank.id as current_rank_id, current_rank.code as current_rank_code, current_rank.name as current_rank_name,
+      target_rank.id as next_rank_id, target_rank.code as next_rank_code, target_rank.name as next_rank_name,
+      private.evaluate_promotion_scorecard(employee.id, current_date) as scorecard,
+      lower(concat_ws(' ', public.search_text(employee), current_rank.code, current_rank.name, target_rank.code, target_rank.name)) as haystack
+    from public.employees employee
+    join public.ranks current_rank on current_rank.id = employee.rank_id and current_rank.code <> 'NUP'
+    join public.ranks target_rank on target_rank.id = private.next_promotion_rank(current_rank.id)
+    where employee.employment_status = 'active' and (target_employee_id is null or employee.id = target_employee_id)
+  ), listed as (
+    select scored.*, decision.id as row_decision_id, coalesce(decision.status, 'for_approval') as row_status, decision.remarks as decision_remarks, decision.decided_at as decision_decided_at
+    from scored
+    left join public.promotion_decisions decision on decision.employee_id = scored.id and decision.target_rank_id = scored.next_rank_id
+    where scorecard ->> 'reason' is null and not exists (select 1 from unnest(terms) term where strpos(scored.haystack, term) = 0)
+  )
+  select listed.id, listed.full_name, listed.employee_number, listed.current_rank_id, listed.current_rank_code, listed.current_rank_name,
+    listed.next_rank_id, listed.next_rank_code, listed.next_rank_name, listed.row_status, listed.row_decision_id, listed.decision_remarks,
+    listed.decision_decided_at, (listed.scorecard ->> 'totalScore')::numeric, (listed.scorecard ->> 'maximumScore')::numeric,
+    listed.scorecard ->> 'band', listed.scorecard -> 'eligibility' -> 'record' ->> 'rating', listed.scorecard, count(*) over()
+  from listed
+  where target_status is null or listed.row_status = target_status
+  order by (listed.scorecard ->> 'totalScore')::numeric desc, listed.full_name, listed.id
+  offset (safe_page - 1) * safe_page_size limit safe_page_size;
+end;
+$$;
+revoke all on function public.list_promotion_candidates_page(text, text, integer, integer, uuid) from public, anon;
+grant execute on function public.list_promotion_candidates_page(text, text, integer, integer, uuid) to authenticated, service_role;
+
+create or replace function public.get_promotion_evaluation(target_employee_id uuid)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare
+  evaluation jsonb;
+begin
+  perform private.require_active_hr();
+  evaluation := private.evaluate_promotion_scorecard(target_employee_id, current_date);
+  if evaluation is null then return null; end if;
+  return jsonb_build_object('evaluation', evaluation, 'decision', case when jsonb_typeof(evaluation -> 'targetRank') = 'object' then private.promotion_decision_json(target_employee_id, (evaluation -> 'targetRank' ->> 'id')::bigint) end);
+end;
+$$;
+
+create or replace function public.get_my_promotion_status()
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare
+  own_employee_id uuid := private.require_active_employee_self();
+  evaluation jsonb := private.evaluate_promotion_scorecard(own_employee_id, current_date);
+begin
+  return jsonb_build_object(
+    'evaluation', evaluation,
+    'decision', case when jsonb_typeof(evaluation -> 'targetRank') = 'object' then private.promotion_decision_json(own_employee_id, (evaluation -> 'targetRank' ->> 'id')::bigint) end,
+    'history', coalesce((select jsonb_agg(jsonb_build_object('id', decision.id, 'status', decision.status, 'remarks', decision.remarks, 'decidedAt', decision.decided_at, 'targetRankCode', rank.code, 'targetRankName', rank.name) order by decision.decided_at desc) from public.promotion_decisions decision join public.ranks rank on rank.id = decision.target_rank_id where decision.employee_id = own_employee_id), '[]'::jsonb)
+  );
+end;
+$$;
+
+-- HR decisions snapshot the PDF scorecard. The PDF defines no pass mark, so a decision is gated only on
+-- the Promotion Board assessments the policy requires; approval never changes employees.rank_id.
+create or replace function public.decide_promotion(target_employee_id uuid, target_approve boolean, target_remarks text default null)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  caller_id uuid := private.require_active_hr();
+  clean_remarks text := nullif(btrim(coalesce(target_remarks, '')), '');
+  evaluation jsonb;
+  target_rank_value bigint;
+  employee_row public.employees%rowtype;
+  decision_id uuid;
+  decision_status text := case when target_approve then 'approved' else 'rejected' end;
+begin
+  if target_approve is null then raise exception 'Choose approve or reject.' using errcode = '22023'; end if;
+  if clean_remarks is not null and char_length(clean_remarks) > 2000 then raise exception 'Remarks must be at most 2000 characters.' using errcode = '22023'; end if;
+  if not target_approve and clean_remarks is null then raise exception 'Enter the reason for rejecting this promotion.' using errcode = '22023'; end if;
+
+  select * into employee_row from public.employees where id = target_employee_id for update;
+  if employee_row.id is null then raise exception 'Employee was not found.' using errcode = 'P0001'; end if;
+  evaluation := private.evaluate_promotion_scorecard(target_employee_id, current_date);
+  if evaluation ->> 'reason' is not null or jsonb_typeof(evaluation -> 'targetRank') is distinct from 'object' then
+    raise exception 'This employee is not evaluated on a PDF promotion scorecard.' using errcode = 'P0001';
+  end if;
+  target_rank_value := (evaluation -> 'targetRank' ->> 'id')::bigint;
+  if exists (select 1 from public.promotion_decisions where employee_id = target_employee_id and target_rank_id = target_rank_value) then
+    raise exception 'A decision for this promotion was already recorded.' using errcode = '23505';
+  end if;
+  if exists (select 1 from jsonb_array_elements(evaluation -> 'criteria') criterion where criterion ->> 'state' = 'unassessed') then
+    raise exception 'Record the Promotion Board assessments before deciding this promotion.' using errcode = 'P0001';
+  end if;
+
+  insert into public.promotion_decisions (employee_id, from_rank_id, target_rank_id, status, remarks, evaluation_snapshot, decided_by_user_id)
+  values (target_employee_id, employee_row.rank_id, target_rank_value, decision_status, clean_remarks, evaluation, caller_id)
+  returning id into decision_id;
+
+  insert into public.audit_logs (actor_user_id, entity_type, entity_id, action, metadata)
+  values (caller_id, 'promotion_decisions', decision_id::text, decision_status, jsonb_build_object('employee_id', target_employee_id, 'from_rank_id', employee_row.rank_id, 'target_rank_id', target_rank_value, 'score', evaluation -> 'totalScore'));
+
+  if employee_row.profile_id is not null then
+    insert into public.notifications (recipient_user_id, type, title, body, link)
+    values (
+      employee_row.profile_id,
+      'promotion_decision',
+      case when target_approve then 'Promotion approved' else 'Promotion not approved' end,
+      case when target_approve
+        then 'HR approved your promotion to ' || (evaluation -> 'targetRank' ->> 'name') || '. Your rank is updated once HR records it in your personnel file.'
+        else 'HR did not approve your promotion to ' || (evaluation -> 'targetRank' ->> 'name') || '. Reason: ' || left(clean_remarks, 1500)
+      end,
+      '/employee/promotion-eligibility'
+    );
+  end if;
+  return decision_id;
+end;
+$$;
+
+-- The Promotion Evaluation report lists the same scorecards as the HR dashboard; every other report
+-- key keeps the operational implementation.
+alter function private.get_hr_report(text, date, date, bigint, text, integer, integer) rename to get_hr_report_operational;
+
+create or replace function private.get_hr_report(target_report_key text, target_starts_on date, target_ends_on date, target_department_id bigint, target_status text, target_page integer, target_page_size integer)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare result jsonb; page_offset integer := (target_page - 1) * target_page_size;
+begin
+  if target_report_key is distinct from 'promotion-evaluation' then
+    return private.get_hr_report_operational(target_report_key, target_starts_on, target_ends_on, target_department_id, target_status, target_page, target_page_size);
+  end if;
+  perform private.require_active_reporting_role(array['hr_personnel'::public.app_role]);
+  perform private.validate_reporting_range(target_starts_on, target_ends_on, target_page, target_page_size);
+  with scored as (
+    select e.id, concat_ws(' ', e.first_name, e.last_name) employee, private.evaluate_promotion_scorecard(e.id, current_date) scorecard
+    from public.employees e
+    where e.employment_status = 'active' and (target_department_id is null or e.department_id = target_department_id)
+  ), filtered as (
+    select scored.*, coalesce(d.status, 'for_approval') status
+    from scored
+    left join public.promotion_decisions d on d.employee_id = scored.id and d.target_rank_id = (scored.scorecard -> 'targetRank' ->> 'id')::bigint
+    where scored.scorecard ->> 'reason' is null and (target_status is null or coalesce(d.status, 'for_approval') = target_status)
+  ), paged as (
+    select * from filtered order by (scorecard ->> 'totalScore')::numeric desc, employee, id limit target_page_size offset page_offset
+  )
+  select jsonb_build_object('reportKey', target_report_key, 'title', 'Promotion Evaluation', 'generatedAt', now(),
+    'columns', jsonb_build_array(jsonb_build_object('key', 'rank', 'label', 'Rank'), jsonb_build_object('key', 'employee', 'label', 'Name'), jsonb_build_object('key', 'targetRank', 'label', 'Target Rank'), jsonb_build_object('key', 'score', 'label', 'Score'), jsonb_build_object('key', 'eligibility', 'label', 'Eligibility'), jsonb_build_object('key', 'status', 'label', 'Status')),
+    'rows', coalesce((select jsonb_agg(jsonb_build_object('rank', scorecard -> 'currentRank' ->> 'code', 'employee', employee, 'targetRank', scorecard -> 'targetRank' ->> 'code', 'score', trim_scale((scorecard ->> 'totalScore')::numeric)::text || ' / ' || (scorecard ->> 'maximumScore'), 'eligibility', coalesce(scorecard -> 'eligibility' -> 'record' ->> 'name', 'None on record'), 'status', status) order by (scorecard ->> 'totalScore')::numeric desc, employee, id) from paged), '[]'::jsonb),
+    'totalCount', (select count(*) from filtered), 'page', target_page, 'pageSize', target_page_size) into result;
+  return result;
+end $$;
+
+revoke all on function private.get_hr_report_operational(text, date, date, bigint, text, integer, integer), private.get_hr_report(text, date, date, bigint, text, integer, integer) from public, anon, authenticated;

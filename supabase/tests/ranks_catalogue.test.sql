@@ -35,7 +35,7 @@ select throws_ok(
 
 select is(
   (select count(*)::int from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-    where n.nspname in ('public', 'private', 'reporting') and p.prosrc ~* 'position'),
+    where n.nspname in ('public', 'private', 'reporting') and regexp_replace(p.prosrc, 'Competence to assume position', '', 'g') ~* 'position'),
   0, 'no function body still mentions position'
 );
 

@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(25);
+select extensions.plan(26);
 
 select extensions.has_table('public', 'promotion_rank_requirements', 'System-owned rank requirements exist');
 select extensions.has_table('public', 'promotion_decisions', 'HR promotion decisions exist');
@@ -34,7 +34,7 @@ where not exists (select 1 from public.ranks where code = 'NUP');
 
 insert into public.employees (id, profile_id, employee_number, first_name, last_name, personal_email, rank_id, employment_started_on)
 values
-  ('00000000-0000-4000-8000-000000012211', '00000000-0000-4000-8000-000000012202', 'AUTO-READY', 'Ready', 'Patrolman', 'promo-auto-ready@example.test', (select id from public.ranks where code = 'PAT'), (current_date - interval '4 years')::date),
+  ('00000000-0000-4000-8000-000000012211', '00000000-0000-4000-8000-000000012202', 'AUTO-READY', 'Ready', 'Corporal', 'promo-auto-ready@example.test', (select id from public.ranks where code = 'PCPL'), (current_date - interval '4 years')::date),
   ('00000000-0000-4000-8000-000000012212', '00000000-0000-4000-8000-000000012203', 'AUTO-MISS', 'Missing', 'Training', 'promo-auto-missing@example.test', (select id from public.ranks where code = 'PAT'), (current_date - interval '4 years')::date),
   ('00000000-0000-4000-8000-000000012213', null, '12345678', 'Civilian', 'Staff', 'promo-auto-nup@example.test', (select id from public.ranks where code = 'NUP'), (current_date - interval '10 years')::date);
 
@@ -59,28 +59,31 @@ select extensions.throws_ok($$select public.record_iper_rating('00000000-0000-40
 select extensions.is(
   (select status from public.list_promotion_candidates_page(null, null, 1, 100) where employee_id = '00000000-0000-4000-8000-000000012211'),
   'for_approval',
-  'A qualified PAT is listed for approval without any HR criteria'
+  'An active PCPL is listed for approval with its PDF scorecard'
 );
 select extensions.is(
   (select target_rank_code from public.list_promotion_candidates_page('auto-ready', null, 1, 100)),
-  'PCPL',
+  'PSSG',
   'The target rank is the next rank by sort order'
 );
 select extensions.is(
   (select count(*)::integer from public.list_promotion_candidates_page(null, null, 1, 100) where employee_id = '00000000-0000-4000-8000-000000012212'),
   0,
-  'A PAT missing the required training is not listed'
+  'A PAT is outside the PDF scorecard bands and is not listed'
 );
-select extensions.ok(
-  (public.get_promotion_evaluation('00000000-0000-4000-8000-000000012212') -> 'evaluation' -> 'missingRequirements') ? 'Training: Public Safety Junior Leadership Course (PSJLC)',
-  'The evaluation names the missing training'
+select extensions.is(
+  public.get_promotion_evaluation('00000000-0000-4000-8000-000000012212') -> 'evaluation' ->> 'reason',
+  'below_scored_rank',
+  'The PAT evaluation explains why it is not scored'
 );
 select extensions.is(
   (select count(*)::integer from public.list_promotion_candidates_page(null, null, 1, 100) where employee_id = '00000000-0000-4000-8000-000000012213'),
   0,
   'NUP is never listed'
 );
-select extensions.throws_ok($$select public.decide_promotion('00000000-0000-4000-8000-000000012212', true, null)$$, 'P0001', null, 'HR cannot approve an unqualified employee');
+select extensions.throws_ok($$select public.decide_promotion('00000000-0000-4000-8000-000000012211', true, null)$$, 'P0001', null, 'HR cannot decide before the Promotion Board assessments are recorded');
+select public.record_promotion_board_assessment('00000000-0000-4000-8000-000000012211', 'board', 'PCPL-PMSG', current_date, 12, 'Panel interview sheet');
+select public.record_promotion_board_assessment('00000000-0000-4000-8000-000000012211', 'reputation', 'PCPL-PMSG', current_date, 18, 'Records review');
 select extensions.throws_ok($$select public.decide_promotion('00000000-0000-4000-8000-000000012211', false, '  ')$$, '22023', null, 'Rejection needs a reason');
 select extensions.lives_ok($$select public.decide_promotion('00000000-0000-4000-8000-000000012211', true, 'Board approved')$$, 'HR approves a qualified employee');
 select extensions.is(
@@ -98,8 +101,14 @@ select extensions.is(
 );
 select extensions.is(
   (select code from public.ranks where id = (select rank_id from public.employees where id = '00000000-0000-4000-8000-000000012211')),
-  'PAT',
+  'PCPL',
   'Approval does not change the rank automatically'
+);
+select public.record_promotion_board_assessment('00000000-0000-4000-8000-000000012211', 'board', 'PCPL-PMSG', current_date, 15, 'Corrected panel sheet');
+select extensions.ok(
+  (select (evaluation_snapshot ->> 'totalScore')::numeric from public.promotion_decisions where employee_id = '00000000-0000-4000-8000-000000012211')
+    < (private.evaluate_promotion_scorecard('00000000-0000-4000-8000-000000012211', current_date) ->> 'totalScore')::numeric,
+  'A later evidence correction changes the live score but not the decision snapshot'
 );
 
 set local role authenticated;

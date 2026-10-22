@@ -63,7 +63,7 @@ export const promotionEvaluationResultSchema = z.object({
   isUniformed: z.boolean(),
   currentRank: rankRefSchema.nullable(),
   targetRank: rankRefSchema.nullable(),
-  reason: z.enum(["no_rank", "non_uniformed", "top_rank", "inactive"]).nullable().optional().default(null),
+  reason: z.enum(["no_rank", "non_uniformed", "below_scored_rank", "top_rank", "inactive"]).nullable().optional().default(null),
   rankSince: z.string().optional(),
   timeInGradeMonths: z.number().int().optional(),
   minimumTimeInGradeMonths: z.number().int().optional(),
@@ -81,7 +81,7 @@ export const promotionEvaluationResultSchema = z.object({
     }).nullable(),
   })).optional(),
   eligibility: z.object({
-    required: z.boolean(),
+    required: z.boolean().optional(),
     record: z.object({ id: uuidSchema, name: z.string(), rating: z.string().nullable(), awardedOn: z.string(), documentPath: z.string().nullable(), documentName: z.string().nullable() }).nullable(),
   }).optional(),
   iper: z.object({
@@ -94,9 +94,13 @@ export const promotionEvaluationResultSchema = z.object({
     validityMonths: z.number().int(),
     record: z.object({ id: uuidSchema, result: z.enum(["passed", "failed", "scored"]).nullable(), score: z.number().nullable(), assessedOn: z.string() }).nullable(),
   }).optional(),
-  requirements: z.array(z.object({ key: z.string(), label: z.string(), met: z.boolean() })),
-  missingRequirements: z.array(z.string()),
-  isQualified: z.boolean(),
+  requirements: z.array(z.object({ key: z.string(), label: z.string(), met: z.boolean() })).optional().default([]),
+  missingRequirements: z.array(z.string()).optional().default([]),
+  isQualified: z.boolean().optional(),
+  band: z.enum(["PCPL-PMSG", "PSMS-PEMS", "PLT-PLTCOL"]).optional(),
+  totalScore: z.number().finite().min(0).max(100).optional(),
+  maximumScore: z.number().finite().positive().optional(),
+  criteria: z.array(z.object({ key: z.string(), label: z.string(), points: z.number().finite().min(0), maximumPoints: z.number().finite().positive(), state: z.enum(["calculated", "missing", "unassessed", "assessed"]), evidence: z.unknown() })).optional(),
 });
 
 const decisionSummarySchema = z.object({
