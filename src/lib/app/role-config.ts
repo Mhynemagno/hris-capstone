@@ -81,6 +81,7 @@ export const ROLE_CONFIG: Record<AppRole, RoleConfig> = {
       { href: "/hr/deployments", label: "Deployments", icon: "MapPinned", group: "Personnel" },
       { href: "/hr/leave-requests", label: "Leave", icon: "CalendarCheck", group: "Personnel", badge: "leaveForApproval" },
       { href: "/hr/promotions", label: "Promotion", icon: "Award", group: "Personnel" },
+      { href: "/hr/profile-requests", label: "Profile Change Requests", icon: "UserPen", group: "Personnel", badge: "profileChangesPending" },
       { href: "/hr/attendance", label: "Daily Attendance Logs", icon: "Clock", group: "Attendance & DTR" },
       { href: "/reports", label: "HR Audit & Reports", icon: "FileText", group: "Reports" },
       { href: "/hr/public-site", label: "Announcements", icon: "Megaphone", group: "Public Site" },

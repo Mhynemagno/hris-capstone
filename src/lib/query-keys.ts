@@ -94,11 +94,11 @@ export const queryKeys = {
     detail: (deploymentId: string) => ["deployment-tracking", "detail", deploymentId] as const,
   },
   promotionEligibility: {
-    criteria: (filters: Record<string, unknown> = {}) => ["promotion-eligibility", "criteria", filters] as const,
-    hrDirectory: (filters: Record<string, unknown>) => ["promotion-eligibility", "hr-directory", filters] as const,
-    hrEmployee: (employeeId: string) => ["promotion-eligibility", "hr-employee", employeeId] as const,
+    candidates: (filters: Record<string, unknown>) => ["promotion-eligibility", "candidates", filters] as const,
+    evaluation: (employeeId: string) => ["promotion-eligibility", "evaluation", employeeId] as const,
+    employees: () => ["promotion-eligibility", "employees"] as const,
+    requirements: () => ["promotion-eligibility", "requirements"] as const,
     mine: () => ["promotion-eligibility", "mine"] as const,
-    readiness: (scope: string | Record<string, unknown> = "all") => ["promotion-eligibility", "readiness", scope] as const,
   },
   attendanceIntegration: {
     hrLogs: (filters: Record<string, unknown>) => ["attendance-integration", "hr-logs", filters] as const,

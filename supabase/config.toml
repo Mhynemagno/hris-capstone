@@ -256,6 +256,14 @@ otp_expiry = 3600
 subject = "Confirm Your Email Address"
 content_path = "./supabase/templates/confirmation.html"
 
+# Password reset and HR "Send new credentials" (applicant roster). Like the confirmation email, the
+# token_hash link is verified by /auth/callback in any browser, so a reset that HR sends from its own
+# browser still works for the applicant. Paste the same file into the hosted project's
+# Authentication > Email Templates > Reset password.
+[auth.email.template.recovery]
+subject = "Set a New Password"
+content_path = "./supabase/templates/recovery.html"
+
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]
 # enabled = true

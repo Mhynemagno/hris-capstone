@@ -10,6 +10,7 @@ vi.mock("@/hooks/use-personnel-records", () => ({
   useEmployeeForCurrentUser: () => state.employee,
   usePersonnelEntries: (kind: string, employeeId: string) => (employeeId ? state.entries[kind] ?? { data: [] } : { data: undefined }),
   useEmployeeProfilePhotoUrl: () => ({ data: null }),
+  useEmployeeTimeInGrade: () => ({ isLoading: false, data: "2021-07-01" }),
   useRemoveMyEmployeeProfilePhoto: () => ({ isPending: false, mutateAsync: vi.fn() }),
   useReplaceMyEmployeeProfilePhoto: () => ({ isPending: false, mutateAsync: vi.fn() }),
   useUpdateMyGovernmentIds: () => ({ isPending: false, mutateAsync: vi.fn() }),

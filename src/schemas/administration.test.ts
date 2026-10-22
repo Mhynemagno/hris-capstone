@@ -27,6 +27,11 @@ describe("administration schemas", () => {
     expect(rankSchema.parse({ name: "Police Corporal", code: "PCpl", sortOrder: 2 })).toEqual({ name: "Police Corporal", code: "PCpl", sortOrder: 2, isActive: true });
   });
 
+  it("accepts order 0 for NUP, the most junior rank, and rejects negative orders", () => {
+    expect(rankSchema.safeParse({ name: "Non-Uniformed Personnel", code: "NUP", sortOrder: 0 }).success).toBe(true);
+    expect(rankSchema.safeParse({ name: "Non-Uniformed Personnel", code: "NUP", sortOrder: -1 }).success).toBe(false);
+  });
+
   it("rejects blank reference data and invalid settings", () => {
     expect(departmentSchema.safeParse({ name: "   " }).success).toBe(false);
     expect(rankSchema.safeParse({ name: "Police Corporal", code: "", sortOrder: 2 }).success).toBe(false);

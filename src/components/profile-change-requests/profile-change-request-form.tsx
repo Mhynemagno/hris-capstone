@@ -2,27 +2,37 @@
 
 import { useState, type FormEvent } from "react";
 
+import { BadgeNumberInput } from "@/components/ui/badge-number-input";
 import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
 import { FormField } from "@/components/ui/form-field";
+import { GovernmentIdInput } from "@/components/ui/government-id-input";
 import { Input } from "@/components/ui/input";
 import { nativeSelectClassName } from "@/components/ui/native-select";
+import { NupIdInput } from "@/components/ui/nup-id-input";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { Textarea } from "@/components/ui/textarea";
 import { useEmployeeForCurrentUser, usePersonnelEntries } from "@/hooks/use-personnel-records";
 import { useSubmitProfileChangeRequest } from "@/hooks/use-profile-change-requests";
 import { PNP_CERTIFICATIONS, PNP_ISSUERS, PNP_QUALIFICATIONS, PNP_TRAININGS, PNP_TRAINING_PROVIDERS, withSavedValue } from "@/lib/pnp-catalogue";
-import type { Certification, Qualification, TrainingRecord } from "@/lib/types/database";
+import type { GovernmentIdKind } from "@/lib/government-ids";
+import { formatRating } from "@/lib/personnel/eligibility";
+import type { Certification, Employee, Qualification, TrainingRecord } from "@/lib/types/database";
+import { BADGE_NUMBER_PATTERN } from "@/schemas/common";
+import { EMERGENCY_CONTACT_RELATIONSHIPS, PHILIPPINE_MOBILE_PATTERN, RELIGIONS, toPhilippineMobile } from "@/schemas/personnel-records";
 import {
+  PERSONAL_FIELD_LABELS,
   profileChangeContactChangeSchema,
   profileChangeQualificationSnapshotSchema,
+  type PersonalField,
   type ProfileChangeDraftInput,
 } from "@/schemas/profile-change-requests";
 
 type QualificationChange = Extract<ProfileChangeDraftInput["changes"][number], { kind: "qualification" }>;
 type CertificationChange = Extract<ProfileChangeDraftInput["changes"][number], { kind: "certification" }>;
 type TrainingChange = Extract<ProfileChangeDraftInput["changes"][number], { kind: "training" }>;
-type QualificationFields = { name: string; awardedOn: string; notes: string };
-const emptyQualification: QualificationFields = { name: "", awardedOn: "", notes: "" };
+type QualificationFields = { name: string; awardedOn: string; rating: string; notes: string };
+const emptyQualification: QualificationFields = { name: "", awardedOn: "", rating: "", notes: "" };
 type CertificationFields = { name: string; issuer: string; credentialId: string; issuedOn: string; expiresOn: string; notes: string };
 const emptyCertification: CertificationFields = { name: "", issuer: "", credentialId: "", issuedOn: "", expiresOn: "", notes: "" };
 type TrainingFields = { courseName: string; provider: string; completedOn: string; expiresOn: string; hours: string; notes: string };
@@ -32,12 +42,13 @@ function snapshot(qualification: Qualification): QualificationFields {
   return {
     name: qualification.name,
     awardedOn: qualification.awarded_on,
+    rating: qualification.rating === null || qualification.rating === undefined ? "" : String(qualification.rating),
     notes: qualification.notes ?? "",
   };
 }
 /** Eligibility is recorded by name and date only; institution, level, and field of study are sent as null. */
 function toRequestedValue(fields: QualificationFields) {
-  return { ...fields, institution: null, qualificationLevel: null, fieldOfStudy: null, notes: fields.notes || null };
+  return { ...fields, institution: null, qualificationLevel: null, fieldOfStudy: null, notes: fields.notes || null, rating: fields.rating.trim() === "" ? null : Number(fields.rating) };
 }
 
 /** The saved entry as it is compared on approval, keeping any older institution, level, or field of study. */
@@ -49,12 +60,13 @@ function originalValue(qualification: Qualification) {
     fieldOfStudy: qualification.field_of_study ?? null,
     awardedOn: qualification.awarded_on,
     notes: qualification.notes ?? null,
+    rating: qualification.rating ?? null,
   };
 }
 function qualificationDescription(change: QualificationChange) {
   return change.operation === "remove"
     ? `Remove: ${change.originalValue.name}`
-    : `${change.operation === "add" ? "Add" : "Edit"}: ${change.requestedValue.name}`;
+    : `${change.operation === "add" ? "Add" : "Edit"}: ${change.requestedValue.name}${change.requestedValue.rating === null || change.requestedValue.rating === undefined ? "" : ` — ${formatRating(change.requestedValue.rating)}`}`;
 }
 function certificationSnapshot(certification: Certification): CertificationFields {
   return { name: certification.name, issuer: certification.issuer ?? "", credentialId: certification.credential_id ?? "", issuedOn: certification.issued_on, expiresOn: certification.expires_on ?? "", notes: certification.notes ?? "" };
@@ -78,7 +90,80 @@ function trainingDescription(change: TrainingChange) {
 type QualificationErrors = Partial<Record<keyof QualificationFields | "qualificationId", string>>;
 type CertificationErrors = Partial<Record<keyof CertificationFields | "certificationId", string>>;
 type TrainingErrors = Partial<Record<keyof TrainingFields | "trainingRecordId", string>>;
-type ContactField = "personalEmail" | "phone" | "emergencyContactName" | "emergencyContactPhone";
+
+type PersonalInputKind = "text" | "date" | "email" | "phone" | "badge" | "government" | "gender" | "civilStatus" | "religion" | "relationship";
+type PersonalFieldConfig = { field: PersonalField; column: keyof Employee; input: PersonalInputKind; government?: GovernmentIdKind | "sss" };
+
+/** Every HR-entered personal field, grouped as on the HR employee form. */
+const PERSONAL_SECTIONS: { title: string; fields: PersonalFieldConfig[] }[] = [
+  {
+    title: "Personal details",
+    fields: [
+      { field: "employeeNumber", column: "employee_number", input: "badge" },
+      { field: "firstName", column: "first_name", input: "text" },
+      { field: "middleName", column: "middle_name", input: "text" },
+      { field: "lastName", column: "last_name", input: "text" },
+      { field: "qualifier", column: "qualifier", input: "text" },
+      { field: "placeOfBirth", column: "place_of_birth", input: "text" },
+      { field: "dateOfBirth", column: "date_of_birth", input: "date" },
+      { field: "gender", column: "gender", input: "gender" },
+      { field: "civilStatus", column: "civil_status", input: "civilStatus" },
+      { field: "religion", column: "religion", input: "religion" },
+    ],
+  },
+  {
+    title: "Contact details",
+    fields: [
+      { field: "personalEmail", column: "personal_email", input: "email" },
+      { field: "phone", column: "phone", input: "phone" },
+      { field: "address", column: "address", input: "text" },
+    ],
+  },
+  {
+    title: "Emergency contact",
+    fields: [
+      { field: "emergencyContactName", column: "emergency_contact_name", input: "text" },
+      { field: "emergencyContactPhone", column: "emergency_contact_phone", input: "phone" },
+      { field: "emergencyContactRelationship", column: "emergency_contact_relationship", input: "relationship" },
+    ],
+  },
+  {
+    title: "Government identification",
+    fields: [
+      { field: "sssNumber", column: "sss_number", input: "government", government: "sss" },
+      { field: "philhealthNumber", column: "philhealth_number", input: "government", government: "philhealth" },
+      { field: "gsisNumber", column: "gsis_number", input: "government", government: "gsis" },
+      { field: "pagibigNumber", column: "pagibig_number", input: "government", government: "pagibig" },
+    ],
+  },
+  { title: "Employment", fields: [{ field: "employmentStartedOn", column: "employment_started_on", input: "date" }] },
+];
+const PERSONAL_FIELD_CONFIGS = PERSONAL_SECTIONS.flatMap((section) => section.fields);
+const CIVIL_STATUS_CHOICES = ["single", "married", "widowed", "separated", "divorced"] as const;
+const capitalize = (value: string) => value[0]!.toUpperCase() + value.slice(1);
+
+/** The value as it is compared and sent: separators dropped from IDs, phones in +639 form, blank as null. */
+function normalizePersonalValue(config: PersonalFieldConfig, raw: string, isNup: boolean): string | null {
+  const trimmed = raw.trim();
+  const value =
+    config.input === "government" ? trimmed.replace(/[\s-]/g, "")
+      : config.input === "phone" ? toPhilippineMobile(trimmed)
+        : config.input === "badge" && isNup ? trimmed.replace(/\D/g, "")
+          : config.input === "email" ? trimmed.toLowerCase()
+            : trimmed;
+  return value || null;
+}
+
+/** Field-specific checks the HR form also applies, on top of the shared request rules. */
+function personalInputError(config: PersonalFieldConfig, value: string | null, isNup: boolean): string | null {
+  if (value === null) return null;
+  if (config.input === "phone" && !PHILIPPINE_MOBILE_PATTERN.test(value)) return "Enter the number as +639XXXXXXXXX.";
+  if (config.input === "badge") {
+    if (isNup) return /^\d{8}$/.test(value) ? null : "ID number must contain 8 digits.";
+    return BADGE_NUMBER_PATTERN.test(value) ? null : "Badge number must be 6 digits in the format 0-00000.";
+  }
+  return null;
+}
 
 function qualificationFieldErrors(fields: QualificationFields): QualificationErrors {
   const parsed = profileChangeQualificationSnapshotSchema.safeParse(toRequestedValue(fields));
@@ -92,7 +177,9 @@ function qualificationFieldErrors(fields: QualificationFields): QualificationErr
         ? "Select an eligibility."
         : key === "awardedOn"
           ? "Enter the date the eligibility was obtained."
-          : issue.message;
+          : key === "rating"
+            ? "Enter a rating from 0 to 100."
+            : issue.message;
   }
   return errors;
 }
@@ -121,7 +208,7 @@ export function ProfileChangeRequestForm() {
   const submit = useSubmitProfileChangeRequest();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [contactErrors, setContactErrors] = useState<Partial<Record<ContactField, string>>>({});
+  const [personalErrors, setPersonalErrors] = useState<Partial<Record<PersonalField, string>>>({});
   const [qualificationErrors, setQualificationErrors] = useState<QualificationErrors>({});
   const [certificationErrors, setCertificationErrors] = useState<CertificationErrors>({});
   const [trainingErrors, setTrainingErrors] = useState<TrainingErrors>({});
@@ -146,6 +233,8 @@ export function ProfileChangeRequestForm() {
   }
   if (!employee.data) return <ErrorState message="Your official employee record is not available." />;
   const employeeData = employee.data;
+  // NUP personnel use an 8-digit ID number (shown as YYYY-MM-DD) instead of a badge number.
+  const isNup = /^\d{8}$/.test(employeeData.employee_number ?? "");
   const qualificationRows = (qualifications.data ?? []) as Qualification[];
   const certificationRows = (certifications.data ?? []) as Certification[];
   const trainingRows = (trainings.data ?? []) as TrainingRecord[];
@@ -250,28 +339,29 @@ export function ProfileChangeRequestForm() {
     setSuccess(null);
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
-    const contactChanges = (
-      [
-        ["personalEmail", "personal_email"],
-        ["phone", "phone"],
-        ["emergencyContactName", "emergency_contact_name"],
-        ["emergencyContactPhone", "emergency_contact_phone"],
-      ] as const
-    ).flatMap(([field, employeeField]) => {
-      const requestedValue = String(form.get(field) ?? "").trim() || null;
-      const originalValue = employeeData[employeeField] ?? null;
-      return requestedValue === originalValue ? [] : [{ kind: "contact" as const, field, originalValue, requestedValue }];
+    const contactChanges = PERSONAL_FIELD_CONFIGS.flatMap((config) => {
+      if (!form.has(config.field)) return [];
+      const originalValue = (employeeData[config.column] as string | null | undefined) ?? null;
+      const requestedValue = normalizePersonalValue(config, String(form.get(config.field) ?? ""), isNup);
+      return requestedValue === normalizePersonalValue(config, originalValue ?? "", isNup)
+        ? []
+        : [{ config, change: { kind: "contact" as const, field: config.field, originalValue, requestedValue } }];
     });
-    const nextContactErrors: Partial<Record<ContactField, string>> = {};
-    for (const change of contactChanges) {
+    const nextPersonalErrors: Partial<Record<PersonalField, string>> = {};
+    for (const { config, change } of contactChanges) {
+      const inputError = personalInputError(config, change.requestedValue, isNup);
       const parsed = profileChangeContactChangeSchema.safeParse(change);
-      if (!parsed.success) nextContactErrors[change.field] = parsed.error.issues[0]?.message ?? "Check this value.";
+      if (inputError) nextPersonalErrors[change.field] = inputError;
+      else if (!parsed.success) nextPersonalErrors[change.field] = parsed.error.issues[0]?.message ?? "Check this value.";
     }
-    setContactErrors(nextContactErrors);
-    if (Object.keys(nextContactErrors).length) return;
-    const changes = [...contactChanges, ...qualificationChanges, ...certificationChanges, ...trainingChanges];
+    setPersonalErrors(nextPersonalErrors);
+    if (Object.keys(nextPersonalErrors).length) {
+      setError("Check the highlighted personal details.");
+      return;
+    }
+    const changes = [...contactChanges.map(({ change }) => change), ...qualificationChanges, ...certificationChanges, ...trainingChanges];
     if (!changes.length) {
-      setError("Change at least one contact field or add an eligibility, certification, or training change.");
+      setError("Change at least one personal detail or add an eligibility, certification, or training change.");
       return;
     }
     const files = Array.from((formElement.elements.namedItem("documents") as HTMLInputElement | null)?.files ?? []);
@@ -294,7 +384,7 @@ export function ProfileChangeRequestForm() {
       setCertificationId("");
       setTraining(emptyTraining);
       setTrainingRecordId("");
-      setSuccess("Request submitted. An administrator will review it; your official profile stays unchanged until then.");
+      setSuccess("Request submitted. HR will review it; your official profile stays unchanged until then.");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Unable to submit your request.");
     }
@@ -302,25 +392,26 @@ export function ProfileChangeRequestForm() {
   return (
     <form className="max-w-3xl space-y-6" noValidate onSubmit={onSubmit}>
       <p className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
-        Your official profile stays unchanged until an administrator approves this request.
+        Correct any detail HR entered on your official record. Change only the fields that are wrong; HR is notified and your official profile stays unchanged until HR approves this request.
       </p>
-      <fieldset className="space-y-4">
-        <legend className="text-base font-semibold">Contact details</legend>
-        <div className="grid gap-4 sm:grid-cols-2">
-          {(
-            [
-              ["personalEmail", "Personal email", employeeData.personal_email, "email", "email"],
-              ["phone", "Phone number", employeeData.phone ?? "", "tel", "tel"],
-              ["emergencyContactName", "Emergency contact name", employeeData.emergency_contact_name ?? "", "text", "off"],
-              ["emergencyContactPhone", "Emergency contact phone number", employeeData.emergency_contact_phone ?? "", "tel", "off"],
-            ] as const
-          ).map(([name, label, value, type, autoComplete]) => (
-            <FormField error={contactErrors[name]} htmlFor={name} key={name} label={label}>
-              <Input autoComplete={autoComplete} defaultValue={value} id={name} name={name} type={type} />
-            </FormField>
-          ))}
-        </div>
-      </fieldset>
+      {PERSONAL_SECTIONS.map((section) => (
+        <fieldset className="space-y-4" key={section.title}>
+          <legend className="text-base font-semibold">{section.title}</legend>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {section.fields.map((config) => (
+              <FormField
+                description={config.input === "badge" ? (isNup ? "8 digits displayed as YYYY-MM-DD." : "6 digits, e.g. 1-23456.") : undefined}
+                error={personalErrors[config.field]}
+                htmlFor={config.field}
+                key={config.field}
+                label={config.input === "badge" ? (isNup ? "ID number" : "Badge number") : PERSONAL_FIELD_LABELS[config.field]}
+              >
+                <PersonalFieldInput config={config} isNup={isNup} value={(employeeData[config.column] as string | null | undefined) ?? null} />
+              </FormField>
+            ))}
+          </div>
+        </fieldset>
+      ))}
       <fieldset className="space-y-4 rounded-xl border p-4">
         <legend className="px-1 text-base font-semibold">Eligibility proposals</legend>
         <p className="text-sm text-muted-foreground">
@@ -375,6 +466,9 @@ export function ProfileChangeRequestForm() {
             </FormField>
             <FormField error={qualificationErrors.awardedOn} htmlFor="awarded-on" label="Date obtained" required>
               <Input id="awarded-on" onChange={(event) => changeQualificationField("awardedOn", event.target.value)} type="date" value={qualification.awardedOn} />
+            </FormField>
+            <FormField description="Optional, e.g. 85 for 85%." error={qualificationErrors.rating} htmlFor="qualification-rating" label="Rating (%)">
+              <Input id="qualification-rating" inputMode="decimal" max="100" min="0" onChange={(event) => changeQualificationField("rating", event.target.value)} step="0.01" type="number" value={qualification.rating} />
             </FormField>
             <div className="sm:col-span-2">
               <FormField error={qualificationErrors.notes} htmlFor="qualification-notes" label="Eligibility remarks">
@@ -469,4 +563,40 @@ export function ProfileChangeRequestForm() {
       </Button>
     </form>
   );
+}
+
+/** The input for one personal field, pre-filled with the value on the official record. */
+function PersonalFieldInput({ config, isNup, value }: { config: PersonalFieldConfig; isNup: boolean; value: string | null }) {
+  const { field } = config;
+  const select = (choices: readonly { value: string; label: string }[], placeholder: string) => (
+    <select className={nativeSelectClassName} defaultValue={value ?? ""} id={field} name={field}>
+      <option value="">{placeholder}</option>
+      {choices.map((choice) => <option key={choice.value} value={choice.value}>{choice.label}</option>)}
+      {value && !choices.some((choice) => choice.value === value) ? <option value={value}>{value}</option> : null}
+    </select>
+  );
+  switch (config.input) {
+    case "badge":
+      return isNup ? <NupIdInput className="h-11 tabular-nums" defaultValue={value} id={field} name={field} /> : <BadgeNumberInput defaultValue={value} id={field} name={field} />;
+    case "phone":
+      return <PhoneInput autoComplete={field === "phone" ? "tel" : "off"} defaultValue={value} id={field} name={field} />;
+    case "government":
+      return config.government === "sss" || !config.government
+        ? <Input autoComplete="off" className="h-11 tabular-nums" defaultValue={value ?? ""} id={field} inputMode="numeric" name={field} placeholder="10 digits" />
+        : <GovernmentIdInput defaultValue={value} id={field} kind={config.government} name={field} />;
+    case "gender":
+      return select([{ value: "female", label: "Female" }, { value: "male", label: "Male" }], "Select a gender");
+    case "civilStatus":
+      return select(CIVIL_STATUS_CHOICES.map((choice) => ({ value: choice, label: capitalize(choice) })), "Select a civil status");
+    case "religion":
+      return select(RELIGIONS.map((choice) => ({ value: choice, label: choice })), "Select a religion");
+    case "relationship":
+      return select(EMERGENCY_CONTACT_RELATIONSHIPS.map((choice) => ({ value: choice, label: capitalize(choice) })), "Select relationship");
+    case "date":
+      return <Input className="h-11" defaultValue={value ?? ""} id={field} name={field} type="date" />;
+    case "email":
+      return <Input autoComplete="email" className="h-11" defaultValue={value ?? ""} id={field} name={field} type="email" />;
+    default:
+      return <Input autoComplete="off" className="h-11" defaultValue={value ?? ""} id={field} name={field} />;
+  }
 }

@@ -65,6 +65,8 @@ export const leaveRequestDraftSchema = z.object({
   startsOn: isoDateSchema.refine(futureOrCurrentDate, "Choose today or a future start date.").refine(withinTwoYears, "Choose a date within the next two years."),
   endsOn: isoDateSchema.refine(futureOrCurrentDate, "Choose today or a future end date.").refine(withinTwoYears, "Choose a date within the next two years."),
   reason: optionalNotesSchema,
+  /** The employee confirmed that days beyond the remaining credits will be deducted. */
+  acceptDeduction: z.boolean().default(false),
 }).superRefine((value, context) => {
   if (value.endsOn < value.startsOn) {
     context.addIssue({ code: "custom", path: ["endsOn"], message: "End date must be on or after the start date." });

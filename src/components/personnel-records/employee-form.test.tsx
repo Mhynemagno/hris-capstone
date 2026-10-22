@@ -129,9 +129,24 @@ describe("EmployeeForm", () => {
     const marked = [...container.querySelectorAll("label")].filter((label) => label.querySelector(".text-destructive")).map((label) => label.textContent?.replace("*", ""));
     expect(marked).toEqual(expect.arrayContaining([
       "Rank", "Badge number", "Personal email", "First name", "Last name", "Place of birth", "Date of birth", "Gender", "Civil status",
-      "Religion", "Phone number", "Home address", "Name", "Unit / Section", "Employment status", "Date Entered Service",
+      "Religion", "Phone number", "Home address", "Name", "Unit / Section", "Status", "Date Entered Service",
     ]));
     expect(marked).not.toContain("Middle name");
+  });
+
+  it("keeps saved identity fields greyed and read-only without a 'cannot be changed' note", () => {
+    render(<EmployeeForm employee={completeEmployee} onSaved={() => undefined} />);
+
+    expect(screen.getByLabelText(/^first name/i)).toHaveAttribute("readonly");
+    expect(screen.getByLabelText(/^first name/i)).toHaveClass("cursor-not-allowed");
+    expect(screen.getByLabelText(/^date of birth/i)).toHaveAttribute("readonly");
+    expect(screen.queryByText(/cannot be changed/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/once saved/i)).not.toBeInTheDocument();
+  });
+
+  it("shows the badge digit hint while the badge number is editable", () => {
+    render(<EmployeeForm onSaved={() => undefined} />);
+    expect(screen.getByText("6 digits, e.g. 1-23456.")).toBeInTheDocument();
   });
 
   it("blocks saving and explains each empty required field", async () => {
@@ -361,7 +376,7 @@ describe("EmployeeForm", () => {
   it("offers only the Active employment status", () => {
     render(<EmployeeForm employee={existingEmployee} onSaved={() => undefined} />);
 
-    const status = screen.getByLabelText(/employment status/i);
+    const status = screen.getByLabelText(/^status/i);
     expect(within(status).getAllByRole("option").map((option) => option.textContent)).toEqual(["Active"]);
   });
 
@@ -370,7 +385,7 @@ describe("EmployeeForm", () => {
     const user = userEvent.setup();
     render(<EmployeeForm employee={{ ...completeEmployee, employment_status: "retired" }} onSaved={onSaved} />);
 
-    const status = screen.getByLabelText(/employment status/i);
+    const status = screen.getByLabelText(/^status/i);
     expect(status).toBeDisabled();
     expect(status).toHaveValue("retired");
 

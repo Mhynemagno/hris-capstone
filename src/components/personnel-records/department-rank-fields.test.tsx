@@ -20,6 +20,14 @@ describe("buildRankChoices", () => {
     ]);
   });
 
+  it("lists NUP, the most junior rank (order 0), above PAT", () => {
+    const withNup = [...ranks, { id: 13, name: "Non-Uniformed Personnel", code: "NUP", sort_order: 0, is_active: true, ...stamp }];
+    expect(buildRankChoices(withNup, null).map((choice) => choice.label)).toEqual([
+      "NUP — Non-Uniformed Personnel",
+      "Pat — Patrolman / Patrolwoman",
+    ]);
+  });
+
   it("keeps the saved rank submittable while ranks load", () => {
     expect(buildRankChoices(undefined, 5)).toEqual([{ value: "5", label: "Current rank (loading…)" }]);
   });

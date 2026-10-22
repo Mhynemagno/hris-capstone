@@ -1,4 +1,6 @@
 /** Applicant numbers display like badge numbers: 12345 → "0-12345". */
+export function formatApplicantNumber(value: number): string;
+export function formatApplicantNumber(value: number | null | undefined): string | null;
 export function formatApplicantNumber(value: number | null | undefined) {
   if (value === null || value === undefined) return null;
   const digits = String(value).padStart(6, "0");

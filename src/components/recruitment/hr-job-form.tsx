@@ -20,7 +20,9 @@ import { useSaveJobOpening } from "@/hooks/use-recruitment";
 import { OTHERS_CHOICE, PNP_GENERAL_REQUIREMENTS, RECRUITMENT_RANK, withSavedValue } from "@/lib/pnp-catalogue";
 import { rankLabel } from "@/lib/ranks";
 import { criteriaFromGeneralRequirements, generalRequirementsFromCriteria } from "@/lib/recruitment/general-requirements";
+import { formatDate } from "@/lib/format-date";
 import { jobPostingImageUrl } from "@/lib/recruitment/job-posting-image";
+import { deadlineWithinCycle, formatRecruitmentCycle, openingRecruitmentCycle, recruitmentCycleEnd, recruitmentCycleOf } from "@/lib/recruitment/recruitment-cycle";
 import { applicationCount, deadlineNote, JOB_STATUS_LABELS } from "@/lib/recruitment/job-postings";
 import { jobOpeningFormSchema, jobOpeningSchema, jobPostingImageFileSchema, type JobOpeningFormInput, type JobOpeningInput } from "@/schemas/recruitment";
 import type { HrJob } from "@/queries/recruitment";
@@ -60,6 +62,10 @@ export function HrJobForm({ job }: HrJobFormProps) {
   const hasApplications = (job?.applications?.[0]?.count ?? 0) > 0;
   const errors = form.formState.errors;
   const shownImage = previewUrl ?? (removeImage ? null : jobPostingImageUrl(savedImagePath));
+  // A draft opens on the day it is published, so it belongs to today's cycle; a published or closed
+  // opening keeps the cycle the database assigned from its opening date.
+  const cycle = !job || job.status === "draft" ? recruitmentCycleOf(new Date()) : openingRecruitmentCycle(job);
+  const cycleEnd = recruitmentCycleEnd(cycle);
 
   // Revoke the local preview's object URL when it is replaced and when the form unmounts.
   useEffect(() => () => { if (previewUrl) URL.revokeObjectURL(previewUrl); }, [previewUrl]);
@@ -93,6 +99,11 @@ export function HrJobForm({ job }: HrJobFormProps) {
     setError(null);
     const valid = await form.trigger();
     if (!valid) return;
+    const closesOn = form.getValues("closesOn");
+    if (closesOn && !deadlineWithinCycle(closesOn, cycle)) {
+      form.setError("closesOn", { message: `The deadline must fall within ${formatRecruitmentCycle(cycle)}. Choose a date on or before ${formatDate(cycleEnd)}.` });
+      return;
+    }
     try {
       const { requirements: values, ...details } = jobOpeningFormSchema.parse({ ...form.getValues(), status });
       const input = jobOpeningSchema.parse({ ...details, criteria: criteriaFromGeneralRequirements(values) });
@@ -132,8 +143,8 @@ export function HrJobForm({ job }: HrJobFormProps) {
             <FormField error={errors.location?.message} htmlFor="job-location" label="Location" required>
               <Input id="job-location" required {...form.register("location")} />
             </FormField>
-            <FormField error={errors.closesOn?.message} htmlFor="job-closes-on" label="Deadline of Application" required>
-              <Input id="job-closes-on" required type="date" {...form.register("closesOn")} />
+            <FormField description={`${formatRecruitmentCycle(cycle)}. On or before ${formatDate(cycleEnd)}.`} error={errors.closesOn?.message} htmlFor="job-closes-on" label="Deadline of Application" required>
+              <Input id="job-closes-on" max={cycleEnd} required type="date" {...form.register("closesOn")} />
             </FormField>
             <FormField description="Every recruitment is for this rank." htmlFor="job-position" label="Position">
               <Input id="job-position" readOnly value={rankLabel(RECRUITMENT_RANK)} />

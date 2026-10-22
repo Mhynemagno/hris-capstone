@@ -3,7 +3,6 @@ import { deleteManagedUser } from "@/queries/administration";
 
 export const DELETABLE_ENTITY_TYPES = [
   "leave_type",
-  "promotion_criterion",
   "job_opening",
   "managed_user",
   "notification",
@@ -38,7 +37,6 @@ export type DeletionImpact = {
 /** Record types with their own delete RPC; every other type (and any forced delete) goes through delete_record. */
 const deleteRpc: Partial<Record<DeletableEntityType, { name: string; arg: string; numeric: boolean }>> = {
   leave_type: { name: "delete_leave_type", arg: "target_leave_type_id", numeric: false },
-  promotion_criterion: { name: "delete_promotion_criterion", arg: "target_criterion_id", numeric: false },
   job_opening: { name: "delete_job_opening", arg: "target_job_id", numeric: true },
   notification: { name: "delete_notification", arg: "target_notification_id", numeric: false },
   employee: { name: "delete_employee", arg: "target_employee_id", numeric: false },

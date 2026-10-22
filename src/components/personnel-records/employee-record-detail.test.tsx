@@ -27,6 +27,7 @@ vi.mock("@/hooks/use-deletion", () => ({
 vi.mock("@/hooks/use-personnel-records", () => ({
   useEmployee: mocks.useEmployee,
   useEmployeeProfilePhotoUrl: () => ({ data: null }),
+  useEmployeeTimeInGrade: () => ({ isLoading: false, data: "2021-07-01" }),
   useRemoveMyEmployeeProfilePhoto: () => ({ isPending: false, mutateAsync: vi.fn() }),
   useReplaceMyEmployeeProfilePhoto: () => ({ isPending: false, mutateAsync: vi.fn() }),
   usePersonnelEntries: mocks.useEntries,
@@ -116,9 +117,8 @@ describe("EmployeeRecordDetail", () => {
 
     expect(screen.getByRole("heading", { level: 1, name: "Ada Dela Cruz" })).toBeInTheDocument();
     expect(within(screen.getByRole("region", { name: "Employee summary" })).getByText("PAT-001")).toBeInTheDocument();
-    await userEvent.setup().click(screen.getByRole("button", { name: "Promotion review" }));
-    // The review opens over this record, so closing it comes back here instead of to Promotion.
-    expect(mocks.replace).toHaveBeenCalledWith(`/hr/employees/${employeeId}?tab=activity&review=1`, { scroll: false });
+    // Promotion is evaluated by the system; the record links to its evaluation on the Promotion page.
+    expect(screen.getByRole("link", { name: "Promotion evaluation" })).toHaveAttribute("href", `/hr/promotions?view=${employeeId}`);
     expect(screen.getByRole("tab", { name: /Certification \/ Training/ })).toHaveTextContent("Certification / Training1");
     const activity = screen.getByRole("region", { name: "Recent activity" });
     expect(activity).toHaveTextContent("Certification / Training");

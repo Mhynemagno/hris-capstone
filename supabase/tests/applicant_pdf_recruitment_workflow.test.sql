@@ -6,7 +6,7 @@ set local search_path = extensions, public;
 select extensions.plan(15);
 
 insert into public.job_openings (title, description, location, closes_on, status, published_at, created_by_user_id)
-values ('PDF workflow test opening', 'A test opening for the eight-stage applicant recruitment workflow.', 'San Juan City', current_date + 30, 'published', now(), '00000000-0000-4000-8000-000000008102');
+values ('PDF workflow test opening', 'A test opening for the eight-stage applicant recruitment workflow.', 'San Juan City', (date_trunc('month', current_date) + interval '1 month - 1 day')::date, 'published', now(), '00000000-0000-4000-8000-000000008102');
 
 insert into public.applications (id, applicant_id, job_opening_id, status)
 select
@@ -80,7 +80,7 @@ select extensions.throws_ok(
 
 set local role postgres;
 insert into public.job_openings (title, description, location, closes_on, status, published_at, created_by_user_id)
-values ('PDF workflow skip test opening', 'A second test opening for rejection and skip validation.', 'San Juan City', current_date + 30, 'published', now(), '00000000-0000-4000-8000-000000008102');
+values ('PDF workflow skip test opening', 'A second test opening for rejection and skip validation.', 'San Juan City', (date_trunc('month', current_date) + interval '1 month - 1 day')::date, 'published', now(), '00000000-0000-4000-8000-000000008102');
 insert into public.applications (id, applicant_id, job_opening_id, status)
 select
   '00000000-0000-4000-8000-000000018002',

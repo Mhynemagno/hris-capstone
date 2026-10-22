@@ -64,10 +64,9 @@ describe("ReportDetail filters", () => {
     rerender(<ReportDetail reportKey="hiring-decisions" role="hr_personnel" />);
     expect(optionValues(screen.getByLabelText("Decision"))).toEqual(["", "Hired", "Not Selected"]);
 
-    rerender(<ReportDetail reportKey="attendance-leave" role="management" />);
-    const recordStatus = screen.getByLabelText("Record status");
-    expect(within(recordStatus).getAllByRole("group").map((group) => group.getAttribute("label"))).toEqual(["Attendance", "Leave"]);
-    expect(optionValues(recordStatus)).toEqual(["", ...REPORT_STATUS_FILTERS["attendance-leave"].options.map((option) => option.value)]);
+    rerender(<ReportDetail reportKey="attendance" role="hr_personnel" />);
+    const attendanceStatus = screen.getByLabelText("Attendance status");
+    expect(optionValues(attendanceStatus)).toEqual(["", ...REPORT_STATUS_FILTERS.attendance.options.map((option) => option.value)]);
   });
 
   it("offers active departments and passes the chosen filters to the report", async () => {
@@ -97,15 +96,6 @@ describe("ReportDetail filters", () => {
     expect(screen.getByText(/No records match these filters/)).toBeVisible();
   });
 
-  it("opens with the Generate filters and prints once the report has loaded", async () => {
-    mocks.fetchFull.mockResolvedValue(report);
-    const print = vi.spyOn(window, "print").mockImplementation(() => undefined);
-    render(<ReportDetail autoAction="print" initialFilters={{ startsOn: "2026-10-01", endsOn: "2026-10-11", departmentId: "1" }} reportKey="deployments" role="hr_personnel" />);
-    expect(mocks.useReport).toHaveBeenLastCalledWith(expect.objectContaining({ startsOn: "2026-10-01", endsOn: "2026-10-11", departmentId: 1 }), "hr_personnel");
-    await waitFor(() => expect(print).toHaveBeenCalledTimes(1));
-    expect(screen.getByText("SAN JUAN CITY POLICE STATION")).toBeInTheDocument();
-    print.mockRestore();
-  });
 });
 
 describe("ReportDetail export (every page, not only the one on screen)", () => {
@@ -115,17 +105,6 @@ describe("ReportDetail export (every page, not only the one on screen)", () => {
     mocks.fetchFull.mockReset();
     mocks.useReport.mockReturnValue({ isLoading: false, error: null, data: { ...report, rows: rows(1, 10), totalCount: 15, pageSize: 10 } });
     mocks.fetchFull.mockResolvedValue({ ...report, rows: rows(1, 15), totalCount: 15, pageSize: 100 });
-  });
-
-  it("prints every row of the report", async () => {
-    let printedRows = 0;
-    const print = vi.spyOn(window, "print").mockImplementation(() => { printedRows = screen.getAllByRole("row").length - 1; });
-    render(<ReportDetail autoAction="print" reportKey="deployments" role="hr_personnel" />);
-    await waitFor(() => expect(print).toHaveBeenCalledTimes(1));
-    expect(mocks.fetchFull).toHaveBeenCalledWith(expect.objectContaining({ reportKey: "deployments" }));
-    expect(printedRows).toBe(15);
-    await waitFor(() => expect(screen.getAllByRole("row")).toHaveLength(11));
-    print.mockRestore();
   });
 
   it("downloads every row as CSV", async () => {

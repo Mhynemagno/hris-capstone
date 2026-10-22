@@ -47,22 +47,23 @@ function formatPdfCell(value: unknown) {
 }
 
 function rowLines(report: ReportResponse, row: ReportResponse["rows"][number]) {
-  return report.columns.flatMap((column) => split(`${column.label}: ${formatPdfCell(row[column.key])}`, 94));
+  return split(report.columns.map((column) => formatPdfCell(row[column.key])).join("  |  "), 94);
 }
 
 function pageContent(report: ReportResponse, pageRows: string[][], page: number, pageCount: number) {
   const commands = [
     "0.2 w",
-    text(left, 755, 9, "REPUBLIC OF THE PHILIPPINES • PHILIPPINE NATIONAL POLICE", true),
-    text(left, 739, 14, "SAN JUAN CITY POLICE STATION", true),
-    text(left, 725, 9, "Human Resource and Doctrine Development Section"),
-    line(left, 716, pageWidth - left, 716),
-    text(left, 695, 13, report.title.toUpperCase(), true),
-    text(left, 681, 8, `Generated ${new Date(report.generatedAt).toLocaleString("en-PH", { timeZone: "Asia/Manila", dateStyle: "long", timeStyle: "short" })}`),
-    text(left, 668, 8, `Records: ${report.totalCount}    Page ${page} of ${pageCount}`),
-    line(left, 662, pageWidth - left, 662),
+    text(left, 755, 9, "Republic of the Philippines", true),
+    text(left, 742, 9, "Philippine National Police", true),
+    text(left, 728, 14, "San Juan City Police Station", true),
+    line(left, 719, pageWidth - left, 719),
+    text(left, 698, 13, report.title.toUpperCase(), true),
+    text(left, 684, 8, `Generated ${new Date(report.generatedAt).toLocaleString("en-PH", { timeZone: "Asia/Manila", dateStyle: "long", timeStyle: "short" })}`),
+    text(left, 671, 8, `Records: ${report.totalCount}    Page ${page} of ${pageCount}`),
+    text(left, 658, 8, report.columns.map((column) => column.label).join("  |  "), true),
+    line(left, 652, pageWidth - left, 652),
   ];
-  let y = firstRowY;
+  let y = firstRowY - 12;
   for (const fields of pageRows) {
     for (const field of fields) {
       commands.push(text(left, y, 8, field));

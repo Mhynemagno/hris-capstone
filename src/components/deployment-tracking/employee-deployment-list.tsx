@@ -1,8 +1,9 @@
 "use client";
 
-import { Calendar, CircleCheck, CircleX, ClipboardList, Clock, Info, MapPin, ShieldCheck } from "lucide-react";
+import { Calendar, CircleCheck, CircleX, ClipboardList, Clock, Hourglass, MapPin, ShieldCheck } from "lucide-react";
 import { useState, type ComponentType } from "react";
 
+import { notifyStaff } from "@/components/staff-shell/staff-notify";
 import { PageTitle } from "@/components/staff-shell/ui/page-title";
 import { staffButton } from "@/components/staff-shell/ui/staff-buttons";
 import { StaffLabel, StaffSelect } from "@/components/staff-shell/ui/staff-fields";
@@ -10,7 +11,7 @@ import { StaffPager } from "@/components/staff-shell/ui/staff-table-card";
 import { StatusPill } from "@/components/staff-shell/ui/status-pill";
 import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
-import { useMyDeployments } from "@/hooks/use-deployment-tracking";
+import { useDeploymentReports, useMyDeployments, useProposeDeploymentStatus } from "@/hooks/use-deployment-tracking";
 import { formatDate } from "@/lib/format-date";
 import { DEPLOYMENT_STATUS } from "@/lib/staff/status-maps";
 import type { Deployment, DeploymentStatus } from "@/lib/types/database";
@@ -20,11 +21,11 @@ import { DeploymentReports } from "./deployment-reports";
 const PAGE_SIZE = 10;
 
 // Card accents per status (empdeploy.html: ongoing blue, scheduled amber); completed/cancelled follow the status pill tones.
-const accents: Record<DeploymentStatus, { border: string; tile: string; info: string; Icon: ComponentType<{ className?: string; "aria-hidden"?: "true" }> }> = {
-  ongoing: { border: "border-l-blue-900", tile: "bg-blue-50 text-blue-900", info: "text-blue-800", Icon: MapPin },
-  scheduled: { border: "border-l-amber-500", tile: "bg-amber-50 text-amber-700", info: "text-amber-600", Icon: Clock },
-  completed: { border: "border-l-emerald-500", tile: "bg-emerald-50 text-emerald-700", info: "text-emerald-600", Icon: CircleCheck },
-  cancelled: { border: "border-l-rose-500", tile: "bg-rose-50 text-rose-700", info: "text-rose-600", Icon: CircleX },
+const accents: Record<DeploymentStatus, { border: string; tile: string; Icon: ComponentType<{ className?: string; "aria-hidden"?: "true" }> }> = {
+  ongoing: { border: "border-l-blue-900", tile: "bg-blue-50 text-blue-900", Icon: MapPin },
+  scheduled: { border: "border-l-amber-500", tile: "bg-amber-50 text-amber-700", Icon: Clock },
+  completed: { border: "border-l-emerald-500", tile: "bg-emerald-50 text-emerald-700", Icon: CircleCheck },
+  cancelled: { border: "border-l-rose-500", tile: "bg-rose-50 text-rose-700", Icon: CircleX },
 };
 
 const pillClass: Record<DeploymentStatus, string> = {
@@ -39,12 +40,51 @@ function dateRange(row: Deployment) {
   return `${formatDate(row.starts_on)} – ${end}`;
 }
 
+/**
+ * The deployed employee proposes Ongoing or Completed after uploading proof; HR approves or
+ * rejects it. Completed needs at least one submitted report.
+ */
+function DeploymentStatusUpdate({ row }: { row: Deployment }) {
+  const reports = useDeploymentReports(row.id);
+  const propose = useProposeDeploymentStatus();
+  if (row.status !== "scheduled" && row.status !== "ongoing") return null;
+  if (row.proposed_status) {
+    return (
+      <p className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-semibold text-amber-800">
+        <Hourglass aria-hidden="true" className="size-3.5" />
+        <span>{DEPLOYMENT_STATUS[row.proposed_status].label} update sent. Waiting for HR approval.</span>
+      </p>
+    );
+  }
+  const hasProof = Boolean(reports.data?.length);
+
+  async function send(status: "ongoing" | "completed") {
+    try {
+      await propose.mutateAsync({ deploymentId: row.id, status });
+      notifyStaff({ title: "Status update sent for approval" });
+    } catch (error) {
+      notifyStaff({ title: "Could not send the status update", description: error instanceof Error ? error.message : undefined, tone: "error" });
+    }
+  }
+
+  return (
+    <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50/80 p-3">
+      <p className="text-xs font-bold text-slate-900">Update deployment status</p>
+      <div className="flex flex-wrap gap-2">
+        {row.status === "scheduled" ? <button className={staffButton.secondary} disabled={propose.isPending} onClick={() => void send("ongoing")} type="button">Mark as Ongoing</button> : null}
+        <button className={staffButton.primary} disabled={propose.isPending || !hasProof} onClick={() => void send("completed")} type="button">Mark as Completed</button>
+      </div>
+      <p className="text-[10px] font-medium text-slate-500">{hasProof ? "HR reviews your update before the status changes." : "Upload a report or proof of attendance before marking the deployment as completed."}</p>
+    </div>
+  );
+}
+
 function DeploymentCard({ row }: { row: Deployment }) {
   const [open, setOpen] = useState(false);
   const accent = accents[row.status];
   const pill = DEPLOYMENT_STATUS[row.status];
   const Icon = accent.Icon;
-  const detail = [row.deployment_type, row.event_operation].filter(Boolean).join(" · ");
+  const detail = [row.task, row.deployment_type, row.event_operation].filter(Boolean).join(" · ");
   return (
     <article className={cn("rounded-2xl border border-l-4 border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-slate-300", accent.border)}>
       <div className="flex flex-col justify-between gap-4 border-b border-slate-100 pb-4 sm:flex-row sm:items-center">
@@ -54,6 +94,7 @@ function DeploymentCard({ row }: { row: Deployment }) {
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-base font-extrabold text-slate-900">{row.location || "Deployment"}</h3>
               <StatusPill className={pillClass[row.status]} tone={pill.tone}>{pill.label}</StatusPill>
+              {row.proposed_status ? <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700">Update for approval</span> : null}
             </div>
             <p className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-slate-500"><Calendar aria-hidden="true" className="size-3" /><span>{dateRange(row)}</span></p>
             {detail ? <p className="mt-0.5 text-xs font-medium text-slate-500">{detail}</p> : null}
@@ -64,13 +105,7 @@ function DeploymentCard({ row }: { row: Deployment }) {
           <span>Report / Proof of Attendance</span>
         </button>
       </div>
-      {row.notes ? (
-        <div className="mt-3 flex items-start gap-2 rounded-xl border border-slate-100 bg-slate-50/80 p-3 text-xs text-slate-700">
-          <Info aria-hidden="true" className={cn("mt-0.5 size-3.5 shrink-0", accent.info)} />
-          <p><span className="font-bold text-slate-900">Remarks:</span> {row.notes}</p>
-        </div>
-      ) : null}
-      {open ? <div className="mt-3"><DeploymentReports deploymentId={row.id} /></div> : null}
+      {open ? <div className="mt-3 space-y-3"><DeploymentReports deploymentId={row.id} /><DeploymentStatusUpdate row={row} /></div> : null}
     </article>
   );
 }
@@ -98,7 +133,7 @@ export function EmployeeDeploymentList() {
               </StaffSelect>
             </div>
           }
-          subtitle="Review your current active duties and deployment history."
+          subtitle="Review your duties, upload proof of attendance and update their status."
           title="My Deployments"
         />
       </div>

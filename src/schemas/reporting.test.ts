@@ -6,13 +6,13 @@ describe("reporting schemas", () => {
   it("normalizes a report filter with pagination", () => {
     expect(
       reportFiltersSchema.parse({
-        reportKey: "attendance-leave",
+        reportKey: "attendance",
         startsOn: "2026-08-01",
         endsOn: "2026-08-31",
         page: "2",
         pageSize: "25",
       }),
-    ).toMatchObject({ reportKey: "attendance-leave", page: 2, pageSize: 25 });
+    ).toMatchObject({ reportKey: "attendance", page: 2, pageSize: 25 });
   });
 
   it("uses ten rows per page when a report does not specify a page size", () => {

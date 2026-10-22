@@ -16,7 +16,7 @@ import { useMyAttendanceLogs } from "@/hooks/use-attendance-integration";
 import { useMyDeployments } from "@/hooks/use-deployment-tracking";
 import { useLeaveTypes, useMyLeaveBalances } from "@/hooks/use-leave-management";
 import { useEmployeeForCurrentUser, useEmployeeProfilePhotoUrl, useRequestEmployeeRecordAssistance } from "@/hooks/use-personnel-records";
-import { useMyPromotionEligibility } from "@/hooks/use-promotion-eligibility";
+import { useMyPromotionStatus } from "@/hooks/use-promotion-eligibility";
 import { usePublishedAnnouncements } from "@/hooks/use-public-site";
 import { formatDate, formatDateRange } from "@/lib/format-date";
 import { LEAVE_TONE_CLASSES, leaveTypeStyle } from "@/lib/leave-management/leave-type-style";
@@ -74,7 +74,7 @@ export function EmployeeDashboard() {
   const leaveTypes = useLeaveTypes({ pageSize: 100 });
   const attendance = useMyAttendanceLogs({ startsOn: today, endsOn: today, pageSize: 1 });
   const photo = useEmployeeProfilePhotoUrl(employee.data?.profile_image_path ?? null);
-  const promotion = useMyPromotionEligibility();
+  const promotion = useMyPromotionStatus();
   const announcements = usePublishedAnnouncements(3);
   const recordAssistance = useRequestEmployeeRecordAssistance();
   const [recordAssistanceMessage, setRecordAssistanceMessage] = useState<string | null>(null);
@@ -108,10 +108,13 @@ export function EmployeeDashboard() {
   const assignment = currentAssignment(deployments.data?.rows ?? []);
   const pill = assignment ? DEPLOYMENT_STATUS[assignment.status] : null;
   const log = attendance.data?.rows[0];
-  const readiness = promotion.data;
-  const requirements = readiness?.readiness.requirements ?? [];
+  const evaluation = promotion.data?.evaluation.targetRank ? promotion.data.evaluation : null;
+  const targetCode = evaluation?.targetRank?.code ?? "";
+  const decision = promotion.data?.decision ?? null;
+  const requirements = evaluation?.requirements ?? [];
   const met = requirements.filter((row) => row.met).length;
-  const percent = requirements.length ? Math.round((met / requirements.length) * 100) : readiness?.readiness.isReady ? 100 : 0;
+  const percent = requirements.length ? Math.round((met / requirements.length) * 100) : evaluation?.isQualified ? 100 : 0;
+  const promotionLabel = decision?.status === "approved" ? "Approved" : decision?.status === "rejected" ? "Rejected" : evaluation?.isQualified ? "For approval" : "In progress";
   const typeById = new Map((leaveTypes.data?.rows ?? []).map((type) => [type.id, type]));
   const entitlements = (balances.data ?? []).flatMap((balance) => {
     const type = typeById.get(balance.leave_type_id);
@@ -121,7 +124,7 @@ export function EmployeeDashboard() {
     ["Badge Number", record.employee_number, "font-mono text-amber-300"],
     ["Years of Service", serviceLength(record.employment_started_on, record.employment_ended_on) ?? "Not recorded", "text-white"],
     ["Station Sector", record.unit_station || "Not assigned", "text-white"],
-    ["Promotion Status", promotion.isLoading ? "Loading…" : promotion.error ? "Unavailable" : readiness ? `${readiness.targetRankCode} ${readiness.docket ? "Submitted" : readiness.readiness.isReady ? "Eligible" : "In progress"}` : "No active criterion", readiness?.readiness.isReady ? "text-emerald-400" : "text-white"],
+    ["Promotion Status", promotion.isLoading ? "Loading…" : promotion.error ? "Unavailable" : evaluation ? `${targetCode} ${promotionLabel}` : "No next rank", evaluation?.isQualified || decision?.status === "approved" ? "text-emerald-400" : "text-white"],
   ];
 
   return (
@@ -194,19 +197,19 @@ export function EmployeeDashboard() {
               <p className="text-[10px] text-slate-500">{formatDate(today)}</p>
             </Card>
 
-            <Card aside={readiness ? <span className="font-mono text-[10px] font-bold text-blue-700">{percent}% requirements met</span> : null} id="promotion-heading" title="Promotion Board Status">
-              {promotion.isLoading ? <LoadingState label="Loading promotion status…" /> : promotion.error ? <ErrorState message={promotion.error.message} /> : readiness ? (
+            <Card aside={evaluation ? <span className="font-mono text-[10px] font-bold text-blue-700">{percent}% requirements met</span> : null} id="promotion-heading" title="Promotion Board Status">
+              {promotion.isLoading ? <LoadingState label="Loading promotion status…" /> : promotion.error ? <ErrorState message={promotion.error.message} /> : evaluation ? (
                 <div className="space-y-2">
                   <div className="flex justify-between text-[11px] font-bold">
-                    <span className="text-slate-700">Target rank: {readiness.targetRankCode}</span>
-                    {readiness.readiness.isReady
-                      ? <span className="flex items-center gap-1 text-emerald-700"><CircleCheck aria-hidden="true" className="size-3.5" />Eligible</span>
+                    <span className="text-slate-700">Target rank: {targetCode}</span>
+                    {evaluation.isQualified || decision
+                      ? <span className={cn("flex items-center gap-1", decision?.status === "rejected" ? "text-rose-700" : "text-emerald-700")}><CircleCheck aria-hidden="true" className="size-3.5" />{promotionLabel}</span>
                       : <span className="flex items-center gap-1 text-amber-700"><CircleDashed aria-hidden="true" className="size-3.5" />In progress</span>}
                   </div>
-                  <div className="h-2 w-full overflow-hidden rounded-full border border-slate-200 bg-slate-100 p-0.5"><div className={cn("h-full rounded-full", readiness.readiness.isReady ? "bg-emerald-500" : "bg-amber-500")} style={{ width: `${percent}%` }} /></div>
-                  <p className="text-[10px] text-slate-500">{readiness.docket ? "Your docket has been submitted to the Promotion Board." : readiness.readiness.isReady ? "All criteria for your next rank are met." : `${readiness.readiness.missingRequirements.length} requirement(s) still missing.`}</p>
+                  <div className="h-2 w-full overflow-hidden rounded-full border border-slate-200 bg-slate-100 p-0.5"><div className={cn("h-full rounded-full", evaluation.isQualified ? "bg-emerald-500" : "bg-amber-500")} style={{ width: `${percent}%` }} /></div>
+                  <p className="text-[10px] text-slate-500">{decision?.status === "approved" ? "HR approved your promotion." : decision?.status === "rejected" ? "HR did not approve your promotion. See the remarks." : evaluation.isQualified ? "All requirements for your next rank are met; awaiting HR approval." : `${evaluation.missingRequirements.length} requirement(s) still missing.`}</p>
                 </div>
-              ) : <p className="text-[11px] text-slate-500" role="status">No active promotion criterion applies to your current rank yet.</p>}
+              ) : <p className="text-[11px] text-slate-500" role="status">No next rank to evaluate for your current rank.</p>}
               <Link className={linkClass} href="/employee/promotion-eligibility">View Promotion Status</Link>
             </Card>
           </div>

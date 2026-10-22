@@ -11,7 +11,7 @@ export function buildMasterlistCsv(rows: MasterlistRow[]) {
   return `${lines.join("\r\n")}\r\n`;
 }
 
-export type ReportExportFormat = "pdf" | "csv" | "print";
+export type ReportExportFormat = "pdf" | "csv";
 
 /** Where the Generate Report modal sends each export format. PDF is a protected server attachment. */
 export function reportGenerateHref(key: ReportFilters["reportKey"], input: { from: string; to: string; departmentId: number | null; format: ReportExportFormat }) {
@@ -19,6 +19,5 @@ export function reportGenerateHref(key: ReportFilters["reportKey"], input: { fro
   if (input.departmentId) params.set("department", String(input.departmentId));
   if (input.format === "pdf") return `/api/reports/${key}.pdf?${params.toString()}`;
   if (input.format === "csv") params.set("export", "csv");
-  else params.set("print", "1");
   return `/reports/${key}?${params.toString()}`;
 }

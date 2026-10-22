@@ -8,6 +8,7 @@ import { StatusPill } from "@/components/staff-shell/ui/status-pill";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useLeaveRequest } from "@/hooks/use-leave-management";
 import { formatDate } from "@/lib/format-date";
+import { dayCount, leaveDays } from "@/lib/leave-days";
 import { leaveDateRange, leaveEmployeeName } from "@/lib/leave-management/leave-type-style";
 import { LEAVE_STATUS } from "@/lib/staff/status-maps";
 
@@ -26,12 +27,11 @@ export function LeaveDetailsModal({ requestId, onClose }: { requestId: string; o
   const data = request.data;
   return (
     <StaffModal
-      footer={<button className={staffButton.dark} onClick={onClose} type="button">Close Window</button>}
+      footer={<button className={staffButton.dark} onClick={onClose} type="button">Close</button>}
       icon={<Eye aria-hidden="true" className="size-3.5" />}
       iconClassName="bg-slate-200 text-slate-700"
       onClose={onClose}
       open
-      subtitle="Historical record and processing remarks"
       title="Leave Application Details"
     >
       {request.isLoading ? <LoadingState label="Loading leave request…" /> : !data ? (
@@ -40,15 +40,21 @@ export function LeaveDetailsModal({ requestId, onClose }: { requestId: string; o
         <>
           <div className="space-y-2 font-medium text-slate-700">
             <Row label="Employee Name:"><span className="text-sm font-bold text-slate-900">{leaveEmployeeName(data)}</span></Row>
-            <Row label="Badge ID:"><span className="font-mono font-bold text-slate-800">{data.employees?.employee_number ?? "—"}</span></Row>
+            <Row label="Badge Number:"><span className="font-mono font-bold text-slate-800">{data.employees?.employee_number ?? "—"}</span></Row>
             <Row label="Leave Type:"><span className="font-bold text-slate-800">{data.leave_type_name}</span></Row>
-            <Row label="Inclusive Dates:"><span className="font-semibold text-slate-800">{leaveDateRange(data.starts_on, data.ends_on, formatDate)}</span></Row>
+            <Row label="Inclusive Dates:">
+              <span className="inline-flex flex-wrap items-center justify-end gap-2">
+                <span className="font-semibold text-slate-800">{leaveDateRange(data.starts_on, data.ends_on, formatDate)}</span>
+                <StatusPill tone="blue">{dayCount(leaveDays(data.starts_on, data.ends_on))}</StatusPill>
+              </span>
+            </Row>
+            {data.excess_days > 0 ? <Row label="Days Deducted:"><StatusPill tone="amber">{dayCount(data.excess_days)}</StatusPill></Row> : null}
             <Row label="Date Submitted:"><span className="text-slate-600">{formatDate(data.created_at)}</span></Row>
             <Row label="Current Status:"><StatusPill tone={LEAVE_STATUS[data.status].tone}>{LEAVE_STATUS[data.status].label}</StatusPill></Row>
           </div>
           <div className="space-y-1.5 border-t border-slate-100 pt-3">
-            <p className="font-bold text-slate-800">HR Processing Notes / Remarks:</p>
-            <div className="rounded-xl border border-slate-200/80 bg-slate-50 p-3 text-xs text-slate-600 italic">{data.decision_note || "No HR processing notes provided."}</div>
+            <p className="font-bold text-slate-800">Remarks:</p>
+            <div className="rounded-xl border border-slate-200/80 bg-slate-50 p-3 text-xs text-slate-600 italic">{data.decision_note || "No remarks provided."}</div>
           </div>
         </>
       )}

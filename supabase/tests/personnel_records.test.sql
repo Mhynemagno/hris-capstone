@@ -60,8 +60,11 @@ values ('Personnel fixture department');
 insert into public.ranks (name, code, sort_order)
 values
   ('Personnel fixture rank', 'PFR', 9101),
-  ('Non-uniformed personnel fixture rank', 'NUP', 9102),
   ('Rank changing to non-uniformed personnel', 'NUP-CANDIDATE', 9103);
+-- The NUP rank is part of the catalogue (sort order 0); add it only on databases without it.
+insert into public.ranks (name, code, sort_order)
+values ('Non-uniformed personnel fixture rank', 'NUP', 9102)
+on conflict (code) do nothing;
 
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-0000-0000-000000000002';

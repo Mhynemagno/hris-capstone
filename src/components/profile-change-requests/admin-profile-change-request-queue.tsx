@@ -19,7 +19,8 @@ import type { ProfileChangeStatus } from "@/schemas/profile-change-requests";
 const statuses: Array<ProfileChangeStatus | ""> = ["", "approved", "rejected"];
 const statusLabel = (status: ProfileChangeStatus | "") => (status ? status[0].toUpperCase() + status.slice(1) : "All statuses");
 
-export function AdminProfileChangeRequestQueue() {
+/** `basePath` is where each request's review page lives: the HR or the system administrator route. */
+export function AdminProfileChangeRequestQueue({ basePath = "/admin/profile-change-requests" }: { basePath?: string } = {}) {
   const { params, set } = useListParams(["status", "page"] as const);
   const page = Math.max(1, Number(params.page) || 1);
   const status = statuses.includes(params.status as ProfileChangeStatus) ? params.status as ProfileChangeStatus : "";
@@ -78,7 +79,7 @@ export function AdminProfileChangeRequestQueue() {
                           <Link
                             aria-label={`${request.status === "pending" ? "Review" : "View"} request submitted ${submitted}`}
                             className="font-medium text-primary underline underline-offset-4"
-                            href={`/admin/profile-change-requests/${request.id}`}
+                            href={`${basePath}/${request.id}`}
                           >
                             {request.status === "pending" ? "Review" : "View"}
                           </Link>

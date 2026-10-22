@@ -16,6 +16,8 @@ const job = {
   description: "Serve the community through visible patrol work.",
   location: "San Juan City",
   closes_on: "2026-09-29",
+  recruitment_cycle: 2,
+  recruitment_year: 2026,
   image_path: "job-openings/9/0b8f2c1e-1111-4222-8333-944455556666.png",
   job_qualification_criteria: [{ id: "c1", ordinal: 1, requirement: "Bachelor's degree", is_required: true }],
 };
@@ -37,6 +39,7 @@ describe("PublicJobDetail", () => {
     expect(screen.getByRole("img", { name: "Patrolman job posting" })).toHaveAttribute("src", expect.stringContaining("/storage/v1/object/public/job-posting-images/job-openings/9/"));
     expect(screen.getByText("Serve the community through visible patrol work.")).toBeVisible();
     expect(screen.getByText(/Deadline of Application: September 29, 2026/)).toBeVisible();
+    expect(screen.getByText(/Cycle 2 · July–December 2026/)).toBeVisible();
     await waitFor(() => expect(mocks.getUser).toHaveBeenCalled());
     await user.click(screen.getByRole("button", { name: "Apply now" }));
     expect(await screen.findByRole("dialog", { name: "Data Privacy Notice" })).toBeVisible();

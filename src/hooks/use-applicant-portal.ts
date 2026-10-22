@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { queryKeys } from "@/lib/query-keys";
-import { getMyAccountEmail, listApplicantEducationFor, listHrRegisteredApplicants, listMyApplicantEducation, listMyApplicationHistory, removeMyApplicantProfileDocument, saveMyApplicantEducation } from "@/queries/applicant-portal";
+import { getMyAccountEmail, listApplicantEducationFor, listHrRegisteredApplicants, listMyApplicantEducation, listMyApplicationHistory, reactivateApplicantAccount, removeMyApplicantProfileDocument, reopenApplicationForResubmission, saveMyApplicantEducation, sendApplicantCredentials } from "@/queries/applicant-portal";
 import { listMyApplications } from "@/queries/recruitment";
 import type { ApplicantEducationInput } from "@/schemas/applicant-portal";
 
@@ -37,6 +37,32 @@ export function useRemoveMyApplicantProfileDocument() {
 
 export function useHrRegisteredApplicants() {
   return useQuery({ queryKey: queryKeys.recruitment.registeredApplicants(), queryFn: listHrRegisteredApplicants });
+}
+
+export function useReactivateApplicantAccount() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: reactivateApplicantAccount,
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.registeredApplicants() }),
+  });
+}
+
+export function useSendApplicantCredentials() {
+  return useMutation({ mutationFn: sendApplicantCredentials });
+}
+
+export function useReopenApplicationForResubmission() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ applicationId, note }: { applicationId: string; note?: string }) => reopenApplicationForResubmission(applicationId, note),
+    onSuccess: (_, input) => {
+      void queryClient.invalidateQueries({ queryKey: ["workspace", "count"] });
+      void queryClient.invalidateQueries({ queryKey: ["recruitment", "applications"] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.registeredApplicants() });
+      void queryClient.invalidateQueries({ queryKey: ["reporting"] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.application(input.applicationId) });
+    },
+  });
 }
 
 const statusFilters = { page: 1, pageSize: 50 };

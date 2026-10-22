@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 
+import { ApplicantAccountActions } from "@/components/recruitment/applicant-account-actions";
 import { ApplicationStageBadge } from "@/components/recruitment/application-stage-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,19 +28,23 @@ export function registeredApplicantName(applicant: HrRegisteredApplicant) {
 
 export function RegisteredApplicantDrawer({ applicant, onClose }: { applicant: HrRegisteredApplicant | null; onClose: () => void }) {
   return (
-    <Drawer description="Registered, has not applied yet" onOpenChange={(open) => { if (!open) onClose(); }} open={Boolean(applicant)} title={applicant ? registeredApplicantName(applicant) : ""}>
+    <Drawer description={applicant && applicant.application_count > 0 ? "Registered applicant" : "Registered, has not applied yet"} onOpenChange={(open) => { if (!open) onClose(); }} open={Boolean(applicant)} title={applicant ? registeredApplicantName(applicant) : ""}>
       {applicant ? (
-        <dl className="space-y-4">
-          {[
-            ["Applicant number", formatApplicantNumber(applicant.applicant_number) ?? "Not assigned yet"],
-            ["Email", applicant.email ?? "—"],
-            ["Email status", applicant.email_confirmed ? "Confirmed" : "Not confirmed"],
-            ["Mobile", applicant.phone ?? "—"],
-            ["Registered", formatDate(applicant.registered_at)],
-          ].map(([label, value]) => (
-            <div key={label}><dt className="text-sm text-muted-foreground">{label}</dt><dd className="text-base break-all">{value}</dd></div>
-          ))}
-        </dl>
+        <div className="space-y-6">
+          <dl className="space-y-4">
+            {[
+              ["Applicant number", formatApplicantNumber(applicant.applicant_number)],
+              ["Email", applicant.email ?? "—"],
+              ["Email status", applicant.email_confirmed ? "Confirmed" : "Not confirmed"],
+              ["Account", applicant.account_active ? "Active" : "Deactivated"],
+              ["Mobile", applicant.phone ?? "—"],
+              ["Registered", formatDate(applicant.registered_at)],
+            ].map(([label, value]) => (
+              <div key={label}><dt className="text-sm text-muted-foreground">{label}</dt><dd className="text-base break-all">{value}</dd></div>
+            ))}
+          </dl>
+          <ApplicantAccountActions active={applicant.account_active} email={applicant.email} userId={applicant.user_id} />
+        </div>
       ) : null}
     </Drawer>
   );
@@ -68,7 +73,7 @@ export function HrRegisteredApplicants() {
           {row.latest_application_id
             ? <Link className="font-medium hover:underline" href={`/hr/applications/${row.latest_application_id}`}>{name}</Link>
             : <button className="font-medium hover:underline" onClick={() => setOpen(row)} type="button">{name}</button>}
-          {row.applicant_number !== null ? <p className="text-sm text-muted-foreground tabular-nums">{formatApplicantNumber(row.applicant_number)}</p> : null}
+          <p className="text-sm text-muted-foreground tabular-nums">{formatApplicantNumber(row.applicant_number)}</p>
         </div>
       );
     } },

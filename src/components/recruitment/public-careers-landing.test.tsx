@@ -26,7 +26,7 @@ describe("PublicCareersLanding", () => {
       { id: announcementId, title: "Road safety advisory", summary: "Expect road works near the station.", category: "advisory", published_at: "2026-10-03T02:00:00Z" },
     ]));
     mocks.jobs.mockReturnValue(loaded({
-      rows: [{ closes_on: "2026-10-31", created_at: "2026-09-01T00:00:00Z", description: "Serve the community through visible patrol work.", id: 7, location: "San Juan City", published_at: "2026-09-02T00:00:00Z", title: "Patrol Officer" }],
+      rows: [{ closes_on: "2026-10-31", created_at: "2026-09-01T00:00:00Z", description: "Serve the community through visible patrol work.", id: 7, location: "San Juan City", published_at: "2026-09-02T00:00:00Z", recruitment_cycle: 2, recruitment_year: 2026, title: "Patrol Officer" }],
     }));
   });
 
@@ -94,6 +94,7 @@ describe("PublicCareersLanding", () => {
     expect(within(recruitment).getByText("Apply online for San Juan City Police Station quota.")).toBeVisible();
     expect(within(recruitment).getByRole("heading", { name: "Patrol Officer" })).toBeVisible();
     expect(within(recruitment).getByText("Deadline: October 31, 2026")).toBeVisible();
+    expect(within(recruitment).getByText("Cycle 2 · July–December 2026")).toBeVisible();
     expect(within(recruitment).getByRole("link", { name: "View details for Patrol Officer" })).toHaveAttribute("href", "/jobs/7");
     expect(within(recruitment).queryByRole("link", { name: /view all openings/i })).not.toBeInTheDocument();
     expect(within(recruitment).queryByRole("textbox", { name: "Reference number" })).not.toBeInTheDocument();

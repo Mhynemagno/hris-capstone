@@ -43,6 +43,7 @@ describe("role configuration", () => {
       { href: "/hr/deployments", label: "Deployments", group: "Personnel", badge: undefined },
       { href: "/hr/leave-requests", label: "Leave", group: "Personnel", badge: "leaveForApproval" },
       { href: "/hr/promotions", label: "Promotion", group: "Personnel", badge: undefined },
+      { href: "/hr/profile-requests", label: "Profile Change Requests", group: "Personnel", badge: "profileChangesPending" },
       { href: "/hr/attendance", label: "Daily Attendance Logs", group: "Attendance & DTR", badge: undefined },
       { href: "/reports", label: "HR Audit & Reports", group: "Reports", badge: undefined },
       { href: "/hr/public-site", label: "Announcements", group: "Public Site", badge: undefined },

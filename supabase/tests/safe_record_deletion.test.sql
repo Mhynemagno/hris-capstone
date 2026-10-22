@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(41);
+select extensions.plan(34);
 
 -- Fixture accounts: two administrators, HR, an unused applicant, and an applicant with an application.
 insert into auth.users (id, aud, role, email, created_at, updated_at)
@@ -96,50 +96,17 @@ select extensions.throws_ok(
   '42501', null, 'Administrators cannot delete department rows directly');
 
 -- ---------------------------------------------------------------------------
--- Leave types and promotion criteria (HR-owned)
+-- Leave types (HR-owned; promotion criteria are system-owned since 20261022120000)
 -- ---------------------------------------------------------------------------
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000009503';
 select extensions.lives_ok(
   $$select public.delete_leave_type('00000000-0000-4000-8000-000000009521')$$,
   'HR can delete an unused leave type');
-select extensions.ok(
-  public.get_deletion_impact('promotion_criterion', '00000000-0000-4000-8000-000000009531') -> 'removes'
-    @> '[{"label": "required credentials", "count": 1}]'::jsonb,
-  'Promotion criterion impact lists the requirements that will be removed with it');
-select extensions.lives_ok(
-  $$select public.delete_promotion_criterion('00000000-0000-4000-8000-000000009531')$$,
-  'HR can delete promotion criteria that have no evaluations');
 set local role postgres;
 select extensions.is((select count(*) from public.leave_types where id = '00000000-0000-4000-8000-000000009521'), 0::bigint, 'The leave type row is removed');
 select extensions.ok(exists (
   select 1 from public.audit_logs where entity_type = 'leave_types' and action = 'delete' and entity_id = '00000000-0000-4000-8000-000000009521'
 ), 'Leave type deletion is audited');
-select extensions.is((select count(*) from public.promotion_criteria_requirements where criterion_id = '00000000-0000-4000-8000-000000009531'), 0::bigint, 'Criterion requirements are removed with the criterion');
-select extensions.ok(exists (
-  select 1 from public.audit_logs where entity_type = 'promotion_criteria' and action = 'delete'
-    and entity_id = '00000000-0000-4000-8000-000000009531' and jsonb_array_length(metadata -> 'requirements') = 1
-), 'Promotion criterion deletion is audited with its requirements');
-
--- Criteria with evaluation evidence can still be deactivated (but not deleted).
-set local role postgres;
-insert into public.promotion_criteria (id, target_rank_id, minimum_years_of_service, created_by_user_id, updated_by_user_id)
-select '00000000-0000-4000-8000-000000009532', id, 1, '00000000-0000-4000-8000-000000009503', '00000000-0000-4000-8000-000000009503'
-from public.ranks where code = 'DUR';
-set local role authenticated;
-set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000009501';
-select extensions.throws_ok(
-  $$select public.set_promotion_criterion_active('00000000-0000-4000-8000-000000009532', false)$$,
-  '42501', 'HR access is required.', 'Only HR can change promotion criteria status');
-set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000009503';
-select extensions.lives_ok(
-  $$select public.set_promotion_criterion_active('00000000-0000-4000-8000-000000009532', false)$$,
-  'HR can deactivate promotion criteria without rewriting their requirements');
-set local role postgres;
-select extensions.ok(
-  (select not is_active from public.promotion_criteria where id = '00000000-0000-4000-8000-000000009532')
-    and exists (select 1 from public.audit_logs where entity_id = '00000000-0000-4000-8000-000000009532' and action = 'deactivated'),
-  'Criteria deactivation is persisted and audited');
-
 -- ---------------------------------------------------------------------------
 -- Job openings: only unused drafts/closed openings, audited
 -- ---------------------------------------------------------------------------

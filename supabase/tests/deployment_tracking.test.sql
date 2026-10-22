@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(26);
+select extensions.plan(27);
 
 select extensions.has_table('public', 'deployments', 'Deployments table exists');
 select extensions.has_table('public', 'deployment_history', 'Deployment history table exists');
@@ -37,7 +37,8 @@ values
 
 insert into public.unit_stations (name) values ('Operations');
 
-set local role authenticated;
+-- Signed-in users can no longer call the legacy create RPC (it writes any status), so the
+-- legacy validation is exercised as the owner role with the HR caller's claims.
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000601';
 
 select extensions.lives_ok(
@@ -106,31 +107,36 @@ select extensions.is((select count(*) from public.deployment_history), 0::bigint
 
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000601';
 select extensions.lives_ok(
-  $$select public.update_deployment(
+  $$select public.update_deployment_details(
     current_setting('test.deployment_id')::uuid, current_setting('test.expected_updated_at')::timestamptz,
-    'Central station', null, null, 'Patrol officer', '2026-09-01', '2026-09-30', 'cancelled', 'Assignment cancelled', 'Public Assembly', 'Rally'
+    'Central station', '2026-09-01', '2026-09-30', 'Public Assembly', 'Rally', 'Deployed'
   )$$,
-  'HR can cancel a deployment'
+  'HR edits the deployment details'
 );
-select extensions.is((select status from public.deployments where id::text = current_setting('test.deployment_id')), 'cancelled', 'Cancelling updates the deployment status');
-select extensions.is((select count(*) from public.deployment_history where deployment_id::text = current_setting('test.deployment_id')), 2::bigint, 'Update appends immutable history');
 select set_config('test.current_updated_at', (select updated_at::text from public.deployments where id::text = current_setting('test.deployment_id')), true);
 select extensions.lives_ok(
-  $$select public.update_deployment(
+  $$select public.update_deployment_details(
     current_setting('test.deployment_id')::uuid, current_setting('test.current_updated_at')::timestamptz,
-    'Central station', null, null, 'Patrol officer', '2026-09-01', null, 'cancelled', 'Historic end-date check', 'Public Assembly', 'Rally'
+    'Central station', '2026-09-01', null, 'Public Assembly', 'Rally', 'Deployed'
   )$$,
   'HR can clear an end date from the form'
 );
 select extensions.is((select ends_on from public.deployments where id::text = current_setting('test.deployment_id')), null::date, 'A cleared end date stays cleared (the form now owns the End date)');
+select set_config('test.current_updated_at', (select updated_at::text from public.deployments where id::text = current_setting('test.deployment_id')), true);
+select extensions.lives_ok(
+  $$select public.cancel_deployment(current_setting('test.deployment_id')::uuid, current_setting('test.current_updated_at')::timestamptz)$$,
+  'HR can cancel a deployment'
+);
+select extensions.is((select status from public.deployments where id::text = current_setting('test.deployment_id')), 'cancelled', 'Cancelling updates the deployment status');
+select extensions.is((select count(*) from public.deployment_history where deployment_id::text = current_setting('test.deployment_id')), 4::bigint, 'Edits and the cancellation append immutable history');
 set local role postgres;
-select extensions.ok(exists (select 1 from public.audit_logs where entity_type = 'deployments' and entity_id = current_setting('test.deployment_id') and action = 'status_changed'), 'Status transition is audited');
+select extensions.ok(exists (select 1 from public.audit_logs where entity_type = 'deployments' and entity_id = current_setting('test.deployment_id') and action = 'cancelled'), 'Cancellation is audited');
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000601';
 select extensions.throws_ok(
-  $$select public.update_deployment(
+  $$select public.update_deployment_details(
     current_setting('test.deployment_id')::uuid, current_setting('test.expected_updated_at')::timestamptz,
-    'Central station', null, null, 'Patrol officer', '2026-09-01', '2026-09-30', 'cancelled', 'Stale update', 'Public Assembly', 'Rally'
+    'Central station', '2026-09-01', '2026-09-30', 'Public Assembly', 'Rally', 'Deployed'
   )$$,
   'P0001', null, 'Stale update is refused'
 );

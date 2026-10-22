@@ -1,31 +1,42 @@
 import { withSearch } from "@/lib/search";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
-import type { Deployment, DeploymentHistory, DeploymentReport, Employee, PaginatedResult } from "@/lib/types/database";
-import { uuidSchema } from "@/schemas/common";
-import { deploymentFiltersSchema, deploymentGroupInputSchema, deploymentInputSchema, deploymentUpdateSchema, type DeploymentFilters } from "@/schemas/deployment-tracking";
+import type { Deployment, DeploymentReport, Employee, PaginatedResult } from "@/lib/types/database";
+import { isoDateSchema, uuidSchema } from "@/schemas/common";
+import { deploymentCancelSchema, deploymentFiltersSchema, deploymentGroupInputSchema, deploymentStatusProposalSchema, deploymentStatusReviewSchema, deploymentUpdateSchema, type DeploymentFilters } from "@/schemas/deployment-tracking";
 
 function throwIfError(error: { message: string } | null) { if (error) throw new Error(error.message); }
 
 export function deploymentFilters(input: unknown = {}) { return deploymentFiltersSchema.parse(input); }
 
-export type DeploymentHistoryEntry = DeploymentHistory & { actor: { full_name: string | null } | null };
-export type DeploymentEmployee = { id: string; employee_number: string; first_name: string; middle_name: string | null; last_name: string };
-export type DeploymentWithHistory = Deployment & { deployment_history: DeploymentHistoryEntry[]; employee: DeploymentEmployee | null };
+/** The deployed employee's identity as shown in the HR list and details page. */
+export type DeploymentEmployee = { id: string; employee_number: string; first_name: string; middle_name: string | null; last_name: string; qualifier: string | null; rank: { code: string } | null };
+export type DeploymentWithEmployee = Deployment & { employee: DeploymentEmployee | null };
 
-export async function listHrDeployments(input: Partial<DeploymentFilters> = {}): Promise<PaginatedResult<Deployment, DeploymentFilters>> {
+const employeeColumns = "id, employee_number, first_name, middle_name, last_name, qualifier, rank:ranks(code)";
+
+export function deploymentEmployeeName(employee: Pick<DeploymentEmployee, "first_name" | "middle_name" | "last_name" | "qualifier"> | null | undefined) {
+  return employee ? [employee.first_name, employee.middle_name, employee.last_name, employee.qualifier].filter(Boolean).join(" ") : null;
+}
+
+export async function listHrDeployments(input: Partial<DeploymentFilters> = {}): Promise<PaginatedResult<DeploymentWithEmployee, DeploymentFilters>> {
   const filters = deploymentFilters(input); const from = (filters.page - 1) * filters.pageSize;
-  const columns = filters.activeEmployeesOnly ? "*, active_employee:employees!inner(employment_status)" : "*";
+  // Rank, name and badge number come with each row; the inner join also lets the HR dashboard leave retired personnel out.
+  const columns = filters.activeEmployeesOnly ? `*, employee:employees!inner(${employeeColumns}, employment_status)` : `*, employee:employees(${employeeColumns})`;
   let query = createBrowserSupabaseClient().from("deployments").select(columns, { count: "exact" }).order("starts_on", { ascending: false }).order("id").range(from, from + filters.pageSize - 1);
   query = withSearch(query, filters.search);
-  if (filters.activeEmployeesOnly) query = query.eq("active_employee.employment_status", "active");
+  if (filters.activeEmployeesOnly) query = query.eq("employee.employment_status", "active");
   if (filters.status) query = query.eq("status", filters.status);
   if (filters.deploymentType) query = query.eq("deployment_type", filters.deploymentType);
   if (filters.employeeId) query = query.eq("employee_id", filters.employeeId);
   if (filters.startsOn) query = query.or(`ends_on.is.null,ends_on.gte.${filters.startsOn}`);
   if (filters.endsOn) query = query.lte("starts_on", filters.endsOn);
   const { data, error, count } = await query; throwIfError(error);
-  // The employment-status embed only filters; it is not part of a deployment row.
-  const rows = ((data ?? []) as unknown as Array<Deployment & { active_employee?: unknown }>).map((row) => { const copy = { ...row }; delete copy.active_employee; return copy as Deployment; });
+  // The employment status is only a filter; it is not part of the row.
+  const rows = ((data ?? []) as unknown as Array<Deployment & { employee: (DeploymentEmployee & { employment_status?: string }) | null }>).map((row) => {
+    if (!row.employee) return row as DeploymentWithEmployee;
+    const employee = { ...row.employee }; delete employee.employment_status;
+    return { ...row, employee } as DeploymentWithEmployee;
+  });
   return { rows, count: count ?? 0, filters };
 }
 
@@ -43,57 +54,66 @@ export async function getDeployment(deploymentId: string) {
   const id = uuidSchema.parse(deploymentId);
   const { data, error } = await createBrowserSupabaseClient()
     .from("deployments")
-    .select("*, employee:employees(id, employee_number, first_name, middle_name, last_name), deployment_history(*, actor:profiles(full_name))")
+    .select(`*, employee:employees(${employeeColumns})`)
     .eq("id", id)
     .maybeSingle();
   throwIfError(error);
-  if (!data) return null;
-  const deployment = data as DeploymentWithHistory;
-  deployment.deployment_history.sort((left, right) => left.created_at.localeCompare(right.created_at));
-  return deployment;
+  return (data as DeploymentWithEmployee | null) ?? null;
 }
 
 export const EMPLOYEE_OPTIONS_LIMIT = 2000;
 
-export type EmployeeOption = { id: string; fullName: string; employeeNumber: string };
-export type DeploymentGroupAssignment = {
+export type EmployeeOption = {
   id: string;
-  employee_id: string;
-  task: "Deployed" | "Reserve/Standby";
-  status: Deployment["status"];
-  deployment_group: { id: string; location: string; starts_on: string; ends_on: string | null; deployment_type: string; event_operation: string };
-  employee: EmployeeOption;
+  fullName: string;
+  employeeNumber: string;
+  rank: string | null;
+  /** Position of the rank in the catalogue, so rank filters list junior ranks first. */
+  rankSortOrder: number | null;
+  department: string | null;
 };
 
 /** Active employees (up to 2000) for deployment pickers; retired personnel cannot be assigned new duty. */
 export async function listEmployeeOptions(): Promise<EmployeeOption[]> {
   const { data, error } = await createBrowserSupabaseClient()
     .from("employees")
-    .select("id, employee_number, first_name, middle_name, last_name, qualifier")
+    .select("id, employee_number, first_name, middle_name, last_name, qualifier, rank:ranks(code, sort_order), department:departments(name)")
     .eq("employment_status", "active")
     .order("last_name")
     .order("first_name")
     .order("employee_number")
     .limit(EMPLOYEE_OPTIONS_LIMIT);
   throwIfError(error);
-  return ((data ?? []) as Pick<Employee, "id" | "employee_number" | "first_name" | "middle_name" | "last_name" | "qualifier">[]).map((row) => ({
+  type Row = Pick<Employee, "id" | "employee_number" | "first_name" | "middle_name" | "last_name" | "qualifier"> & { rank?: { code: string; sort_order: number } | null; department?: { name: string } | null };
+  return ((data ?? []) as unknown as Row[]).map((row) => ({
     id: row.id,
     employeeNumber: row.employee_number,
     fullName: [row.first_name, row.middle_name, row.last_name, row.qualifier].filter(Boolean).join(" "),
+    rank: row.rank?.code ?? null,
+    rankSortOrder: row.rank?.sort_order ?? null,
+    department: row.department?.name ?? null,
   }));
 }
 
-/**
- * Fields shared by create and update. A deployment's employee is fixed once created.
- * The form no longer asks for an assignment role or project: the database still requires an
- * assignment role, so the location is stored there, and the project is cleared.
- */
-function rpcPayload(input: ReturnType<typeof deploymentInputSchema.parse>) {
-  return { target_location: input.location, target_unit: input.unit, target_project: null, target_assignment_role: input.location, target_starts_on: input.startsOn, target_ends_on: input.endsOn, target_status: input.status, target_notes: input.notes, target_deployment_type: input.deploymentType, target_event_operation: input.eventOperation };
+function localIsoDate(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
-export async function createDeployment(input: unknown) {
-  const values = deploymentInputSchema.parse(input); const { data, error } = await createBrowserSupabaseClient().rpc("create_deployment", { target_employee_id: values.employeeId, ...rpcPayload(values) }); throwIfError(error); return data as string;
+/**
+ * Employees with approved leave overlapping the given dates (today when none are chosen).
+ * They are left out of the deployable list; the database refuses them as well.
+ */
+export async function listEmployeeIdsOnLeave(input: { startsOn?: string | null; endsOn?: string | null } = {}): Promise<string[]> {
+  const startsOn = isoDateSchema.parse(input.startsOn || localIsoDate(new Date()));
+  const endsOn = isoDateSchema.parse(input.endsOn && input.endsOn >= startsOn ? input.endsOn : startsOn);
+  const { data, error } = await createBrowserSupabaseClient()
+    .from("leave_requests")
+    .select("employee_id")
+    .eq("status", "approved")
+    .lte("starts_on", endsOn)
+    .gte("ends_on", startsOn);
+  throwIfError(error);
+  return [...new Set(((data ?? []) as Array<{ employee_id: string }>).map((row) => row.employee_id))];
 }
 
 /** Creates a single deployment header with one assignment row for every selected employee. */
@@ -112,29 +132,41 @@ export async function createDeploymentGroup(input: unknown) {
   return data as string;
 }
 
-/** Assignment rows from deployments created through the grouped workflow. */
-export async function listHrDeploymentGroupAssignments(): Promise<DeploymentGroupAssignment[]> {
-  const { data, error } = await createBrowserSupabaseClient()
-    .from("deployment_assignments")
-    .select("id, employee_id, task, status, deployment_group:deployment_groups(id, location, starts_on, ends_on, deployment_type, event_operation), employee:employees(id, employee_number, first_name, middle_name, last_name, qualifier)")
-    .order("created_at", { ascending: false })
-    .limit(200);
-  throwIfError(error);
-  return ((data ?? []) as unknown as Array<{ id: string; employee_id: string; task: DeploymentGroupAssignment["task"]; status: Deployment["status"]; deployment_group: DeploymentGroupAssignment["deployment_group"] | null; employee: Pick<Employee, "id" | "employee_number" | "first_name" | "middle_name" | "last_name" | "qualifier"> | null }>).flatMap((row) => {
-    if (!row.deployment_group || !row.employee) return [];
-    return [{
-      id: row.id,
-      employee_id: row.employee_id,
-      task: row.task,
-      status: row.status,
-      deployment_group: row.deployment_group,
-      employee: { id: row.employee.id, employeeNumber: row.employee.employee_number, fullName: [row.employee.first_name, row.employee.middle_name, row.employee.last_name, row.employee.qualifier].filter(Boolean).join(" ") },
-    }];
+/** HR edits one employee's deployment details. The status is never sent: HR can only cancel. */
+export async function updateDeployment(input: unknown) {
+  const values = deploymentUpdateSchema.parse(input);
+  const { error } = await createBrowserSupabaseClient().rpc("update_deployment_details", {
+    target_deployment_id: values.id,
+    expected_updated_at: values.expectedUpdatedAt,
+    target_location: values.location,
+    target_starts_on: values.startsOn,
+    target_ends_on: values.endsOn,
+    target_deployment_type: values.deploymentType,
+    target_event_operation: values.eventOperation,
+    target_task: values.task,
   });
+  throwIfError(error);
 }
 
-export async function updateDeployment(input: unknown) {
-  const values = deploymentUpdateSchema.parse(input); const { error } = await createBrowserSupabaseClient().rpc("update_deployment", { target_deployment_id: values.id, expected_updated_at: values.expectedUpdatedAt, ...rpcPayload(values) }); throwIfError(error);
+/** HR's only direct status action. */
+export async function cancelDeployment(input: unknown) {
+  const values = deploymentCancelSchema.parse(input);
+  const { error } = await createBrowserSupabaseClient().rpc("cancel_deployment", { target_deployment_id: values.id, expected_updated_at: values.expectedUpdatedAt });
+  throwIfError(error);
+}
+
+/** The deployed employee asks HR to set Ongoing or Completed (Completed needs submitted proof). */
+export async function proposeDeploymentStatus(input: unknown) {
+  const values = deploymentStatusProposalSchema.parse(input);
+  const { error } = await createBrowserSupabaseClient().rpc("propose_deployment_status", { target_deployment_id: values.deploymentId, target_status: values.status });
+  throwIfError(error);
+}
+
+/** HR approves (applies) or rejects (clears) the employee's proposed status. */
+export async function reviewDeploymentStatus(input: unknown) {
+  const values = deploymentStatusReviewSchema.parse(input);
+  const { error } = await createBrowserSupabaseClient().rpc("review_deployment_status", { target_deployment_id: values.id, approve: values.approve });
+  throwIfError(error);
 }
 
 const deploymentReportBucket = "deployment-reports";
@@ -142,7 +174,7 @@ const reportExtensions: Record<string, string> = { "application/pdf": "pdf", "im
 
 export type DeploymentReportInput = { deploymentId: string; notes?: string; file: File | null };
 
-/** The deployed employee (or HR) submits a report / proof of attendance; the file is removed again if the report is refused. */
+/** The deployed employee submits a report / proof of attendance; the file is removed again if the report is refused. */
 export async function submitDeploymentReport({ deploymentId, notes, file }: DeploymentReportInput) {
   const id = uuidSchema.parse(deploymentId);
   if (!file) throw new Error("Attach the report or proof of attendance.");

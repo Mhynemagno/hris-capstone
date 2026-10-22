@@ -71,11 +71,10 @@ describe("ApplicantProfileForm", { timeout: 20_000 }, () => {
     expect(screen.getByText("Applicant Number").parentElement).toHaveTextContent("2-02601");
   });
 
-  it("shows Pending until HR accepts the application", () => {
-    mocks.applicant = { ...baseApplicant, applicant_number: null };
+  it("never shows a Pending placeholder: the number is issued at registration", () => {
     render(<ApplicantProfileForm />);
-    expect(screen.getByText("Applicant Number").parentElement).toHaveTextContent("Pending");
-    expect(screen.getByText("Issued once HR accepts your application")).toBeVisible();
+    expect(screen.getByText("Applicant Number").parentElement).not.toHaveTextContent("Pending");
+    expect(screen.queryByText("Issued once HR accepts your application")).not.toBeInTheDocument();
   });
 
   it("hides the photo requirement once a photo is on file", () => {

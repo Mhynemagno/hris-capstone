@@ -2,12 +2,15 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+const mocks = vi.hoisted(() => ({ propose: vi.fn(), notify: vi.fn(), reports: [] as Array<{ id: string }> }));
+vi.mock("@/components/staff-shell/staff-notify", () => ({ notifyStaff: mocks.notify }));
+
 import { EmployeeDeploymentList } from "./employee-deployment-list";
 
-const base = { employee_id: "e1", unit: null, project: null, assignment_role: null, deployment_type: "Public Assembly", event_operation: "Rally", updated_at: "2026-09-23T00:00:00Z" };
+const base = { employee_id: "e1", unit: null, project: null, assignment_role: "Deployed", task: "Deployed", deployment_type: "Public Assembly", event_operation: "Rally", proposed_status: null as string | null, updated_at: "2026-09-23T00:00:00Z" };
 const rows = [
   { ...base, id: "d1", location: "Greenhills Area Deployment", starts_on: "2026-09-28", ends_on: null, status: "ongoing", notes: "Report to Greenhills Sub-Station" },
-  { ...base, id: "d2", location: "Manila Area Detail", starts_on: "2026-10-05", ends_on: null, status: "scheduled", notes: "CDM standby" },
+  { ...base, id: "d2", location: "Manila Area Detail", starts_on: "2026-10-05", ends_on: null, status: "scheduled", notes: "CDM standby", task: "Reserve/Standby", proposed_status: "ongoing" },
   { ...base, id: "d3", location: "Completed detail", starts_on: "2026-08-01", ends_on: "2026-08-09", status: "completed", notes: null },
 ];
 const state = { loading: false, error: null as Error | null };
@@ -17,14 +20,15 @@ const useMyDeployments = vi.fn((input: { page?: number; pageSize?: number; statu
 });
 vi.mock("@/hooks/use-deployment-tracking", () => ({
   useMyDeployments: (input: { page?: number; pageSize?: number; status?: string }) => useMyDeployments(input),
-  useDeploymentReports: () => ({ isLoading: false, error: null, data: [] }),
+  useDeploymentReports: () => ({ isLoading: false, error: null, data: mocks.reports }),
   useSubmitDeploymentReport: () => ({ isPending: false, mutateAsync: vi.fn() }),
+  useProposeDeploymentStatus: () => ({ isPending: false, mutateAsync: mocks.propose }),
 }));
 
 describe("EmployeeDeploymentList", () => {
-  beforeEach(() => { state.loading = false; state.error = null; useMyDeployments.mockClear(); });
+  beforeEach(() => { state.loading = false; state.error = null; useMyDeployments.mockClear(); mocks.propose.mockReset(); mocks.notify.mockReset(); mocks.reports = []; });
 
-  it("renders the module heading, cards with status text, word-form dates and remarks", () => {
+  it("renders the module heading, cards with status text, word-form dates and tasks, without remarks", () => {
     render(<EmployeeDeploymentList />);
     expect(screen.getByText("Personnel Assignment Module")).toBeVisible();
     expect(screen.getByRole("heading", { name: "My Deployments" })).toBeVisible();
@@ -33,7 +37,9 @@ describe("EmployeeDeploymentList", () => {
     expect(screen.getByText("August 1, 2026 – August 9, 2026")).toBeVisible();
     expect(screen.getAllByText("Ongoing")).toHaveLength(2); // filter option + card pill
     expect(screen.getAllByText("Scheduled")).toHaveLength(2);
-    expect(screen.getByText(/CDM standby/)).toBeVisible();
+    expect(screen.queryByText(/CDM standby/)).not.toBeInTheDocument();
+    expect(screen.getByText("Reserve/Standby · Public Assembly · Rally")).toBeVisible();
+    expect(screen.getByText("Update for approval")).toBeVisible();
     expect(screen.getByText("Showing 1–3 of 3 deployments")).toBeVisible();
   });
 
@@ -48,6 +54,31 @@ describe("EmployeeDeploymentList", () => {
     expect(report).toBeVisible();
     await user.click(report);
     expect(screen.getByRole("button", { name: "Submit report" })).toBeVisible();
+  });
+
+  it("proposes Ongoing or Completed for HR approval; Completed needs proof first", async () => {
+    const user = userEvent.setup();
+    mocks.propose.mockResolvedValue(undefined);
+    render(<EmployeeDeploymentList />);
+    await user.selectOptions(screen.getByLabelText("Filter Status"), "ongoing");
+    await user.click(screen.getByRole("button", { name: "Report / Proof of Attendance" }));
+    expect(screen.queryByRole("button", { name: "Mark as Ongoing" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Mark as Completed" })).toBeDisabled();
+    expect(screen.getByText("Upload a report or proof of attendance before marking the deployment as completed.")).toBeVisible();
+  });
+
+  it("sends a Completed update once proof exists, and shows a pending update instead of buttons", async () => {
+    const user = userEvent.setup();
+    mocks.reports = [{ id: "r1" }];
+    mocks.propose.mockResolvedValue(undefined);
+    render(<EmployeeDeploymentList />);
+    const [ongoingReport, scheduledReport] = screen.getAllByRole("button", { name: "Report / Proof of Attendance" });
+    await user.click(ongoingReport!);
+    await user.click(screen.getByRole("button", { name: "Mark as Completed" }));
+    expect(mocks.propose).toHaveBeenCalledWith({ deploymentId: "d1", status: "completed" });
+    expect(mocks.notify).toHaveBeenCalledWith({ title: "Status update sent for approval" });
+    await user.click(scheduledReport!);
+    expect(screen.getByText("Ongoing update sent. Waiting for HR approval.")).toBeVisible();
   });
 
   it("shows a direct empty state for a status with no deployments", async () => {

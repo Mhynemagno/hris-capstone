@@ -37,7 +37,7 @@ const errorFieldFor: Record<string, string> = {
   notes: "notes", provider: "secondary",
   startedOn: "date", awardedOn: "date", issuedOn: "date", completedOn: "date",
   endedOn: "expiry", expiresOn: "expiry",
-  departmentId: "departmentId", rankId: "rankId", hours: "hours", unitStation: "unitStation",
+  departmentId: "departmentId", rankId: "rankId", hours: "hours", unitStation: "unitStation", rating: "rating",
 };
 
 type RecordEntryFormProps = {
@@ -98,7 +98,7 @@ export function RecordEntryForm({ employeeId, kind, onSaved, pending = false, tr
     const base = kind === "serviceHistory"
       ? { employeeId, departmentId: form.departmentId || undefined, rankId: form.rankId || undefined, unitStation: text(form.unitStation), ...kept({ employmentTitle: serviceHistory?.employment_title }), notes: text(form.notes), startedOn: form.date, endedOn: form.expiry || undefined }
       : kind === "qualification"
-        ? { employeeId, name: form.primary, ...kept({ institution: qualification?.institution, qualificationLevel: qualification?.qualification_level, fieldOfStudy: qualification?.field_of_study }), awardedOn: form.date, notes: text(form.notes) }
+        ? { employeeId, name: form.primary, ...kept({ institution: qualification?.institution, qualificationLevel: qualification?.qualification_level, fieldOfStudy: qualification?.field_of_study }), awardedOn: form.date, rating: text(form.rating), notes: text(form.notes) }
         : kind === "certification"
           ? { employeeId, name: form.primary, ...kept({ issuer: certification?.issuer, credentialId: certification?.credential_id, expiresOn: certification?.expires_on }), issuedOn: form.date, notes: text(form.notes) }
           : { employeeId, courseName: form.primary, provider: form.secondary, completedOn: form.date, expiresOn: form.expiry || undefined, hours: form.hours || undefined, notes: text(form.notes) };
@@ -207,6 +207,11 @@ export function RecordEntryForm({ employeeId, kind, onSaved, pending = false, tr
       {config.expiry ? (
         <FormField error={e.expiry} htmlFor={`${kind}-expiry`} label={config.expiry}>
           <Input className="h-11" defaultValue={training?.expires_on ?? serviceHistory?.ended_on ?? ""} id={`${kind}-expiry`} min={startDate || undefined} name="expiry" type="date" />
+        </FormField>
+      ) : null}
+      {kind === "qualification" ? (
+        <FormField description="Optional, e.g. 85 for NAPOLCOM 85%." error={e.rating} htmlFor="qualification-rating" label="Rating (%)">
+          <Input className="h-11" defaultValue={qualification?.rating ?? ""} id="qualification-rating" inputMode="decimal" max="100" min="0" name="rating" step="0.01" type="number" />
         </FormField>
       ) : null}
       {kind === "training" ? (

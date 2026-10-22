@@ -22,7 +22,6 @@ import { DepartmentField, RankField } from "./department-rank-fields";
 
 /** Greyed look for fields that cannot be changed once the record is saved. */
 const lockedClassName = "cursor-not-allowed bg-muted text-muted-foreground focus-visible:ring-0 dark:bg-muted";
-const lockedNote = "This cannot be changed once saved.";
 
 /** A numbered group of fields: one column when narrow, two at medium widths, three when wide (sized to the container, not the viewport). */
 function FormSection({ title, children }: { title: string; children: ReactNode }) {
@@ -108,31 +107,31 @@ export function EmployeeForm({ employee, account, onSaved, pending = false }: Em
       <FormSection title="I. Personal Details">
         <RankField error={e.rankId} idPrefix="employee" name="rankId" onChange={setRankId} required savedId={employee?.rank_id} value={rankId} />
         <input name="rankCode" type="hidden" value={rankCode} />
-        <FormField description={locked.employeeNumber ? lockedNote : isNup ? "8 digits displayed as YYYY-MM-DD." : "6 digits, e.g. 1-23456."} error={e.employeeNumber} htmlFor="employee-number" label={isNup ? "ID number" : "Badge number"} required>
+        <FormField description={locked.employeeNumber ? undefined : isNup ? "8 digits displayed as YYYY-MM-DD." : "6 digits, e.g. 1-23456."} error={e.employeeNumber} htmlFor="employee-number" label={isNup ? "ID number" : "Badge number"} required>
           {isNup ? <NupIdInput className={cn("h-11 tabular-nums", locked.employeeNumber && lockedClassName)} defaultValue={employee?.employee_number} id="employee-number" name="employeeNumber" readOnly={locked.employeeNumber} required /> : <BadgeNumberInput className={cn("h-11 tabular-nums", locked.employeeNumber && lockedClassName)} defaultValue={employee?.employee_number} id="employee-number" name="employeeNumber" readOnly={locked.employeeNumber} required />}
         </FormField>
         <FormField error={e.personalEmail} htmlFor="personal-email" label="Personal email" required>
           <Input className="h-11" defaultValue={employee?.personal_email ?? account?.email ?? ""} id="personal-email" name="personalEmail" type="email" autoComplete="email" required />
         </FormField>
-        <FormField description={locked.names ? lockedNote : undefined} error={e.firstName} htmlFor="first-name" label="First name" required>
+        <FormField error={e.firstName} htmlFor="first-name" label="First name" required>
           <Input className={cn("h-11", locked.names && lockedClassName)} defaultValue={employee?.first_name ?? account?.first_name ?? ""} id="first-name" name="firstName" readOnly={locked.names} required />
         </FormField>
-        <FormField description={locked.names ? lockedNote : undefined} error={e.middleName} htmlFor="middle-name" label="Middle name">
+        <FormField error={e.middleName} htmlFor="middle-name" label="Middle name">
           <Input className={cn("h-11", locked.names && lockedClassName)} defaultValue={employee?.middle_name ?? ""} id="middle-name" name="middleName" readOnly={locked.names} />
         </FormField>
-        <FormField description={locked.names ? lockedNote : undefined} error={e.lastName} htmlFor="last-name" label="Last name" required>
+        <FormField error={e.lastName} htmlFor="last-name" label="Last name" required>
           <Input className={cn("h-11", locked.names && lockedClassName)} defaultValue={employee?.last_name ?? account?.last_name ?? ""} id="last-name" name="lastName" readOnly={locked.names} required />
         </FormField>
-        <FormField description={locked.names ? lockedNote : undefined} error={e.qualifier} htmlFor="qualifier" label="Qualifier">
+        <FormField error={e.qualifier} htmlFor="qualifier" label="Qualifier">
           <Input className={cn("h-11", locked.names && lockedClassName)} defaultValue={employee?.qualifier ?? ""} id="qualifier" name="qualifier" placeholder={locked.names ? undefined : "Jr., Sr., III"} readOnly={locked.names} />
         </FormField>
-        <FormField description={locked.placeOfBirth ? lockedNote : undefined} error={e.placeOfBirth} htmlFor="place-of-birth" label="Place of birth" required>
+        <FormField error={e.placeOfBirth} htmlFor="place-of-birth" label="Place of birth" required>
           <Input className={cn("h-11", locked.placeOfBirth && lockedClassName)} defaultValue={employee?.place_of_birth ?? ""} id="place-of-birth" name="placeOfBirth" readOnly={locked.placeOfBirth} required />
         </FormField>
-        <FormField description={locked.dateOfBirth ? lockedNote : undefined} error={e.dateOfBirth} htmlFor="date-of-birth" label="Date of birth" required>
+        <FormField error={e.dateOfBirth} htmlFor="date-of-birth" label="Date of birth" required>
           <Input className={cn("h-11", locked.dateOfBirth && lockedClassName)} defaultValue={employee?.date_of_birth ?? ""} id="date-of-birth" name="dateOfBirth" readOnly={locked.dateOfBirth} required type="date" />
         </FormField>
-        <FormField description={locked.gender ? lockedNote : undefined} error={e.gender} htmlFor="gender" label="Gender" required>
+        <FormField error={e.gender} htmlFor="gender" label="Gender" required>
           {/* A disabled select is left out of the submitted form, so a hidden input carries the saved value. */}
           <NativeSelect className={cn(locked.gender && lockedClassName)} defaultValue={employee?.gender ?? ""} disabled={locked.gender} id="gender" name={locked.gender ? undefined : "gender"} required>
             <option value="">Select a gender</option>
@@ -151,7 +150,7 @@ export function EmployeeForm({ employee, account, onSaved, pending = false }: Em
             <option value="divorced">Divorced</option>
           </NativeSelect>
         </FormField>
-        <FormField description={locked.religion ? lockedNote : undefined} error={e.religion} htmlFor="religion" label="Religion" required>
+        <FormField error={e.religion} htmlFor="religion" label="Religion" required>
           <NativeSelect className={cn(locked.religion && lockedClassName)} defaultValue={employee?.religion ?? ""} disabled={locked.religion} id="religion" name={locked.religion ? undefined : "religion"} required>
             <option value="">Select a religion</option>
             {RELIGIONS.map((religion) => <option key={religion} value={religion}>{religion}</option>)}
@@ -199,7 +198,7 @@ export function EmployeeForm({ employee, account, onSaved, pending = false }: Em
             {unitStations.data?.map((unit) => <option key={unit.id} value={unit.name}>{unit.name}</option>)}
           </NativeSelect>
         </FormField>
-        <FormField error={e.employmentStatus} htmlFor="employment-status" label="Employment status" required>
+        <FormField error={e.employmentStatus} htmlFor="employment-status" label="Status" required>
           {hasLegacyRetiredStatus ? <>
             <input name="employmentStatus" type="hidden" value="retired" />
             <NativeSelect defaultValue="retired" disabled id="employment-status">
@@ -210,7 +209,6 @@ export function EmployeeForm({ employee, account, onSaved, pending = false }: Em
           </NativeSelect>}
         </FormField>
         <FormField
-          description={locked.employmentStartedOn ? lockedNote : undefined}
           error={e.employmentStartedOn}
           htmlFor="employment-started-on"
           label="Date Entered Service"

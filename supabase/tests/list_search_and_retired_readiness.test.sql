@@ -6,7 +6,7 @@ set local search_path = extensions, public;
 select extensions.plan(9);
 
 select extensions.has_function('public', 'search_text', array['employees'], 'Employees expose a search_text computed field');
-select extensions.has_function('public', 'list_promotion_readiness_page', array['integer', 'integer', 'uuid', 'text'], 'Paged readiness accepts a search');
+select extensions.has_function('public', 'list_promotion_candidates_page', array['text', 'text', 'integer', 'integer', 'uuid'], 'The promotion candidates list accepts a search');
 
 insert into auth.users (id, aud, role, email, created_at, updated_at)
 values ('00000000-0000-4000-8000-000000003301', 'authenticated', 'authenticated', 'search-hr@example.test', now(), now());
@@ -35,19 +35,29 @@ select is(
   'Attendance search matches a full name across first and last name'
 );
 
-select set_config('test.criterion_id', public.create_promotion_criterion(9921, 1, null, '[]'::jsonb)::text, true);
-select public.create_promotion_evaluation('00000000-0000-4000-8000-000000003311', 9921, current_setting('test.criterion_id')::uuid, current_date - 5, 'deferred', null, '[]'::jsonb);
-select public.create_promotion_evaluation('00000000-0000-4000-8000-000000003312', 9921, current_setting('test.criterion_id')::uuid, current_date - 5, 'deferred', null, '[]'::jsonb);
+-- Both employees meet every system requirement for the next rank (no HR criteria needed).
+reset role;
+insert into public.qualifications (employee_id, name, institution, awarded_on)
+select id, 'NAPOLCOM PNP Entrance Examination', 'National Police Commission (NAPOLCOM)', '2014-06-01'
+from public.employees where id in ('00000000-0000-4000-8000-000000003311', '00000000-0000-4000-8000-000000003312');
+insert into public.performance_ratings (employee_id, rating, descriptive_rating, rating_kind, review_period_starts_on, review_period_ends_on)
+select id, 5, 'Outstanding', 'iper', current_date - 150, current_date - 5
+from public.employees where id in ('00000000-0000-4000-8000-000000003311', '00000000-0000-4000-8000-000000003312');
+insert into public.physical_fitness_results (employee_id, result, assessed_on, valid_until, recorded_by_user_id)
+select id, 'passed', current_date - 10, current_date + 300, '00000000-0000-4000-8000-000000003301'
+from public.employees where id in ('00000000-0000-4000-8000-000000003311', '00000000-0000-4000-8000-000000003312');
+set local role authenticated;
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000003301';
 
 select is(
-  (select count(*)::integer from public.list_promotion_readiness_page(1, 100, null, 'cruz juan')),
+  (select count(*)::integer from public.list_promotion_candidates_page('cruz juan', null, 1, 100)),
   1,
-  'Paged readiness search matches every word in any order'
+  'Promotion candidate search matches every word in any order'
 );
 select is(
-  (select count(*)::integer from public.list_promotion_readiness_page(1, 100, null, 'juan nobody')),
+  (select count(*)::integer from public.list_promotion_candidates_page('juan nobody', null, 1, 100)),
   0,
-  'Paged readiness search requires every word'
+  'Promotion candidate search requires every word'
 );
 
 reset role;
@@ -56,19 +66,19 @@ set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000003301';
 
 select is(
-  (select count(*)::integer from public.list_promotion_readiness() where employee_id = '00000000-0000-4000-8000-000000003312'),
+  (select count(*)::integer from public.list_promotion_candidates_page(null, 'for_approval', 1, 100) where employee_id = '00000000-0000-4000-8000-000000003312'),
   0,
-  'Retired personnel are left out of the readiness list (dashboard Promotion Notice)'
+  'Retired personnel are left out of the promotion candidates (dashboard Promotion Notice)'
 );
 select is(
-  (select count(*)::integer from public.list_promotion_readiness_page(1, 100, null, 'retirado')),
+  (select count(*)::integer from public.list_promotion_candidates_page('retirado', null, 1, 100)),
   0,
-  'Retired personnel are left out of the paged readiness list'
+  'Retired personnel are left out of the searched candidates list'
 );
 select is(
-  (select count(*)::integer from public.list_promotion_readiness('00000000-0000-4000-8000-000000003312')),
-  1,
-  'A retired employee''s own readiness can still be looked up by id'
+  public.get_promotion_evaluation('00000000-0000-4000-8000-000000003312') -> 'evaluation' ->> 'reason',
+  'inactive',
+  'A retired employee''s evaluation can still be looked up by id'
 );
 
 select * from extensions.finish();

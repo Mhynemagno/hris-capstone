@@ -33,6 +33,7 @@ import type { ReactNode } from "react";
 import { usePublishedAnnouncements } from "@/hooks/use-public-site";
 import { usePublishedJobs } from "@/hooks/use-recruitment";
 import { formatDate } from "@/lib/format-date";
+import { formatRecruitmentCycle, openingRecruitmentCycle } from "@/lib/recruitment/recruitment-cycle";
 import { stripAnnouncementMarkup } from "@/lib/public-site/announcement-markup";
 import { announcementCategoryLabel } from "@/schemas/public-site";
 import { APPLICANT_PROFILE_DOCUMENT_KINDS } from "@/schemas/applicant-portal";
@@ -334,7 +335,7 @@ function RecruitmentTab() {
                   <div className="mb-3 flex items-center justify-between gap-3">
                     <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase ${index % 2 ? "bg-[#0B1A30]/10 text-[#0B1A30]" : "bg-[#CE1126]/10 text-[#CE1126]"}`}>{job.location ?? "San Juan City"}</span>
                     <span className="flex items-center text-xs font-semibold text-slate-500">
-                      <Clock aria-hidden="true" className="mr-1 size-3" /> CY {new Date(job.published_at ?? job.created_at).getFullYear()}
+                      <Clock aria-hidden="true" className="mr-1 size-3" /> {formatRecruitmentCycle(openingRecruitmentCycle(job))}
                     </span>
                   </div>
                   <h4 className="mb-2 text-lg font-extrabold text-slate-900 uppercase [overflow-wrap:anywhere]" id={`job-${job.id}-title`}>{job.title}</h4>

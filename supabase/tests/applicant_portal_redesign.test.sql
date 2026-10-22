@@ -6,8 +6,8 @@ set local search_path = extensions, public;
 select extensions.plan(14);
 
 insert into public.job_openings (title, description, location, closes_on, status, published_at, created_by_user_id) values
-  ('Older open posting', 'Older posting for redesign tests.', 'San Juan City', current_date + 30, 'published', now() - interval '2 days', '00000000-0000-4000-8000-000000008102'),
-  ('Newest open posting', 'Newest posting for redesign tests.', 'San Juan City', current_date + 30, 'published', now() - interval '1 day', '00000000-0000-4000-8000-000000008102'),
+  ('Older open posting', 'Older posting for redesign tests.', 'San Juan City', (date_trunc('month', current_date) + interval '1 month - 1 day')::date, 'published', now() - interval '2 days', '00000000-0000-4000-8000-000000008102'),
+  ('Newest open posting', 'Newest posting for redesign tests.', 'San Juan City', (date_trunc('month', current_date) + interval '1 month - 1 day')::date, 'published', now() - interval '1 day', '00000000-0000-4000-8000-000000008102'),
   ('Draft posting', 'Draft posting for redesign tests.', 'San Juan City', null, 'draft', null, '00000000-0000-4000-8000-000000008102');
 
 -- Registration remembers a published posting and ignores anything else.

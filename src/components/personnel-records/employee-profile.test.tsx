@@ -5,6 +5,7 @@ import { vi } from "vitest";
 
 vi.mock("@/hooks/use-personnel-records", () => ({
   useEmployeeProfilePhotoUrl: () => ({ data: null }),
+  useEmployeeTimeInGrade: () => ({ isLoading: false, data: "2021-07-01" }),
   useRemoveMyEmployeeProfilePhoto: () => ({ isPending: false, mutateAsync: vi.fn() }),
   useReplaceMyEmployeeProfilePhoto: () => ({ isPending: false, mutateAsync: vi.fn() }),
   useUpdateMyGovernmentIds: () => ({ isPending: false, mutateAsync: vi.fn() }),

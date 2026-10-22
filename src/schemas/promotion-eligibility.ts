@@ -2,164 +2,130 @@ import { z } from "zod";
 
 import { isoDateSchema, paginationSchema, uuidSchema } from "./common";
 
-const optionalText = (maximum: number) => z.string().trim().max(maximum).transform((value) => value || null).optional().default(null);
-const positiveInteger = z.coerce.number().int().positive();
-const optionalRating = z.preprocess((value) => value === "" || value === undefined ? null : value, z.coerce.number().int().min(1).max(5).nullable());
-const optionalPositiveInteger = (maximum: number) => z.preprocess((value) => value === "" || value === undefined ? null : value, z.coerce.number().int().min(1).max(maximum).nullable()).default(null);
-const optionalScore = z.preprocess((value) => value === "" || value === undefined ? null : value, z.coerce.number().min(0).max(100).nullable()).default(null);
+/**
+ * Promotion is evaluated by the system against fixed next-rank requirements
+ * (20261022120000_promotion_auto_evaluation.sql). HR only approves or rejects,
+ * and records the supervisor's IPER and the PFT result.
+ */
 
-export const promotionRecordKindSchema = z.enum(["qualification", "certification", "training"]);
-export const promotionRecommendationSchema = z.enum(["recommended", "not_recommended", "deferred"]);
-export const promotionReadinessSchema = z.enum(["ready", "not_ready"]);
+export const IPER_RATINGS = ["Outstanding", "Very Satisfactory", "Satisfactory", "Unsatisfactory", "Poor"] as const;
+export const iperRatingSchema = z.enum(IPER_RATINGS);
+export const promotionStatusSchema = z.enum(["for_approval", "approved", "rejected"]);
 
-export const promotionDocketSchema = z.object({
-  criterionId: uuidSchema,
-  remarks: z.string().trim().min(1, "Explain why you are ready for HR review.").max(2000),
+const optionalNotes = z.string().trim().max(2000).nullish().transform((value) => value || null);
+
+export const promotionCandidateFiltersSchema = paginationSchema.extend({
+  pageSize: z.coerce.number().int().positive().transform((value) => Math.min(value, 100)).default(25),
+  status: promotionStatusSchema.optional(),
+  employeeId: uuidSchema.optional(),
+  search: z.string().trim().max(200).transform((value) => value || undefined).optional(),
 });
 
-const promotionReadinessResponseSchema = z.object({
-  yearsOfService: z.number().int().min(0),
-  minimumYearsOfService: z.number().int().min(0),
-  timeInGradeYears: z.number().int().min(0).optional(),
-  minimumTimeInGradeYears: z.number().int().min(1).nullable().optional(),
-  isReady: z.boolean(),
+export const promotionDecisionSchema = z.object({
+  employeeId: uuidSchema,
+  approve: z.boolean(),
+  remarks: z.string().trim().max(2000).transform((value) => value || null).optional().default(null),
+}).superRefine((value, context) => {
+  if (!value.approve && !value.remarks) context.addIssue({ code: "custom", path: ["remarks"], message: "Enter the reason for rejecting this promotion." });
+});
+
+/** Supervisor's Individual Performance Evaluation Rating for a rating period of up to 6 months. */
+export const iperEntrySchema = z.object({
+  employeeId: uuidSchema,
+  periodStartsOn: isoDateSchema,
+  periodEndsOn: isoDateSchema,
+  rating: iperRatingSchema,
+  notes: optionalNotes,
+}).superRefine((value, context) => {
+  if (value.periodEndsOn < value.periodStartsOn) {
+    context.addIssue({ code: "custom", path: ["periodEndsOn"], message: "The rating period must end on or after it starts." });
+    return;
+  }
+  const limit = new Date(`${value.periodStartsOn}T00:00:00Z`);
+  limit.setUTCMonth(limit.getUTCMonth() + 6);
+  if (value.periodEndsOn > limit.toISOString().slice(0, 10)) context.addIssue({ code: "custom", path: ["periodEndsOn"], message: "An IPER rating period covers at most 6 months." });
+});
+
+export const pftEntrySchema = z.object({
+  employeeId: uuidSchema,
+  assessedOn: isoDateSchema,
+  passed: z.boolean(),
+  notes: optionalNotes,
+});
+
+const rankRefSchema = z.object({ id: z.number().int(), code: z.string(), name: z.string() });
+
+export const promotionEvaluationResultSchema = z.object({
+  employeeId: uuidSchema,
+  employeeName: z.string(),
+  employeeNumber: z.string(),
+  evaluatedOn: z.string(),
+  isUniformed: z.boolean(),
+  currentRank: rankRefSchema.nullable(),
+  targetRank: rankRefSchema.nullable(),
+  reason: z.enum(["no_rank", "non_uniformed", "top_rank", "inactive"]).nullable().optional().default(null),
+  rankSince: z.string().optional(),
+  timeInGradeMonths: z.number().int().optional(),
+  minimumTimeInGradeMonths: z.number().int().optional(),
+  trainings: z.array(z.object({
+    name: z.string(),
+    code: z.string(),
+    met: z.boolean(),
+    record: z.object({
+      recordKind: z.enum(["certification", "training"]),
+      recordId: uuidSchema,
+      recordName: z.string(),
+      completedOn: z.string(),
+      documentPath: z.string().nullable(),
+      documentName: z.string().nullable(),
+    }).nullable(),
+  })).optional(),
+  eligibility: z.object({
+    required: z.boolean(),
+    record: z.object({ id: uuidSchema, name: z.string(), rating: z.string().nullable(), awardedOn: z.string(), documentPath: z.string().nullable(), documentName: z.string().nullable() }).nullable(),
+  }).optional(),
+  iper: z.object({
+    minimum: iperRatingSchema,
+    periodMonths: z.number().int(),
+    record: z.object({ id: uuidSchema, rating: iperRatingSchema, periodStartsOn: z.string(), periodEndsOn: z.string() }).nullable(),
+  }).optional(),
+  pft: z.object({
+    required: z.boolean(),
+    validityMonths: z.number().int(),
+    record: z.object({ id: uuidSchema, result: z.enum(["passed", "failed", "scored"]).nullable(), score: z.number().nullable(), assessedOn: z.string() }).nullable(),
+  }).optional(),
+  requirements: z.array(z.object({ key: z.string(), label: z.string(), met: z.boolean() })),
   missingRequirements: z.array(z.string()),
-  requirements: z.array(z.object({ label: z.string(), met: z.boolean() })),
+  isQualified: z.boolean(),
 });
 
-export const myPromotionReadinessSchema = z.object({
-  criterionId: uuidSchema,
-  currentRankName: z.string(),
-  targetRankName: z.string(),
-  targetRankCode: z.string(),
-  evaluatedOn: z.string().nullable(),
-  docket: z.object({
+const decisionSummarySchema = z.object({
+  id: uuidSchema,
+  status: z.enum(["approved", "rejected"]),
+  remarks: z.string().nullable(),
+  decidedAt: z.string(),
+  targetRankId: z.number().int(),
+});
+
+export const promotionEvaluationDetailSchema = z.object({
+  evaluation: promotionEvaluationResultSchema,
+  decision: decisionSummarySchema.nullable().optional().default(null),
+});
+
+export const myPromotionStatusSchema = z.object({
+  evaluation: promotionEvaluationResultSchema,
+  decision: decisionSummarySchema.nullable().optional().default(null),
+  history: z.array(z.object({
     id: uuidSchema,
-    criterionId: uuidSchema,
-    remarks: z.string(),
-    submittedAt: z.string(),
-  }).nullable(),
-  readiness: promotionReadinessResponseSchema,
+    status: z.enum(["approved", "rejected"]),
+    remarks: z.string().nullable(),
+    decidedAt: z.string(),
+    targetRankCode: z.string(),
+    targetRankName: z.string(),
+  })).default([]),
 });
 
-export const promotionCriterionRequirementSchema = z.object({
-  id: uuidSchema.optional(),
-  recordKind: promotionRecordKindSchema,
-  requiredName: z.string().trim().min(1, "Choose a requirement.").max(200),
-  label: z.string().trim().min(1, "A requirement label is required.").max(200),
-  isMandatory: z.boolean().default(true),
-});
-
-export const promotionCriterionSchema = z.object({
-  targetRankId: positiveInteger,
-  minimumYearsOfService: z.coerce.number().int().min(1).max(30),
-  minimumPerformanceRating: optionalRating,
-  minimumTimeInGradeYears: optionalPositiveInteger(30),
-  iperReviewPeriodMonths: optionalPositiveInteger(60),
-  pftMinimumScore: optionalScore,
-  pftValidityMonths: optionalPositiveInteger(60),
-  requirements: z.array(promotionCriterionRequirementSchema)
-    .min(0)
-    .max(30)
-    .refine(
-      (requirements) => new Set(requirements.map((requirement) => `${requirement.recordKind}:${requirement.requiredName.toLowerCase()}`)).size === requirements.length,
-      "Each requirement can only be added once.",
-    ),
-}).superRefine((value, context) => {
-  if ((value.minimumPerformanceRating === null) !== (value.iperReviewPeriodMonths === null)) context.addIssue({ code: "custom", path: ["iperReviewPeriodMonths"], message: "Set both the IPER rating and review period, or leave both blank." });
-  if ((value.pftMinimumScore === null) !== (value.pftValidityMonths === null)) context.addIssue({ code: "custom", path: ["pftValidityMonths"], message: "Set both the PFT score and validity period, or leave both blank." });
-});
-
-export const promotionCriterionUpdateSchema = promotionCriterionSchema.extend({
-  id: uuidSchema,
-  isActive: z.boolean(),
-  expectedUpdatedAt: z.string().datetime({ offset: true }),
-});
-
-export const performanceRatingSchema = z.object({
-  employeeId: uuidSchema,
-  rating: z.coerce.number().int().min(1).max(5),
-  reviewPeriodStartsOn: isoDateSchema,
-  reviewPeriodEndsOn: isoDateSchema,
-  notes: optionalText(2000),
-}).superRefine((value, context) => {
-  if (value.reviewPeriodEndsOn < value.reviewPeriodStartsOn) context.addIssue({ code: "custom", path: ["reviewPeriodEndsOn"], message: "Review period end must be on or after its start." });
-});
-
-/** A rubric evaluation: the score is computed by the server from service years and courses. */
-export const performanceEvaluationSchema = z.object({
-  employeeId: uuidSchema,
-  reviewPeriodStartsOn: isoDateSchema,
-  reviewPeriodEndsOn: isoDateSchema,
-  notes: optionalText(2000),
-}).superRefine((value, context) => {
-  if (value.reviewPeriodEndsOn < value.reviewPeriodStartsOn) context.addIssue({ code: "custom", path: ["reviewPeriodEndsOn"], message: "Review period end must be on or after its start." });
-});
-
-export const performanceRatingUpdateSchema = performanceRatingSchema.extend({
-  id: uuidSchema,
-  expectedUpdatedAt: z.string().datetime({ offset: true }),
-});
-
-export const promotionEvidenceSchema = z.object({
-  requirementId: uuidSchema,
-  qualificationId: uuidSchema.optional(),
-  certificationId: uuidSchema.optional(),
-  trainingRecordId: uuidSchema.optional(),
-}).superRefine((value, context) => {
-  if ([value.qualificationId, value.certificationId, value.trainingRecordId].filter(Boolean).length !== 1) context.addIssue({ code: "custom", message: "Link exactly one personnel record as evidence." });
-});
-
-export const promotionEvaluationSchema = z.object({
-  employeeId: uuidSchema,
-  targetRankId: positiveInteger,
-  criterionId: uuidSchema,
-  evaluatedOn: isoDateSchema,
-  recommendation: promotionRecommendationSchema,
-  notes: optionalText(2000),
-  evidence: z.array(promotionEvidenceSchema).max(30).default([]),
-});
-
-export const promotionEvaluationUpdateSchema = promotionEvaluationSchema.extend({
-  id: uuidSchema,
-  expectedUpdatedAt: z.string().datetime({ offset: true }),
-});
-
-export const promotionEvaluationFiltersSchema = paginationSchema.extend({
-  pageSize: z.coerce.number().int().positive().transform((value) => Math.min(value, 100)).default(25),
-  employeeId: uuidSchema.optional(),
-  targetRankId: positiveInteger.optional(),
-  readiness: promotionReadinessSchema.optional(),
-  recommendation: promotionRecommendationSchema.optional(),
-  search: z.string().trim().max(200).transform((value) => value || undefined).optional(),
-});
-export const promotionReadinessFiltersSchema = paginationSchema.extend({
-  pageSize: z.coerce.number().int().positive().transform((value) => Math.min(value, 100)).default(25),
-  employeeId: uuidSchema.optional(),
-  search: z.string().trim().max(200).transform((value) => value || undefined).optional(),
-});
-
-export const employeePromotionEligibilitySchema = z.object({
-  employeeId: uuidSchema,
-  evaluationId: uuidSchema,
-  targetRankId: positiveInteger,
-  targetRankName: z.string(),
-  calculatedAt: z.string().datetime({ offset: true }),
-  yearsOfService: z.number().int().min(0),
-  isReady: z.boolean(),
-  missingRequirements: z.array(z.string()),
-});
-
-export type PromotionRecordKind = z.infer<typeof promotionRecordKindSchema>;
-export type PromotionRecommendation = z.infer<typeof promotionRecommendationSchema>;
-export type PromotionCriterionInput = z.infer<typeof promotionCriterionSchema>;
-export type PromotionCriterionUpdateInput = z.infer<typeof promotionCriterionUpdateSchema>;
-export type PerformanceRatingInput = z.infer<typeof performanceRatingSchema>;
-export type PerformanceRatingUpdateInput = z.infer<typeof performanceRatingUpdateSchema>;
-export type PerformanceEvaluationInput = z.infer<typeof performanceEvaluationSchema>;
-export type PromotionEvidenceInput = z.infer<typeof promotionEvidenceSchema>;
-export type PromotionEvaluationInput = z.infer<typeof promotionEvaluationSchema>;
-export type PromotionEvaluationUpdateInput = z.infer<typeof promotionEvaluationUpdateSchema>;
-export type PromotionEvaluationFilters = z.infer<typeof promotionEvaluationFiltersSchema>;
-export type PromotionReadinessFilters = z.infer<typeof promotionReadinessFiltersSchema>;
-export type PromotionDocketInput = z.infer<typeof promotionDocketSchema>;
+export type PromotionCandidateFilters = z.infer<typeof promotionCandidateFiltersSchema>;
+export type PromotionDecisionInput = z.input<typeof promotionDecisionSchema>;
+export type IperEntryInput = z.input<typeof iperEntrySchema>;
+export type PftEntryInput = z.input<typeof pftEntrySchema>;

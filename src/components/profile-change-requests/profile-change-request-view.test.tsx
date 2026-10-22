@@ -5,6 +5,7 @@ const hooks = vi.hoisted(() => ({ useProfileChangeRequest: vi.fn(), useMyProfile
 vi.mock("@/hooks/use-profile-change-requests", () => hooks);
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
+import { changeLabel } from "./admin-profile-change-request-detail";
 import { ProfileChangeRequestList } from "./profile-change-request-list";
 import { ProfileChangeRequestView } from "./profile-change-request-view";
 
@@ -21,13 +22,23 @@ describe("ProfileChangeRequestView", () => {
     render(<ProfileChangeRequestView requestId={requestId} />);
 
     expect(hooks.useProfileChangeRequest).toHaveBeenCalledWith(requestId);
-    const change = screen.getByRole("heading", { name: "Phone" }).closest("li")!;
+    const change = screen.getByRole("heading", { name: "Phone number" }).closest("li")!;
     expect(within(change).getByText("Previous value")).toBeInTheDocument();
     expect(within(change).getByText("09170000000")).toBeInTheDocument();
     expect(within(change).getByText("09171234567")).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Decision" })).toHaveTextContent("Rejected. Your profile was not changed.");
     expect(screen.getByText("Attach proof of the new number.")).toBeInTheDocument();
     expect(screen.getByText("New number")).toBeInTheDocument();
+  });
+});
+
+describe("change labels", () => {
+  it("names personal fields and record changes by their kind", () => {
+    expect(changeLabel({ kind: "contact", field_key: "dateOfBirth", operation: null })).toBe("Date of birth");
+    expect(changeLabel({ kind: "contact", field_key: "employmentStartedOn", operation: null })).toBe("Date Entered Service");
+    expect(changeLabel({ kind: "qualification", field_key: null, operation: "add" })).toBe("Eligibility: add");
+    expect(changeLabel({ kind: "certification", field_key: null, operation: "edit" })).toBe("Certification / Training: edit");
+    expect(changeLabel({ kind: "training", field_key: null, operation: "remove" })).toBe("Training: remove");
   });
 });
 

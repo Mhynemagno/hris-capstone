@@ -66,7 +66,7 @@ select extensions.ok(exists (select 1 from public.notifications where recipient_
 
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000102';
-select extensions.throws_ok($$select public.submit_profile_change_request('00000000-0000-4000-8000-000000000302'::uuid, null, '[{"kind":"contact","field":"address","originalValue":null,"requestedValue":"Ulaanbaatar"}]'::jsonb, public.profile_change_test_document('00000000-0000-4000-8000-000000000302'::uuid))$$, '22023', null, 'Employee self-service does not collect address changes');
+select extensions.lives_ok($$select public.submit_profile_change_request('00000000-0000-4000-8000-000000000302'::uuid, null, '[{"kind":"contact","field":"address","originalValue":null,"requestedValue":"Ulaanbaatar"}]'::jsonb, public.profile_change_test_document('00000000-0000-4000-8000-000000000302'::uuid))$$, 'Employee self-service can request an address correction');
 
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000102';

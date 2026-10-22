@@ -30,6 +30,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ repo
     startsOn: query.get("from") ?? undefined,
     endsOn: query.get("to") ?? undefined,
     departmentId: query.get("department") ?? undefined,
+    status: query.get("status") ?? undefined,
     page: 1,
     pageSize: 100,
   });

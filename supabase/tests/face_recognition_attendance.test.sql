@@ -5,6 +5,10 @@ set local search_path = extensions, public;
 
 select extensions.plan(59);
 
+-- Scans run at the real time of day; open the access window all day so the suite passes at any hour
+-- (attendance_late_recompute_and_face_window.test.sql covers the 05:00 window itself).
+update public.attendance_integration_settings set access_window_start = time '00:00' where adapter_key = 'csv_xlsx';
+
 select extensions.has_function('public', 'enroll_employee_face', array['uuid', 'real[]', 'integer', 'boolean'], 'Face enrollment RPC exists');
 select extensions.has_function('public', 'record_face_attendance', array['uuid', 'real[]'], 'Face attendance RPC exists');
 select extensions.has_function('public', 'record_my_face_attendance', array['uuid', 'real[]'], 'Employee self-scan RPC exists');

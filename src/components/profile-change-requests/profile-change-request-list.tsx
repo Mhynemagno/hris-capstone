@@ -66,7 +66,7 @@ export function ProfileChangeRequestList() {
                 confirmingId === request.id ? (
                   <div className="mt-3 space-y-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3">
                     <p className="text-sm font-medium" id={`cancel-${request.id}-prompt`}>
-                      Cancel this request? The administrator will no longer review it and this cannot be undone.
+                      Cancel this request? HR will no longer review it and this cannot be undone.
                     </p>
                     <div className="flex flex-wrap gap-2">
                       <Button

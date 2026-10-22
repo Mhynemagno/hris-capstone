@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 
+import { ApplicantAccountActions } from "@/components/recruitment/applicant-account-actions";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { PageHeader } from "@/components/ui/page-header";
@@ -55,7 +56,8 @@ export function HrApplicationReview({ applicationId }: { applicationId: string }
   const job = result.data.application.job_openings;
   const statusChanges = history.filter((entry) => entry.previous_status !== entry.next_status);
   const lastChange = statusChanges.at(-1)?.created_at ?? null;
-  const email = registered.data?.find((row) => row.applicant_id === application.applicant_id)?.email ?? null;
+  const account = registered.data?.find((row) => row.applicant_id === application.applicant_id) ?? null;
+  const email = account?.email ?? null;
   const initials = name.split(" ").filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
   const profileDocs = profileDocuments.data ?? [];
 
@@ -94,8 +96,9 @@ export function HrApplicationReview({ applicationId }: { applicationId: string }
             <TabPanel value="activity"><ActivityTab applicationId={applicationId} history={history} /></TabPanel>
           </Tabs>
         </div>
-        <div className="order-1 lg:order-2">
+        <div className="order-1 space-y-4 lg:sticky lg:top-20 lg:order-2">
           <DetailsPanel email={email} jobId={application.job_opening_id} jobTitle={job?.title ?? null} lastChange={lastChange} mobile={applicant?.phone ?? null} number={formatApplicantNumber(applicant?.applicant_number)} submittedAt={application.submitted_at} />
+          {account ? <div className="rounded-lg border bg-card p-5"><h2 className="mb-2 text-base font-semibold">Applicant account</h2><ApplicantAccountActions active={account.account_active} email={account.email} userId={account.user_id} /></div> : null}
         </div>
       </div>
     </PageContainer>

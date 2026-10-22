@@ -16,6 +16,8 @@ it("shows each opening's title, long-format deadline and a details link", () => 
           description: "Coordinate community safety programmes.",
           id: 12,
           location: "San Juan City",
+          recruitment_cycle: 2,
+          recruitment_year: 2026,
           title: "Community Liaison Officer",
         },
       ],
@@ -28,6 +30,7 @@ it("shows each opening's title, long-format deadline and a details link", () => 
 
   expect(screen.getByRole("heading", { name: "Community Liaison Officer" })).toBeVisible();
   expect(screen.getByText("Deadline of Application: September 29, 2026")).toBeVisible();
+  expect(screen.getByText("Cycle 2 · July–December 2026")).toBeVisible();
   expect(screen.queryByText("Coordinate community safety programmes.")).not.toBeInTheDocument();
   const link = screen.getByRole("link", { name: "View details for Community Liaison Officer" });
   expect(link).toHaveAttribute("href", "/jobs/12");

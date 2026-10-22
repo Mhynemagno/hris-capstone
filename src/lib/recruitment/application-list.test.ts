@@ -10,8 +10,8 @@ const app = (overrides: Partial<HrShortlistApplication>): HrShortlistApplication
   applicant_name: "Ana Reyes", applicant_number: 12345, job_title: "Patrol North", ...overrides,
 });
 const registered = (overrides: Partial<HrRegisteredApplicant>): HrRegisteredApplicant => ({
-  user_id: "u9", applicant_id: null, applicant_number: null, first_name: "Ben", middle_name: null, last_name: "Cruz", qualifier: null, full_name: null, email: "ben@example.test", phone: null,
-  registered_at: "2026-10-02T00:00:00Z", email_confirmed: true, application_count: 0, latest_application_id: null, latest_application_status: null, latest_job_title: null, latest_submitted_at: null, ...overrides,
+  user_id: "u9", applicant_id: "a9", applicant_number: 202699, first_name: "Ben", middle_name: null, last_name: "Cruz", qualifier: null, full_name: null, email: "ben@example.test", phone: null,
+  registered_at: "2026-10-02T00:00:00Z", email_confirmed: true, account_active: true, application_count: 0, latest_application_id: null, latest_application_status: null, latest_job_title: null, latest_submitted_at: null, ...overrides,
 });
 
 describe("application list", () => {

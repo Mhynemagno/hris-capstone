@@ -26,40 +26,42 @@ set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000002201';
 
 select extensions.lives_ok(
-  $$select public.create_deployment('00000000-0000-4000-8000-000000002211'::uuid, 'Plaza', null, null, 'Plaza', '2099-01-10', '2099-01-12', 'scheduled', 'Fiesta', 'Special Event', 'Fiesta / Major Event')$$,
+  $$select public.create_deployment_group('Plaza', null, '2099-01-10', '2099-01-12', 'Special Event', 'Fiesta / Major Event', '[{"employeeId":"00000000-0000-4000-8000-000000002211","task":"Deployed"}]'::jsonb)$$,
   'HR deploys an employee for three days'
 );
 select extensions.throws_ok(
-  $$select public.create_deployment('00000000-0000-4000-8000-000000002211'::uuid, 'Market', null, null, 'Market', '2099-01-12', null, 'scheduled', 'Rally', 'Public Assembly', 'Rally')$$,
-  '23P01', 'This employee is already deployed on that date.', 'A one-day deployment inside an active range is rejected'
+  $$select public.create_deployment_group('Market', null, '2099-01-12', null, 'Public Assembly', 'Rally', '[{"employeeId":"00000000-0000-4000-8000-000000002211","task":"Deployed"}]'::jsonb)$$,
+  '22023', 'An employee already has an overlapping deployment.', 'A one-day deployment inside an active range is rejected'
 );
 select extensions.throws_ok(
-  $$select public.create_deployment('00000000-0000-4000-8000-000000002211'::uuid, 'Market', null, null, 'Market', '2099-01-08', '2099-01-10', 'ongoing', 'Rally', 'Public Assembly', 'Rally')$$,
-  '23P01', 'This employee is already deployed on that date.', 'A range touching the first day is rejected'
+  $$select public.create_deployment_group('Market', null, '2099-01-08', '2099-01-10', 'Public Assembly', 'Rally', '[{"employeeId":"00000000-0000-4000-8000-000000002211","task":"Deployed"}]'::jsonb)$$,
+  '22023', 'An employee already has an overlapping deployment.', 'A range touching the first day is rejected'
 );
 select extensions.lives_ok(
-  $$select public.create_deployment('00000000-0000-4000-8000-000000002211'::uuid, 'Market', null, null, 'Market', '2099-01-13', null, 'scheduled', 'Rally', 'Public Assembly', 'Rally')$$,
+  $$select public.create_deployment_group('Market', null, '2099-01-13', null, 'Public Assembly', 'Rally', '[{"employeeId":"00000000-0000-4000-8000-000000002211","task":"Deployed"}]'::jsonb)$$,
   'The day after the range is free'
 );
 select extensions.lives_ok(
-  $$select public.create_deployment('00000000-0000-4000-8000-000000002211'::uuid, 'Hall', null, null, 'Hall', '2099-01-11', null, 'cancelled', 'Called off', 'Public Assembly', 'Rally')$$,
-  'A cancelled deployment on a busy day is allowed'
+  $$select public.cancel_deployment(
+      (select id from public.deployments where employee_id = '00000000-0000-4000-8000-000000002211' and location = 'Plaza'),
+      (select updated_at from public.deployments where employee_id = '00000000-0000-4000-8000-000000002211' and location = 'Plaza'))$$,
+  'HR cancels the three-day deployment'
 );
 select extensions.lives_ok(
-  $$select public.create_deployment('00000000-0000-4000-8000-000000002212'::uuid, 'Plaza', null, null, 'Plaza', '2099-01-11', null, 'scheduled', 'Other person', 'Special Event', 'Fiesta / Major Event')$$,
-  'Another employee can be deployed on the same day'
+  $$select public.create_deployment_group('Hall', null, '2099-01-11', null, 'Public Assembly', 'Rally', '[{"employeeId":"00000000-0000-4000-8000-000000002211","task":"Deployed"}]'::jsonb)$$,
+  'A cancelled deployment no longer blocks the day'
 );
 select extensions.lives_ok(
-  $$select public.update_deployment('00000000-0000-4000-8000-000000002291'::uuid,
+  $$select public.update_deployment_details('00000000-0000-4000-8000-000000002291'::uuid,
       (select updated_at from public.deployments where id = '00000000-0000-4000-8000-000000002291'),
-      'Legacy A', null, null, 'Legacy A', '2099-05-01', null, 'scheduled', 'remarks changed', null, null)$$,
-  'Editing only the remarks of a legacy overlapping deployment still works'
+      'Legacy A', '2099-05-01', null, 'Public Assembly', 'Rally', 'Reserve/Standby')$$,
+  'Editing only the task of a legacy overlapping deployment still works'
 );
 select extensions.throws_ok(
-  $$select public.update_deployment(
+  $$select public.update_deployment_details(
       (select id from public.deployments where location = 'Market' and starts_on = '2099-01-13'),
       (select updated_at from public.deployments where location = 'Market' and starts_on = '2099-01-13'),
-      'Market', null, null, 'Market', '2099-01-11', null, 'scheduled', 'moved', 'Public Assembly', 'Rally')$$,
+      'Market', '2099-01-11', null, 'Public Assembly', 'Rally', 'Deployed')$$,
   '23P01', 'This employee is already deployed on that date.', 'Moving a deployment onto a busy day is rejected'
 );
 

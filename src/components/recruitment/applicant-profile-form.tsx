@@ -162,8 +162,8 @@ export function ApplicantProfileForm() {
         </div>
         <div className="w-full shrink-0 rounded-xl border border-white/15 bg-white/10 p-4 text-center shadow-inner backdrop-blur-md md:w-auto md:text-right">
           <span className="block text-[10px] font-bold tracking-widest text-slate-300 uppercase">Applicant Number</span>
-          <span className="font-mono text-2xl font-black tracking-wider text-white">{applicantNumber ?? "Pending"}</span>
-          {applicantNumber ? null : <span className="block text-[10px] text-slate-300">Issued once HR accepts your application</span>}
+          {/* Issued at registration, so every applicant record has one. */}
+          <span className="font-mono text-2xl font-black tracking-wider text-white">{applicantNumber ?? "—"}</span>
         </div>
       </div>
     </div>

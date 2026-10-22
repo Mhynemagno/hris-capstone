@@ -13,7 +13,7 @@ export function DetailsPanel({ email, jobId, jobTitle, lastChange, mobile, numbe
     ["Last stage change", formatDate(lastChange) ?? "—"],
   ];
   return (
-    <aside aria-label="Applicant details" className="rounded-lg border bg-card p-5 lg:sticky lg:top-20">
+    <aside aria-label="Applicant details" className="rounded-lg border bg-card p-5">
       <dl className="grid grid-cols-2 gap-x-4 gap-y-3 lg:grid-cols-1">
         {rows.map(([label, value]) => (
           <div className="min-w-0" key={label}><dt className="text-sm text-muted-foreground">{label}</dt><dd className="truncate text-base">{value}</dd></div>

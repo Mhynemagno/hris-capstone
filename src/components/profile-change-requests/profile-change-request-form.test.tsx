@@ -31,7 +31,7 @@ describe("ProfileChangeRequestForm", () => {
     const user = userEvent.setup();
     render(<ProfileChangeRequestForm />);
     await user.click(screen.getByRole("button", { name: "Submit request" }));
-    expect(screen.getByRole("alert")).toHaveTextContent("Change at least one contact field or add an eligibility, certification, or training change.");
+    expect(screen.getByRole("alert")).toHaveTextContent("Change at least one personal detail or add an eligibility, certification, or training change.");
   });
 
   it("requires a supporting document before submitting a proposed change", async () => {

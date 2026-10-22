@@ -9,6 +9,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { usePublishedJob } from "@/hooks/use-recruitment";
 import { formatDate } from "@/lib/format-date";
+import { formatRecruitmentCycle, openingRecruitmentCycle } from "@/lib/recruitment/recruitment-cycle";
 import { jobPostingImageUrl } from "@/lib/recruitment/job-posting-image";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
@@ -27,7 +28,7 @@ export function PublicJobDetail({ jobId }: { jobId: number }) {
   const applyPath = `/applicant/apply/${job.data.id}`;
   const imageUrl = jobPostingImageUrl(job.data.image_path);
   return <section className="mx-auto max-w-4xl space-y-6">
-    <div><Link className="text-sm text-primary underline-offset-4 hover:underline" href="/">Back</Link><h1 className="mt-4 text-3xl font-bold tracking-tight">{job.data.title}</h1><p className="mt-2 text-sm text-muted-foreground">{[job.data.location, job.data.closes_on ? `Deadline of Application: ${formatDate(job.data.closes_on)}` : null].filter(Boolean).join(" · ")}</p></div>
+    <div><Link className="text-sm text-primary underline-offset-4 hover:underline" href="/">Back</Link><h1 className="mt-4 text-3xl font-bold tracking-tight">{job.data.title}</h1><p className="mt-2 text-sm text-muted-foreground">{[job.data.location, formatRecruitmentCycle(openingRecruitmentCycle(job.data)), job.data.closes_on ? `Deadline of Application: ${formatDate(job.data.closes_on)}` : null].filter(Boolean).join(" · ")}</p></div>
     {imageUrl ? <Image alt={`${job.data.title} job posting`} className="h-auto w-full rounded-xl border object-contain" height={900} priority src={imageUrl} unoptimized width={1600} /> : null}
     <p className="whitespace-pre-wrap leading-7">{job.data.description}</p>
     <ApplyPrivacyNotice className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/85 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50" href={isSignedIn ? applyPath : `/applicant/register?next=${encodeURIComponent(applyPath)}`}>Apply now<ArrowRight aria-hidden="true" className="size-4" /></ApplyPrivacyNotice>

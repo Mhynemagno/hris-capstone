@@ -176,12 +176,12 @@ describe("EmployeeLeaveList", () => {
     expect(screen.getAllByText("Rejected")).toHaveLength(2);
   });
 
-  it("tells the employee about paternity days deducted from retirement benefits", () => {
+  it("tells the employee about days beyond their leave credits that will be deducted", () => {
     mocks.rows = [{ ...pendingRow, leave_type_name: "Paternity Leave", starts_on: "2026-11-01", ends_on: "2026-11-10", reason: null, excess_days: 3 }];
     render(<EmployeeLeaveList />);
 
     expect(screen.getByText("For Approval", { selector: "span" })).toBeVisible();
-    expect(screen.getByText("3 days beyond the yearly limit, deducted from your retirement benefits.")).toBeVisible();
+    expect(screen.getByText("3 days beyond your leave credits, to be deducted.")).toBeVisible();
   });
 });
 
@@ -240,32 +240,43 @@ describe("EmployeeLeaveRequestForm", () => {
     mocks.gender = "male";
   });
 
-  it("shows the days left and blocks a request longer than what is left", async () => {
+  it("shows the days left and asks before a request longer than what is left; No returns to the form", async () => {
     mocks.balances = [{ leave_type_id: "11111111-1111-4111-8111-111111111111", days_per_year: 2, excess_deducted_from_retirement: false, used_days: 1 }];
     const user = userEvent.setup();
     render(<EmployeeLeaveRequestForm />);
     await user.selectOptions(screen.getByRole("combobox", { name: /Leave type/ }), "11111111-1111-4111-8111-111111111111");
     expect(screen.getByText(/^1 day of 2 left for \d{4}\.$/)).toBeVisible();
     await user.type(screen.getByLabelText(/Start date/), isoDate(1));
-    await user.type(screen.getByLabelText(/End date/), isoDate(2));
+    await user.type(screen.getByLabelText(/End date/), isoDate(3));
     await user.click(screen.getByRole("button", { name: "Submit Application" }));
 
-    expect(await screen.findByText(/You have 1 day of this leave left for \d{4}\. Shorten the request to fit\./)).toBeVisible();
+    const dialog = await screen.findByRole("dialog", { name: "Not Enough Leave Credits" });
+    expect(dialog).toHaveTextContent(/You only have 1 day of Annual leave credits left for \d{4}\. Because you do not have enough leave credits, the 2 excess days will be deducted\./);
+    expect(within(dialog).getByText("Would you like to proceed?")).toBeVisible();
+    await user.click(within(dialog).getByRole("button", { name: "No" }));
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     expect(mocks.submit).not.toHaveBeenCalled();
+    expect(screen.getByLabelText(/End date/)).toHaveValue(isoDate(3));
   });
 
-  it("lets a request go past a limit whose extra days are deducted from retirement benefits", async () => {
+  it("submits a request beyond the remaining credits after Yes, accepting the deduction", async () => {
     mocks.submit.mockResolvedValue(undefined);
-    mocks.balances = [{ leave_type_id: "11111111-1111-4111-8111-111111111111", days_per_year: 7, excess_deducted_from_retirement: true, used_days: 7 }];
+    mocks.balances = [{ leave_type_id: "11111111-1111-4111-8111-111111111111", days_per_year: 7, excess_deducted_from_retirement: false, used_days: 7 }];
     const user = userEvent.setup();
     render(<EmployeeLeaveRequestForm />);
     await user.selectOptions(screen.getByRole("combobox", { name: /Leave type/ }), "11111111-1111-4111-8111-111111111111");
-    expect(screen.getByText(/0 days of 7 left for \d{4}\. Days beyond this are allowed but deducted from your retirement benefits\./)).toBeVisible();
+    expect(screen.getByText(/^0 days of 7 left for \d{4}\.$/)).toBeVisible();
     await user.type(screen.getByLabelText(/Start date/), isoDate(1));
-    await user.type(screen.getByLabelText(/End date/), isoDate(2));
+    await user.type(screen.getByLabelText(/End date/), isoDate(1));
     await user.click(screen.getByRole("button", { name: "Submit Application" }));
 
-    expect(mocks.submit).toHaveBeenCalled();
+    const dialog = await screen.findByRole("dialog", { name: "Not Enough Leave Credits" });
+    expect(dialog).toHaveTextContent(/You have no Annual leave credits left for \d{4}\. Because you do not have enough leave credits, the 1 excess day will be deducted\./);
+    expect(mocks.submit).not.toHaveBeenCalled();
+    await user.click(within(dialog).getByRole("button", { name: "Yes" }));
+
+    await waitFor(() => expect(mocks.submit).toHaveBeenCalledWith({ draft: expect.objectContaining({ leaveTypeId: "11111111-1111-4111-8111-111111111111", acceptDeduction: true }), files: [] }));
   });
 
   it("offers only active leave types without evidence hints or an upload field", () => {
@@ -305,7 +316,7 @@ describe("EmployeeLeaveRequestForm", () => {
     await user.click(screen.getByRole("button", { name: "Submit Application" }));
 
     expect(await screen.findByRole("status")).toHaveTextContent("Leave request submitted.");
-    expect(mocks.submit).toHaveBeenCalledWith({ draft: expect.objectContaining({ leaveTypeId: "11111111-1111-4111-8111-111111111111", reason: "" }), files: [] });
+    expect(mocks.submit).toHaveBeenCalledWith({ draft: expect.objectContaining({ leaveTypeId: "11111111-1111-4111-8111-111111111111", reason: "", acceptDeduction: false }), files: [] });
     expect(screen.getByRole("combobox", { name: /Leave type/ })).toHaveValue("");
     expect(screen.getByLabelText(/Start date/)).toHaveValue("");
   });

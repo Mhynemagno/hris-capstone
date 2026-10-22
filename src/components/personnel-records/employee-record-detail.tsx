@@ -3,17 +3,17 @@
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Activity, ArrowLeft, Award, BadgeCheck, BookOpenCheck, Building2, Cake, CheckCircle2, Clock, GraduationCap, History, MapPin, Pencil, ShieldCheck, TrendingUp, UserRound, X, type LucideIcon } from "lucide-react";
+import { Activity, ArrowLeft, Award, BadgeCheck, BookOpenCheck, Building2, Cake, CheckCircle2, Clock, GraduationCap, History, Hourglass, MapPin, Pencil, ShieldCheck, TrendingUp, UserRound, X, type LucideIcon } from "lucide-react";
 
 import { DeleteRecordDialog } from "@/components/deletion/delete-record-dialog";
-import { PromotionReviewModal } from "@/components/promotion-eligibility/promotion-review-modal";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useDepartmentOptions, useRankOptions } from "@/hooks/use-administration";
-import { useEmployee, usePersonnelEntries, useSavePersonnelEntry } from "@/hooks/use-personnel-records";
+import { useEmployee, useEmployeeTimeInGrade, usePersonnelEntries, useSavePersonnelEntry } from "@/hooks/use-personnel-records";
 import { formatDate, formatDateRange } from "@/lib/format-date";
 import { formatGovernmentId } from "@/lib/government-ids";
+import { eligibilityLabel, formatRating } from "@/lib/personnel/eligibility";
 import { rankLabel } from "@/lib/ranks";
 import type { Certification, Employee, Qualification, ServiceHistory, TrainingRecord } from "@/lib/types/database";
 import type { PersonnelKind } from "@/queries/personnel-records";
@@ -44,7 +44,7 @@ function day(value: unknown) {
 
 function entryDetail(kind: PersonnelKind, entry: Record<string, unknown>) {
   const parts = kind === "qualification"
-    ? [day(entry.awarded_on), entry.notes]
+    ? [typeof entry.rating === "number" || typeof entry.rating === "string" ? `Rating ${formatRating(entry.rating)}` : null, day(entry.awarded_on), entry.notes]
     : kind === "certification"
       ? [entry.issued_on && `Completed ${day(entry.issued_on)}`, entry.notes]
       : [typeof entry.started_on === "string" && entry.started_on && formatDateRange(entry.started_on, typeof entry.ended_on === "string" ? entry.ended_on : null)];
@@ -92,7 +92,7 @@ function Records({ employeeId, kind, editable }: { employeeId: string; kind: Per
         {entries.data?.length ? entries.data.map((entry) => {
           const record = entry as unknown as { id: string } & Record<string, unknown>;
           const service = kind === "serviceHistory" ? entry as ServiceHistory : null;
-          const title = service ? serviceHistoryTitle(service, rankTitles) : entryTitle(record);
+          const title = service ? serviceHistoryTitle(service, rankTitles) : kind === "qualification" ? eligibilityLabel(entry as Qualification) : entryTitle(record);
           const detail = service
             ? [service.department_id ? departmentNames.get(service.department_id) : null, formatDateRange(service.started_on, service.ended_on)].filter(Boolean).join(" · ")
             : entryDetail(kind, record);
@@ -175,7 +175,7 @@ function useRecordActivity(employeeId: string, rankTitles: Map<number, string>, 
     })),
     ...((qualifications.data ?? []) as Qualification[]).map((entry): TimelineItem => ({
       id: `qualification-${entry.id}`, icon: GraduationCap, tone: "violet", category: "Eligibility",
-      title: entry.name, detail: entry.notes ?? undefined, date: entry.awarded_on,
+      title: eligibilityLabel(entry), detail: entry.notes ?? undefined, date: entry.awarded_on,
     })),
     ...((certifications.data ?? []) as Certification[]).map((entry): TimelineItem => ({
       id: `certification-${entry.id}`, icon: Award, tone: "amber", category: "Certification / Training",
@@ -197,6 +197,7 @@ function useRecordActivity(employeeId: string, rankTitles: Map<number, string>, 
       training: trainings.data?.length,
     } satisfies Partial<Record<RecordTabKey, number | undefined>>,
     certificationNames: [...new Set(((certifications.data ?? []) as Certification[]).map((entry) => entry.name))].slice(0, 5),
+    eligibilities: ((qualifications.data ?? []) as Qualification[]).toSorted((a, b) => b.awarded_on.localeCompare(a.awarded_on)).map(eligibilityLabel),
   };
 }
 
@@ -251,7 +252,7 @@ function OfficialDetails({ record, departmentName, rankName }: { record: Employe
       <DetailSection title="III. Employment" rows={[
         { label: "Unit / Section", value: departmentName },
         { label: "Unit / Station", value: record.unit_station },
-        { label: "Employment status", value: record.employment_status === "retired" ? "Retired" : "Active" },
+        { label: "Status", value: record.employment_status === "retired" ? "Retired" : "Active" },
         { label: "Date Entered Service", value: formatDate(record.employment_started_on) },
         { label: "Inclusive Dates (To)", value: formatDate(record.employment_ended_on) },
       ]} />
@@ -275,13 +276,12 @@ export function EmployeeRecordDetail({ employeeId }: { employeeId: string }) {
   // View mode is read-only; `?mode=edit` (the directory Edit link or "Edit details") unlocks every section.
   const editing = searchParams.get("mode") === "edit";
   const saved = searchParams.get("saved");
-  // The promotion review opens over this record, so closing it returns here rather than to Promotion.
-  const reviewing = searchParams.get("review") !== null;
   const savedMessage = saved === "created" || saved === "edited" ? savedMessages[saved] : null;
   const panelsRef = useRef<HTMLDivElement>(null);
   const rankTitles = useMemo(() => new Map((ranks.data ?? []).map((rank) => [rank.id, rankLabel(rank)])), [ranks.data]);
   const departmentNames = useMemo(() => new Map((departments.data ?? []).map((department) => [department.id, department.name])), [departments.data]);
   const activity = useRecordActivity(employeeId, rankTitles, departmentNames);
+  const timeInGrade = useEmployeeTimeInGrade(employeeId);
 
   /** Rewrites the URL query; any navigation also clears the one-time "saved" confirmation. */
   function updateParams(change: (params: URLSearchParams) => void) {
@@ -349,7 +349,8 @@ export function EmployeeRecordDetail({ employeeId }: { employeeId: string }) {
         {editing
           ? <Button onClick={stopEditing} size="sm" type="button" variant="outline">Done editing</Button>
           : <Button onClick={editDetails} size="sm" type="button"><Pencil aria-hidden />Edit details</Button>}
-        <Button onClick={() => updateParams((params) => params.set("review", "1"))} size="sm" type="button" variant="outline"><TrendingUp aria-hidden />Promotion review</Button>
+        {/* Promotion is evaluated by the system; HR decides on the Promotion Evaluation page. */}
+        <Link className={buttonVariants({ size: "sm", variant: "outline" })} href={`/hr/promotions?view=${record.id}`}><TrendingUp aria-hidden />Promotion evaluation</Link>
       </>}
       meta={[
         { label: "Badge number", value: <span className="tabular-nums">{record.employee_number}</span>, icon: BadgeCheck },
@@ -357,6 +358,8 @@ export function EmployeeRecordDetail({ employeeId }: { employeeId: string }) {
         { label: "Born", value: formatDay(record.date_of_birth) ?? "Not provided", icon: Cake },
         { label: "Gender", value: titleCase(record.gender) ?? "Not provided", icon: UserRound },
         { label: "Years of service", value: serviceLength(record.employment_started_on, record.employment_ended_on) ?? "Not recorded", icon: Clock },
+        { label: "Time-In-Grade", value: timeInGrade.isLoading ? "Loading…" : serviceLength(timeInGrade.data) ?? "Not recorded", icon: Hourglass },
+        { label: "Eligibility", value: activity.loading ? "Loading…" : activity.eligibilities.length ? activity.eligibilities.join("; ") : "None recorded", icon: GraduationCap },
         { label: "Unit / Section", value: departmentName ?? "Not assigned", icon: Building2 },
         { label: "Unit / Station", value: record.unit_station || "Not assigned", icon: MapPin },
       ]}
@@ -380,6 +383,5 @@ export function EmployeeRecordDetail({ employeeId }: { employeeId: string }) {
         ))}
       </div>
     </div>
-    {reviewing ? <PromotionReviewModal employeeId={record.id} onClose={() => updateParams((params) => params.delete("review"))} /> : null}
   </div>;
 }
