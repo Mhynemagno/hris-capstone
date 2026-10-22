@@ -26,7 +26,8 @@ export function useMyPromotionStatus() { return useQuery({ queryKey: queryKeys.p
 export function usePromotionRankRequirements() { return useQuery({ queryKey: queryKeys.promotionEligibility.requirements(), queryFn: listPromotionRankRequirements, staleTime: 5 * 60_000 }); }
 export function usePromotionEmployees(enabled = true) { return useQuery({ queryKey: queryKeys.promotionEligibility.employees(), queryFn: listPromotionEmployees, enabled }); }
 
-function useInvalidatePromotion() {
+/** Refreshes every view a promotion record feeds: scorecards, reports and the audit log. */
+export function useInvalidatePromotion() {
   const client = useQueryClient();
   return () => {
     void client.invalidateQueries({ queryKey: ["promotion-eligibility"] });

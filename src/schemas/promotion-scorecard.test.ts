@@ -11,8 +11,8 @@ describe("promotion scorecard evidence schemas", () => {
   });
 
   it("accepts only policy award keys", () => {
-    expect(() => promotionAwardInputSchema.parse({ employeeId, awardKey: "unknown_award", awardedOn: "2026-01-01", presentRankCode: "PCPL", evidence: "certificate" })).toThrow();
-    expect(promotionAwardInputSchema.parse({ employeeId, awardKey: "medalya_ng_kagitingan", awardedOn: "2026-01-01", presentRankCode: "PCPL", evidence: "certificate" }).awardKey).toBe("medalya_ng_kagitingan");
+    expect(() => promotionAwardInputSchema.parse({ employeeId, awardKey: "unknown_award", awardedOn: "2026-01-01", presentRankId: 3, evidence: "certificate" })).toThrow();
+    expect(promotionAwardInputSchema.parse({ employeeId, awardKey: "medalya_ng_kagitingan", awardedOn: "2026-01-01", presentRankId: 3, evidence: "certificate" }).awardKey).toBe("medalya_ng_kagitingan");
   });
 
   it("rejects scores outside a board criterion maximum without trusting the browser", () => {

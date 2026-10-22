@@ -141,6 +141,16 @@ export type {
   PromotionCandidateFilters,
   PromotionDecisionInput,
 } from "./promotion-eligibility";
+export {
+  promotionAssignmentInputSchema,
+  promotionAwardInputSchema,
+  promotionBoardAssessmentInputSchema,
+} from "./promotion-scorecard";
+export type {
+  PromotionAssignmentInput,
+  PromotionAwardInput,
+  PromotionBoardAssessmentInput,
+} from "./promotion-scorecard";
 export type {
   LeaveAttachmentInput,
   LeaveCancellationInput,

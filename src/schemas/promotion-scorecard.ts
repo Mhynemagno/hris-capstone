@@ -28,7 +28,7 @@ export const promotionAwardInputSchema = z.object({
   employeeId: uuidSchema,
   awardKey: z.string().refine((value) => policyAwardKeys.has(value), "Choose an official promotion-policy award."),
   awardedOn: isoDateSchema,
-  presentRankCode: z.string().trim().min(1).max(20).transform((value) => value.toUpperCase()),
+  presentRankId: z.number().int().positive(),
   evidence: evidenceSchema,
 });
 
