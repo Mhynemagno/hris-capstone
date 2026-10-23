@@ -2,7 +2,7 @@ begin;
 
 set local role postgres;
 set local search_path = extensions, public;
-select extensions.plan(39);
+select extensions.plan(41);
 
 select extensions.has_column('public', 'deployments', 'task', 'Deployments store their task');
 select extensions.has_column('public', 'deployments', 'deployment_group_id', 'Deployments keep their group header');
@@ -12,6 +12,14 @@ select extensions.has_function('public', 'cancel_deployment', array['uuid', 'tim
 select extensions.has_function('public', 'propose_deployment_status', array['uuid', 'text'], 'Employee status proposal RPC exists');
 select extensions.has_function('public', 'review_deployment_status', array['uuid', 'boolean'], 'HR status review RPC exists');
 select extensions.has_function('public', 'list_deployment_employee_options', array[]::text[], 'Deployment picker RPC exists');
+select extensions.ok(
+  pg_get_functiondef('private.lock_deployment_employees(jsonb)'::regprocedure) like '%pg_advisory_xact_lock%',
+  'Deployment creation locks each employee before checking availability'
+);
+select extensions.ok(
+  pg_get_functiondef('private.lock_deployment_employees(jsonb)'::regprocedure) like '%order by 1%',
+  'Deployment creation locks the group in a deterministic employee order'
+);
 select extensions.ok(not has_function_privilege('authenticated', 'public.update_deployment(uuid, timestamptz, text, text, text, text, date, date, text, text, text, text)', 'execute'), 'Signed-in users can no longer call the status-writing update RPC');
 select extensions.ok(not has_function_privilege('authenticated', 'public.create_deployment(uuid, text, text, text, text, date, date, text, text, text, text)', 'execute'), 'Signed-in users can no longer call the status-writing create RPC');
 

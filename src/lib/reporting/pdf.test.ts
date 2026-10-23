@@ -47,4 +47,16 @@ describe("buildReportPdf", () => {
     const pdf = buildReportPdf({ reportKey: "deployments", title: "Oversized", generatedAt: "2026-10-21T08:00:00.000Z", columns, rows: [row], totalCount: 1, page: 1, pageSize: 100 });
     expect(new TextDecoder().decode(pdf)).toMatch(/Page 2 of [2-9]/);
   });
+
+  it("wraps an unbroken value within its table cell", () => {
+    const unbrokenValue = "X".repeat(140);
+    const pdf = buildReportPdf({
+      reportKey: "leave", title: "Leave", generatedAt: "2026-10-21T08:00:00.000Z",
+      columns: [{ key: "name", label: "Name" }, { key: "leaveType", label: "Leave Type" }],
+      rows: [{ name: "Officer Santos", leaveType: unbrokenValue }], totalCount: 1, page: 1, pageSize: 100,
+    });
+    const output = new TextDecoder().decode(pdf);
+    expect(output).not.toContain(unbrokenValue);
+    expect(output).toContain("X".repeat(60));
+  });
 });

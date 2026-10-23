@@ -29,11 +29,14 @@ function split(value: string, limit: number) {
   const lines: string[] = [];
   let current = "";
   for (const word of words) {
-    if (`${current} ${word}`.trim().length > limit && current) {
-      lines.push(current);
-      current = word;
-    } else {
-      current = `${current} ${word}`.trim();
+    const chunks = word.match(new RegExp(`.{1,${limit}}`, "g")) ?? [word];
+    for (const chunk of chunks) {
+      if (`${current} ${chunk}`.trim().length > limit && current) {
+        lines.push(current);
+        current = chunk;
+      } else {
+        current = `${current} ${chunk}`.trim();
+      }
     }
   }
   if (current) lines.push(current);
