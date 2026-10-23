@@ -118,16 +118,18 @@ function DeploymentGroupFields({ assignments, errors, onAssignments }: { assignm
   const [endsOn, setEndsOn] = useState("");
   const onLeave = useEmployeesOnLeave(startsOn || null, endsOn || null);
   const onLeaveIds = useMemo(() => new Set(onLeave.data ?? []), [onLeave.data]);
-  const employeeById = useMemo(() => new Map((employees.data ?? []).map((employee) => [employee.id, employee])), [employees.data]);
+  // The RPC excludes NUP personnel, and this local guard keeps a stale query response out of the picker.
+  const deployableEmployees = useMemo(() => (employees.data ?? []).filter((employee) => employee.rank !== "NUP"), [employees.data]);
+  const employeeById = useMemo(() => new Map(deployableEmployees.map((employee) => [employee.id, employee])), [deployableEmployees]);
   const rankOptions = useMemo(() => {
     const ranks = new Map<string, number>();
-    for (const employee of employees.data ?? []) if (employee.rank) ranks.set(employee.rank, employee.rankSortOrder ?? Number.MAX_SAFE_INTEGER);
+    for (const employee of deployableEmployees) if (employee.rank) ranks.set(employee.rank, employee.rankSortOrder ?? Number.MAX_SAFE_INTEGER);
     return [...ranks].sort((left, right) => left[1] - right[1] || left[0].localeCompare(right[0])).map(([code]) => code);
-  }, [employees.data]);
-  const departmentOptions = useMemo(() => [...new Set((employees.data ?? []).flatMap((employee) => employee.department ? [employee.department] : []))].sort((left, right) => left.localeCompare(right)), [employees.data]);
-  const filtered = useMemo(() => (employees.data ?? [])
+  }, [deployableEmployees]);
+  const departmentOptions = useMemo(() => [...new Set(deployableEmployees.flatMap((employee) => employee.department ? [employee.department] : []))].sort((left, right) => left.localeCompare(right)), [deployableEmployees]);
+  const filtered = useMemo(() => deployableEmployees
     .filter((employee) => !assignments.some((assignment) => assignment.employeeId === employee.id))
-    .filter((employee) => (!rank || employee.rank === rank) && (!department || employee.department === department)), [assignments, department, employees.data, rank]);
+    .filter((employee) => (!rank || employee.rank === rank) && (!department || employee.department === department)), [assignments, department, deployableEmployees, rank]);
   const options = useMemo<ComboboxOption[]>(() => filtered
     .filter((employee) => !onLeaveIds.has(employee.id))
     .map((employee) => ({ value: employee.id, label: employee.fullName, description: employeeDescription(employee) })), [filtered, onLeaveIds]);

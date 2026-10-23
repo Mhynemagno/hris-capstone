@@ -2,7 +2,7 @@ begin;
 
 set local role postgres;
 set local search_path = extensions, public;
-select extensions.plan(34);
+select extensions.plan(39);
 
 select extensions.has_column('public', 'deployments', 'task', 'Deployments store their task');
 select extensions.has_column('public', 'deployments', 'deployment_group_id', 'Deployments keep their group header');
@@ -11,6 +11,7 @@ select extensions.has_function('public', 'update_deployment_details', array['uui
 select extensions.has_function('public', 'cancel_deployment', array['uuid', 'timestamp with time zone'], 'HR cancel RPC exists');
 select extensions.has_function('public', 'propose_deployment_status', array['uuid', 'text'], 'Employee status proposal RPC exists');
 select extensions.has_function('public', 'review_deployment_status', array['uuid', 'boolean'], 'HR status review RPC exists');
+select extensions.has_function('public', 'list_deployment_employee_options', array[]::text[], 'Deployment picker RPC exists');
 select extensions.ok(not has_function_privilege('authenticated', 'public.update_deployment(uuid, timestamptz, text, text, text, text, date, date, text, text, text, text)', 'execute'), 'Signed-in users can no longer call the status-writing update RPC');
 select extensions.ok(not has_function_privilege('authenticated', 'public.create_deployment(uuid, text, text, text, text, date, date, text, text, text, text)', 'execute'), 'Signed-in users can no longer call the status-writing create RPC');
 
@@ -29,6 +30,12 @@ values
   ('00000000-0000-4000-8000-000000003011', '00000000-0000-4000-8000-000000003002', 'APR-001', 'Approval', 'Employee', 'approval-employee@example.test', '2024-01-01'),
   ('00000000-0000-4000-8000-000000003012', '00000000-0000-4000-8000-000000003003', 'APR-002', 'Leave', 'Employee', 'approval-other@example.test', '2024-01-01');
 
+insert into public.employees (id, employee_number, first_name, last_name, personal_email, employment_started_on, rank_id)
+values (
+  '00000000-0000-4000-8000-000000003013', '20261023', 'Non', 'Uniformed', 'nup-approval@example.test', '2024-01-01',
+  (select id from public.ranks where code = 'NUP')
+);
+
 insert into public.leave_types (id, name) values ('00000000-0000-4000-8000-000000003021', 'Approval test leave');
 set local session_replication_role = replica;
 insert into public.leave_requests (id, employee_id, submitted_by_user_id, leave_type_id, leave_type_name, starts_on, ends_on, status, decided_by_user_id, decided_at)
@@ -38,6 +45,14 @@ set local session_replication_role = origin;
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000003001';
 
+select extensions.lives_ok(
+  $$select public.list_deployment_employee_options()$$,
+  'HR can list deployment employee options'
+);
+select extensions.throws_ok(
+  $$select public.create_deployment_group('Plaza', null, '2099-06-05', null, 'Public Assembly', 'Rally', '[{"employeeId":"00000000-0000-4000-8000-000000003013","task":"Deployed"}]'::jsonb)$$,
+  '22023', 'NUP personnel cannot be assigned to deployments.', 'NUP personnel are refused'
+);
 select extensions.throws_ok(
   $$select public.create_deployment_group('Plaza', null, '2099-06-05', null, 'Public Assembly', 'Rally', '[{"employeeId":"00000000-0000-4000-8000-000000003012","task":"Deployed"}]'::jsonb)$$,
   '22023', 'An employee on approved leave cannot be deployed.', 'An employee on approved leave is refused'
@@ -49,6 +64,14 @@ select extensions.throws_ok(
 select extensions.lives_ok(
   $$select public.create_deployment_group('Plaza', null, '2099-06-05', '2099-06-07', 'Public Assembly', 'Rally', '[{"employeeId":"00000000-0000-4000-8000-000000003011","task":"Reserve/Standby"}]'::jsonb)$$,
   'HR creates a grouped deployment'
+);
+select extensions.ok(
+  not exists (
+    select 1
+    from public.list_deployment_employee_options() option
+    where option.id in ('00000000-0000-4000-8000-000000003011', '00000000-0000-4000-8000-000000003013')
+  ),
+  'Scheduled and NUP personnel are absent from deployment options'
 );
 
 set local role postgres;
@@ -97,6 +120,10 @@ select extensions.throws_ok(
   '42501', null, 'Another employee cannot propose a status'
 );
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000003002';
+select extensions.throws_ok(
+  $$select public.list_deployment_employee_options()$$,
+  '42501', 'HR access is required.', 'Employees cannot list deployment employee options'
+);
 select extensions.throws_ok(
   $$select public.propose_deployment_status(current_setting('test.deployment_id')::uuid, 'completed')$$,
   '22023', 'Submit a report or proof of attendance before marking the deployment as completed.', 'Completed needs a submitted report'

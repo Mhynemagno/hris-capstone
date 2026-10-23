@@ -12,6 +12,7 @@ vi.mock("@/hooks/use-deployment-tracking", () => ({
     { id: "00000000-0000-4000-8000-000000000011", fullName: "Danilo Aguilar", employeeNumber: "0-11152", rank: "PCPL", rankSortOrder: 2, department: "Investigation" },
     { id: "00000000-0000-4000-8000-000000000012", fullName: "Bea Santos", employeeNumber: "0-22222", rank: "PAT", rankSortOrder: 1, department: "Traffic" },
     { id: "00000000-0000-4000-8000-000000000013", fullName: "Carlo Reyes", employeeNumber: "0-33333", rank: "PCPL", rankSortOrder: 2, department: "Traffic" },
+    { id: "00000000-0000-4000-8000-000000000014", fullName: "Nestor Utility", employeeNumber: "2026-10-23", rank: "NUP", rankSortOrder: 0, department: "Records" },
   ] }),
   useEmployeesOnLeave: () => ({ isLoading: false, error: null, data: mocks.onLeave }),
 }));

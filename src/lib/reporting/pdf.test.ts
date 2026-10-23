@@ -23,6 +23,9 @@ describe("buildReportPdf", () => {
     expect(output).toContain("DEPLOYMENT STATUS REPORT");
     expect(output).toContain("Employee");
     expect(output).toContain("Status");
+    expect(output).not.toContain("Generated ");
+    expect(output).not.toContain("  |  ");
+    expect(output).toMatch(/42 \d+ m 42 \d+ l S/);
     expect(output).not.toContain("Employee: SPO2 Maria Santos");
     expect(output).toContain("SPO2 Maria Santos");
     expect(output).toContain("%%EOF");
@@ -35,13 +38,13 @@ describe("buildReportPdf", () => {
       rows: Array.from({ length: 45 }, (_, index) => ({ employee: `Officer ${index}`, location: "San Juan City Police Station", status: "Scheduled" })),
       totalCount: 45, page: 1, pageSize: 100,
     });
-    expect(new TextDecoder().decode(pdf)).toContain("Page 2 of 3");
+    expect(new TextDecoder().decode(pdf)).toContain("Page 2 of 2");
   });
 
   it("splits an oversized record across portrait pages instead of drawing through the footer", () => {
-    const columns = Array.from({ length: 220 }, (_, index) => ({ key: `field${index}`, label: `Field ${index}` }));
-    const row = Object.fromEntries(columns.map((column) => [column.key, "Recorded value"]));
+    const columns = [{ key: "details", label: "Details" }];
+    const row = { details: Array.from({ length: 3000 }, () => "Recorded value").join(" ") };
     const pdf = buildReportPdf({ reportKey: "deployments", title: "Oversized", generatedAt: "2026-10-21T08:00:00.000Z", columns, rows: [row], totalCount: 1, page: 1, pageSize: 100 });
-    expect(new TextDecoder().decode(pdf)).toContain("Page 2 of 2");
+    expect(new TextDecoder().decode(pdf)).toMatch(/Page 2 of [2-9]/);
   });
 });

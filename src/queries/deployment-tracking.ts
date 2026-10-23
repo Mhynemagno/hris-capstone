@@ -1,6 +1,6 @@
 import { withSearch } from "@/lib/search";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
-import type { Deployment, DeploymentReport, Employee, PaginatedResult } from "@/lib/types/database";
+import type { Deployment, DeploymentReport, PaginatedResult } from "@/lib/types/database";
 import { isoDateSchema, uuidSchema } from "@/schemas/common";
 import { deploymentCancelSchema, deploymentFiltersSchema, deploymentGroupInputSchema, deploymentStatusProposalSchema, deploymentStatusReviewSchema, deploymentUpdateSchema, type DeploymentFilters } from "@/schemas/deployment-tracking";
 
@@ -61,8 +61,6 @@ export async function getDeployment(deploymentId: string) {
   return (data as DeploymentWithEmployee | null) ?? null;
 }
 
-export const EMPLOYEE_OPTIONS_LIMIT = 2000;
-
 export type EmployeeOption = {
   id: string;
   fullName: string;
@@ -73,25 +71,18 @@ export type EmployeeOption = {
   department: string | null;
 };
 
-/** Active employees (up to 2000) for deployment pickers; retired personnel cannot be assigned new duty. */
+/** Server-approved personnel for deployment pickers: active, uniformed, and without an open assignment. */
 export async function listEmployeeOptions(): Promise<EmployeeOption[]> {
-  const { data, error } = await createBrowserSupabaseClient()
-    .from("employees")
-    .select("id, employee_number, first_name, middle_name, last_name, qualifier, rank:ranks(code, sort_order), department:departments(name)")
-    .eq("employment_status", "active")
-    .order("last_name")
-    .order("first_name")
-    .order("employee_number")
-    .limit(EMPLOYEE_OPTIONS_LIMIT);
+  const { data, error } = await createBrowserSupabaseClient().rpc("list_deployment_employee_options");
   throwIfError(error);
-  type Row = Pick<Employee, "id" | "employee_number" | "first_name" | "middle_name" | "last_name" | "qualifier"> & { rank?: { code: string; sort_order: number } | null; department?: { name: string } | null };
+  type Row = { id: string; employee_number: string; full_name: string; rank: string | null; rank_sort_order: number | null; department: string | null };
   return ((data ?? []) as unknown as Row[]).map((row) => ({
     id: row.id,
     employeeNumber: row.employee_number,
-    fullName: [row.first_name, row.middle_name, row.last_name, row.qualifier].filter(Boolean).join(" "),
-    rank: row.rank?.code ?? null,
-    rankSortOrder: row.rank?.sort_order ?? null,
-    department: row.department?.name ?? null,
+    fullName: row.full_name,
+    rank: row.rank,
+    rankSortOrder: row.rank_sort_order,
+    department: row.department,
   }));
 }
 

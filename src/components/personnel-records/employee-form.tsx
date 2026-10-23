@@ -52,7 +52,6 @@ export function EmployeeForm({ employee, account, onSaved, pending = false }: Em
   const unitStations = useUnitStations();
   const rankCode = ranks.data?.find((rank) => String(rank.id) === rankId)?.code ?? "";
   const isNup = rankCode === "NUP";
-  const hasLegacyRetiredStatus = employee?.employment_status === "retired";
   // Preserve the linked account: creating from an account binds it, editing keeps the existing link.
   const linkedProfileId = account?.profile_id ?? employee?.profile_id ?? null;
   // Identity and service-start fields are fixed once saved on an existing record. A field that was
@@ -199,14 +198,10 @@ export function EmployeeForm({ employee, account, onSaved, pending = false }: Em
           </NativeSelect>
         </FormField>
         <FormField error={e.employmentStatus} htmlFor="employment-status" label="Status" required>
-          {hasLegacyRetiredStatus ? <>
-            <input name="employmentStatus" type="hidden" value="retired" />
-            <NativeSelect defaultValue="retired" disabled id="employment-status">
-              <option value="retired">Retired</option>
-            </NativeSelect>
-          </> : <NativeSelect defaultValue="active" id="employment-status" name="employmentStatus" required>
+          <NativeSelect defaultValue={employee?.employment_status ?? "active"} id="employment-status" name="employmentStatus" required>
             <option value="active">Active</option>
-          </NativeSelect>}
+            <option value="retired">Retired</option>
+          </NativeSelect>
         </FormField>
         <FormField
           error={e.employmentStartedOn}
