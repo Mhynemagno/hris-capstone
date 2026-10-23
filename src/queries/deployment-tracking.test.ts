@@ -7,7 +7,7 @@ vi.mock("@/lib/supabase/client", () => ({
   createBrowserSupabaseClient: () => ({ from, rpc }),
 }));
 
-import { cancelDeployment, createDeploymentGroup, deploymentFilters, EMPLOYEE_OPTIONS_LIMIT, listEmployeeIdsOnLeave, listEmployeeOptions, listHrDeployments, proposeDeploymentStatus, reviewDeploymentStatus, updateDeployment } from "./deployment-tracking";
+import { cancelDeployment, createDeploymentGroup, deploymentFilters, listEmployeeIdsOnLeave, listEmployeeOptions, listHrDeployments, proposeDeploymentStatus, reviewDeploymentStatus, updateDeployment } from "./deployment-tracking";
 
 const deployment = { employeeId: "3f1e2d3c-4b5a-4968-8776-655443322110" };
 const details = { location: "San Juan", startsOn: "2026-09-25", deploymentType: "Public Assembly", eventOperation: "Rally", task: "Reserve/Standby" };
@@ -83,24 +83,14 @@ describe("deployment tracking queries", () => {
     expect(deploymentFilters({ page: "2", pageSize: "200", status: "ongoing" })).toEqual({ page: 2, pageSize: 100, status: "ongoing" });
   });
 
-  it("lists every employee for the picker, capped at 2000, with full names and badge numbers", async () => {
-    const limit = vi.fn().mockResolvedValue({
-      data: [{ id: "e1", employee_number: "PAT-001", first_name: "Ana", middle_name: "M", last_name: "Reyes", qualifier: "Jr.", rank: { code: "PCPL", sort_order: 2 }, department: { name: "Investigation" } }],
+  it("lists only server-approved deployment options with full names and badge numbers", async () => {
+    rpc.mockResolvedValue({
+      data: [{ id: "e1", employee_number: "PAT-001", full_name: "Ana M Reyes Jr.", rank: "PCPL", rank_sort_order: 2, department: "Investigation" }],
       error: null,
     });
-    const order = vi.fn();
-    const eq = vi.fn();
-    const chain = { order, limit, eq };
-    order.mockReturnValue(chain);
-    eq.mockReturnValue(chain);
-    const select = vi.fn(() => chain);
-    from.mockReturnValue({ select });
 
     await expect(listEmployeeOptions()).resolves.toEqual([{ id: "e1", employeeNumber: "PAT-001", fullName: "Ana M Reyes Jr.", rank: "PCPL", rankSortOrder: 2, department: "Investigation" }]);
-    expect(from).toHaveBeenCalledWith("employees");
-    expect(limit).toHaveBeenCalledWith(EMPLOYEE_OPTIONS_LIMIT);
-    expect(eq).toHaveBeenCalledWith("employment_status", "active");
-    expect(EMPLOYEE_OPTIONS_LIMIT).toBe(2000);
+    expect(rpc).toHaveBeenLastCalledWith("list_deployment_employee_options");
   });
 
   it("filters the HR list by deployment type", async () => {

@@ -5,7 +5,7 @@ set local role postgres;
 set constraints all immediate;
 set local search_path = extensions, public;
 
-select extensions.plan(22);
+select extensions.plan(23);
 
 select extensions.has_schema('reporting', 'Private reporting schema exists');
 select extensions.has_function('public', 'get_hr_dashboard_summary', array['date', 'date'], 'HR dashboard RPC exists');
@@ -178,6 +178,14 @@ select extensions.is(
     target_page_size => 25
   ) ->> 'reportKey',
   'deployments', 'HR report RPC accepts requests that omit optional date filters'
+);
+select extensions.is(
+  (
+    select array_agg(column_definition ->> 'label' order by column_position)
+    from jsonb_array_elements(public.get_hr_report('leave', current_date - 30, current_date + 30, null, null, 1, 25) -> 'columns') with ordinality as column_data(column_definition, column_position)
+  ),
+  array['Number', 'Rank', 'Name', 'Badge Number', 'Leave Type', 'Status'],
+  'Leave reports use the requested numbered HR format'
 );
 
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000001502';

@@ -53,11 +53,12 @@ values
   ('00000000-0000-4000-8000-000000008106', 'employee')
 on conflict (user_id) do update set role = excluded.role, assigned_at = now();
 
--- Ranks and departments come from migrations (20260924111000_demo_data_reset.sql); the demo
--- employee starts without a department or rank, matching the client's reset data.
-insert into public.employees (profile_id, employee_number, first_name, last_name, personal_email, employment_status, employment_started_on, unit_station, place_of_birth, date_of_birth, gender, religion, phone, address, emergency_contact_name, emergency_contact_phone)
-values ('00000000-0000-4000-8000-000000008103', '0-00001', 'Demo', 'Employee', 'demo.employee@example.test', 'active', '2024-01-01', 'San Juan Police Station', 'San Juan City', '1995-05-15', 'female', 'Roman Catholic', '+639171234567', '1 Demo St., San Juan City', 'Demo Contact', '+639181234567')
+-- Ranks and departments come from migrations (20260924111000_demo_data_reset.sql). The demo
+-- employee is a deployable Patrolman / Patrolwoman so the employee deployment journey is reproducible.
+insert into public.employees (profile_id, employee_number, first_name, last_name, personal_email, employment_status, employment_started_on, rank_id, unit_station, place_of_birth, date_of_birth, gender, religion, phone, address, emergency_contact_name, emergency_contact_phone)
+values ('00000000-0000-4000-8000-000000008103', '0-00001', 'Demo', 'Employee', 'demo.employee@example.test', 'active', '2024-01-01', (select id from public.ranks where code = 'PAT'), 'San Juan Police Station', 'San Juan City', '1995-05-15', 'female', 'Roman Catholic', '+639171234567', '1 Demo St., San Juan City', 'Demo Contact', '+639181234567')
 on conflict (profile_id) do update set first_name = excluded.first_name, last_name = excluded.last_name, personal_email = excluded.personal_email,
+  rank_id = excluded.rank_id,
   unit_station = coalesce(public.employees.unit_station, excluded.unit_station),
   place_of_birth = coalesce(public.employees.place_of_birth, excluded.place_of_birth), date_of_birth = coalesce(public.employees.date_of_birth, excluded.date_of_birth),
   gender = coalesce(public.employees.gender, excluded.gender), religion = coalesce(public.employees.religion, excluded.religion),

@@ -4,9 +4,11 @@ const encoder = new TextEncoder();
 const pageWidth = 612;
 const pageHeight = 792;
 const left = 42;
-const firstRowY = 660;
-const lineHeight = 14;
-const linesPerPage = 38;
+const right = pageWidth - left;
+const tableTop = 666;
+const tableBottom = 50;
+const cellPadding = 4;
+const tableLineHeight = 10;
 
 function ascii(value: string) {
   return value
@@ -27,11 +29,14 @@ function split(value: string, limit: number) {
   const lines: string[] = [];
   let current = "";
   for (const word of words) {
-    if (`${current} ${word}`.trim().length > limit && current) {
-      lines.push(current);
-      current = word;
-    } else {
-      current = `${current} ${word}`.trim();
+    const chunks = word.match(new RegExp(`.{1,${limit}}`, "g")) ?? [word];
+    for (const chunk of chunks) {
+      if (`${current} ${chunk}`.trim().length > limit && current) {
+        lines.push(current);
+        current = chunk;
+      } else {
+        current = `${current} ${chunk}`.trim();
+      }
     }
   }
   if (current) lines.push(current);
@@ -46,11 +51,80 @@ function formatPdfCell(value: unknown) {
   return String(value);
 }
 
-function rowLines(report: ReportResponse, row: ReportResponse["rows"][number]) {
-  return split(report.columns.map((column) => formatPdfCell(row[column.key])).join("  |  "), 94);
+function columnWidths(report: ReportResponse) {
+  const available = right - left;
+  const weights = report.columns.map((column) => Math.max(column.label.length, 8));
+  const totalWeight = weights.reduce((total, weight) => total + weight, 0);
+  return weights.map((weight) => Math.max(1, (available * weight) / totalWeight));
 }
 
-function pageContent(report: ReportResponse, pageRows: string[][], page: number, pageCount: number) {
+function charactersPerLine(width: number) {
+  return Math.max(4, Math.floor((width - cellPadding * 2) / 4.2));
+}
+
+type TableRow = { cells: string[][]; lineCount: number };
+
+function tableRow(cells: string[], widths: number[]): TableRow {
+  const lines = cells.map((value, index) => split(value, charactersPerLine(widths[index] ?? 1)));
+  return { cells: lines, lineCount: Math.max(...lines.map((cell) => cell.length), 1) };
+}
+
+function rowHeight(row: TableRow) {
+  return row.lineCount * tableLineHeight + cellPadding * 2;
+}
+
+function paginateRows(report: ReportResponse, widths: number[]) {
+  const groups: TableRow[][] = [[]];
+  let usedHeight = 0;
+  const maximumHeight = tableTop - tableBottom - rowHeight(tableRow(report.columns.map((column) => column.label), widths));
+  for (const row of report.rows) {
+    const source = tableRow(report.columns.map((column) => formatPdfCell(row[column.key])), widths);
+    let offset = 0;
+    while (offset < source.lineCount) {
+      const remainingLines = Math.max(1, Math.floor((maximumHeight - usedHeight - cellPadding * 2) / tableLineHeight));
+      if (groups.at(-1)?.length && remainingLines < 1) {
+        groups.push([]);
+        usedHeight = 0;
+        continue;
+      }
+      const lineCount = Math.min(source.lineCount - offset, Math.max(1, remainingLines));
+      const chunk = { cells: source.cells.map((cell) => cell.slice(offset, offset + lineCount)), lineCount };
+      const height = rowHeight(chunk);
+      if (groups.at(-1)?.length && usedHeight + height > maximumHeight) {
+        groups.push([]);
+        usedHeight = 0;
+        continue;
+      }
+      groups.at(-1)?.push(chunk);
+      usedHeight += height;
+      offset += lineCount;
+      if (offset < source.lineCount) {
+        groups.push([]);
+        usedHeight = 0;
+      }
+    }
+  }
+  return groups;
+}
+
+function drawRow(commands: string[], row: TableRow, widths: number[], top: number, bold = false) {
+  const bottom = top - rowHeight(row);
+  commands.push(line(left, top, right, top));
+  commands.push(line(left, bottom, right, bottom));
+  let x = left;
+  for (let index = 0; index <= widths.length; index += 1) {
+    commands.push(line(x, top, x, bottom));
+    x += widths[index] ?? 0;
+  }
+  x = left;
+  row.cells.forEach((cell, index) => {
+    cell.forEach((value, lineIndex) => commands.push(text(x + cellPadding, top - cellPadding - 8 - lineIndex * tableLineHeight, 7, value, bold)));
+    x += widths[index] ?? 0;
+  });
+  return bottom;
+}
+
+function pageContent(report: ReportResponse, pageRows: TableRow[], widths: number[], page: number, pageCount: number) {
   const commands = [
     "0.2 w",
     text(left, 755, 9, "Republic of the Philippines", true),
@@ -58,49 +132,18 @@ function pageContent(report: ReportResponse, pageRows: string[][], page: number,
     text(left, 728, 14, "San Juan City Police Station", true),
     line(left, 719, pageWidth - left, 719),
     text(left, 698, 13, report.title.toUpperCase(), true),
-    text(left, 684, 8, `Generated ${new Date(report.generatedAt).toLocaleString("en-PH", { timeZone: "Asia/Manila", dateStyle: "long", timeStyle: "short" })}`),
-    text(left, 671, 8, `Records: ${report.totalCount}    Page ${page} of ${pageCount}`),
-    text(left, 658, 8, report.columns.map((column) => column.label).join("  |  "), true),
-    line(left, 652, pageWidth - left, 652),
+    text(left, 680, 8, `Records: ${report.totalCount}    Page ${page} of ${pageCount}`),
   ];
-  let y = firstRowY - 12;
-  for (const fields of pageRows) {
-    for (const field of fields) {
-      commands.push(text(left, y, 8, field));
-      y -= lineHeight;
-    }
-    commands.push(line(left, y + 5, pageWidth - left, y + 5));
-    y -= 5;
-  }
-  commands.push(text(left, 28, 7, "Official HRIS report • San Juan City Police Station"));
+  let y = drawRow(commands, tableRow(report.columns.map((column) => column.label), widths), widths, tableTop, true);
+  for (const row of pageRows) y = drawRow(commands, row, widths, y);
+  commands.push(text(left, 28, 7, "Official HRIS report - San Juan City Police Station"));
   return commands.join("\n");
 }
 
 /** Builds a compact, portrait, downloadable PDF without relying on the browser print dialog. */
 export function buildReportPdf(report: ReportResponse) {
-  const groups: string[][][] = [[]];
-  let usedLines = 0;
-  for (const row of report.rows) {
-    const fields = rowLines(report, row);
-    // A row has one rendered line per column (and may wrap). A very wide or
-    // verbose row is split at a field boundary across pages instead of being
-    // drawn through the footer.
-    while (fields.length) {
-      const remaining = linesPerPage - usedLines;
-      if (usedLines > 0 && remaining < 2) {
-        groups.push([]);
-        usedLines = 0;
-        continue;
-      }
-      const take = Math.max(1, Math.min(fields.length, remaining - 1));
-      groups.at(-1)?.push(fields.splice(0, take));
-      usedLines += take + 1;
-      if (fields.length) {
-        groups.push([]);
-        usedLines = 0;
-      }
-    }
-  }
+  const widths = columnWidths(report);
+  const groups = paginateRows(report, widths);
   const pageObjectStart = 5;
   const objects: string[] = [
     "<< /Type /Catalog /Pages 2 0 R >>",
@@ -109,7 +152,7 @@ export function buildReportPdf(report: ReportResponse) {
     "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>",
   ];
   groups.forEach((rows, index) => {
-    const content = pageContent(report, rows, index + 1, groups.length);
+    const content = pageContent(report, rows, widths, index + 1, groups.length);
     const pageObject = pageObjectStart + index * 2;
     const contentObject = pageObject + 1;
     objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${contentObject} 0 R >>`);

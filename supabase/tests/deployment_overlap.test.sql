@@ -31,15 +31,15 @@ select extensions.lives_ok(
 );
 select extensions.throws_ok(
   $$select public.create_deployment_group('Market', null, '2099-01-12', null, 'Public Assembly', 'Rally', '[{"employeeId":"00000000-0000-4000-8000-000000002211","task":"Deployed"}]'::jsonb)$$,
-  '22023', 'An employee already has an overlapping deployment.', 'A one-day deployment inside an active range is rejected'
+  '22023', 'An employee already has a scheduled or ongoing deployment.', 'A scheduled deployment blocks another assignment'
 );
 select extensions.throws_ok(
   $$select public.create_deployment_group('Market', null, '2099-01-08', '2099-01-10', 'Public Assembly', 'Rally', '[{"employeeId":"00000000-0000-4000-8000-000000002211","task":"Deployed"}]'::jsonb)$$,
-  '22023', 'An employee already has an overlapping deployment.', 'A range touching the first day is rejected'
+  '22023', 'An employee already has a scheduled or ongoing deployment.', 'A scheduled deployment blocks a range ending on its first day'
 );
-select extensions.lives_ok(
+select extensions.throws_ok(
   $$select public.create_deployment_group('Market', null, '2099-01-13', null, 'Public Assembly', 'Rally', '[{"employeeId":"00000000-0000-4000-8000-000000002211","task":"Deployed"}]'::jsonb)$$,
-  'The day after the range is free'
+  '22023', 'An employee already has a scheduled or ongoing deployment.', 'A scheduled deployment blocks later assignments until it is closed'
 );
 select extensions.lives_ok(
   $$select public.cancel_deployment(
@@ -58,11 +58,8 @@ select extensions.lives_ok(
   'Editing only the task of a legacy overlapping deployment still works'
 );
 select extensions.throws_ok(
-  $$select public.update_deployment_details(
-      (select id from public.deployments where location = 'Market' and starts_on = '2099-01-13'),
-      (select updated_at from public.deployments where location = 'Market' and starts_on = '2099-01-13'),
-      'Market', '2099-01-11', null, 'Public Assembly', 'Rally', 'Deployed')$$,
-  '23P01', 'This employee is already deployed on that date.', 'Moving a deployment onto a busy day is rejected'
+  $$select public.create_deployment_group('Market', null, '2099-01-13', null, 'Public Assembly', 'Rally', '[{"employeeId":"00000000-0000-4000-8000-000000002212","task":"Deployed"}]'::jsonb)$$,
+  '22023', 'An employee already has a scheduled or ongoing deployment.', 'A legacy scheduled deployment also blocks a new assignment'
 );
 
 select * from extensions.finish();
