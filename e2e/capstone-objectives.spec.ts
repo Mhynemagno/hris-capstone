@@ -23,6 +23,7 @@ const HR = { email: "demo.hr@example.test", home: "/hr" };
 const EMPLOYEE = { email: "demo.employee@example.test", home: "/employee" };
 const MANAGEMENT = { email: "demo.management@example.test", home: "/management" };
 const ADMIN = { email: "demo.admin@example.test", home: "/admin" };
+const DEMO_EMPLOYEE = { badge: "0-00001", name: "Demo Employee" };
 
 // A minimal, valid PDF: the upload checks the file signature.
 const pdf = (name: string) => ({
@@ -82,7 +83,7 @@ async function chooseComboboxOption(page: Page, name: RegExp | string, search: s
   await page.getByRole("option", { name: option }).first().click();
 }
 
-/** A distinct far-future start day per created deployment, so repeated runs never double-book the demo employee. */
+/** A distinct far-future start day per created deployment. */
 let deploymentDayCounter = 0;
 function uniqueDeploymentDay() {
   deploymentDayCounter += 1;
@@ -90,13 +91,13 @@ function uniqueDeploymentDay() {
   return 3650 + ((seed * 7 + deploymentDayCounter) % 20000);
 }
 
-/** HR creates a deployment for the demo employee in the Deployments side panel, then opens its details page. */
-async function createDeployment(page: Page, location: string, options: { startDay?: number } = {}) {
+/** HR creates a deployment for an eligible employee in the Deployments side panel, then opens its details page. */
+async function createDeployment(page: Page, location: string, employee: { badge: string; name: string }, options: { startDay?: number } = {}) {
   const { startDay = uniqueDeploymentDay() } = options;
   await page.goto("/hr/deployments");
   await page.getByRole("button", { name: /New Deployment/ }).click();
   const panel = page.getByRole("dialog", { name: "Create Deployment" });
-  await chooseComboboxOption(page, /^Employees/, "0-00001", /Demo Employee/);
+  await chooseComboboxOption(page, /^Employees/, employee.badge, employee.name);
   await panel.getByLabel(/^Location/).fill(location);
   await panel.getByLabel(/^Deployment Type/).selectOption("Public Assembly");
   await panel.getByLabel(/^Event \/ Operation/).selectOption("Rally");
@@ -329,17 +330,16 @@ test.describe("Objective 3: deployment tracking", () => {
     await signOut(page);
 
     await signIn(page, HR.email, HR.home);
-
     // Validation: a grouped deployment still needs a location.
     await page.goto("/hr/deployments?create=1");
     const createPanel = page.getByRole("dialog", { name: "Create Deployment" });
-    await chooseComboboxOption(page, /^Employees/, "0-00001", /Demo Employee/);
+    await chooseComboboxOption(page, /^Employees/, DEMO_EMPLOYEE.badge, DEMO_EMPLOYEE.name);
     await createPanel.getByLabel(/^Start Date/).fill(isoDate(0));
     await createPanel.getByRole("button", { name: "Save" }).click();
     await expect(createPanel.getByText("Location is required.").first()).toBeVisible();
     await createPanel.getByRole("button", { name: "Cancel" }).click();
 
-    await createDeployment(page, role);
+    await createDeployment(page, role, DEMO_EMPLOYEE);
     await expect(page.getByText("Current status")).toBeVisible();
     await expect(page.getByText(role, { exact: true })).toBeVisible();
     const detailUrl = page.url();
@@ -543,7 +543,8 @@ test.describe("Objective 6: attendance monitoring and reporting", () => {
 test.describe("Objective 7: analytics dashboard", () => {
   test("HR and management dashboards summarize recruitment, deployment, attendance, and promotion data", async ({ page }) => {
     await signIn(page, HR.email, HR.home);
-    await createDeployment(page, `E2E Dashboard ${runId}`);
+    const deploymentEmployee = await createEmployee(page, "Dashboard");
+    await createDeployment(page, `E2E Dashboard ${runId}`, deploymentEmployee);
     await page.goto("/hr");
     await expect(page.getByRole("heading", { name: "Dashboard Overview", exact: true })).toBeVisible({ timeout: 30_000 });
     const kpi = (label: string) => page.getByText(label, { exact: true }).locator("xpath=ancestor::article[1]");
@@ -571,8 +572,9 @@ test.describe("Objective 8: automated reports", () => {
   test("HR generates, filters, and downloads reports; management reads them", async ({ page }) => {
     const role = `E2E Report ${runId}`;
     await signIn(page, HR.email, HR.home);
+    const deploymentEmployee = await createEmployee(page, "Reports");
     // Dated today so it falls in the report's default 30-day range.
-    await createDeployment(page, role, { startDay: 0 });
+    await createDeployment(page, role, deploymentEmployee, { startDay: 0 });
 
     await page.goto("/reports");
     for (const report of ["Applicant Tracking", "Hiring Decisions", "Employee Performance", "Duty Deployments", "Attendance", "Leave", "Promotion Evaluation", "Training Needs"]) {
