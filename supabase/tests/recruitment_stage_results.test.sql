@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(18);
+select extensions.plan(21);
 
 select extensions.has_function('public', 'record_stage_result', array['uuid', 'text', 'text', 'jsonb', 'timestamp with time zone', 'text'], 'HR records Passed / Failed / Scheduled / Verified results');
 select extensions.has_table('public', 'application_stage_documents', 'Stage supporting documents are stored');
@@ -79,7 +79,24 @@ select extensions.is(
   array['Not Selected', 'failed'],
   'Failing ends the application as Not Selected (Disqualified) and the history records the result'
 );
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000008102';
+select extensions.throws_ok(
+  $$select public.reactivate_applicant_account('00000000-0000-4000-8000-000000008104')$$,
+  '22023', 'Applicant accounts can only be reactivated six months after rejection.',
+  'HR cannot reactivate a rejected applicant before the six-month cooldown ends'
+);
+set local role postgres;
+select extensions.is(
+  (select is_active from public.profiles where id = '00000000-0000-4000-8000-000000008104'),
+  false,
+  'Failing a recruitment stage blocks the rejected applicant from signing in'
+);
+select extensions.ok(
+  (select banned_until > now() from auth.users where id = '00000000-0000-4000-8000-000000008104'),
+  'The rejected applicant is banned in Supabase Auth as well as the application profile'
+);
 
+set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000008104';
 select extensions.throws_ok(
   $$select public.record_stage_result('00000000-0000-4000-8000-000000028001', 'scheduled', null, null)$$,
