@@ -57,7 +57,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ repo
     return NextResponse.json({ error: "The report is too large to generate safely. Narrow the filters and try again." }, { status: 422 });
   }
 
-  const pdf = buildReportPdf({ ...report.data, rows, page: 1 });
+  const pdf = buildReportPdf({ ...report.data, rows, page: 1 }, role === "hr_personnel" ? "HR Admin" : "Management");
   return new NextResponse(pdf, {
     headers: {
       "Content-Disposition": `attachment; filename="${report.data.reportKey}-${filters.data.startsOn}-to-${filters.data.endsOn}.pdf"`,
