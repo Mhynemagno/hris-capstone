@@ -289,6 +289,28 @@ describe("EmployeeLeaveRequestForm", () => {
     expect(screen.queryByText("Must be on or after the start date.")).not.toBeInTheDocument();
   });
 
+  it("shows the inclusive requested duration after both dates are selected", async () => {
+    const user = userEvent.setup();
+    render(<EmployeeLeaveRequestForm />);
+
+    await user.type(screen.getByLabelText(/Start date/), isoDate(1));
+    expect(screen.queryByText("Requested duration:")).not.toBeInTheDocument();
+    await user.type(screen.getByLabelText(/End date/), isoDate(2));
+
+    expect(screen.getByText("Requested duration:")).toBeVisible();
+    expect(screen.getByText("2 days", { selector: "span" })).toBeVisible();
+  });
+
+  it("does not show a requested duration when the end date is before the start date", async () => {
+    const user = userEvent.setup();
+    render(<EmployeeLeaveRequestForm />);
+
+    await user.type(screen.getByLabelText(/Start date/), isoDate(5));
+    await user.type(screen.getByLabelText(/End date/), isoDate(3));
+
+    expect(screen.queryByText("Requested duration:")).not.toBeInTheDocument();
+  });
+
   it("binds the end date minimum to the start date and blocks an end date before the start", async () => {
     const user = userEvent.setup();
     render(<EmployeeLeaveRequestForm />);

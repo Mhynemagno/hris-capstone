@@ -304,6 +304,9 @@ export function EmployeeLeaveRequestForm({ onCancel, onSubmitted }: { onCancel?:
   const year = Number((validStart ?? minDate).slice(0, 4));
   const balances = useMyLeaveBalances(year);
   const balance = balances.data?.find((entry) => entry.leave_type_id === leaveTypeId);
+  const requestedDays = validStart && endsOn && endsOn >= validStart && !leaveDateError(endsOn, minDate, maxDate)
+    ? leaveDays(validStart, endsOn)
+    : null;
 
   if (types.isLoading || employee.isLoading) return <LoadingState label="Loading leave types…" />;
   const loadError = types.error ?? employee.error;
@@ -396,6 +399,12 @@ export function EmployeeLeaveRequestForm({ onCancel, onSubmitted }: { onCancel?:
           )}
         </Field>
       </div>
+      {requestedDays !== null ? (
+        <div aria-live="polite" className="flex flex-wrap items-center gap-1.5 text-[11px]">
+          <span className="text-slate-500">Requested duration:</span>
+          <StatusPill tone="blue">{dayCount(requestedDays)}</StatusPill>
+        </div>
+      ) : null}
       {selectedType?.requires_attachment ? (
         <Field description="Required for this leave type, e.g. a medical certificate (PDF or image, up to 10 MB)." error={fieldErrors.document} htmlFor="leave-document" label="Supporting document" required>
           {(aria) => <StaffInput {...aria} accept="application/pdf,image/png,image/jpeg,image/webp" id="leave-document" onChange={(event) => setDocument(event.target.files?.[0] ?? null)} type="file" />}
