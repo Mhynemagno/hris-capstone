@@ -8,29 +8,17 @@ import { ErrorState } from "@/components/ui/error-state";
 import { FormField } from "@/components/ui/form-field";
 import { Textarea } from "@/components/ui/textarea";
 import { notifySuccess } from "@/components/ui/toaster";
-import { useReactivateApplicantAccount, useReopenApplicationForResubmission, useSendApplicantCredentials } from "@/hooks/use-applicant-portal";
+import { useReopenApplicationForResubmission, useSendApplicantCredentials } from "@/hooks/use-applicant-portal";
 
 const errorText = (cause: unknown, fallback: string) => (cause instanceof Error ? cause.message : fallback);
 
 /**
- * HR account help for an applicant who must resubmit (Final Revisions PDF p. 15): reactivate a
- * deactivated account, or email new credentials (a password-reset link to the existing reset page).
+ * HR can resend credentials. Rejected applicants regain access automatically after their
+ * six-month cooling-off period; HR must not manually reactivate them.
  */
-export function ApplicantAccountActions({ userId, email, active }: { userId: string; email: string | null; active: boolean }) {
-  const reactivate = useReactivateApplicantAccount();
+export function ApplicantAccountActions({ email, active }: { email: string | null; active: boolean }) {
   const send = useSendApplicantCredentials();
   const [error, setError] = useState<string | null>(null);
-
-  async function reactivateAccount() {
-    if (reactivate.isPending) return;
-    setError(null);
-    try {
-      await reactivate.mutateAsync(userId);
-      notifySuccess("Account reactivated. The applicant can sign in again.");
-    } catch (cause) {
-      setError(errorText(cause, "We could not reactivate this account."));
-    }
-  }
 
   async function sendCredentials() {
     if (!email || send.isPending) return;
@@ -46,11 +34,12 @@ export function ApplicantAccountActions({ userId, email, active }: { userId: str
   return (
     <section aria-label="Account actions" className="space-y-3">
       <p className="text-sm text-muted-foreground">
-        {active ? "The account can sign in." : "The account is deactivated and cannot sign in. Reactivate it so the applicant can resubmit."}
+        {active
+          ? "The account can sign in. A rejected applicant regains access automatically after the six-month cooling-off period."
+          : "The account is deactivated. A System Administrator must restore permanent account access."}
       </p>
       <div className="flex flex-wrap gap-2">
-        {active ? null : <Button loading={reactivate.isPending} onClick={() => void reactivateAccount()} type="button">Reactivate account</Button>}
-        <Button disabled={!email || !active} loading={send.isPending} onClick={() => void sendCredentials()} title={!active ? "Reactivate the account first." : undefined} type="button" variant="outline">Send new credentials</Button>
+        <Button disabled={!email || !active} loading={send.isPending} onClick={() => void sendCredentials()} title={!active ? "A System Administrator must restore permanent access first." : undefined} type="button" variant="outline">Send new credentials</Button>
       </div>
       {error ? <ErrorState message={error} /> : null}
     </section>

@@ -12,10 +12,9 @@ const applicants = [
   { user_id: "u1", applicant_id: "a1", applicant_number: 12345, first_name: "Ana", middle_name: null, last_name: "Reyes", qualifier: null, full_name: null, email: "ana@example.test", phone: "09171234567", registered_at: "2026-09-01T00:00:00Z", email_confirmed: true, account_active: true, application_count: 1, latest_application_id: "app-1", latest_application_status: "Interview", latest_job_title: "Patrol", latest_submitted_at: "2026-09-02T00:00:00Z" },
   { user_id: "u2", applicant_id: "a2", applicant_number: 202602, first_name: "Ben", middle_name: null, last_name: "Cruz", qualifier: null, full_name: null, email: "ben@example.test", phone: null, registered_at: "2026-09-05T00:00:00Z", email_confirmed: false, account_active: false, application_count: 0, latest_application_id: null, latest_application_status: null, latest_job_title: null, latest_submitted_at: null },
 ];
-const actions = vi.hoisted(() => ({ reactivate: vi.fn(), send: vi.fn() }));
+const actions = vi.hoisted(() => ({ send: vi.fn() }));
 vi.mock("@/hooks/use-applicant-portal", () => ({
   useHrRegisteredApplicants: () => ({ isLoading: false, error: null, refetch: vi.fn(), data: applicants }),
-  useReactivateApplicantAccount: () => ({ isPending: false, mutateAsync: actions.reactivate }),
   useSendApplicantCredentials: () => ({ isPending: false, mutateAsync: actions.send }),
 }));
 vi.mock("@/components/ui/toaster", () => ({ notifySuccess: vi.fn() }));
@@ -25,7 +24,7 @@ import type { HrRegisteredApplicant } from "@/lib/types/database";
 import { HrRegisteredApplicants, RegisteredApplicantDrawer } from "./hr-registered-applicants";
 
 describe("HrRegisteredApplicants", () => {
-  beforeEach(() => { nav.search = ""; nav.push.mockReset(); actions.reactivate.mockReset().mockResolvedValue(undefined); actions.send.mockReset().mockResolvedValue(undefined); });
+  beforeEach(() => { nav.search = ""; nav.push.mockReset(); actions.send.mockReset().mockResolvedValue(undefined); });
 
   it("lists every account with its latest stage and an unconfirmed-email badge", () => {
     render(<HrRegisteredApplicants />);
@@ -57,14 +56,14 @@ describe("HrRegisteredApplicants", () => {
     expect(within(screen.getByRole("row", { name: /Cruz, Ben/ })).getByText("2-02602")).toBeInTheDocument();
   });
 
-  it("lets HR reactivate a deactivated account and send new credentials once it is active", async () => {
+  it("keeps a permanently deactivated account for System Administration and does not offer manual reactivation", async () => {
     render(<HrRegisteredApplicants />);
     await userEvent.click(screen.getByRole("button", { name: "Cruz, Ben" }));
     const drawer = screen.getByRole("dialog", { name: "Cruz, Ben" });
     expect(drawer).toHaveTextContent("Deactivated");
     expect(within(drawer).getByRole("button", { name: "Send new credentials" })).toBeDisabled();
-    await userEvent.click(within(drawer).getByRole("button", { name: "Reactivate account" }));
-    expect(actions.reactivate).toHaveBeenCalledWith("u2");
+    expect(within(drawer).getByText(/System Administrator must restore permanent account access/i)).toBeInTheDocument();
+    expect(within(drawer).queryByRole("button", { name: /reactivate/i })).not.toBeInTheDocument();
   });
 
   it("sends new credentials to an active applicant's email", async () => {

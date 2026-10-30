@@ -34,7 +34,7 @@ describe("getCurrentRole", () => {
     const eq = vi.fn().mockReturnValue({ maybeSingle });
     const select = vi.fn().mockReturnValue({ eq });
     const from = vi.fn().mockReturnValue({ select });
-    createServerSupabaseClient.mockResolvedValue({ from });
+    createServerSupabaseClient.mockResolvedValue({ from, rpc: vi.fn().mockResolvedValue({ data: true, error: null }) });
 
     await expect(getCurrentRole()).resolves.toBe("hr_personnel");
     expect(eq).toHaveBeenCalledWith(
@@ -50,6 +50,7 @@ describe("getCurrentRole", () => {
       error: null,
     });
     createServerSupabaseClient.mockResolvedValue({
+      rpc: vi.fn().mockResolvedValue({ data: true, error: null }),
       from: vi.fn().mockReturnValue({
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({ maybeSingle }),
@@ -60,15 +61,33 @@ describe("getCurrentRole", () => {
     await expect(getCurrentRole()).resolves.toBeNull();
   });
 
-  it("returns null for an account that can no longer sign in", async () => {
+  it("returns null when the database access decision denies the account", async () => {
     getVerifiedUserId.mockResolvedValue("00000000-0000-4000-8000-000000000001");
-    const maybeSingle = vi.fn()
-      .mockResolvedValueOnce({ data: { role: "applicant" }, error: null })
-      .mockResolvedValueOnce({ data: { is_active: false }, error: null });
     createServerSupabaseClient.mockResolvedValue({
-      from: vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ maybeSingle }) }) }),
+      rpc: vi.fn().mockResolvedValue({ data: false, error: null }),
+      from: vi.fn(),
     });
 
     await expect(getCurrentRole()).resolves.toBeNull();
+  });
+
+  it("returns null while the applicant cooling-off period still blocks access", async () => {
+    getVerifiedUserId.mockResolvedValue("00000000-0000-4000-8000-000000000001");
+    const maybeSingle = vi.fn().mockResolvedValue({
+      data: { role: "applicant" },
+      error: null,
+    });
+    const rpc = vi.fn().mockResolvedValue({ data: false, error: null });
+    createServerSupabaseClient.mockResolvedValue({
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({ maybeSingle }),
+        }),
+      }),
+      rpc,
+    });
+
+    await expect(getCurrentRole()).resolves.toBeNull();
+    expect(rpc).toHaveBeenCalledWith("current_account_can_sign_in");
   });
 });

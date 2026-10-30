@@ -28,7 +28,7 @@ function loginRequest(fields: Record<string, string>) {
 describe("password login route", () => {
   beforeEach(() => {
     signInWithPassword.mockReset();
-    createServerSupabaseClient.mockResolvedValue({ auth: { signInWithPassword } });
+    createServerSupabaseClient.mockResolvedValue({ auth: { signInWithPassword }, rpc: vi.fn().mockResolvedValue({ data: true, error: null }) });
   });
 
   it("redirects a successful POST login to the requested safe path", async () => {
@@ -85,7 +85,7 @@ describe("password login route", () => {
     const signOut = vi.fn().mockResolvedValue({ error: null });
     const maybeSingle = vi.fn().mockResolvedValue({ data: { is_active: false }, error: null });
     createServerSupabaseClient.mockResolvedValue({
-      auth: { signInWithPassword, signOut },
+      auth: { signInWithPassword, signOut }, rpc: vi.fn().mockResolvedValue({ data: false, error: null }),
       from: vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ maybeSingle }) }) }),
     });
     signInWithPassword.mockResolvedValue({ data: { user: { id: "00000000-0000-4000-8000-000000000001" } }, error: null });
@@ -100,7 +100,7 @@ describe("password login route", () => {
     function activeAccountClient() {
       const maybeSingle = vi.fn().mockResolvedValue({ data: { is_active: true }, error: null });
       createServerSupabaseClient.mockResolvedValue({
-        auth: { signInWithPassword },
+        auth: { signInWithPassword }, rpc: vi.fn().mockResolvedValue({ data: true, error: null }),
         from: vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ maybeSingle }) }) }),
       });
     }
@@ -147,7 +147,7 @@ describe("Employee / HR login for HR and System Administrators", () => {
         }),
       }),
     }));
-    createServerSupabaseClient.mockResolvedValue({ auth: { signInWithPassword, signOut }, from });
+    createServerSupabaseClient.mockResolvedValue({ auth: { signInWithPassword, signOut }, from, rpc: vi.fn().mockResolvedValue({ data: true, error: null }) });
     return { signOut };
   }
 

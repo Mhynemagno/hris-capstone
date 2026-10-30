@@ -12,13 +12,12 @@ vi.mock("./overview-tab", () => ({ OverviewTab: () => <p>overview content</p> })
 vi.mock("./profile-tab", () => ({ ProfileTab: () => <p>profile content</p> }));
 vi.mock("./documents-tab", () => ({ DocumentsTab: () => <p>documents content</p> }));
 vi.mock("./activity-tab", () => ({ ActivityTab: () => <p>activity content</p> }));
-const accountMocks = vi.hoisted(() => ({ reopen: vi.fn(), reactivate: vi.fn(), send: vi.fn(), active: true }));
+const accountMocks = vi.hoisted(() => ({ reopen: vi.fn(), send: vi.fn(), active: true }));
 vi.mock("@/components/ui/toaster", () => ({ notifySuccess: vi.fn() }));
 vi.mock("@/hooks/use-applicant-portal", () => ({
   useHrRegisteredApplicants: () => ({ data: [{ user_id: "u1", applicant_id: "a1", email: "ana@example.test", account_active: accountMocks.active }] }),
   useApplicantEducationFor: () => ({ data: [], error: null, refetch: vi.fn() }),
   useReopenApplicationForResubmission: () => ({ isPending: false, mutateAsync: accountMocks.reopen }),
-  useReactivateApplicantAccount: () => ({ isPending: false, mutateAsync: accountMocks.reactivate }),
   useSendApplicantCredentials: () => ({ isPending: false, mutateAsync: accountMocks.send }),
 }));
 vi.mock("@/hooks/use-recruitment", () => ({
@@ -40,7 +39,7 @@ vi.mock("@/hooks/use-recruitment", () => ({
 import { HrApplicationReview } from "./application-review";
 
 describe("HrApplicationReview", () => {
-  beforeEach(() => { accountMocks.active = true; accountMocks.reopen.mockReset().mockResolvedValue(undefined); accountMocks.reactivate.mockReset().mockResolvedValue(undefined); state.status = "Application Submission"; state.stageResult = "pending"; state.documents = []; state.missing = false; state.history = [{ id: "h", previous_status: null, next_status: "Application Submission", created_at: new Date(Date.now() - 4 * 86_400_000).toISOString(), note: null }]; });
+  beforeEach(() => { accountMocks.active = true; accountMocks.reopen.mockReset().mockResolvedValue(undefined); state.status = "Application Submission"; state.stageResult = "pending"; state.documents = []; state.missing = false; state.history = [{ id: "h", previous_status: null, next_status: "Application Submission", created_at: new Date(Date.now() - 4 * 86_400_000).toISOString(), note: null }]; });
 
   it("names the applicant, links the job and shows how long they have been at this stage", () => {
     render(<HrApplicationReview applicationId="00000000-0000-0000-0000-000000000001" />);
@@ -62,11 +61,11 @@ describe("HrApplicationReview", () => {
     expect(accountMocks.reopen).toHaveBeenCalledWith({ applicationId: "00000000-0000-0000-0000-000000000001", note: "Please upload a clearer diploma." });
   });
 
-  it("offers HR account help: reactivate a deactivated applicant account", async () => {
+  it("does not let HR manually reactivate a deactivated applicant account", () => {
     accountMocks.active = false;
     render(<HrApplicationReview applicationId="00000000-0000-0000-0000-000000000001" />);
-    await userEvent.click(screen.getByRole("button", { name: "Reactivate account" }));
-    expect(accountMocks.reactivate).toHaveBeenCalledWith("u1");
+    expect(screen.getByText(/System Administrator must restore permanent account access/i)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /reactivate/i })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Send new credentials" })).toBeDisabled();
   });
 

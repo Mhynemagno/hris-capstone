@@ -43,7 +43,7 @@ export function RegisteredApplicantDrawer({ applicant, onClose }: { applicant: H
               <div key={label}><dt className="text-sm text-muted-foreground">{label}</dt><dd className="text-base break-all">{value}</dd></div>
             ))}
           </dl>
-          <ApplicantAccountActions active={applicant.account_active} email={applicant.email} userId={applicant.user_id} />
+          <ApplicantAccountActions active={applicant.account_active} email={applicant.email} />
         </div>
       ) : null}
     </Drawer>

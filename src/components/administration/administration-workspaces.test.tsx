@@ -3,10 +3,14 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const navigation = vi.hoisted(() => ({ replace: vi.fn(), search: "" }));
+const presentationDemo = vi.hoisted(() => ({ rpc: vi.fn() }));
 vi.mock("next/navigation", () => ({
   usePathname: () => "/admin/departments",
   useRouter: () => ({ replace: navigation.replace }),
   useSearchParams: () => new URLSearchParams(navigation.search),
+}));
+vi.mock("@/lib/supabase/client", () => ({
+  createBrowserSupabaseClient: () => ({ rpc: presentationDemo.rpc }),
 }));
 
 // List filters are written through the History API (no server round trip).
@@ -170,6 +174,37 @@ describe("administration shared controls", () => {
 
     await user.click(screen.getByRole("button", { name: /edit organization settings/i }));
     expect(screen.getByRole("dialog", { name: /organization settings/i })).toHaveAttribute("data-side", "center");
+  });
+
+  it("lets a System Administrator simulate six months for one applicant and records the requested target", async () => {
+    const user = userEvent.setup();
+    let active = false;
+    presentationDemo.rpc.mockImplementation((name: string) => {
+      if (name === "set_applicant_login_presentation_demo") {
+        active = true;
+        return Promise.resolve({ error: null });
+      }
+      return Promise.resolve({
+        data: active ? [{ email: "demo.applicant@example.test", cooling_off_ends_at: "2026-11-01T00:00:00Z", simulated_at: "2026-11-01T00:00:00Z", expires_at: "2026-10-30T10:30:00Z" }] : [],
+        error: null,
+      });
+    });
+    hooks.useOrganizationSettings.mockReturnValue({
+      data: { organization_name: "San Juan City Police", support_email: "hr@sanjuancity.gov", default_timezone: "Asia/Manila" },
+      error: null,
+      isLoading: false,
+      refetch: vi.fn(),
+    });
+    hooks.useSaveOrganizationSettings.mockReturnValue({ isPending: false, mutateAsync: vi.fn() });
+
+    render(<SettingsWorkspace />);
+    await user.type(screen.getByLabelText("Demo applicant email"), "demo.applicant@example.test");
+    await user.click(screen.getByRole("button", { name: "Simulate six months passed" }));
+
+    await waitFor(() => expect(presentationDemo.rpc).toHaveBeenCalledWith(
+      "set_applicant_login_presentation_demo",
+      { target_email: "demo.applicant@example.test", requested_action: "start" },
+    ));
   });
 
   it("offers only Edit for departments and keeps the current status when an edit is saved", async () => {

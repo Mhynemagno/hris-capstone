@@ -71,8 +71,8 @@ export async function POST(request: NextRequest) {
 
   // Belt and braces for "Account can sign in" being cleared: refuse the session here too.
   if (data?.user) {
-    const { data: profile } = await supabase.from("profiles").select("is_active").eq("id", data.user.id).maybeSingle();
-    if (profile?.is_active === false) {
+    const { data: canSignIn, error: accessError } = await supabase.rpc("current_account_can_sign_in");
+    if (accessError || canSignIn !== true) {
       await supabase.auth.signOut();
       return loginRedirect(request, nextPath, "account_disabled", mode);
     }

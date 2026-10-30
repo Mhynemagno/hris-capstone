@@ -98,7 +98,7 @@ export function HrApplicationReview({ applicationId }: { applicationId: string }
         </div>
         <div className="order-1 space-y-4 lg:sticky lg:top-20 lg:order-2">
           <DetailsPanel email={email} jobId={application.job_opening_id} jobTitle={job?.title ?? null} lastChange={lastChange} mobile={applicant?.phone ?? null} number={formatApplicantNumber(applicant?.applicant_number)} submittedAt={application.submitted_at} />
-          {account ? <div className="rounded-lg border bg-card p-5"><h2 className="mb-2 text-base font-semibold">Applicant account</h2><ApplicantAccountActions active={account.account_active} email={account.email} userId={account.user_id} /></div> : null}
+          {account ? <div className="rounded-lg border bg-card p-5"><h2 className="mb-2 text-base font-semibold">Applicant account</h2><ApplicantAccountActions active={account.account_active} email={account.email} /></div> : null}
         </div>
       </div>
     </PageContainer>
