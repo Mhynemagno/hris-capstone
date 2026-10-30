@@ -68,12 +68,6 @@ export async function listHrRegisteredApplicants() {
   return ((data ?? []) as HrRegisteredApplicant[]).map((row) => ({ ...row, application_count: Number(row.application_count ?? 0) }));
 }
 
-/** HR reactivates a deactivated applicant account so the applicant can sign in and resubmit. */
-export async function reactivateApplicantAccount(userId: string) {
-  const { error } = await createBrowserSupabaseClient().rpc("reactivate_applicant_account", { target_user_id: userId });
-  throwIfError(error);
-}
-
 /**
  * HR issues new credentials: Supabase Auth emails the applicant a password-reset link that opens the
  * existing /reset-password page. A non-persisting client sends it, so no PKCE verifier is left in HR's

@@ -13,6 +13,14 @@ export async function getCurrentRole(): Promise<AppRole | null> {
   }
 
   const supabase = await createServerSupabaseClient();
+  const { data: canSignIn, error: accessError } = await supabase.rpc(
+    "current_account_can_sign_in",
+  );
+
+  if (accessError || canSignIn !== true) {
+    return null;
+  }
+
   const { data, error } = await supabase
     .from("user_roles")
     .select("role")
@@ -20,17 +28,6 @@ export async function getCurrentRole(): Promise<AppRole | null> {
     .maybeSingle();
 
   if (error || !data) {
-    return null;
-  }
-
-  // An account whose "can sign in" flag was cleared keeps its role row but gets no access.
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("is_active")
-    .eq("id", userId)
-    .maybeSingle();
-
-  if (profile?.is_active === false) {
     return null;
   }
 

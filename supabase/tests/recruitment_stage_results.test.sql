@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public;
 
-select extensions.plan(21);
+select extensions.plan(28);
 
 select extensions.has_function('public', 'record_stage_result', array['uuid', 'text', 'text', 'jsonb', 'timestamp with time zone', 'text'], 'HR records Passed / Failed / Scheduled / Verified results');
 select extensions.has_table('public', 'application_stage_documents', 'Stage supporting documents are stored');
@@ -79,17 +79,15 @@ select extensions.is(
   array['Not Selected', 'failed'],
   'Failing ends the application as Not Selected (Disqualified) and the history records the result'
 );
-set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000008102';
-select extensions.throws_ok(
-  $$select public.reactivate_applicant_account('00000000-0000-4000-8000-000000008104')$$,
-  '22023', 'Applicant accounts can only be reactivated six months after rejection.',
-  'HR cannot reactivate a rejected applicant before the six-month cooldown ends'
-);
 set local role postgres;
 select extensions.is(
   (select is_active from public.profiles where id = '00000000-0000-4000-8000-000000008104'),
-  false,
-  'Failing a recruitment stage blocks the rejected applicant from signing in'
+  true,
+  'Failing a recruitment stage keeps permanent account activation separate from the temporary cooling-off block'
+);
+select extensions.ok(
+  (select applicant_cooling_off_ends_at between now() + interval '6 months - 5 seconds' and now() + interval '6 months + 5 seconds' from public.profiles where id = '00000000-0000-4000-8000-000000008104'),
+  'Failing a recruitment stage records a six-month cooling-off end time'
 );
 select extensions.ok(
   (select banned_until > now() from auth.users where id = '00000000-0000-4000-8000-000000008104'),
@@ -97,6 +95,54 @@ select extensions.ok(
 );
 
 set local role authenticated;
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000008104';
+select extensions.is(
+  public.current_account_can_sign_in(),
+  false,
+  'A rejected applicant remains unable to access protected data during the real cooling-off period'
+);
+
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000008101';
+select extensions.lives_ok(
+  $$select public.set_applicant_login_presentation_demo('demo.applicant@example.test', 'start')$$,
+  'A System Administrator can start the isolated six-month presentation simulation'
+);
+select extensions.is(
+  (select email from public.get_applicant_login_presentation_demo()),
+  'demo.applicant@example.test',
+  'The presentation simulation records only its selected applicant'
+);
+
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000008104';
+select extensions.is(
+  public.current_account_can_sign_in(),
+  true,
+  'The selected applicant can access protected data while the isolated simulation is active'
+);
+
+set local role postgres;
+update public.applicant_login_presentation_demo set expires_at = now() - interval '1 second' where id;
+set local role authenticated;
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000008104';
+select extensions.is(
+  public.current_account_can_sign_in(),
+  false,
+  'An expired presentation simulation no longer grants protected-data access'
+);
+
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000008101';
+select extensions.lives_ok(
+  $$select public.set_applicant_login_presentation_demo('', 'reset')$$,
+  'A System Administrator can reset the presentation simulation'
+);
+
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000008104';
+select extensions.is(
+  public.current_account_can_sign_in(),
+  false,
+  'Resetting the simulation restores the real cooling-off block'
+);
+
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000008104';
 select extensions.throws_ok(
   $$select public.record_stage_result('00000000-0000-4000-8000-000000028001', 'scheduled', null, null)$$,

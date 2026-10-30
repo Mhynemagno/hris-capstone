@@ -104,8 +104,9 @@ Keep the existing audit/report scope but split outputs and filters for:
 
 Every applicant receives and retains a unique applicant number whether or not
 documents are submitted or the applicant is qualified. Disqualified records
-remain recoverable. HR can reactivate an applicant account or issue new
-credentials when a resubmission is needed. Recruitment is represented as two
+remain recoverable. A rejected applicant regains sign-in access automatically
+after the six-month cooling-off period; HR can issue new credentials but does
+not manually reactivate rejected accounts. Recruitment is represented as two
 opening windows per calendar year while preserving the applications and
 openings belonging to prior windows.
 

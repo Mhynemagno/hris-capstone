@@ -15,6 +15,7 @@ import { EmptyTableState } from "@/components/ui/empty-table-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
+import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { LoadingState } from "@/components/ui/loading-state";
 import { nativeSelectClassName } from "@/components/ui/native-select";
 import { SearchInput } from "@/components/ui/search-input";
@@ -703,6 +704,7 @@ export function SettingsWorkspace() {
         <div className="space-y-1 px-5 py-4"><dt className="text-sm font-semibold text-muted-foreground">Default time zone</dt><dd>{settings?.default_timezone || "Not configured"}</dd></div>
       </dl>
       <Button onClick={() => setOpen(true)} type="button">Edit organization settings</Button>
+      <ApplicantLoginPresentationDemo />
       <AdministrationFormPanel description="Update the organization identity, support contact, and default time zone. Application secrets are never shown here." onOpenChange={setOpen} open={open} title="Organization settings">
         <form className="space-y-4" noValidate onSubmit={form.handleSubmit(submit)}>
           <FormField error={errors.organizationName?.message} htmlFor="organization-name" label="Organization name" required>
@@ -733,6 +735,55 @@ export function SettingsWorkspace() {
       </AdministrationFormPanel>
     </div>
   );
+}
+
+/** A System Administrator can demonstrate only one deliberately-created applicant account at a time. */
+function ApplicantLoginPresentationDemo() {
+  const [email, setEmail] = useState("");
+  const [state, setState] = useState<{ email: string | null; cooling_off_ends_at: string | null; simulated_at: string | null; expires_at: string | null } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+
+  const refresh = async () => {
+    const client = createBrowserSupabaseClient();
+    const { data, error: loadError } = await client.rpc("get_applicant_login_presentation_demo");
+    if (loadError) throw new Error(loadError.message);
+    setState((data?.[0] ?? null) as typeof state);
+  };
+  useEffect(() => {
+    let mounted = true;
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        try {
+          const client = createBrowserSupabaseClient();
+          const { data, error: loadError } = await client.rpc("get_applicant_login_presentation_demo");
+          if (loadError) throw new Error(loadError.message);
+          if (mounted) setState((data?.[0] ?? null) as typeof state);
+        } catch (cause) {
+          if (mounted) setError(errorMessage(cause, "We could not load the presentation simulator."));
+        }
+      })();
+    }, 0);
+    return () => { mounted = false; window.clearTimeout(timer); };
+  }, []);
+  async function change(action: "start" | "reset") {
+    setPending(true); setError(null);
+    try {
+      const client = createBrowserSupabaseClient();
+      const { error: saveError } = await client.rpc("set_applicant_login_presentation_demo", { target_email: email, requested_action: action });
+      if (saveError) throw new Error(saveError.message);
+      await refresh();
+    } catch (cause) { setError(errorMessage(cause, "We could not update the presentation simulator.")); }
+    finally { setPending(false); }
+  }
+  const active = Boolean(state?.expires_at && new Date(state.expires_at) > new Date());
+  return <section aria-label="Applicant login presentation demo" className="space-y-3 rounded-xl border border-amber-300 bg-amber-50 p-5">
+    <div><h2 className="font-bold text-amber-950">Applicant login presentation demo</h2><p className="mt-1 text-sm text-amber-900">For a deliberately created demo applicant only. It never changes the server date or another account.</p></div>
+    {active ? <p className="rounded-lg bg-amber-200 px-3 py-2 text-sm font-semibold text-amber-950">Simulation active for {state?.email} until {state?.expires_at ? formatDateTime(state.expires_at) : "soon"}.</p> : null}
+    <FormField htmlFor="presentation-demo-email" label="Demo applicant email"><Input disabled={pending} id="presentation-demo-email" onChange={(event) => setEmail(event.target.value)} placeholder="demo.applicant@example.com" type="email" value={email} /></FormField>
+    <div className="flex flex-wrap gap-2"><Button disabled={pending || !email.trim()} onClick={() => void change("start")} type="button">Simulate six months passed</Button>{state?.email ? <Button disabled={pending} onClick={() => void change("reset")} type="button" variant="outline">Reset simulation</Button> : null}</div>
+    {error ? <ErrorState message={error} /> : null}
+  </section>;
 }
 
 // ---------------------------------------------------------------------------

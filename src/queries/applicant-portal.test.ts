@@ -17,7 +17,7 @@ vi.mock("@/lib/supabase/client", () => ({
   }),
 }));
 
-import { listHrRegisteredApplicants, listMyApplicationHistory, reactivateApplicantAccount, removeMyApplicantProfileDocument, reopenApplicationForResubmission, saveMyApplicantEducation, sendApplicantCredentials } from "./applicant-portal";
+import { listHrRegisteredApplicants, listMyApplicationHistory, removeMyApplicantProfileDocument, reopenApplicationForResubmission, saveMyApplicantEducation, sendApplicantCredentials } from "./applicant-portal";
 
 function tableMock(existing: { id: string; level: string }[]) {
   const writes: { op: string; payload?: unknown; id?: unknown }[] = [];
@@ -99,12 +99,6 @@ describe("listHrRegisteredApplicants", () => {
 
 describe("HR applicant account help", () => {
   beforeEach(() => vi.resetAllMocks());
-
-  it("reactivates an applicant account through the HR RPC", async () => {
-    mocks.rpc.mockResolvedValue({ error: null });
-    await reactivateApplicantAccount("u1");
-    expect(mocks.rpc).toHaveBeenCalledWith("reactivate_applicant_account", { target_user_id: "u1" });
-  });
 
   it("reopens a Not Selected application with a trimmed optional note", async () => {
     mocks.rpc.mockResolvedValue({ error: null });

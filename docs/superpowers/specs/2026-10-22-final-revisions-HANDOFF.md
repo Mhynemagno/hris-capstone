@@ -110,8 +110,11 @@ Migrations:
 New files: `applicant-account-actions.tsx`, `src/lib/recruitment/recruitment-cycle.ts`.
 
 Check each requirement:
-1. HR can reactivate an applicant account, send new credentials (password
-   reset email), and reopen a Not Selected application for resubmission.
+1. Superseded by the applicant cooling-off implementation: a rejected applicant
+   regains sign-in access automatically after six months. HR can send new
+   credentials and reopen a Not Selected application for resubmission, but does
+   not manually reactivate a rejected account. A System Administrator can use
+   the isolated presentation simulator for the approved demo.
 2. There are two recruitment cycles per year: Cycle 1 (Jan–Jun) and
    Cycle 2 (Jul–Dec). The cycle shows in the HR job form and list and on the
    public careers pages, and `closes_on` must fall within the cycle.
